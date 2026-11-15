@@ -22,7 +22,7 @@ run = [
 	"sloptor build",
 	"rogen check",
 	"eslint --cache --max-warnings 0 src",
-	"rojo build default.project.json --output build/game.rbxl",
+	"mkdir -p build && rojo build default.project.json --output build/game.rbxl",
 	"lune run scripts/check-place build/game.rbxl",
 ]
 
@@ -34,7 +34,7 @@ run = [
 	"sloptor build",
 	"rogen check",
 	"eslint --max-warnings 0 src",
-	"rojo build default.project.json --output build/game.rbxl",
+	"mkdir -p build && rojo build default.project.json --output build/game.rbxl",
 	"lune run scripts/check-place build/game.rbxl",
 ]
 
@@ -44,4 +44,4 @@ run = "rogen write --quiet && sloptor build && (trap 'kill 0' EXIT; sloptor buil
 
 [tasks.build]
 description = "Compile and build the place to build/game.rbxl"
-run = ["rogen write --quiet", "sloptor build", "rojo build default.project.json --output build/game.rbxl"]
+run = ["rogen write --quiet", "sloptor build", "mkdir -p build && rojo build default.project.json --output build/game.rbxl"]
