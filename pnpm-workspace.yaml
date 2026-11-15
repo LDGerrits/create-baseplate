@@ -1,0 +1,12 @@
+# roblox-ts resolves packages through one node_modules folder in the game, so
+# every package, including dependencies of dependencies, must sit in the
+# top-level node_modules. pnpm's default layout hides those behind symlinks.
+nodeLinker: hoisted
+
+# eslint-plugin-roblox-ts pins an older typescript-eslint that rejects TypeScript 6.
+# Share the project's typescript-eslint instead.
+overrides:
+  "@typescript-eslint/utils": "8.72.2"
+  "@typescript-eslint/type-utils": "8.72.2"
+  "@typescript-eslint/typescript-estree": "8.72.2"
+  "@typescript-eslint/parser": "8.72.2"

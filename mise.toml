@@ -1,0 +1,47 @@
+# Every tool this project needs, pinned. `mise install` fetches them all.
+# Rogen and the npm tools come from package.json, through `mise run install`.
+[tools]
+node = "24.22.1"
+pnpm = "12.18.0"
+"github:rojo-rbx/rojo" = "7.7.1"
+"github:howmanyslop/sloptor" = "2.8.3"
+"github:lune-org/lune" = "0.11.1"
+
+[env]
+_.path = ["{{config_root}}/node_modules/.bin"]
+
+[tasks.install]
+description = "Install packages and write the Rojo project file"
+run = ["pnpm install --frozen-lockfile", "rogen write --quiet"]
+
+[tasks.check]
+description = "The one command to run after every change: format, compile, lint, build and verify the place"
+run = [
+	"biome check --write --no-errors-on-unmatched .",
+	"rogen write --quiet",
+	"sloptor build",
+	"rogen check",
+	"eslint --cache --max-warnings 0 src",
+	"rojo build default.project.json --output build/game.rbxl",
+	"lune run scripts/check-place build/game.rbxl",
+]
+
+[tasks.ci]
+description = "check, without writing fixes: fails on unformatted code"
+run = [
+	"biome ci .",
+	"rogen write --quiet",
+	"sloptor build",
+	"rogen check",
+	"eslint --max-warnings 0 src",
+	"rojo build default.project.json --output build/game.rbxl",
+	"lune run scripts/check-place build/game.rbxl",
+]
+
+[tasks.dev]
+description = "Compile on save and serve to Studio. Press Connect in the Rojo plugin."
+run = "rogen write --quiet && sloptor build && (trap 'kill 0' EXIT; sloptor build --watch --no-clear & rogen serve)"
+
+[tasks.build]
+description = "Compile and build the place to build/game.rbxl"
+run = ["rogen write --quiet", "sloptor build", "rojo build default.project.json --output build/game.rbxl"]

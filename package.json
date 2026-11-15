@@ -1,0 +1,32 @@
+{
+	"name": "agent-baseplate",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Roblox game template built for AI coding agents",
+	"type": "module",
+	"packageManager": "pnpm@12.18.0",
+	"dependencies": {
+		"@flamework/components": "1.3.2",
+		"@flamework/core": "1.3.2",
+		"@flamework/networking": "1.3.2",
+		"@rbxts/charm": "0.11.1",
+		"@rbxts/react": "17.3.13-ts.1",
+		"@rbxts/react-charm": "0.4.1",
+		"@rbxts/react-roblox": "17.3.13-ts.1",
+		"@rbxts/services": "1.6.0",
+		"@rbxts/t": "3.2.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.6.7",
+		"@ldgerrits/rogen": "2.0.0-beta.4",
+		"@rbxts/compiler-types": "3.0.0-types.0",
+		"@rbxts/types": "1.0.962",
+		"eslint": "10.15.0",
+		"eslint-import-resolver-typescript": "4.4.5",
+		"eslint-plugin-import-x": "4.18.1",
+		"eslint-plugin-react-hooks": "7.1.1",
+		"eslint-plugin-roblox-ts": "1.4.1",
+		"typescript": "6.0.3",
+		"typescript-eslint": "8.72.2"
+	}
+}

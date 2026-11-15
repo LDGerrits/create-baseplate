@@ -1,0 +1,33 @@
+{
+	"name": "agent-baseplate",
+	"sourcePaths": ["src"],
+	"routes": {
+		"server": "ServerScriptService",
+		"client": "StarterPlayer/StarterPlayerScripts",
+		"shared": "ReplicatedStorage/shared",
+		"*": "ReplicatedStorage/shared"
+	},
+	"compiledPath": "out",
+	"tree": {
+		"$className": "DataModel",
+		"ReplicatedStorage": {
+			"rbxts_include": {
+				"node_modules": {
+					"$className": "Folder",
+					"@flamework": {
+						"$path": "node_modules/@flamework"
+					},
+					"@rbxts": {
+						"$path": "node_modules/@rbxts"
+					},
+					"@rbxts-js": {
+						"$path": "node_modules/@rbxts-js"
+					}
+				},
+				"$path": {
+					"optional": "include"
+				}
+			}
+		}
+	}
+}
