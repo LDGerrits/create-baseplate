@@ -4,9 +4,9 @@ A Roblox game written in TypeScript with roblox-ts, compiled by Sloptor, synced 
 
 ## Checking your work
 
-Run `mise run check` after every change, and fix what it reports until it passes. It formats with Biome, writes the Rojo project file, compiles and type-checks, runs `rogen check`, lints with ESLint, builds the place, and checks that every import in the built place resolves. It takes a few seconds.
+Run `mise run check` after every change, and fix what it reports until it passes. It formats with Biome, writes the Rojo project file, compiles and type-checks, runs `rogen check`, lints with ESLint, builds the place, checks that every import in the built place resolves, and runs the tests. It takes a few seconds.
 
-- A clean compile doesn't mean the game runs. The last step catches imports that compile but fail in Studio; nothing here plays the game yet.
+- A clean compile doesn't mean the game runs; the tests do run it. Add tests with every feature, as below.
 - Don't silence a lint rule to pass the check. If a rule is wrong for a line, disable it on that line with a comment that says why.
 - Never edit `out/`, `include/`, `build/`, `node_modules/` or `default.project.json`; they're generated.
 
@@ -33,7 +33,18 @@ Name files in kebab-case, after what they hold: `inventory-service.ts`, `invento
 3. Define the feature's network events in `shared/<feature>-network.ts` with `Networking.createEvent<ClientToServer, ServerToClient>()`.
 4. Add a service in `server/` and a controller in `client/`, then import each in the matching `src/app/*/main` file.
 5. Add UI components in `client/`, and render the top one from `src/app/client/app.tsx`.
-6. Run `mise run check`.
+6. Add a spec for the rules, and an end-to-end test for each request a client sends (see Testing).
+7. Run `mise run check`.
+
+## Testing
+
+`mise run test` compiles and runs the tests offline in ree, an emulator of the Roblox engine, in about a second. `mise run test:engine` runs every Jest spec in a real Roblox engine through jest-roblox, in about twenty seconds. When the two disagree, the real engine is right.
+
+- **Specs** are Jest tests in `<name>.spec.ts` beside the code they test, written with `@rbxts/jest-globals`. Test rules and services through their public methods; `clicker-rules.spec.ts` is the example.
+- **Engine specs** are named `<name>.engine.spec.ts`. Use one when the test needs what ree doesn't emulate: collisions and physics beyond free fall, Humanoids (health, `Died`, movement), and real DataStore limits. ree skips them and `test:engine` runs them; run it yourself after changing one.
+- **End-to-end tests** are ree harnesses in `tests/e2e/<feature>.luau`: the real server boots, and a player's client talks to it through its remotes, in one run. Copy `tests/e2e/clicker.luau`. A test passes when its client prints `@done`; a failed `assert` fails it.
+- ree returns nil from a method it doesn't emulate instead of raising, so a test can pass for the wrong reason. When a result depends on engine behaviour, prove it in an engine spec.
+- jest-roblox picks Roblox Studio when it finds it and Open Cloud otherwise; its README (`node_modules/@isentinel/jest-roblox/README.md`) covers both. From WSL it can't find Studio: set `JEST_ROBLOX_STUDIO_PATH` to `RobloxStudioBeta.exe` and `JEST_ROBLOX_PLUGINS_DIR` to the Studio plugins folder, both as `/mnt/c/...` paths.
 
 ## How the code works
 

@@ -6,6 +6,11 @@ pnpm = "12.18.0"
 "github:rojo-rbx/rojo" = "7.7.1"
 "github:howmanyslop/sloptor" = "2.8.3"
 "github:lune-org/lune" = "0.11.1"
+# ree runs the game offline for tests, rur renders UI, ror renders 3D. Anime-Vanguards tools.
+# ree is on its canary build for `--rojo` and its exit codes; pin the next release when it ships.
+"github:Anime-Vanguards/roblox-engine-emulator" = { version = "canary", bin = "ree" }
+"github:Anime-Vanguards/roblox-ui-renderer" = { version = "0.8.0", bin = "rur-native" }
+"github:Anime-Vanguards/roblox-object-renderer" = { version = "0.6.0", bin = "ror" }
 
 [env]
 _.path = ["{{config_root}}/node_modules/.bin"]
@@ -15,7 +20,7 @@ description = "Install packages and write the Rojo project file"
 run = ["pnpm install --frozen-lockfile", "rogen write --quiet"]
 
 [tasks.check]
-description = "The one command to run after every change: format, compile, lint, build and verify the place"
+description = "The one command to run after every change: format, compile, lint, build, verify the place and run the tests"
 run = [
 	"biome check --write --no-errors-on-unmatched .",
 	"rogen write --quiet",
@@ -24,6 +29,7 @@ run = [
 	"eslint --cache --max-warnings 0 src",
 	"mkdir -p build && rojo build default.project.json --output build/game.rbxl",
 	"lune run scripts/check-place build/game.rbxl",
+	"node scripts/test.mjs",
 ]
 
 [tasks.ci]
@@ -36,7 +42,16 @@ run = [
 	"eslint --max-warnings 0 src",
 	"mkdir -p build && rojo build default.project.json --output build/game.rbxl",
 	"lune run scripts/check-place build/game.rbxl",
+	"node scripts/test.mjs",
 ]
+
+[tasks.test]
+description = "Compile and run the tests offline in ree: Jest specs, except *.engine.spec, then tests/e2e"
+run = ["rogen write --quiet", "sloptor build", "node scripts/test.mjs"]
+
+[tasks."test:engine"]
+description = "Run every Jest spec, *.engine.spec included, in Roblox Studio or Open Cloud through jest-roblox"
+run = ["rogen write --quiet", "sloptor build", "jest-roblox"]
 
 [tasks.dev]
 description = "Compile on save and serve to Studio. Press Connect in the Rojo plugin."

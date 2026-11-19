@@ -18,8 +18,11 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.6.7",
+		"@isentinel/jest-roblox": "0.4.12",
 		"@ldgerrits/rogen": "2.0.0-beta.4",
 		"@rbxts/compiler-types": "3.0.0-types.0",
+		"@rbxts/jest": "3.16.0-ts.2",
+		"@rbxts/jest-globals": "3.16.0-ts.2",
 		"@rbxts/types": "1.0.962",
 		"eslint": "10.15.0",
 		"eslint-import-resolver-typescript": "4.4.5",

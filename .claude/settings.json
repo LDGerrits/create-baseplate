@@ -6,6 +6,10 @@
 					{
 						"type": "command",
 						"command": "node \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/rogen-check.mjs"
+					},
+					{
+						"type": "command",
+						"command": "node \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/test-check.mjs"
 					}
 				]
 			}

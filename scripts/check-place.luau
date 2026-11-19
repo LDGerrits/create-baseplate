@@ -132,7 +132,11 @@ for _, script in game:GetDescendants() do
 		if string.match(line, "^%s*%-%-") then
 			continue
 		end
-		for chain in string.gmatch(line, "require%(script([%.%[:][^%)]*%)?)") do
+		for start, chain in string.gmatch(line, "()require%(script([%.%[:][^%)]*%)?)") do
+			-- `option and require(...)` runs only when the option is on; packages ship without those modules.
+			if string.match(string.sub(line, 1, start - 1), "%f[%w]and%s*$") then
+				continue
+			end
 			checked += 1
 			local current: Instance? = script
 			local position = 1

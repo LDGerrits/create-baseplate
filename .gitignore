@@ -21,3 +21,6 @@ sourcemap.json
 # Compiler caches
 /.rotor
 /flamework.build
+
+# jest-roblox run logs
+/.jest-roblox
