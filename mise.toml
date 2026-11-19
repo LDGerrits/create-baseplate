@@ -15,52 +15,65 @@ pnpm = "12.18.0"
 [env]
 _.path = ["{{config_root}}/node_modules/.bin"]
 
+[tasks.generate]
+description = "Write the generated files: default.project.json (code), game.project.json (code and world), src/world.d.ts"
+run = ["rogen write --quiet", "node scripts/game-project.mjs", "node scripts/world-types.mjs"]
+
 [tasks.install]
-description = "Install packages and write the Rojo project file"
-run = ["pnpm install --frozen-lockfile", "rogen write --quiet"]
+description = "Install packages and write the generated files"
+run = ["pnpm install --frozen-lockfile", "mise run generate"]
 
 [tasks.check]
 description = "The one command to run after every change: format, compile, lint, build, verify the place and run the tests"
+depends = ["generate"]
 run = [
 	"biome check --write --no-errors-on-unmatched .",
-	"rogen write --quiet",
 	"sloptor build",
 	"rogen check",
 	"eslint --cache --max-warnings 0 src",
-	"mkdir -p build && rojo build default.project.json --output build/game.rbxl",
+	"mkdir -p build && rojo build game.project.json --output build/game.rbxl",
 	"lune run scripts/check-place build/game.rbxl",
 	"node scripts/test.mjs",
 ]
 
 [tasks.ci]
 description = "check, without writing fixes: fails on unformatted code"
+depends = ["generate"]
 run = [
 	"biome ci .",
-	"rogen write --quiet",
 	"sloptor build",
 	"rogen check",
 	"eslint --max-warnings 0 src",
-	"mkdir -p build && rojo build default.project.json --output build/game.rbxl",
+	"mkdir -p build && rojo build game.project.json --output build/game.rbxl",
 	"lune run scripts/check-place build/game.rbxl",
 	"node scripts/test.mjs",
 ]
 
 [tasks.test]
 description = "Compile and run the tests offline in ree: Jest specs, except *.engine.spec, then tests/e2e"
-run = ["rogen write --quiet", "sloptor build", "node scripts/test.mjs"]
+depends = ["generate"]
+run = ["sloptor build", "node scripts/test.mjs"]
 
 [tasks."test:engine"]
 description = "Run every Jest spec, *.engine.spec included, in Roblox Studio or Open Cloud through jest-roblox"
-run = ["rogen write --quiet", "sloptor build", "jest-roblox"]
+depends = ["generate"]
+run = ["sloptor build", "jest-roblox"]
 
 [tasks.ui]
 description = "Compile and render every UI story offline with rur; prints each picture's path"
-run = ["rogen write --quiet", "sloptor build", "node scripts/ui.mjs"]
+depends = ["generate"]
+run = ["sloptor build", "node scripts/ui.mjs"]
 
 [tasks.dev]
-description = "Compile on save and serve to Studio. Press Connect in the Rojo plugin."
-run = "rogen write --quiet && sloptor build && (trap 'kill 0' EXIT; sloptor build --watch --no-clear & rogen serve)"
+description = "Start the dev session: compile on save, serve code to Studio, open Studio on the world, and sync each Studio save back to world/"
+depends = ["generate"]
+run = "forge start --syncback"
+
+[tasks.sync]
+description = "Save the Studio place, then write its world edits into world/ (while a forge session runs)"
+run = ["forge save", "forge sync"]
 
 [tasks.build]
-description = "Compile and build the place to build/game.rbxl"
-run = ["rogen write --quiet", "sloptor build", "mkdir -p build && rojo build default.project.json --output build/game.rbxl"]
+description = "Compile and build the whole game, code and world, to build/game.rbxl"
+depends = ["generate"]
+run = ["sloptor build", "mkdir -p build && rojo build game.project.json --output build/game.rbxl"]

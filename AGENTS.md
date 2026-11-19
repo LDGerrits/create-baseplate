@@ -8,7 +8,7 @@ Run `mise run check` after every change, and fix what it reports until it passes
 
 - A clean compile doesn't mean the game runs; the tests do run it. Add tests with every feature, as below.
 - Don't silence a lint rule to pass the check. If a rule is wrong for a line, disable it on that line with a comment that says why.
-- Never edit `out/`, `include/`, `build/`, `node_modules/` or `default.project.json`; they're generated.
+- Never edit `out/`, `include/`, `build/`, `node_modules/`, `default.project.json`, `game.project.json` or `src/world.d.ts`; they're generated.
 
 ## Layout
 
@@ -67,6 +67,28 @@ Each platform area holds three things, like `platform/clock`:
 - a fake for tests, such as `FakeClock`, which a test controls.
 
 A service asks for the interface in its constructor, `constructor(private readonly clock: Clock) {}`, and each `src/app/*/main` file registers the real one before Flamework starts: `Modding.registerDependency<Clock>(() => systemClock)`. When you add an area, register it there, and add its Roblox service to `platformServices` in `eslint.config.js`, which bans it outside `src/platform`. Wrap only effects that leave the game or depend on time; Instances, datatypes and engine services such as `TweenService` stay as they are.
+
+## World
+
+The world, meaning the map, lighting and models placed in Studio, lives in `world/` as files, apart from the code:
+
+- `world/default.project.json` maps each world service (`Workspace`, `Lighting`) to a project file beside it, which holds the service's properties, and a folder of its instances. Each instance is a `.model.json`, or an `.rbxm` when Studio made it.
+- Rojo serves only the code (`default.project.json`), and Studio opens a place built from `world/` alone, so code only ever comes from `src` and the world only from `world/`.
+- `game.project.json` joins the two. Builds, the place check and the tests use it, so a test sees the map.
+- `src/world.d.ts` types every world instance, so code can write `Workspace.SpawnLocation` and the compiler checks it exists. Each check regenerates it.
+
+To change the world, edit it in Studio and sync it back:
+
+1. Start the session in the background: `forge up --studio --syncback`. Studio opens on the world, and Rojo adds the code. `forge status` shows each part; `forge down` stops it.
+2. Edit the world in Studio, by hand or through the Studio MCP's `execute_luau` in the Edit data model.
+3. Run `mise run sync`. It saves the place through Studio's File menu, then syncback writes the edits into `world/`, sorts the JSON and regenerates the types. Read the diff of `world/` before you go on.
+
+You can also edit a `.model.json` directly, then `forge restart` to rebuild Studio's place from `world/`.
+
+- Syncback writes a new instance as an `.rbxm` (binary); Rojo picks JSON only for a few classes. Read one with Lune (`roblox.deserializeModel`), or ask the user before converting it.
+- Sync with `mise run sync`, not `forge sync` alone: without a save first, syncback reads the last saved place. forge's `capture` save method keeps instances deleted in Studio (rbx-forge#323), so the config uses the File menu.
+- Plugins can leave attributes in the world: rodeo's plugin stamps `rodeoStudioId_*` on Workspace. Remove them from the diff before you commit.
+- To add a service to the world, such as `SoundService`, give it a project file and a folder like `Workspace`, and add it to `world/default.project.json`. A service lives in either the code or the world, never both; `scripts/game-project.mjs` fails when one is in both.
 
 ## How the code works
 

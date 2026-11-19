@@ -24,3 +24,12 @@ sourcemap.json
 
 # jest-roblox run logs
 /.jest-roblox
+
+# The world's project files are written by hand and by syncback; keep them
+!/world/**/*.project.json
+
+# Generated from world/ by scripts/world-types.mjs
+/src/world.d.ts
+
+# forge's session state and logs
+/.forge

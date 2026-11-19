@@ -29,7 +29,7 @@ for (const run of runs) {
 	const started = performance.now();
 	const ree = spawnSync(
 		"ree",
-		["run", "--rojo", "default.project.json", "--load-string", "--harness", run.harness, ...run.args],
+		["run", "--rojo", "game.project.json", "--load-string", "--harness", run.harness, ...run.args],
 		{ encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
 	);
 	const seconds = ((performance.now() - started) / 1000).toFixed(2);

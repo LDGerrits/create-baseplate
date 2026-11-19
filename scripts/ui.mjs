@@ -36,7 +36,7 @@ if (noStudio) {
 fs.rmSync(OUT, { recursive: true, force: true });
 const sweep = spawnSync(
 	"rur-native",
-	["sweep", "--rojo", "default.project.json", "--out", OUT, "--viewport", "800x600", ...process.argv.slice(2)],
+	["sweep", "--rojo", "game.project.json", "--out", OUT, "--viewport", "800x600", ...process.argv.slice(2)],
 	{ encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
 );
 

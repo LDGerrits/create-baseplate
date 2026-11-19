@@ -1,13 +1,44 @@
 {
 	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-	"vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
-	"files": { "includes": ["**", "!**/*.project.json", "!pnpm-lock.yaml"] },
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"files": {
+		"includes": ["**", "!*.project.json", "!pnpm-lock.yaml"]
+	},
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab",
 		"lineWidth": 120
 	},
-	"javascript": { "formatter": { "quoteStyle": "double" } },
-	"linter": { "enabled": false },
-	"assist": { "enabled": true, "actions": { "source": { "organizeImports": "on" } } }
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	},
+	"linter": {
+		"enabled": false
+	},
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	},
+	"overrides": [
+		{
+			"includes": ["world/**"],
+			"assist": {
+				"actions": {
+					"source": {
+						"useSortedKeys": "on"
+					}
+				}
+			}
+		}
+	]
 }

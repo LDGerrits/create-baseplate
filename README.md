@@ -9,6 +9,7 @@ The Roblox game template built for AI coding agents. Strict types, one command t
 - **Agents can see the UI.** Each view has a story, and `mise run ui` renders every story offline with [rur](https://github.com/Anime-Vanguards/roblox-ui-renderer) and prints where each picture is, so an agent can look at what it built.
 - **Mistakes fail before Studio.** Strict TypeScript, typed networking and ESLint's roblox-ts rules catch the JavaScript habits agents bring (`.length`, `null`, truthiness) and the Roblox ones (server code reaching clients).
 - **Services are tested without Roblox's outside world.** Time, data stores, purchases and teleports go through interfaces in `src/platform`, so a test passes a fake; ESLint bans those services anywhere else.
+- **The world is files, apart from the code.** Studio edits the map and [rbx-forge](https://github.com/christopher-buss/rbx-forge) syncs it back into `world/`, while Rojo serves only code, so syncing never overwrites code. The map is typed: `Workspace.SpawnLocation` compiles only if it exists.
 - **Each feature is one folder.** [Rogen](https://github.com/LDGerrits/rogen) routes `server/`, `client/` and `shared/` folders to the right place in the game, so an agent finds everything about a feature in one place. Lint rules stop features from importing each other.
 - **`AGENTS.md` explains the rules.** The layout, how to add a feature, never trusting the client, and the ways roblox-ts differs from JavaScript.
 
@@ -17,7 +18,7 @@ The Roblox game template built for AI coding agents. Strict types, one command t
 |              |                                                                                                                                                                                                                              |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Language     | TypeScript with [roblox-ts](https://roblox-ts.com), compiled by [Sloptor](https://github.com/howmanyslop/sloptor)                                                                                                            |
-| Sync         | [Rogen](https://github.com/LDGerrits/rogen) over [Rojo](https://rojo.space)                                                                                                                                                  |
+| Sync         | [Rogen](https://github.com/LDGerrits/rogen) over [Rojo](https://rojo.space); [rbx-forge](https://github.com/christopher-buss/rbx-forge) runs Studio and syncback                                                             |
 | Framework    | [Flamework](https://flamework.fireboltofdeath.dev): services, controllers, typed networking                                                                                                                                  |
 | State and UI | [Charm](https://github.com/littensy/charm) atoms, [React](https://github.com/jsdotlua/react-lua)                                                                                                                             |
 | Checks       | ESLint with typescript-eslint and eslint-plugin-roblox-ts, Biome for formatting, Lune for place checks                                                                                                                       |
@@ -32,10 +33,9 @@ Install [mise](https://mise.jdx.dev/getting-started.html), then:
 mise install       # Node, pnpm, Rojo, Sloptor, Lune, ree, rur, ror
 mise run install   # packages and the Rojo project file
 mise run check     # everything should pass
-mise run dev       # compile on save and serve to Studio
+mise run dev       # compile on save, open Studio on the world, serve the code
+mise run sync      # write Studio's world edits into world/
 ```
-
-In Studio, install the Rojo plugin (`rogen plugin install`) and press Connect.
 
 ## Layout
 
@@ -52,4 +52,5 @@ src/
                        clicker-button.tsx (a view) and its story
       shared/          clicker-network.ts, clicker-rules.ts, clicker-rules.spec.ts
 tests/e2e/             end-to-end tests: clicker.luau
+world/                 the map and lighting, edited in Studio and synced back
 ```

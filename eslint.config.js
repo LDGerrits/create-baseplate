@@ -86,7 +86,7 @@ const platformRules = {
 };
 
 export default tseslint.config(
-	{ ignores: ["out/", "include/", "node_modules/", "*.config.js", ".agents/"] },
+	{ ignores: ["out/", "include/", "node_modules/", "*.config.js", ".agents/", "src/world.d.ts"] },
 	tseslint.configs.strictTypeChecked,
 	tseslint.configs.stylisticTypeChecked,
 	roblox.configs.recommended,
