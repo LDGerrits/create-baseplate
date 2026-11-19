@@ -8,6 +8,7 @@ The Roblox game template built for AI coding agents. Strict types, one command t
 - **Tests run without Studio.** Jest specs and end-to-end tests, with the real server and a client talking through remotes, run in [ree](https://github.com/Anime-Vanguards/roblox-engine-emulator), an emulated Roblox engine, in about a second. The same specs run in real Studio or Open Cloud through [jest-roblox](https://github.com/christopher-buss/jest-roblox-cli) (`mise run test:engine`). A Stop hook runs the tests before an agent ends its turn.
 - **Agents can see the UI.** Each view has a story, and `mise run ui` renders every story offline with [rur](https://github.com/Anime-Vanguards/roblox-ui-renderer) and prints where each picture is, so an agent can look at what it built.
 - **Mistakes fail before Studio.** Strict TypeScript, typed networking and ESLint's roblox-ts rules catch the JavaScript habits agents bring (`.length`, `null`, truthiness) and the Roblox ones (server code reaching clients).
+- **Services are tested without Roblox's outside world.** Time, data stores, purchases and teleports go through interfaces in `src/platform`, so a test passes a fake; ESLint bans those services anywhere else.
 - **Each feature is one folder.** [Rogen](https://github.com/LDGerrits/rogen) routes `server/`, `client/` and `shared/` folders to the right place in the game, so an agent finds everything about a feature in one place. Lint rules stop features from importing each other.
 - **`AGENTS.md` explains the rules.** The layout, how to add a feature, never trusting the client, and the ways roblox-ts differs from JavaScript.
 
@@ -42,6 +43,8 @@ In Studio, install the Rojo plugin (`rogen plugin install`) and press Connect.
 src/
   app/                 entry scripts: start Flamework, mount the UI
   core/                what several features share
+  platform/            Roblox's outside world behind interfaces, with fakes for tests
+    clock/             Clock, systemClock, FakeClock
   features/
     clicker/           an example feature
       server/          clicker-service.ts: owns the counts, validates clicks

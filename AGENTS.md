@@ -12,13 +12,14 @@ Run `mise run check` after every change, and fix what it reports until it passes
 
 ## Layout
 
-Code lives in `src`, in three layers. A layer imports only the layers below it, and ESLint enforces it.
+Code lives in `src`, in four layers. A layer imports only the layers below it, and ESLint enforces it.
 
+- `src/platform/<area>/`: Roblox's outside world, behind interfaces: time, data stores, purchases, teleports, messaging. It knows nothing about the game (see Platform).
 - `src/core/<area>/`: what several features share, such as player data. Nothing in core imports a feature.
 - `src/features/<feature>/`: one folder per feature, holding everything it needs. A feature never imports another feature. When two features need the same thing, move it into `core`; when one feature must react to another, connect them in `app`.
 - `src/app/`: the entry scripts. `app/server/main.server.ts` and `app/client/main.client.tsx` import every service and controller, then start Flamework. `app/client/app.tsx` is the root of the UI.
 
-Inside a feature or core area, files sit in a folder named for where they run:
+Inside a platform area, core area or feature, files sit in a folder named for where they run:
 
 - `server/` runs only on the server and never reaches clients. Put rules, validation and secrets here.
 - `client/` runs only on the player's device.
@@ -33,14 +34,14 @@ Name files in kebab-case, after what they hold: `inventory-service.ts`, `invento
 3. Define the feature's network events in `shared/<feature>-network.ts` with `Networking.createEvent<ClientToServer, ServerToClient>()`.
 4. Add a service in `server/` and a controller in `client/`, then import each in the matching `src/app/*/main` file.
 5. Add UI as views in `client/`, each with a story, and a `client/use-<feature>.ts` hook that connects them; render the top view from `src/app/client/app.tsx` (see UI).
-6. Add a spec for the rules, and an end-to-end test for each request a client sends (see Testing).
+6. Add specs for the rules and the service, and an end-to-end test for each request a client sends (see Testing).
 7. Run `mise run check`.
 
 ## Testing
 
 `mise run test` compiles and runs the tests offline in ree, an emulator of the Roblox engine, in about a second. `mise run test:engine` runs every Jest spec in a real Roblox engine through jest-roblox, in about twenty seconds. When the two disagree, the real engine is right.
 
-- **Specs** are Jest tests in `<name>.spec.ts` beside the code they test, written with `@rbxts/jest-globals`. Test rules and services through their public methods; `clicker-rules.spec.ts` is the example.
+- **Specs** are Jest tests in `<name>.spec.ts` beside the code they test, written with `@rbxts/jest-globals`. Test rules and services through their public methods: construct the service yourself with `new`, passing a fake for each platform interface. `clicker-rules.spec.ts` and `clicker-service.spec.ts` are the examples.
 - **Engine specs** are named `<name>.engine.spec.ts`. Use one when the test needs what ree doesn't emulate: collisions and physics beyond free fall, Humanoids (health, `Died`, movement), and real DataStore limits. ree skips them and `test:engine` runs them; run it yourself after changing one.
 - **End-to-end tests** are ree harnesses in `tests/e2e/<feature>.luau`: the real server boots, and a player's client talks to it through its remotes, in one run. Copy `tests/e2e/clicker.luau`. A test passes when its client prints `@done`; a failed `assert` fails it.
 - ree returns nil from a method it doesn't emulate instead of raising, so a test can pass for the wrong reason. When a result depends on engine behaviour, prove it in an engine spec.
@@ -54,6 +55,18 @@ UI is React function components from `@rbxts/react`, split in two:
 - **The feature's hook**, `client/use-<feature>.ts`, connects views to the game: it reads atoms with `useAtom`, gets controllers with `Dependency<MyController>()`, and returns the values and callbacks. `src/app/client/app.tsx` calls each hook and passes the result to the top view, like `useClicker` and `ClickerButton`.
 
 Give each view a story beside it, `<view>.story.tsx`, in UI Labs' React format; copy `clicker-button.story.tsx` and add controls for the props worth varying. After changing UI, run `mise run ui`: it renders every story offline with rur and prints the path of each picture. Open the pictures and look at them; a story that renders without errors can still look wrong.
+
+## Platform
+
+Everything outside the game's own state goes through `src/platform`: the time, DataStores, purchases, teleports, cross-server messages, HTTP requests (`HttpService`'s JSON helpers are fine anywhere). A test then swaps in a fake, so a service is tested without waiting, without a real data store, and without a network.
+
+Each platform area holds three things, like `platform/clock`:
+
+- an interface, such as `Clock`, with doc comments saying what each method promises;
+- the real implementation, such as `systemClock`, the only code that calls the Roblox API;
+- a fake for tests, such as `FakeClock`, which a test controls.
+
+A service asks for the interface in its constructor, `constructor(private readonly clock: Clock) {}`, and each `src/app/*/main` file registers the real one before Flamework starts: `Modding.registerDependency<Clock>(() => systemClock)`. When you add an area, register it there, and add its Roblox service to `platformServices` in `eslint.config.js`, which bans it outside `src/platform`. Wrap only effects that leave the game or depend on time; Instances, datatypes and engine services such as `TweenService` stay as they are.
 
 ## How the code works
 
