@@ -32,63 +32,30 @@ Name files in kebab-case, after what they hold: `inventory-service.ts`, `invento
 1. Create `src/features/<feature>/` with the `server`, `client` and `shared` folders it needs.
 2. Put pure logic (rules, formulas, validation) in `shared/<feature>-rules.ts` as plain functions over plain data, with no Roblox services, so it stays easy to test.
 3. Define the feature's network events in `shared/<feature>-network.ts` with `Networking.createEvent<ClientToServer, ServerToClient>()`.
-4. Add a service in `server/` and a controller in `client/`, then import each in the matching `src/app/*/main` file.
+4. Add a service in `server/` and a controller in `client/`, then import each in the matching `src/app/*/main` file. A service that needs the time or an external service asks for its platform interface (see Platform).
 5. Add UI as views in `client/`, each with a story, and a `client/use-<feature>.ts` hook that connects them; render the top view from `src/app/client/app.tsx` (see UI).
 6. Add specs for the rules and the service, and an end-to-end test for each request a client sends (see Testing).
 7. Run `mise run check`.
 
 ## Testing
 
-`mise run test` compiles and runs the tests offline in ree, an emulator of the Roblox engine, in about a second. `mise run test:engine` runs every Jest spec in a real Roblox engine through jest-roblox, in about twenty seconds. When the two disagree, the real engine is right.
-
-- **Specs** are Jest tests in `<name>.spec.ts` beside the code they test, written with `@rbxts/jest-globals`. Test rules and services through their public methods: construct the service yourself with `new`, passing a fake for each platform interface. `clicker-rules.spec.ts` and `clicker-service.spec.ts` are the examples.
-- **Engine specs** are named `<name>.engine.spec.ts`. Use one when the test needs what ree doesn't emulate: collisions and physics beyond free fall, Humanoids (health, `Died`, movement), and real DataStore limits. ree skips them and `test:engine` runs them; run it yourself after changing one.
-- **End-to-end tests** are ree harnesses in `tests/e2e/<feature>.luau`: the real server boots, and a player's client talks to it through its remotes, in one run. Copy `tests/e2e/clicker.luau`. A test passes when its client prints `@done`; a failed `assert` fails it.
-- ree returns nil from a method it doesn't emulate instead of raising, so a test can pass for the wrong reason. When a result depends on engine behaviour, prove it in an engine spec.
-- jest-roblox picks Roblox Studio when it finds it and Open Cloud otherwise; its README (`node_modules/@isentinel/jest-roblox/README.md`) covers both. From WSL it can't find Studio: set `JEST_ROBLOX_STUDIO_PATH` to `RobloxStudioBeta.exe` and `JEST_ROBLOX_PLUGINS_DIR` to the Studio plugins folder, both as `/mnt/c/...` paths.
+`mise run test` runs the tests offline in ree, an emulated Roblox engine, in about a second; `mise run test:engine` runs the specs in a real Roblox engine. Specs (`<name>.spec.ts`) sit beside the code they test, end-to-end tests in `tests/e2e/`, and `<name>.engine.spec.ts` holds what ree doesn't emulate. Before writing a test or debugging a failing one, read `.agents/skills/write-tests/SKILL.md`.
 
 ## UI
 
-UI is React function components from `@rbxts/react`, split in two:
-
-- **Views** are the `.tsx` files in `client/`. A view takes its data and callbacks as props and renders them, like `clicker-button.tsx`. ESLint keeps Flamework, atoms, controllers and hooks out of views.
-- **The feature's hook**, `client/use-<feature>.ts`, connects views to the game: it reads atoms with `useAtom`, gets controllers with `Dependency<MyController>()`, and returns the values and callbacks. `src/app/client/app.tsx` calls each hook and passes the result to the top view, like `useClicker` and `ClickerButton`.
-
-Give each view a story beside it, `<view>.story.tsx`, in UI Labs' React format; copy `clicker-button.story.tsx` and add controls for the props worth varying. After changing UI, run `mise run ui`: it renders every story offline with rur and prints the path of each picture. Open the pictures and look at them; a story that renders without errors can still look wrong.
+Views, the `.tsx` files in `client/`, take everything they show and do as props. The feature's `client/use-<feature>.ts` hook connects them to atoms and controllers, and `app.tsx` passes what it returns to the view. Each view has a story. Before building or changing UI, read `.agents/skills/build-ui/SKILL.md`.
 
 ## Platform
 
-Everything outside the game's own state goes through `src/platform`: the time, DataStores, purchases, teleports, cross-server messages, HTTP requests (`HttpService`'s JSON helpers are fine anywhere). A test then swaps in a fake, so a service is tested without waiting, without a real data store, and without a network.
-
-Each platform area holds three things, like `platform/clock`:
-
-- an interface, such as `Clock`, with doc comments saying what each method promises;
-- the real implementation, such as `systemClock`, the only code that calls the Roblox API;
-- a fake for tests, such as `FakeClock`, which a test controls.
-
-A service asks for the interface in its constructor, `constructor(private readonly clock: Clock) {}`, and each `src/app/*/main` file registers the real one before Flamework starts: `Modding.registerDependency<Clock>(() => systemClock)`. When you add an area, register it there, and add its Roblox service to `platformServices` in `eslint.config.js`, which bans it outside `src/platform`. Wrap only effects that leave the game or depend on time; Instances, datatypes and engine services such as `TweenService` stay as they are.
+Time and Roblox's external services (DataStores, purchases, teleports, messaging, HTTP requests) go through interfaces in `src/platform`, which tests replace with fakes; ESLint bans them anywhere else. A service asks for the interface in its constructor. To wrap a new one, read `.agents/skills/add-platform-service/SKILL.md`.
 
 ## World
 
-The world, meaning the map, lighting and models placed in Studio, lives in `world/` as files, apart from the code:
+The map and lighting live in `world/` as files. Studio edits them and syncback writes them back, while Rojo serves only code. Code reaches world instances through the types generated in `src/world.d.ts`: `Workspace.SpawnLocation`. To change the world or look at it, read `.agents/skills/edit-world/SKILL.md`.
 
-- `world/default.project.json` maps each world service (`Workspace`, `Lighting`) to a project file beside it, which holds the service's properties, and a folder of its instances. Each instance is a `.model.json`, or an `.rbxm` when Studio made it.
-- Rojo serves only the code (`default.project.json`), and Studio opens a place built from `world/` alone, so code only ever comes from `src` and the world only from `world/`.
-- `game.project.json` joins the two. Builds, the place check and the tests use it, so a test sees the map.
-- `src/world.d.ts` types every world instance, so code can write `Workspace.SpawnLocation` and the compiler checks it exists. Each check regenerates it.
+## Studio
 
-To change the world, edit it in Studio and sync it back:
-
-1. Start the session in the background: `forge up --studio --syncback`. Studio opens on the world, and Rojo adds the code. `forge status` shows each part; `forge down` stops it.
-2. Edit the world in Studio, by hand or through the Studio MCP's `execute_luau` in the Edit data model.
-3. Run `mise run sync`. It saves the place through Studio's File menu, then syncback writes the edits into `world/`, sorts the JSON and regenerates the types. Read the diff of `world/` before you go on.
-
-You can also edit a `.model.json` directly, then `forge restart` to rebuild Studio's place from `world/`.
-
-- Syncback writes a new instance as an `.rbxm` (binary); Rojo picks JSON only for a few classes. Read one with Lune (`roblox.deserializeModel`), or ask the user before converting it.
-- Sync with `mise run sync`, not `forge sync` alone: without a save first, syncback reads the last saved place. forge's `capture` save method keeps instances deleted in Studio (rbx-forge#323), so the config uses the File menu.
-- Plugins can leave attributes in the world: rodeo's plugin stamps `rodeoStudioId_*` on Workspace. Remove them from the diff before you commit.
-- To add a service to the world, such as `SoundService`, give it a project file and a folder like `Workspace`, and add it to `world/default.project.json`. A service lives in either the code or the world, never both; `scripts/game-project.mjs` fails when one is in both.
+ree, rur and ror answer most questions without Studio. To run the game in real Studio, for a playtest, characters, physics, its output or a screenshot, read `.agents/skills/drive-studio/SKILL.md`. forge runs the session, including `rogen serve`.
 
 ## How the code works
 
@@ -105,7 +72,7 @@ The code is TypeScript but it runs as Luau. ESLint catches most of these; know t
 
 - No `null`: use `undefined`. Arrays, maps, sets and strings use `.size()`, never `.length` or `.size`.
 - Write explicit conditions: `if (count > 0)`, `if (name !== "")`, `if (item !== undefined)`. In Luau only `nil` and `false` are falsy, so for `if (count)` roblox-ts emits extra checks for `0`, `""` and `NaN`, and the code reads differently from what runs.
-- There's no Node, DOM or npm ecosystem: no `JSON`, `setTimeout`, `fetch`, `console`, `Date.now`, regex, or `Object.keys`. Use Roblox APIs: `HttpService:JSONEncode`, `task.delay`, `print`, `os.clock()`, `string.match`, `pairs`.
+- There's no Node, DOM or npm ecosystem: no `JSON`, `setTimeout`, `fetch`, `console`, `Date.now`, regex, or `Object.keys`. Use Roblox APIs: `HttpService:JSONEncode`, `task.delay`, `print`, `string.match`, `pairs`, and a `Clock` for the time.
 - Packages come from the `@rbxts` scope, with roblox-ts types. A plain npm package won't run in Roblox.
 - Get services from `@rbxts/services`: `import { Players } from "@rbxts/services"`.
 - Use the `task` library (`task.wait`, `task.spawn`, `task.delay`), not `wait`, `spawn` or `delay`.

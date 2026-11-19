@@ -12,6 +12,7 @@ The Roblox game template built for AI coding agents. Strict types, one command t
 - **The world is files, apart from the code.** Studio edits the map and [rbx-forge](https://github.com/christopher-buss/rbx-forge) syncs it back into `world/`, while Rojo serves only code, so syncing never overwrites code. The map is typed: `Workspace.SpawnLocation` compiles only if it exists.
 - **Each feature is one folder.** [Rogen](https://github.com/LDGerrits/rogen) routes `server/`, `client/` and `shared/` folders to the right place in the game, so an agent finds everything about a feature in one place. Lint rules stop features from importing each other.
 - **`AGENTS.md` explains the rules.** The layout, how to add a feature, never trusting the client, and the ways roblox-ts differs from JavaScript.
+- **Skills for the bigger jobs.** `.agents/skills/` (linked as `.claude/skills/`) holds step-by-step guides for writing tests, building UI, wrapping a platform service, editing the world and driving Studio; `AGENTS.md` points to each.
 
 ## Stack
 

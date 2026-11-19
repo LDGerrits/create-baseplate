@@ -6,7 +6,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["**", "!*.project.json", "!pnpm-lock.yaml"]
+		"includes": ["**", "!*.project.json", "!pnpm-lock.yaml", "!**/SKILL.md"]
 	},
 	"formatter": {
 		"enabled": true,
