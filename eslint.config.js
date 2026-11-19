@@ -86,4 +86,32 @@ export default tseslint.config(
 			"@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
 		},
 	},
+	{
+		// Views: every .tsx in a feature or core takes its data and callbacks as props, so a story
+		// renders it alone. The feature's `use-<feature>.ts` hook connects controllers and atoms,
+		// and app passes what it returns to the view.
+		files: ["src/features/**/*.tsx", "src/core/**/*.tsx"],
+		rules: {
+			"@typescript-eslint/no-restricted-imports": [
+				"error",
+				{
+					patterns: [
+						{
+							group: [
+								"@flamework/*",
+								"@rbxts/charm",
+								"@rbxts/react-charm",
+								"**/*-controller",
+								"**/*-state",
+								"**/use-*",
+							],
+							allowTypeImports: true,
+							message:
+								"A view gets its data and callbacks through props. Read controllers and atoms in the feature's use-<feature>.ts hook, and pass its result in from app.",
+						},
+					],
+				},
+			],
+		},
+	},
 );

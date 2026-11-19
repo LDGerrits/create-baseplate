@@ -53,6 +53,10 @@ run = ["rogen write --quiet", "sloptor build", "node scripts/test.mjs"]
 description = "Run every Jest spec, *.engine.spec included, in Roblox Studio or Open Cloud through jest-roblox"
 run = ["rogen write --quiet", "sloptor build", "jest-roblox"]
 
+[tasks.ui]
+description = "Compile and render every UI story offline with rur; prints each picture's path"
+run = ["rogen write --quiet", "sloptor build", "node scripts/ui.mjs"]
+
 [tasks.dev]
 description = "Compile on save and serve to Studio. Press Connect in the Rojo plugin."
 run = "rogen write --quiet && sloptor build && (trap 'kill 0' EXIT; sloptor build --watch --no-clear & rogen serve)"

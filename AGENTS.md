@@ -32,7 +32,7 @@ Name files in kebab-case, after what they hold: `inventory-service.ts`, `invento
 2. Put pure logic (rules, formulas, validation) in `shared/<feature>-rules.ts` as plain functions over plain data, with no Roblox services, so it stays easy to test.
 3. Define the feature's network events in `shared/<feature>-network.ts` with `Networking.createEvent<ClientToServer, ServerToClient>()`.
 4. Add a service in `server/` and a controller in `client/`, then import each in the matching `src/app/*/main` file.
-5. Add UI components in `client/`, and render the top one from `src/app/client/app.tsx`.
+5. Add UI as views in `client/`, each with a story, and a `client/use-<feature>.ts` hook that connects them; render the top view from `src/app/client/app.tsx` (see UI).
 6. Add a spec for the rules, and an end-to-end test for each request a client sends (see Testing).
 7. Run `mise run check`.
 
@@ -46,13 +46,21 @@ Name files in kebab-case, after what they hold: `inventory-service.ts`, `invento
 - ree returns nil from a method it doesn't emulate instead of raising, so a test can pass for the wrong reason. When a result depends on engine behaviour, prove it in an engine spec.
 - jest-roblox picks Roblox Studio when it finds it and Open Cloud otherwise; its README (`node_modules/@isentinel/jest-roblox/README.md`) covers both. From WSL it can't find Studio: set `JEST_ROBLOX_STUDIO_PATH` to `RobloxStudioBeta.exe` and `JEST_ROBLOX_PLUGINS_DIR` to the Studio plugins folder, both as `/mnt/c/...` paths.
 
+## UI
+
+UI is React function components from `@rbxts/react`, split in two:
+
+- **Views** are the `.tsx` files in `client/`. A view takes its data and callbacks as props and renders them, like `clicker-button.tsx`. ESLint keeps Flamework, atoms, controllers and hooks out of views.
+- **The feature's hook**, `client/use-<feature>.ts`, connects views to the game: it reads atoms with `useAtom`, gets controllers with `Dependency<MyController>()`, and returns the values and callbacks. `src/app/client/app.tsx` calls each hook and passes the result to the top view, like `useClicker` and `ClickerButton`.
+
+Give each view a story beside it, `<view>.story.tsx`, in UI Labs' React format; copy `clicker-button.story.tsx` and add controls for the props worth varying. After changing UI, run `mise run ui`: it renders every story offline with rur and prints the path of each picture. Open the pictures and look at them; a story that renders without errors can still look wrong.
+
 ## How the code works
 
 - **Services own state and rules.** A service (`@Service()`, in `server/`) is the only code that changes its state. Other code calls its methods.
 - **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. Flamework checks the types of remote arguments for you, but not whether the request is allowed.
 - **Controllers present.** A controller (`@Controller()`, in `client/`) handles input, camera and UI state, and sends requests to the server. It never decides an outcome.
-- **Client state lives in Charm atoms** in `client/<feature>-state.ts`. A controller writes them from network events; React reads them with `useAtom`.
-- **UI is React function components** from `@rbxts/react`. Get a controller with `Dependency<MyController>()`.
+- **Client state lives in Charm atoms** in `client/<feature>-state.ts`. A controller writes them from network events; the feature's hook reads them with `useAtom`.
 - **Prefer composition to inheritance.** At most one level of `extends`. Share behaviour through functions and injected services, not base classes.
 - Use Flamework's constructor injection to depend on another service in the same feature or in `core`: `constructor(private readonly data: PlayerDataService) {}`.
 
