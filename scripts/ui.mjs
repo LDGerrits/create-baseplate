@@ -20,12 +20,7 @@ if (!process.env.RUR_ROBLOX_CONTENT && fs.existsSync("/mnt/c/Users")) {
 	if (installs.length > 0) process.env.RUR_ROBLOX_CONTENT = path.join(installs[0], "content");
 }
 
-// Without the fonts, rur renders text as nothing and still reports the story as clean.
-const content = process.env.RUR_ROBLOX_CONTENT;
-if (content && !fs.existsSync(path.join(content, "fonts"))) {
-	console.log(`rur can't draw text: RUR_ROBLOX_CONTENT (${content}) has no fonts folder`);
-	process.exit(1);
-}
+// Without Studio's fonts rur draws no text; `rur-native doctor` says when it can't find them.
 const doctor = spawnSync("rur-native", ["doctor"], { encoding: "utf8" });
 const noStudio = `${doctor.stdout}${doctor.stderr}`.split("\n").find((line) => /^!\s*studio/.test(line));
 if (noStudio) {
@@ -57,12 +52,14 @@ let failed = 0;
 for (const record of report.records) {
 	const name = record.story.replace(/^out\//, "").replace(/\.story\.luau$/, "");
 	const picture = path.join(OUT, record.out, "render.png");
-	if (record.clean) {
+	const missingFonts = record.missingFonts ?? [];
+	if (record.clean && missingFonts.length === 0) {
 		console.log(`✓ ${name}: ${picture}`);
 		continue;
 	}
 	failed++;
-	console.log(`✗ ${name} (${record.status}): ${record.failure ?? "not clean"}`);
+	const reason = record.failure ?? (record.clean ? `no font to draw ${missingFonts.join(", ")}` : "not clean");
+	console.log(`✗ ${name} (${record.status}): ${reason}`);
 	for (const error of record.errors ?? []) console.log(`  ${String(error).replaceAll("\n", "\n  ")}`);
 	if (fs.existsSync(picture)) console.log(`  picture: ${picture}`);
 }

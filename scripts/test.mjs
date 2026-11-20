@@ -1,7 +1,8 @@
 // Runs the tests offline in ree, the Roblox engine emulator: the Jest specs, then every end-to-end
 // harness in tests/e2e. Run it through `mise run test`, which compiles first.
 // A run fails on a non-zero exit, on any script error (ree counts errors from scripts other than the
-// harness without failing the run), and, for an end-to-end test, when it never prints "@done".
+// harness without failing the run), on reaching an engine member ree doesn't emulate, and, for an
+// end-to-end test, when it never prints "@done".
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -49,6 +50,8 @@ for (const run of runs) {
 		ree.status !== 0 && `ree exited ${ree.status}`,
 		summary.status === "error" && (summary.failure ?? "the harness failed"),
 		summary.errors > 0 && `${summary.errors} script error(s)`,
+		(summary.unemulated ?? []).length > 0 &&
+			`reached what ree doesn't emulate (${summary.unemulated.map((u) => u.member).join(", ")}); test that in a *.engine.spec`,
 		run.needsDone && !done && summary.status !== "error" && 'the test never printed "@done"',
 	].filter(Boolean);
 

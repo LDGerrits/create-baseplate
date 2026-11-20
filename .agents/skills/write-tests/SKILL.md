@@ -10,7 +10,7 @@ Every test runs in one of two engines:
 - **ree**, an emulated Roblox engine: `mise run test`, about a second, offline. `mise run check` and the Stop hook run it.
 - **A real Roblox engine** through jest-roblox: `mise run test:engine`, about twenty seconds, in Studio or Open Cloud.
 
-When the two disagree, the real engine is right. ree returns nil from a method it doesn't emulate instead of raising, so a test can pass there for the wrong reason: prove any result that depends on engine behaviour in an engine spec.
+When the two disagree, the real engine is right. ree lets a call to a member it doesn't emulate return nothing, so `mise run test` fails any run that reaches one and names the member: prove that behaviour in an engine spec instead.
 
 ## Pick the kind of test
 
