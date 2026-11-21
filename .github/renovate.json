@@ -12,6 +12,20 @@
 			"managerFilePatterns": ["/^cli/template/extras/.+/addon\\.json$/"],
 			"matchStrings": ["\"(?<depName>@?[\\w./-]+)\":\\s*\"(?<currentValue>\\d[^\"]*)\""],
 			"datasourceTemplate": "npm"
+		},
+		{
+			"description": "mise's own version: every workflow's jdx/mise-action `version:` and the template's cloud setup. Grouped into one update; .github/scripts/check-mise-pins.ts then fails until cloud-setup.sh's SHA-256s match the new release.",
+			"customType": "regex",
+			"managerFilePatterns": ["/(^|/)\\.github/workflows/.+\\.ya?ml$/", "/cloud-setup\\.sh$/"],
+			"matchStrings": [
+				"jdx/mise-action@\\S+[^\\n]*\\n(?:\\s+[^\\n]*\\n)*?\\s+version: (?<currentValue>\\d[^\\s]*)",
+				"MISE_VERSION=\"(?<currentValue>[^\"]+)\""
+			],
+			"matchStringsStrategy": "any",
+			"depNameTemplate": "mise",
+			"packageNameTemplate": "jdx/mise",
+			"datasourceTemplate": "github-releases",
+			"extractVersionTemplate": "^v(?<version>.*)$"
 		}
 	],
 	"packageRules": [
@@ -33,6 +47,12 @@
 		{
 			"description": "Never merged without a person: the tools above come in on release day, before any wait could catch a hijacked release, and CI's engine job runs them with the Open Cloud key; and a Rojo update needs a check that CI can't make, that rbx-forge supports its Studio plugin",
 			"matchPackageNames": ["rbx-forge", "@rbx-forge/**", "@ldgerrits/rogen", "rojo-rbx/rojo", "github:rojo-rbx/rojo"],
+			"automerge": false
+		},
+		{
+			"description": "mise's own version moves in one update, merged by a person once cloud-setup.sh's SHA-256s are updated",
+			"matchDepNames": ["mise"],
+			"groupName": "mise",
 			"automerge": false
 		}
 	]
