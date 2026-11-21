@@ -66,6 +66,18 @@ test("leaves the first commit until an install brings the add-ons' packages into
 	assert.notEqual(log.status, 0, "no commit yet");
 });
 
+test("locks the tools an add-on brings before installing them", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const steps = (...args: string[]) => {
+		const run = create(cwd, ...args, "--no-git");
+		assert.equal(run.status, 0, run.stderr);
+		return JSON.parse(run.stdout).nextSteps as string[];
+	};
+	const withTool = steps("with-darklua", "--release", "darklua");
+	assert.deepEqual(withTool.slice(1, 3), ["mise lock", "mise install"]);
+	assert.ok(!steps("plain").includes("mise lock"), "the template's mise.lock already covers its own tools");
+});
+
 test("says why the game isn't its own git repo", () => {
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
 	spawnSync("git", ["init", "--quiet"], { cwd });
@@ -299,11 +311,7 @@ test("uploads assets with Asphalt", () => {
 	assert.match(read("asphalt.toml"), /output_path = "src\/shared"/);
 	assert.ok(fs.existsSync(path.join(dir, "assets")));
 	const mise = read("mise.toml");
-	assert.match(
-		mise,
-		/\[tools\][^[]*"github:jackTabsCode\/asphalt" = "\d[^"]*"\n[^[]*\n\[env\]/,
-		"the tool joins [tools]",
-	);
+	assert.match(mise, /\[tools\][^[]*"github:jackTabsCode\/asphalt" = "\d[^"]*"\n/, "the tool joins [tools]");
 	assert.match(mise, /\n\[tasks\.assets\]\n/);
 	// check and ci fail on assets that aren't uploaded yet.
 	assert.equal(mise.match(/asphalt sync cloud --dry-run/g)?.length, 2);

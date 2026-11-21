@@ -13,10 +13,13 @@ pnpm = "12.18.0"
 "github:Anime-Vanguards/roblox-ui-renderer" = { version = "0.9.0", bin = "rur-native" }
 "github:Anime-Vanguards/roblox-object-renderer" = { version = "0.7.0", bin = "ror" }
 
+[settings]
+# mise.lock records each tool's download and checksum for these platforms; `mise install` refuses a
+# download that doesn't match. After changing a pin above, run `mise lock` and commit mise.lock.
+lockfile_platforms = ["linux-x64", "linux-arm64", "macos-arm64", "windows-x64"]
+
 [env]
 _.path = ["{{config_root}}/node_modules/.bin"]
-# Your keys and local paths, if you have any: copy .env.example to .env. mise hides their values in its output.
-_.file = { path = ".env", redact = true }
 # Syncback writes each new world instance as a readable .model.json instead of a binary .rbxm.
 # Set for every task so forge's sync on save gets it too. It's Rojo's undocumented debug switch
 # (src/syncback/mod.rs), not a stable option: check it still works when upgrading Rojo.
@@ -83,11 +86,15 @@ run = '''node scripts/each-place.ts 'sloptor build -p "$TSCONFIG" --rojo "$PWD/d
 [tasks."test:engine"]
 description = "Run every Jest spec, *.engine.spec included, in Roblox Studio or Open Cloud through jest-roblox"
 depends = ["generate"]
+# Your keys and local paths (copy .env.example to .env) reach only the tasks that use them, so the
+# other tasks' tools never see them.
+env = { _.file = ".env" }
 run = "node scripts/each-place.ts 'sloptor build -p \"$TSCONFIG\" --rojo \"$PWD/default.project.json\" --includePath \"$ROOT/include\" && jest-roblox --passWithNoTests'"
 
 [tasks.ui]
 description = "Compile and render every UI story offline with rur; prints each picture's path"
 depends = ["generate"]
+env = { _.file = ".env" }
 run = '''node scripts/each-place.ts 'sloptor build -p "$TSCONFIG" --rojo "$PWD/default.project.json" --includePath "$ROOT/include" && node "$ROOT/scripts/ui.ts"' '''
 
 [tasks.dev]

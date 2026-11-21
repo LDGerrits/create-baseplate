@@ -7,6 +7,8 @@ export interface NextStepsState {
 	installed: boolean;
 	/** The add-ons changed the packages, which the template's lockfile doesn't list yet. */
 	packagesChanged: boolean;
+	/** The add-ons brought tools, which the template's mise.lock doesn't record yet. */
+	toolsChanged: boolean;
 	/** The first commit waits for the install, so the lockfile it holds matches package.json. */
 	commit: boolean;
 	/** In a multi-place game, the place Studio commands name. */
@@ -23,6 +25,7 @@ export function nextSteps(dir: string, state: NextStepsState): string[] {
 		...(state.installed
 			? []
 			: [
+					...(state.toolsChanged ? ["mise lock"] : []),
 					"mise install",
 					// A plain `pnpm install` adds the add-ons' packages to the lockfile; CI's frozen install wouldn't.
 					...(state.packagesChanged ? ["mise exec -- pnpm install --no-frozen-lockfile"] : []),

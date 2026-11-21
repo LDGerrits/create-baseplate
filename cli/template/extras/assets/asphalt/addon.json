@@ -14,8 +14,8 @@
 		},
 		{
 			"file": "biome.json",
-			"from": "\"!**/SKILL.md\"]",
-			"to": "\"!**/SKILL.md\", \"!**/src/shared/assets.d.ts\"]"
+			"from": "\"!**/*.md\"]",
+			"to": "\"!**/*.md\", \"!**/src/shared/assets.d.ts\"]"
 		},
 		{
 			"file": "eslint.config.ts",

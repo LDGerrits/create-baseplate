@@ -47,10 +47,15 @@ async function main() {
 		return JSON.stringify([pkg.dependencies, pkg.devDependencies]);
 	};
 	const basePackages = packages();
+	// The [tools] of mise.toml, which the template's mise.lock covers until an add-on brings a tool.
+	const tools = () =>
+		/^\[tools\]\n([\s\S]*?)(?=^\[)/m.exec(fs.readFileSync(path.join(options.dir, "mise.toml"), "utf8"))?.[1];
+	const baseTools = tools();
 	installAddOns(options.dir, options.addOns);
 	if (options.addOns.places === "multi") makeMultiPlace(options.dir, options.name);
 	// The template's lockfile lists the base's packages only, until an install adds the add-ons'.
 	const packagesChanged = packages() !== basePackages;
+	const toolsChanged = tools() !== baseTools;
 	// In a multi-place game, Studio commands name a place.
 	const place = options.addOns.places === "multi" ? (PLACES[0] ?? "") : "";
 	logger.success(`Created ${options.name} in ${options.dir}`);
@@ -65,7 +70,7 @@ async function main() {
 		if (isMiseInstalled()) {
 			const spinner = options.json ? undefined : p.spinner();
 			spinner?.start("Installing the tools and packages with mise");
-			const error = installDependencies(options.dir, options.json || spinner !== undefined);
+			const error = installDependencies(options.dir, options.json || spinner !== undefined, toolsChanged);
 			spinner?.stop(error === undefined ? "Installed the tools and packages" : "Install failed");
 			if (error === undefined) installed = true;
 			else warnings.push(error);
@@ -88,6 +93,7 @@ async function main() {
 	}
 
 	for (const warning of warnings) logger.warn(warning);
+	const steps = { installed, packagesChanged, toolsChanged, commit: git && !committed && packagesChanged, place };
 	if (options.json) {
 		console.log(
 			JSON.stringify({
@@ -99,16 +105,11 @@ async function main() {
 				installed,
 				addOns: options.addOns,
 				warnings,
-				nextSteps: nextSteps(options.dir, {
-					installed,
-					packagesChanged,
-					commit: git && !committed && packagesChanged,
-					place,
-				}),
+				nextSteps: nextSteps(options.dir, steps),
 			}),
 		);
 	} else {
-		logNextSteps(options.dir, { installed, packagesChanged, commit: git && !committed && packagesChanged, place });
+		logNextSteps(options.dir, steps);
 		logger.info(pc.dim(`create-baseplate ${version}`));
 	}
 }
