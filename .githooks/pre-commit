@@ -1,4 +1,4 @@
 #!/bin/sh
-# Runs the full check before each commit. It checks the files on disk, not only the staged ones.
+# Runs the full check on exactly what is being committed (lint-staged.config.ts).
 # `mise run install` turns this folder on with `git config core.hooksPath .githooks`.
-exec mise run ci
+exec mise exec -- lint-staged

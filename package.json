@@ -36,6 +36,7 @@
 		"eslint-plugin-react-x": "5.28.8",
 		"eslint-plugin-roblox-ts": "1.4.1",
 		"jiti": "2.7.0",
+		"lint-staged": "17.6.0",
 		"rbx-forge": "2.4.0",
 		"typescript": "6.0.3",
 		"typescript-eslint": "8.72.1",
