@@ -44,7 +44,7 @@ try {
 }
 
 if (report.records.length === 0) {
-	console.log("No stories found. Add a `<view>.story.tsx` beside each view.");
+	console.log("No stories found. Add a `<component>.story.tsx` beside a component (see UI in AGENTS.md).");
 	process.exit(0);
 }
 

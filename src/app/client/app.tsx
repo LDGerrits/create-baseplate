@@ -1,14 +1,22 @@
+import { Dependency } from "@flamework/core";
 import React from "@rbxts/react";
+import { useAtom } from "@rbxts/react-charm";
 import { ClickerButton } from "../../features/clicker/client/clicker-button";
-import { useClicker } from "../../features/clicker/client/use-clicker";
+import { type ClickerController } from "../../features/clicker/client/clicker-controller";
 
-/** The root of the player's UI: each feature's hook feeds its top-level view. */
+/** The root of the player's UI. */
 export function App() {
-	const clicker = useClicker();
+	const clicker = Dependency<ClickerController>();
+	const clicks = useAtom(clicker.clicks);
 
 	return (
 		<screengui ResetOnSpawn={false} ZIndexBehavior={Enum.ZIndexBehavior.Sibling}>
-			<ClickerButton clicks={clicker.clicks} onClick={clicker.click} />
+			<ClickerButton
+				clicks={clicks}
+				onClick={() => {
+					clicker.click();
+				}}
+			/>
 		</screengui>
 	);
 }

@@ -20,7 +20,7 @@ The world lives in `world/` as files, apart from the code:
 1. Start the session in the background: `forge up --studio --syncback`. Studio opens on the world and Rojo adds the code. `forge status` shows each part.
 2. Edit in Studio: by hand, or through the Studio MCP's `execute_luau` with `datamodel_type` `Edit` (see the `drive-studio` skill).
 3. Run `mise run sync`. It saves the place through Studio's File menu, then syncback writes the edits into `world/`, sorts the JSON and regenerates the types.
-4. Read the diff of `world/`. Remove anything you didn't mean to change, such as an attribute a plugin left (rodeo's `rodeoStudioId_*` on Workspace).
+4. Read the diff of `world/`. Remove anything you didn't mean to change, such as an attribute a Studio plugin left.
 5. Run `mise run check`, and `forge down` when you're done.
 
 ## Change it in files

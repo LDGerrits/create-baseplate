@@ -1,8 +1,9 @@
 import { type OnStart, Service } from "@flamework/core";
 import { Players } from "@rbxts/services";
-import { type Clock } from "../../../platform/clock/shared/clock";
 import { ClickerNetwork } from "../shared/clicker-network";
-import { canClick } from "../shared/clicker-rules";
+
+/** Seconds a player waits between counted clicks. */
+export const CLICK_COOLDOWN_SECONDS = 0.1;
 
 const events = ClickerNetwork.createServer({});
 
@@ -11,8 +12,6 @@ const events = ClickerNetwork.createServer({});
 export class ClickerService implements OnStart {
 	private readonly clicks = new Map<number, number>();
 	private readonly lastClickAt = new Map<number, number>();
-
-	constructor(private readonly clock: Clock) {}
 
 	onStart() {
 		events.click.connect((player) => {
@@ -29,10 +28,13 @@ export class ClickerService implements OnStart {
 		return this.clicks.get(userId) ?? 0;
 	}
 
-	/** Counts a click if the cooldown allows it. Returns the new count, or `undefined` when refused. */
-	click(userId: number): number | undefined {
-		const now = this.clock.now();
-		if (!canClick(this.lastClickAt.get(userId), now)) return undefined;
+	/**
+	 * Counts a click unless it comes inside the cooldown. Returns the new count, or `undefined` when refused.
+	 * `now` is in `os.clock()` seconds; a test passes its own.
+	 */
+	click(userId: number, now = os.clock()): number | undefined {
+		const last = this.lastClickAt.get(userId);
+		if (last !== undefined && now - last < CLICK_COOLDOWN_SECONDS) return undefined;
 
 		this.lastClickAt.set(userId, now);
 		const clicks = this.getClicks(userId) + 1;

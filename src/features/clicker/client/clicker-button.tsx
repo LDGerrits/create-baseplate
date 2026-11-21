@@ -5,7 +5,7 @@ export interface ClickerButtonProps {
 	readonly onClick: () => void;
 }
 
-/** Shows the click count and reports presses. A view: everything comes in through props. */
+/** Shows the click count and reports presses. Takes everything as props, so its story renders it alone. */
 export function ClickerButton({ clicks, onClick }: ClickerButtonProps) {
 	return (
 		<textbutton

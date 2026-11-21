@@ -1,18 +1,16 @@
 # agent-baseplate
 
-The Roblox game template built for AI coding agents. Strict types, one command that checks everything, and an architecture agents don't get lost in. Works with Claude Code, Codex and Cursor.
+A Roblox game template in roblox-ts, set up for AI coding agents: one command checks everything, tests and UI run without Studio, and the world lives in files. Works with Claude Code, Codex and Cursor.
 
-## Why it works well with agents
+## What it gives an agent
 
-- **One command checks everything.** `mise run check` formats, compiles, type-checks, lints, builds the place, verifies every import in it resolves and runs the tests, in a few seconds. Agents run it after each change.
-- **Tests run without Studio.** Jest specs and end-to-end tests, with the real server and a client talking through remotes, run in [ree](https://github.com/Anime-Vanguards/roblox-engine-emulator), an emulated Roblox engine, in about a second. The same specs run in real Studio or Open Cloud through [jest-roblox](https://github.com/christopher-buss/jest-roblox-cli) (`mise run test:engine`). A Stop hook runs the tests before an agent ends its turn.
-- **Agents can see the UI.** Each view has a story, and `mise run ui` renders every story offline with [rur](https://github.com/Anime-Vanguards/roblox-ui-renderer) and prints where each picture is, so an agent can look at what it built.
-- **Mistakes fail before Studio.** Strict TypeScript, typed networking and ESLint's roblox-ts rules catch the JavaScript habits agents bring (`.length`, `null`, truthiness) and the Roblox ones (server code reaching clients).
-- **Services are tested without Roblox's outside world.** Time, data stores, purchases and teleports go through interfaces in `src/platform`, so a test passes a fake; ESLint bans those services anywhere else.
-- **The world is files, apart from the code.** Studio edits the map and [rbx-forge](https://github.com/christopher-buss/rbx-forge) syncs it back into `world/`, while Rojo serves only code, so syncing never overwrites code. The map is typed: `Workspace.SpawnLocation` compiles only if it exists.
-- **Each feature is one folder.** [Rogen](https://github.com/LDGerrits/rogen) routes `server/`, `client/` and `shared/` folders to the right place in the game, so an agent finds everything about a feature in one place. Lint rules stop features from importing each other.
-- **`AGENTS.md` explains the rules.** The layout, how to add a feature, never trusting the client, and the ways roblox-ts differs from JavaScript.
-- **Skills for the bigger jobs.** `.agents/skills/` (linked as `.claude/skills/`) holds step-by-step guides for writing tests, building UI, wrapping a platform service, editing the world and driving Studio; `AGENTS.md` points to each.
+- **One command checks everything.** `mise run check` formats, compiles, type-checks, lints, builds the place, verifies every import in it resolves and runs the tests, in a few seconds.
+- **Tests run without Studio.** Jest specs and end-to-end tests, with the real server and a client talking through remotes, run in [ree](https://github.com/Anime-Vanguards/roblox-engine-emulator), an emulated Roblox engine, in about a second. The same specs run in real Studio or Open Cloud through [jest-roblox](https://github.com/christopher-buss/jest-roblox-cli) (`mise run test:engine`).
+- **It can see the UI.** `mise run ui` renders every story offline with [rur](https://github.com/Anime-Vanguards/roblox-ui-renderer) and prints where each picture is.
+- **roblox-ts mistakes fail early.** Strict TypeScript, typed networking and ESLint's roblox-ts rules catch the JavaScript habits agents bring (`.length`, `null`, truthiness) and server code imported on the client.
+- **The world is files, apart from the code.** Studio edits the map and [rbx-forge](https://github.com/christopher-buss/rbx-forge) syncs it back into `world/` as readable JSON, while Rojo serves only code. The map is typed: `Workspace.SpawnLocation` compiles only if it exists.
+- **Each feature is one folder.** [Rogen](https://github.com/LDGerrits/rogen) routes its `server/`, `client/` and `shared/` folders to the right place in the game.
+- **Instructions where agents look.** `AGENTS.md` covers the layout, adding a feature and the rules; `.agents/skills/` (linked as `.claude/skills/`) covers tests, the world and Studio. In Claude Code, a Stop hook runs the tests before the agent ends its turn.
 
 ## Stack
 
@@ -49,15 +47,11 @@ Keys and local paths go in `.env`: copy `.env.example`, which lists each one.
 ```
 src/
   app/                 entry scripts: start Flamework, mount the UI
-  core/                what several features share
-  platform/            Roblox's outside world behind interfaces, with fakes for tests
-    clock/             Clock, systemClock, FakeClock
   features/
     clicker/           an example feature
-      server/          clicker-service.ts: owns the counts, validates clicks
-      client/          clicker-controller.ts, clicker-state.ts, use-clicker.ts,
-                       clicker-button.tsx (a view) and its story
-      shared/          clicker-network.ts, clicker-rules.ts, clicker-rules.spec.ts
+      server/          clicker-service.ts: owns the counts, checks the cooldown; its spec
+      client/          clicker-controller.ts, clicker-button.tsx and its story
+      shared/          clicker-network.ts
 tests/e2e/             end-to-end tests: clicker.luau
 world/                 the map and lighting, edited in Studio and synced back
 ```

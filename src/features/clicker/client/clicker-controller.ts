@@ -1,15 +1,17 @@
 import { Controller, type OnStart } from "@flamework/core";
+import { atom } from "@rbxts/charm";
 import { ClickerNetwork } from "../shared/clicker-network";
-import { clicks } from "./clicker-state";
 
 const events = ClickerNetwork.createClient({});
 
-/** Sends click requests and mirrors the server's count into `clicks`. */
+/** Sends click requests, and keeps the server's latest count in `clicks` for the UI. */
 @Controller()
 export class ClickerController implements OnStart {
+	readonly clicks = atom(0);
+
 	onStart() {
 		events.clicksChanged.connect((count) => {
-			clicks(count);
+			this.clicks(count);
 		});
 	}
 

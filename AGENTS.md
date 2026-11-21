@@ -12,30 +12,31 @@ Run `mise run check` after every change, and fix what it reports until it passes
 
 ## Layout
 
-Code lives in `src`, in four layers. A layer imports only the layers below it, and ESLint enforces it.
-
-- `src/platform/<area>/`: Roblox's outside world, behind interfaces: time, data stores, purchases, teleports, messaging. It knows nothing about the game (see Platform).
-- `src/core/<area>/`: what several features share, such as player data. Nothing in core imports a feature.
-- `src/features/<feature>/`: one folder per feature, holding everything it needs. A feature never imports another feature. When two features need the same thing, move it into `core`; when one feature must react to another, connect them in `app`.
+- `src/features/<feature>/`: one folder per feature, holding its server, client and shared code. `src/features/clicker` is the example; copy its shape.
 - `src/app/`: the entry scripts. `app/server/main.server.ts` and `app/client/main.client.tsx` import every service and controller, then start Flamework. `app/client/app.tsx` is the root of the UI.
 
-Inside a platform area, core area or feature, files sit in a folder named for where they run:
+Inside a feature, files sit in a folder named for where they run, and Rogen sends each to its place in the game:
 
 - `server/` runs only on the server and never reaches clients. Put rules, validation and secrets here.
 - `client/` runs only on the player's device.
-- `shared/` ships to both. It can't import `server/` or `client/` code.
+- `shared/` ships to both. It can't import `server/` or `client/` code; ESLint enforces the sides.
 
-Name files in kebab-case, after what they hold: `inventory-service.ts`, `inventory-rules.ts`. `src/features/clicker` is a complete example of every part below; copy its shape.
+Name files in kebab-case, after what they hold: `inventory-service.ts`.
 
 ## Adding a feature
 
 1. Create `src/features/<feature>/` with the `server`, `client` and `shared` folders it needs.
-2. Put pure logic (rules, formulas, validation) in `shared/<feature>-rules.ts` as plain functions over plain data, with no Roblox services, so it stays easy to test.
-3. Define the feature's network events in `shared/<feature>-network.ts` with `Networking.createEvent<ClientToServer, ServerToClient>()`.
-4. Add a service in `server/` and a controller in `client/`, then import each in the matching `src/app/*/main` file. A service that needs the time or an external service asks for its platform interface (see Platform).
-5. Add UI as views in `client/`, each with a story, and a `client/use-<feature>.ts` hook that connects them; render the top view from `src/app/client/app.tsx` (see UI).
-6. Add specs for the rules and the service, and an end-to-end test for each request a client sends (see Testing).
-7. Run `mise run check`.
+2. Define the feature's network events in `shared/<feature>-network.ts` with `Networking.createEvent<ClientToServer, ServerToClient>()`.
+3. Add a service in `server/` and, if the client takes part, a controller in `client/`. Import each in the matching `src/app/*/main` file.
+4. Add UI as a component in `client/` with a story, and render it from `src/app/client/app.tsx` (see UI).
+5. Add a spec for the service, and an end-to-end test for each request a client sends (see Testing).
+6. Run `mise run check`.
+
+## How the code works
+
+- **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. Flamework checks the types of remote arguments for you, but not whether the request is allowed.
+- **Services own server state.** A service (`@Service()`, in `server/`) is the only code that changes its state; other code calls its methods. Depend on another service through the constructor: `constructor(private readonly data: PlayerDataService) {}`.
+- **Controllers run the client side.** A controller (`@Controller()`, in `client/`) handles input and the server's events, and keeps what the UI shows in Charm atoms, as `ClickerController.clicks` does.
 
 ## Testing
 
@@ -43,11 +44,13 @@ Name files in kebab-case, after what they hold: `inventory-service.ts`, `invento
 
 ## UI
 
-Views, the `.tsx` files in `client/`, take everything they show and do as props. The feature's `client/use-<feature>.ts` hook connects them to atoms and controllers, and `app.tsx` passes what it returns to the view. Each view has a story. Before building or changing UI, read `.agents/skills/build-ui/SKILL.md`.
+UI is React from `@rbxts/react`. Give each component worth looking at a story beside it, `<component>.story.tsx`, in UI Labs' React format; copy `clicker-button.story.tsx`. A story renders the component alone, without Flamework or the server, so pass in through props what comes from controllers.
 
-## Platform
+`mise run ui` renders every story offline with rur and prints each picture's path; `--filter <name>` renders only matching stories. Open each picture you changed and look at it: text cut off, overlap, alignment, the empty state. A story that renders without errors can still look wrong.
 
-Time and Roblox's external services (DataStores, purchases, teleports, messaging, HTTP requests) go through interfaces in `src/platform`, which tests replace with fakes; ESLint bans them anywhere else. A service asks for the interface in its constructor. To wrap a new one, read `.agents/skills/add-platform-service/SKILL.md`.
+- rur needs Roblox Studio's fonts, or it draws no text. On Windows it finds them; from WSL the script finds the newest Windows Studio. Elsewhere, set `RUR_ROBLOX_CONTENT` (see `.env.example`).
+- A story renders inside a `Frame`, so a component whose root is a `ScreenGui` draws nothing.
+- In Studio, React runs in development mode (`src/app/client/react-dev.ts`), with its warnings in the Output.
 
 ## World
 
@@ -55,28 +58,15 @@ The map and lighting live in `world/` as files. Studio edits them and syncback w
 
 ## Studio
 
-ree, rur and ror answer most questions without Studio. To run the game in real Studio, for a playtest, characters, physics, its output or a screenshot, read `.agents/skills/drive-studio/SKILL.md`. forge runs the session, including `rogen serve`.
-
-## How the code works
-
-- **Services own state and rules.** A service (`@Service()`, in `server/`) is the only code that changes its state. Other code calls its methods.
-- **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. Flamework checks the types of remote arguments for you, but not whether the request is allowed.
-- **Controllers present.** A controller (`@Controller()`, in `client/`) handles input, camera and UI state, and sends requests to the server. It never decides an outcome.
-- **Client state lives in Charm atoms** in `client/<feature>-state.ts`. A controller writes them from network events; the feature's hook reads them with `useAtom`.
-- **Prefer composition to inheritance.** At most one level of `extends`. Share behaviour through functions and injected services, not base classes.
-- Use Flamework's constructor injection to depend on another service in the same feature or in `core`: `constructor(private readonly data: PlayerDataService) {}`.
+ree and rur answer most questions without Studio. To run the game in real Studio, for a playtest, characters, physics, its output or a screenshot, read `.agents/skills/drive-studio/SKILL.md`. forge runs the session, including `rogen serve`.
 
 ## roblox-ts is not JavaScript
 
-The code is TypeScript but it runs as Luau. ESLint catches most of these; know them anyway:
+The code is TypeScript but it runs as Luau. The compiler and ESLint catch most differences (`null`, `.length`, truthiness, `for...in`); these they don't explain:
 
-- No `null`: use `undefined`. Arrays, maps, sets and strings use `.size()`, never `.length` or `.size`.
-- Write explicit conditions: `if (count > 0)`, `if (name !== "")`, `if (item !== undefined)`. In Luau only `nil` and `false` are falsy, so for `if (count)` roblox-ts emits extra checks for `0`, `""` and `NaN`, and the code reads differently from what runs.
-- There's no Node, DOM or npm ecosystem: no `JSON`, `setTimeout`, `fetch`, `console`, `Date.now`, regex, or `Object.keys`. Use Roblox APIs: `HttpService:JSONEncode`, `task.delay`, `print`, `string.match`, `pairs`, and a `Clock` for the time.
+- There's no Node, DOM or npm ecosystem. Use Roblox's APIs instead: `HttpService:JSONEncode` for `JSON`, `task.delay` for `setTimeout`, `print` for `console`, `string.match` for regex, `pairs` for `Object.keys`.
 - Packages come from the `@rbxts` scope, with roblox-ts types. A plain npm package won't run in Roblox.
-- Get services from `@rbxts/services`: `import { Players } from "@rbxts/services"`.
-- Use the `task` library (`task.wait`, `task.spawn`, `task.delay`), not `wait`, `spawn` or `delay`.
-- No getters, setters, `#private` fields, `for...in`, or `typeof x === "..."` checks on Roblox values. Use `typeIs(value, "Vector3")` and `classIs(instance, "Part")`.
+- Check Roblox values with `typeIs(value, "Vector3")` and `classIs(instance, "Part")`.
 
 ## Packages
 

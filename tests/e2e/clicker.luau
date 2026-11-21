@@ -9,14 +9,32 @@ local function bootServer()
 	task.spawn(run)
 end
 
-local function findRemote(name: string): RemoteEvent
-	for _, descendant in game:GetService("ReplicatedStorage"):GetDescendants() do
-		if descendant.Name == name and descendant:IsA("RemoteEvent") then
-			return descendant
+-- Wait for a condition rather than a fixed time: fixed waits make tests slow and flaky.
+local function waitFor<T>(what: string, check: () -> T?, seconds: number?): T
+	local deadline = os.clock() + (seconds or 5)
+	while os.clock() < deadline do
+		local value = check()
+		if value then
+			return value
 		end
+		task.wait()
 	end
-	error(`no RemoteEvent named {name}`)
+	error(`timed out waiting for {what}`)
 end
+
+-- Flamework creates the remotes as the server starts.
+local function remote(name: string): RemoteEvent
+	return waitFor(`the {name} remote`, function()
+		for _, descendant in game:GetService("ReplicatedStorage"):GetDescendants() do
+			if descendant.Name == name and descendant:IsA("RemoteEvent") then
+				return descendant
+			end
+		end
+		return nil
+	end)
+end
+
+local COOLDOWN = 0.1 -- CLICK_COOLDOWN_SECONDS in clicker-service.ts
 
 return {
 	Server = function()
@@ -24,19 +42,24 @@ return {
 	end,
 
 	Client = function()
-		task.wait(0.5) -- Flamework creates the remotes as the server starts
-
 		local counts = {}
-		findRemote("clicksChanged").OnClientEvent:Connect(function(count)
+		remote("clicksChanged").OnClientEvent:Connect(function(count)
 			table.insert(counts, count)
 		end)
 
-		local click = findRemote("click")
+		local click = remote("click")
 		click:FireServer()
 		click:FireServer() -- inside the cooldown: the server drops it
-		task.wait(0.3)
+		waitFor("the first count", function()
+			return #counts >= 1
+		end)
+
+		task.wait(COOLDOWN)
 		click:FireServer()
-		task.wait(0.3)
+		waitFor("the second count", function()
+			return #counts >= 2
+		end)
+		task.wait(0.2) -- room for a count the server should have dropped to show up
 
 		local got = table.concat(counts, ",")
 		assert(got == "1,2", `expected counts 1,2, got {got}`)
