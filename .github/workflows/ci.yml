@@ -97,7 +97,7 @@ jobs:
     # what ree can't vouch for, such as an update that breaks only in the real engine. Set the
     # secret ROBLOX_OPEN_CLOUD_API_KEY and the variables ROBLOX_UNIVERSE_ID and ROBLOX_PLACE_ID
     # (in an experience made only for tests: each run uploads to the place, and the key can write
-    # every place of its experience); without them this job only says it skipped.
+    # every place of its experience); without the variables the job is skipped.
     name: Created game in Roblox (${{ matrix.addOns }})
     needs: create
     runs-on: ubuntu-latest
@@ -116,30 +116,24 @@ jobs:
     concurrency:
       group: roblox-open-cloud-${{ strategy.job-index }}
       cancel-in-progress: false
-    env:
-      # Whether the key is set, not the key itself, which only the last step gets.
-      OPEN_CLOUD: ${{ secrets.ROBLOX_OPEN_CLOUD_API_KEY != '' }}
+    # Without the variables, GitHub shows the job as skipped, not passed. With them but no key, the
+    # specs fail. (A job's `if` can't read secrets; only the last step gets the key.)
+    if: vars.ROBLOX_UNIVERSE_ID != '' && vars.ROBLOX_PLACE_ID != ''
+    timeout-minutes: 30
     steps:
-      - if: env.OPEN_CLOUD != 'true'
-        run: echo "::notice::Skipped the Roblox specs. Set ROBLOX_OPEN_CLOUD_API_KEY, ROBLOX_UNIVERSE_ID and ROBLOX_PLACE_ID to run them."
-      - if: env.OPEN_CLOUD == 'true'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - if: env.OPEN_CLOUD == 'true'
-        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
           version: 2026.11.8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - if: env.OPEN_CLOUD == 'true'
-        run: pnpm install --frozen-lockfile && pnpm --filter create-baseplate build
-      - if: env.OPEN_CLOUD == 'true'
-        run: node cli/dist/index.js "$RUNNER_TEMP/coin-rush" --json ${{ matrix.addOns }}
+      - run: pnpm install --frozen-lockfile && pnpm --filter create-baseplate build
+      - run: node cli/dist/index.js "$RUNNER_TEMP/coin-rush" --json ${{ matrix.addOns }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - if: env.OPEN_CLOUD == 'true'
-        run: mise run test:engine -- --backend open-cloud
+      - run: mise run test:engine -- --backend open-cloud
         working-directory: ${{ runner.temp }}/coin-rush
         env:
           # The key only here: the steps before run installs and tools, which never see it.
