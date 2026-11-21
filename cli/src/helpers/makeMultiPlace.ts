@@ -25,11 +25,12 @@ const GITIGNORE = `
  * default.rogen.json (`sourcePaths` `["../common/src", "src"]`), tsconfig, entry scripts, world,
  * tests and forge config. Runs after the add-ons, so they land in the shared code.
  *
- * Rogen's own example compiles each place with rbxtsc into projects/<place>/out. Sloptor can't:
- * it wants every source under its tsconfig's folder (rootDir), rejects project paths into a
- * folder inside rootDir, and writes only inside its tsconfig's folder. So each place compiles
- * from tsconfig.<place>.json at the root (rootDir projects/) to out/<place>, with the root's
- * include/.
+ * TypeScript 6 and later (Sloptor follows TypeScript 7) no longer infer rootDir: it must hold
+ * every source, so a place that also compiles projects/common/src needs rootDir projects/.
+ * Rogen's own example leaves rootDir unset, which only TypeScript 5 (rbxtsc) accepts. With
+ * rootDir projects/, out/ can't sit in the place's folder (the compiler rejects project paths
+ * into a folder inside rootDir), and Sloptor writes only inside its tsconfig's folder. So each
+ * place compiles from tsconfig.<place>.json at the root to out/<place>, with the root's include/.
  */
 export function makeMultiPlace(dir: string, name: string) {
 	const at = (...parts: string[]) => path.join(dir, ...parts);
