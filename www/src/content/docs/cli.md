@@ -14,6 +14,7 @@ pnpm create baseplate [dir] [flags]
 | `--no-git`     | Don't make the project a git repo.                                         |
 | `--no-install` | Don't install the tools and packages (with mise). |
 | `--json`       | Print one JSON result on stdout. Implies `--yes`.                          |
+| `--ui <library>` | UI: `react` (default) or `vide`. |
 | `--state <library>` | Client state: `charm`, `reflex` or `none` (default). |
 | `--data <library>` | Player data: `profilestore`, `lapis` or `none` (default). |
 | `--entities <library>` | Entities: `components`, `jecs` or `none` (default). |

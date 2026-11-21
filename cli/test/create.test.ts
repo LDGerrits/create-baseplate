@@ -71,7 +71,7 @@ test("applies the chosen add-ons", () => {
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
 	const run = create(cwd, "my-game", "--no-git", "--state", "charm", "--data", "lapis", "--entities", "jecs");
 	assert.equal(run.status, 0, run.stderr);
-	assert.deepEqual(JSON.parse(run.stdout).addOns, { state: "charm", data: "lapis", entities: "jecs" });
+	assert.deepEqual(JSON.parse(run.stdout).addOns, { ui: "react", state: "charm", data: "lapis", entities: "jecs" });
 
 	const dir = path.join(cwd, "my-game");
 	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
@@ -99,7 +99,7 @@ test("applies the chosen add-ons", () => {
 test("takes no add-ons by default", () => {
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
 	const run = create(cwd, "my-game", "--no-git");
-	assert.deepEqual(JSON.parse(run.stdout).addOns, { state: "none", data: "none", entities: "none" });
+	assert.deepEqual(JSON.parse(run.stdout).addOns, { ui: "react", state: "none", data: "none", entities: "none" });
 	assert.ok(!fs.existsSync(path.join(cwd, "my-game/src/features/player-data")));
 });
 
@@ -108,4 +108,49 @@ test("refuses an add-on choice that doesn't exist", () => {
 	const run = create(cwd, "my-game", "--no-git", "--state", "redux");
 	assert.equal(run.status, 1);
 	assert.match(JSON.parse(run.stdout).error, /charm, reflex, none/);
+});
+
+test("swaps React for Vide", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const run = create(cwd, "my-game", "--no-git", "--ui", "vide");
+	assert.equal(run.status, 0, run.stderr);
+
+	const dir = path.join(cwd, "my-game");
+	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+	const pkg = JSON.parse(read("package.json")) as Record<string, Record<string, string>>;
+	const all = { ...pkg.dependencies, ...pkg.devDependencies };
+	assert.ok(all["@rbxts/vide"] !== undefined);
+	for (const react of ["@rbxts/react", "@rbxts/react-roblox", "@rbxts/pretty-react-hooks", "eslint-plugin-react-x"]) {
+		assert.equal(all[react], undefined, `${react} is gone`);
+	}
+	assert.ok(!fs.existsSync(path.join(dir, "src/app/client/react-dev.ts")));
+	assert.match(read("tsconfig.json"), /"jsxFactory": "Vide\.jsx"/);
+	assert.doesNotMatch(read("eslint.config.ts"), /react/);
+	assert.match(read("src/features/clicker/client/clicker-button.story.tsx"), /CreateVideStory/);
+
+	const agents = read("AGENTS.md");
+	assert.match(agents, /and Vide for the UI/);
+	assert.match(agents, /## UI\n\nVide/);
+	assert.doesNotMatch(agents, /@rbxts\/react/);
+	assert.doesNotMatch(read("README.md"), /React DevTools/);
+});
+
+test("uses Charm's Vide binding with Vide", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const run = create(cwd, "my-game", "--no-git", "--ui", "vide", "--state", "charm");
+	assert.equal(run.status, 0, run.stderr);
+	const dir = path.join(cwd, "my-game");
+	const dependencies = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8")).dependencies;
+	assert.ok(dependencies["@rbxts/vide-charm"] !== undefined);
+	assert.equal(dependencies["@rbxts/react-charm"], undefined);
+	assert.match(fs.readFileSync(path.join(dir, "src/app/client/app.tsx"), "utf8"), /@rbxts\/vide-charm/);
+	assert.match(fs.readFileSync(path.join(dir, "AGENTS.md"), "utf8"), /@rbxts\/vide-charm/);
+});
+
+test("refuses Reflex with Vide", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const run = create(cwd, "my-game", "--no-git", "--ui", "vide", "--state", "reflex");
+	assert.equal(run.status, 1);
+	assert.match(JSON.parse(run.stdout).error, /Reflex.*Vide.*charm/);
+	assert.ok(!fs.existsSync(path.join(cwd, "my-game")), "nothing is created");
 });

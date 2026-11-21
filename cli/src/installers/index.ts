@@ -3,19 +3,33 @@ import path from "node:path";
 import { TEMPLATE_EXTRAS } from "../consts.ts";
 
 // Add-ons, the way create-t3-app's installers work: each question offers the most popular
-// libraries plus "none". A choice is a folder in template/extras/<question>/<choice>/ holding
-// addon.json (packages, and imports for the main files), AGENTS.md (its section for the game's
-// AGENTS.md), and files/ (copied over the game).
+// libraries, plus "none" where the game can go without. A choice is a folder in
+// template/extras/<question>/<choice>/ holding addon.json (see Manifest), AGENTS.md (its section
+// for the game's AGENTS.md) and files/ (copied over the game). The base template is the default
+// choice of a question without "none" (React, for the UI), so that choice has no folder.
 export interface AddOn {
 	/** The flag and the key in results, such as "state". */
 	readonly name: string;
 	readonly question: string;
 	readonly choices: readonly { readonly value: string; readonly label: string; readonly hint: string }[];
+	/** The choice taken when none is given; "none" unless the question has no "none". */
+	readonly defaultValue: string;
+	readonly allowNone: boolean;
 }
 
 export const NONE = "none";
 
 export const addOns = [
+	{
+		name: "ui",
+		question: "Which UI library?",
+		choices: [
+			{ value: "react", label: "React", hint: "the most used" },
+			{ value: "vide", label: "Vide", hint: "fine-grained reactivity, no re-renders" },
+		],
+		defaultValue: "react",
+		allowNone: false,
+	},
 	{
 		name: "state",
 		question: "Which library for client state?",
@@ -23,6 +37,8 @@ export const addOns = [
 			{ value: "charm", label: "Charm", hint: "signals, the most used" },
 			{ value: "reflex", label: "Reflex", hint: "a Redux-like store; no longer updated" },
 		],
+		defaultValue: NONE,
+		allowNone: true,
 	},
 	{
 		name: "data",
@@ -31,6 +47,8 @@ export const addOns = [
 			{ value: "profilestore", label: "ProfileStore", hint: "the most used, with session locking" },
 			{ value: "lapis", label: "Lapis", hint: "validated documents" },
 		],
+		defaultValue: NONE,
+		allowNone: true,
 	},
 	{
 		name: "entities",
@@ -39,38 +57,89 @@ export const addOns = [
 			{ value: "components", label: "Flamework Components", hint: "classes on tagged instances" },
 			{ value: "jecs", label: "Jecs", hint: "an entity component system" },
 		],
+		defaultValue: NONE,
+		allowNone: true,
 	},
 ] as const satisfies readonly AddOn[];
 
 export type AddOnChoices = Record<(typeof addOns)[number]["name"], string>;
 
-/** The values a question accepts, "none" included. */
-export const valuesOf = (addOn: AddOn) => [...addOn.choices.map((choice) => choice.value), NONE];
+/** The values a question accepts, with "none" where it has one. */
+export const valuesOf = (addOn: AddOn) => [
+	...addOn.choices.map((choice) => choice.value),
+	...(addOn.allowNone ? [NONE] : []),
+];
 
 interface Manifest {
+	/** Packages to add, pinned. */
 	dependencies: Record<string, string>;
+	/** Side-effect imports to add to a main file, so Flamework starts what they define. */
 	imports: Record<string, string[]>;
+	/** Packages the choice replaces, from dependencies or devDependencies. */
+	removeDependencies?: string[];
+	/** Base files the choice replaces. */
+	removeFiles?: string[];
+	/** The heading of the AGENTS.md section its AGENTS.md replaces, instead of adding a section. */
+	replaceAgentsSection?: string;
+	/** Exact text to replace in the game's files. */
+	replaceText?: { file: string; from: string; to: string }[];
+	/** What changes with another question's choice: `{ vide: { dependencies, files, agents } }` under the UI. */
+	byUi?: Record<string, { dependencies?: Record<string, string>; files?: string; agents?: string }>;
+	/** Choices of other questions this one can't go with, and why. */
+	conflicts?: Record<string, Record<string, string>>;
 }
 
-/** Applies each chosen add-on to the project in `dir`. */
-export function installAddOns(dir: string, chosen: AddOnChoices) {
-	for (const [name, value] of Object.entries(chosen)) {
-		if (value === NONE) continue;
-		const from = path.join(TEMPLATE_EXTRAS, name, value);
-		const manifest = JSON.parse(fs.readFileSync(path.join(from, "addon.json"), "utf8")) as Manifest;
+const manifestOf = (name: string, value: string): Manifest | undefined => {
+	const file = path.join(TEMPLATE_EXTRAS, name, value, "addon.json");
+	return fs.existsSync(file) ? (JSON.parse(fs.readFileSync(file, "utf8")) as Manifest) : undefined;
+};
 
-		fs.cpSync(path.join(from, "files"), dir, { recursive: true });
-		addDependencies(dir, manifest.dependencies);
+/** Why the chosen add-ons can't go together, if they can't. */
+export function findConflict(chosen: AddOnChoices): string | undefined {
+	for (const [name, value] of Object.entries(chosen)) {
+		const conflicts = manifestOf(name, value)?.conflicts ?? {};
+		for (const [other, reasons] of Object.entries(conflicts)) {
+			const reason = reasons[(chosen as Record<string, string>)[other] ?? ""];
+			if (reason !== undefined) return reason;
+		}
+	}
+	return undefined;
+}
+
+/** Applies each chosen add-on to the project in `dir`, in the order of `addOns`: the UI first. */
+export function installAddOns(dir: string, chosen: AddOnChoices) {
+	for (const addOn of addOns) {
+		const value = chosen[addOn.name];
+		const manifest = manifestOf(addOn.name, value);
+		if (manifest === undefined) continue; // "none", or the base's own choice
+		const from = path.join(TEMPLATE_EXTRAS, addOn.name, value);
+		const variant = manifest.byUi?.[chosen.ui];
+
+		for (const file of manifest.removeFiles ?? []) fs.rmSync(path.join(dir, file), { force: true });
+		fs.cpSync(path.join(from, variant?.files ?? "files"), dir, { recursive: true });
+		editPackage(dir, variant?.dependencies ?? manifest.dependencies, manifest.removeDependencies ?? []);
 		for (const [file, imports] of Object.entries(manifest.imports)) addImports(path.join(dir, file), imports);
-		addAgentsSection(dir, fs.readFileSync(path.join(from, "AGENTS.md"), "utf8"));
+		const agents = fs.readFileSync(path.join(from, variant?.agents ?? "AGENTS.md"), "utf8");
+		if (manifest.replaceAgentsSection === undefined) addAgentsSection(dir, agents);
+		else replaceAgentsSection(dir, manifest.replaceAgentsSection, agents);
+		for (const { file, from: text, to } of manifest.replaceText ?? []) {
+			const at = path.join(dir, file);
+			fs.writeFileSync(at, fs.readFileSync(at, "utf8").replace(text, to));
+		}
 	}
 }
 
-function addDependencies(dir: string, dependencies: Record<string, string>) {
+function editPackage(dir: string, add: Record<string, string>, remove: string[]) {
 	const file = path.join(dir, "package.json");
-	const pkg = JSON.parse(fs.readFileSync(file, "utf8")) as { dependencies?: Record<string, string> };
-	const merged = { ...pkg.dependencies, ...dependencies };
-	pkg.dependencies = Object.fromEntries(Object.entries(merged).sort(([a], [b]) => a.localeCompare(b)));
+	const pkg = JSON.parse(fs.readFileSync(file, "utf8")) as Record<string, Record<string, string> | undefined>;
+	const sorted = (entries: Record<string, string>) =>
+		Object.fromEntries(
+			Object.entries(entries)
+				.filter(([name]) => !remove.includes(name))
+				.sort(([a], [b]) => a.localeCompare(b)),
+		);
+	pkg.dependencies = sorted({ ...pkg.dependencies, ...add });
+	if (pkg.devDependencies !== undefined) pkg.devDependencies = sorted(pkg.devDependencies);
 	fs.writeFileSync(file, `${JSON.stringify(pkg, undefined, "\t")}\n`);
 }
 
@@ -80,6 +149,17 @@ function addImports(file: string, imports: string[]) {
 	const last = lines.findLastIndex((line) => line.startsWith("import "));
 	lines.splice(last + 1, 0, ...imports.map((module) => `import "${module}";`));
 	fs.writeFileSync(file, lines.join("\n"));
+}
+
+/** Replaces the section under `## <heading>` with the add-on's, up to the next `## ` heading. */
+function replaceAgentsSection(dir: string, heading: string, section: string) {
+	const file = path.join(dir, "AGENTS.md");
+	const agents = fs.readFileSync(file, "utf8");
+	const start = agents.indexOf(`## ${heading}\n`);
+	if (start === -1) throw new Error(`AGENTS.md has no "## ${heading}" section to replace`);
+	const next = agents.indexOf("\n## ", start + 1);
+	const end = next === -1 ? agents.length : next + 1;
+	fs.writeFileSync(file, `${agents.slice(0, start)}${section.trim()}\n\n${agents.slice(end)}`);
 }
 
 /** Puts the add-on's section before the Rogen section, which Rogen manages at the end of AGENTS.md. */

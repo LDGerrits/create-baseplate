@@ -3,5 +3,15 @@
 		"@rbxts/charm": "0.11.1",
 		"@rbxts/react-charm": "0.4.1"
 	},
-	"imports": {}
+	"imports": {},
+	"byUi": {
+		"vide": {
+			"dependencies": {
+				"@rbxts/charm": "0.11.1",
+				"@rbxts/vide-charm": "0.4.1"
+			},
+			"files": "files-vide",
+			"agents": "AGENTS.vide.md"
+		}
+	}
 }

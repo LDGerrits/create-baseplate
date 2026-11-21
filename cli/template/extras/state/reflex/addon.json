@@ -3,5 +3,10 @@
 		"@rbxts/reflex": "4.3.1",
 		"@rbxts/react-reflex": "0.3.7"
 	},
-	"imports": {}
+	"imports": {},
+	"conflicts": {
+		"ui": {
+			"vide": "Reflex has no Vide binding: with --ui vide, choose --state charm or none."
+		}
+	}
 }

@@ -8,7 +8,7 @@ import { installDependencies, isMiseInstalled } from "./helpers/installDependenc
 import { logNextSteps, nextSteps } from "./helpers/logNextSteps.ts";
 import { scaffoldProject } from "./helpers/scaffoldProject.ts";
 import { setProjectName } from "./helpers/setProjectName.ts";
-import { installAddOns, NONE } from "./installers/index.ts";
+import { addOns, findConflict, installAddOns } from "./installers/index.ts";
 import { logger, logToStderr } from "./utils/logger.ts";
 import { validateAppName } from "./utils/validateAppName.ts";
 
@@ -30,6 +30,9 @@ async function main() {
 	const invalid = validateAppName(options.name);
 	if (invalid !== undefined) fail(`"${options.name}" can't name the game: ${invalid}`);
 
+	const conflict = findConflict(options.addOns);
+	if (conflict !== undefined) fail(conflict);
+
 	try {
 		scaffoldProject(options.dir);
 	} catch (error) {
@@ -37,7 +40,7 @@ async function main() {
 	}
 	setProjectName(options.dir, options.name);
 	installAddOns(options.dir, options.addOns);
-	const withAddOns = Object.values(options.addOns).some((value) => value !== NONE);
+	const withAddOns = addOns.some((addOn) => options.addOns[addOn.name] !== addOn.defaultValue);
 	logger.success(`Created ${options.name} in ${options.dir}`);
 
 	const git = options.git && isGitInstalled() && initGit(options.dir);

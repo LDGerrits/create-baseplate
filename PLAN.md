@@ -47,5 +47,5 @@ Getting started (people and agents), the agent loop (check, hooks, skills, Studi
 1. **Done. Restructure and rename:** move the game into `cli/template/base`, rename to Baseplate, make its hooks and setup work from the subfolder, add the root AGENTS.md and workspace. Done when `cli/template/base` passes `mise run ci` and the root CI runs it.
 2. **Done. CLI without add-ons:** create a project from `cli/template/base` with prompts and flags, with tests; CI creates one and checks it.
 3. **Docs site:** the pages above, built in CI; deploy to Vercel at publish.
-4. **Add-ons.** Done for libraries: state (Charm, Reflex), player data (ProfileStore, Lapis), entities (Flamework Components, Jecs), each or none. Next round, as template variants: the UI framework (React or Vide) and single or multi place.
+4. **Add-ons.** Done for libraries: state (Charm, Reflex), player data (ProfileStore, Lapis), entities (Flamework Components, Jecs), each or none. The UI library (React or Vide) is done too. Next: single or multi place; propose a layout to the user first, since they maintain Rogen.
 5. **Publish** (when the user says): GitHub repo, npm package, Vercel site.

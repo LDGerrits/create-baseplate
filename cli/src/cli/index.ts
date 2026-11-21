@@ -42,7 +42,9 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 	}
 
 	const flags = program.opts<{ yes: boolean; git: boolean; install: boolean; json: boolean } & Partial<AddOnChoices>>();
-	const chosen = Object.fromEntries(addOns.map((addOn) => [addOn.name, flags[addOn.name] ?? NONE])) as AddOnChoices;
+	const chosen = Object.fromEntries(
+		addOns.map((addOn) => [addOn.name, flags[addOn.name] ?? addOn.defaultValue]),
+	) as AddOnChoices;
 	const given = program.args[0];
 	const ask = !flags.yes && !flags.json && process.stdin.isTTY && process.stdout.isTTY;
 
@@ -68,8 +70,11 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 			if (flags[addOn.name] !== undefined) continue;
 			const answer = await p.select({
 				message: addOn.question,
-				initialValue: NONE,
-				options: [...addOn.choices, { value: NONE, label: "None", hint: "add one later yourself" }],
+				initialValue: addOn.defaultValue,
+				options: [
+					...addOn.choices,
+					...(addOn.allowNone ? [{ value: NONE, label: "None", hint: "add one later yourself" }] : []),
+				],
 			});
 			cancelled(answer);
 			chosen[addOn.name] = answer as string;

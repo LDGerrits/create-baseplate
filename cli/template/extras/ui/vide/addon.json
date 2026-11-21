@@ -1,0 +1,42 @@
+{
+	"dependencies": {
+		"@rbxts/vide": "0.6.1"
+	},
+	"removeDependencies": [
+		"@rbxts/react",
+		"@rbxts/react-roblox",
+		"@rbxts/pretty-react-hooks",
+		"@rbxts/ripple",
+		"@rbxts/react-devtools-core",
+		"@rbxts/react-globals",
+		"eslint-plugin-react-hooks",
+		"eslint-plugin-react-x"
+	],
+	"removeFiles": [
+		"src/app/client/react-dev.ts"
+	],
+	"imports": {},
+	"replaceAgentsSection": "UI",
+	"replaceText": [
+		{
+			"file": "AGENTS.md",
+			"from": "and React for the UI",
+			"to": "and Vide for the UI"
+		},
+		{
+			"file": "README.md",
+			"from": "| UI        | [React](https://github.com/jsdotlua/react-lua) with [pretty-react-hooks](https://github.com/littensy/pretty-react-hooks), [Ripple](https://github.com/littensy/ripple) for animation, stories in [UI Labs](https://github.com/PepeElToro41/ui-labs) format, React DevTools in Studio |",
+			"to": "| UI | [Vide](https://github.com/centau/vide), stories in [UI Labs](https://github.com/PepeElToro41/ui-labs) format |"
+		},
+		{
+			"file": "README.md",
+			"from": "| Checks    | ESLint with typescript-eslint, eslint-plugin-roblox-ts, React's rules (react-hooks, react-x) and eslint-plugin-jest; Biome for formatting; Lune for place checks; the tooling scripts are TypeScript, type-checked too                                                               |",
+			"to": "| Checks | ESLint with typescript-eslint, eslint-plugin-roblox-ts and eslint-plugin-jest; Biome for formatting; Lune for place checks; the tooling scripts are TypeScript, type-checked too |"
+		},
+		{
+			"file": "README.md",
+			"from": "- **React DevTools:** run `npx react-devtools`, set the attribute `ReactDevTools` to true on Workspace in Studio, and play: the app shows the UI's component tree, props and state. React logs one harmless telemetry error when it connects.\n",
+			"to": ""
+		}
+	]
+}
