@@ -42,3 +42,30 @@ for (const [service, node] of Object.entries(world.tree as Record<string, Projec
 
 const game = { ...code, name: "game", tree };
 fs.writeFileSync("game.project.json", `${JSON.stringify(game, undefined, "\t")}\n`);
+
+// In a multi-place game this runs in projects/<place>/. jest-roblox matches its compiled folders
+// against the project's $path strings as written, which here start with ../../, so it also gets a
+// copy at the repo root with paths from there: game.<place>.project.json.
+const placesDir = path.dirname(process.cwd());
+if (path.basename(placesDir) === "projects") {
+	const place = path.basename(process.cwd());
+	const fromRoot = (node: unknown): unknown => {
+		if (Array.isArray(node) || node === null || typeof node !== "object") return node;
+		return Object.fromEntries(
+			Object.entries(node).map(([key, value]) => {
+				if (key !== "$path") return [key, fromRoot(value)];
+				const rebase = (p: string) => path.posix.normalize(path.posix.join("projects", place, p));
+				return [
+					key,
+					typeof value === "string"
+						? rebase(value)
+						: { ...value, optional: rebase((value as { optional: string }).optional) },
+				];
+			}),
+		);
+	};
+	fs.writeFileSync(
+		path.join(placesDir, "..", `game.${place}.project.json`),
+		`${JSON.stringify(fromRoot(game), undefined, "\t")}\n`,
+	);
+}

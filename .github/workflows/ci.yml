@@ -78,3 +78,51 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mise run ci
         working-directory: ${{ runner.temp }}/coin-rush
+
+  engine:
+    # Created games' specs, *.engine.spec included, in a real Roblox server through Open Cloud:
+    # what ree can't vouch for, such as an update that breaks only in the real engine. Set the
+    # secret ROBLOX_OPEN_CLOUD_API_KEY and the variables ROBLOX_UNIVERSE_ID and ROBLOX_PLACE_ID
+    # (a place made for tests: each run uploads to it); without them this job only says it skipped.
+    name: Created game in Roblox (${{ matrix.addOns }})
+    needs: create
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      # The runs share the test place, so one at a time within a workflow run; the concurrency
+      # group below keeps the same option set of two runs from overlapping.
+      max-parallel: 1
+      matrix:
+        addOns:
+          - ""
+          - --state charm --data profilestore --entities components
+          - --ui vide --state charm --data lapis --entities jecs
+          - --state reflex --data lapis --entities jecs
+          - --places multi --data profilestore --entities components
+    concurrency:
+      group: roblox-open-cloud-${{ strategy.job-index }}
+      cancel-in-progress: false
+    env:
+      ROBLOX_OPEN_CLOUD_API_KEY: ${{ secrets.ROBLOX_OPEN_CLOUD_API_KEY }}
+      ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
+      ROBLOX_PLACE_ID: ${{ vars.ROBLOX_PLACE_ID }}
+    steps:
+      - if: env.ROBLOX_OPEN_CLOUD_API_KEY == ''
+        run: echo "::notice::Skipped the Roblox specs. Set ROBLOX_OPEN_CLOUD_API_KEY, ROBLOX_UNIVERSE_ID and ROBLOX_PLACE_ID to run them."
+      - if: env.ROBLOX_OPEN_CLOUD_API_KEY != ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - if: env.ROBLOX_OPEN_CLOUD_API_KEY != ''
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        with:
+          version: 2026.11.8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - if: env.ROBLOX_OPEN_CLOUD_API_KEY != ''
+        run: pnpm install --frozen-lockfile && pnpm --filter create-baseplate build
+      - if: env.ROBLOX_OPEN_CLOUD_API_KEY != ''
+        run: node cli/dist/index.js "$RUNNER_TEMP/coin-rush" --json ${{ matrix.addOns }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - if: env.ROBLOX_OPEN_CLOUD_API_KEY != ''
+        run: mise run test:engine -- --backend open-cloud
+        working-directory: ${{ runner.temp }}/coin-rush

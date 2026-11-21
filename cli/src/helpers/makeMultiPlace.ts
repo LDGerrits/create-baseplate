@@ -55,7 +55,12 @@ export function makeMultiPlace(dir: string, name: string) {
 			);
 		}
 		for (const folder of ["world", "tests"]) fs.cpSync(at(folder), path.join(placeDir, folder), { recursive: true });
-		fs.copyFileSync(at("jest.config.ts"), path.join(placeDir, "jest.config.ts"));
+		fs.writeFileSync(
+			path.join(placeDir, "jest.config.ts"),
+			fs
+				.readFileSync(path.join(TEMPLATE_EXTRAS, "places", "multi", "jest.config.ts"), "utf8")
+				.replaceAll("PLACE", place),
+		);
 		fs.writeFileSync(
 			path.join(placeDir, "rbx-forge.config.ts"),
 			read("rbx-forge.config.ts")
