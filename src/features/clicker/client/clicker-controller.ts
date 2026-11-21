@@ -1,18 +1,33 @@
 import { Controller, type OnStart } from "@flamework/core";
-import { atom } from "@rbxts/charm";
 import { ClickerNetwork } from "../shared/clicker-network";
 
 const events = ClickerNetwork.createClient({});
 
-/** Sends click requests, and keeps the server's latest count in `clicks` for the UI. */
+/** Sends click requests, and keeps the server's latest count for the UI. */
 @Controller()
 export class ClickerController implements OnStart {
-	readonly clicks = atom(0);
+	private clicks = 0;
+	private readonly listeners = new Set<(clicks: number) => void>();
 
 	onStart() {
-		events.clicksChanged.connect((count) => {
-			this.clicks(count);
+		events.clicksChanged.connect((clicks) => {
+			this.clicks = clicks;
+			this.listeners.forEach((listener) => {
+				listener(clicks);
+			});
 		});
+	}
+
+	getClicks() {
+		return this.clicks;
+	}
+
+	/** Calls `listener` with each new count. Returns a function that stops it. */
+	subscribe(listener: (clicks: number) => void) {
+		this.listeners.add(listener);
+		return () => {
+			this.listeners.delete(listener);
+		};
 	}
 
 	click() {

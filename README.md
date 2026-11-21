@@ -14,15 +14,15 @@ A Roblox game template in roblox-ts, set up for AI coding agents: one command ch
 
 ## Stack
 
-|              |                                                                                                                                                                                                                              |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Language     | TypeScript with [roblox-ts](https://roblox-ts.com), compiled by [Sloptor](https://github.com/howmanyslop/sloptor)                                                                                                            |
-| Sync         | [Rogen](https://github.com/LDGerrits/rogen) over [Rojo](https://rojo.space); [rbx-forge](https://github.com/christopher-buss/rbx-forge) runs Studio and syncback                                                             |
-| Framework    | [Flamework](https://flamework.fireboltofdeath.dev): services, controllers, typed networking                                                                                                                                  |
-| State and UI | [Charm](https://github.com/littensy/charm) atoms, [React](https://github.com/jsdotlua/react-lua)                                                                                                                             |
-| Checks       | ESLint with typescript-eslint and eslint-plugin-roblox-ts, Biome for formatting, Lune for place checks                                                                                                                       |
-| Tests        | [Jest](https://github.com/jsdotlua/jest-lua) run in [ree](https://github.com/Anime-Vanguards/roblox-engine-emulator), and in Studio or Open Cloud through [jest-roblox](https://github.com/christopher-buss/jest-roblox-cli) |
-| Tools        | [mise](https://mise.jdx.dev) pins every tool; pnpm installs packages                                                                                                                                                         |
+|           |                                                                                                                                                                                                                              |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Language  | TypeScript with [roblox-ts](https://roblox-ts.com), compiled by [Sloptor](https://github.com/howmanyslop/sloptor)                                                                                                            |
+| Sync      | [Rogen](https://github.com/LDGerrits/rogen) over [Rojo](https://rojo.space); [rbx-forge](https://github.com/christopher-buss/rbx-forge) runs Studio and syncback                                                             |
+| Framework | [Flamework](https://flamework.fireboltofdeath.dev): services, controllers, typed networking                                                                                                                                  |
+| UI        | [React](https://github.com/jsdotlua/react-lua)                                                                                                                                                                               |
+| Checks    | ESLint with typescript-eslint, eslint-plugin-roblox-ts and React's rules (react-hooks, react-x), Biome for formatting, Lune for place checks                                                                                 |
+| Tests     | [Jest](https://github.com/jsdotlua/jest-lua) run in [ree](https://github.com/Anime-Vanguards/roblox-engine-emulator), and in Studio or Open Cloud through [jest-roblox](https://github.com/christopher-buss/jest-roblox-cli) |
+| Tools     | [mise](https://mise.jdx.dev) pins every tool; pnpm installs packages                                                                                                                                                         |
 
 ## Getting started
 

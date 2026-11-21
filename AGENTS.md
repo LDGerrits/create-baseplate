@@ -1,6 +1,6 @@
 # agent-baseplate
 
-A Roblox game written in TypeScript with roblox-ts, compiled by Sloptor, synced to Studio by Rogen and Rojo. Server and client logic runs on Flamework, client state in Charm atoms, and UI in React.
+A Roblox game written in TypeScript with roblox-ts, compiled by Sloptor, synced to Studio by Rogen and Rojo. Server and client logic runs on Flamework, and UI in React.
 
 ## Checking your work
 
@@ -36,7 +36,7 @@ Name files in kebab-case, after what they hold: `inventory-service.ts`.
 
 - **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. Flamework checks the types of remote arguments for you, but not whether the request is allowed.
 - **Services own server state.** A service (`@Service()`, in `server/`) is the only code that changes its state; other code calls its methods. Depend on another service through the constructor: `constructor(private readonly data: PlayerDataService) {}`.
-- **Controllers run the client side.** A controller (`@Controller()`, in `client/`) handles input and the server's events, and keeps what the UI shows in Charm atoms, as `ClickerController.clicks` does.
+- **Controllers run the client side.** A controller (`@Controller()`, in `client/`) handles input and the server's events, and keeps what the UI shows, as `ClickerController` keeps the count and lets `app.tsx` subscribe to it.
 
 ## Testing
 

@@ -1,13 +1,13 @@
 import { Dependency } from "@flamework/core";
-import React from "@rbxts/react";
-import { useAtom } from "@rbxts/react-charm";
+import React, { useEffect, useState } from "@rbxts/react";
 import { ClickerButton } from "../../features/clicker/client/clicker-button";
 import { type ClickerController } from "../../features/clicker/client/clicker-controller";
 
 /** The root of the player's UI. */
 export function App() {
 	const clicker = Dependency<ClickerController>();
-	const clicks = useAtom(clicker.clicks);
+	const [clicks, setClicks] = useState(clicker.getClicks());
+	useEffect(() => clicker.subscribe(setClicks), [clicker]);
 
 	return (
 		<screengui ResetOnSpawn={false} ZIndexBehavior={Enum.ZIndexBehavior.Sibling}>

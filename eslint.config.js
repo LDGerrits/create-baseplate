@@ -2,6 +2,7 @@
 import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
 import importX from "eslint-plugin-import-x";
 import reactHooks from "eslint-plugin-react-hooks";
+import reactX from "eslint-plugin-react-x";
 import roblox from "eslint-plugin-roblox-ts";
 import tseslint from "typescript-eslint";
 
@@ -29,6 +30,7 @@ export default tseslint.config(
 	tseslint.configs.strictTypeChecked,
 	roblox.configs.recommended,
 	reactHooks.configs.flat["recommended-latest"],
+	reactX.configs["recommended-type-checked"],
 	{
 		languageOptions: {
 			parserOptions: {
@@ -39,6 +41,8 @@ export default tseslint.config(
 		plugins: { "import-x": importX },
 		settings: {
 			"import-x/resolver-next": [createTypeScriptImportResolver()],
+			// React comes from @rbxts/react, a port of React 17.
+			"react-x": { importSource: "@rbxts/react", version: "17.0.2" },
 		},
 		rules: {
 			"import-x/no-restricted-paths": ["error", { zones }],
