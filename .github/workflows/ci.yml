@@ -8,6 +8,13 @@ on:
 permissions:
   contents: read
 
+env:
+  # The first commit of a created game runs its hook, as on a person's machine.
+  GIT_AUTHOR_NAME: CI
+  GIT_AUTHOR_EMAIL: ci@example.com
+  GIT_COMMITTER_NAME: CI
+  GIT_COMMITTER_EMAIL: ci@example.com
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -24,6 +31,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # rur renders the stories in the check; GitHub's Linux machines have no GPU, so give it Mesa's
+      # software Vulkan driver.
+      - run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends mesa-vulkan-drivers
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
           version: 2026.11.8
@@ -78,6 +88,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # rur renders the stories in the check; GitHub's Linux machines have no GPU, so give it Mesa's
+      # software Vulkan driver.
+      - run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends mesa-vulkan-drivers
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
           version: 2026.11.8
