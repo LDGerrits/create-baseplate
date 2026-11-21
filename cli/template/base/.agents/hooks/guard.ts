@@ -71,7 +71,7 @@ function checkCommand(command: string): string | undefined {
 		return "This project's packages are pnpm's: `pnpm add <package>` (or `pnpm add -D`), `pnpm install --frozen-lockfile`.";
 	}
 	if (/(^|[\s;&|(])(npx|bunx|rbxtsc|pnpm dlx|bun x)\s/.test(command)) {
-		return "Run tools through the project: `mise run check` compiles with Sloptor; other binaries with `pnpm exec <tool>`.";
+		return "Run tools through the project: `mise run check` compiles with Sloptor; other tools with `mise x -- <tool>`, which finds both the npm ones and the mise ones.";
 	}
 	const reads =
 		/\b(cat|less|more|head|tail|grep|rg|sed|awk|bat|xxd|od|strings|base64|source|node|python3?)\b/.test(command) ||

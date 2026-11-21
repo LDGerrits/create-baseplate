@@ -8,6 +8,7 @@ A Roblox game in TypeScript: roblox-ts compiled by Sloptor, placed in the game b
 
 - While iterating, narrower loops are faster: `mise run test` for the tests, `mise run ui --filter <name>` for one story's picture.
 - When a lint rule is wrong for one line, disable it on that line with a comment saying why.
+- The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `lune` and the rest are on the PATH only where your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills.
 - Generated files change through their generator, and a hook blocks direct edits: `out/` and `include/` (the compiler), `build/` (builds), `default.project.json` (Rogen), `game.project.json` and `src/world.d.ts` (`mise run check`, from the code and `world/`).
 
 ## Where code goes

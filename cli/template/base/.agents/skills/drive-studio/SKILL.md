@@ -9,6 +9,8 @@ Reach for Studio last: `mise run test` and `mise run ui` answer most questions i
 
 ## Open Studio through forge
 
+Run `forge`, `ror` and the other tools below as `mise x -- forge …` when your shell doesn't activate mise (see `AGENTS.md`).
+
 `forge up --studio --syncback --json` starts the session, or joins the running one: Studio opens hidden on the world, and Rojo syncs the compiled code into it. The session is yours when `data.started` is `true`; then `forge down --json` ends it when you're done. Leave a session someone else started running. `forge status --json` shows each part and the last compile's errors.
 
 - **The user's Studio:** when forge reports that a Studio already had the place open (`origin: "found"`), it's the user's. Ask before closing it or saving in it.

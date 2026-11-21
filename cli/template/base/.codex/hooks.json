@@ -16,7 +16,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "d=\"$PWD\"; while [ ! -f \"$d/.codex/hooks.json\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; cd \"$d\" && node .agents/hooks/rogen-check.mjs"
+						"command": "d=\"$PWD\"; while [ ! -f \"$d/.codex/hooks.json\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; cd \"$d\" && mise exec -- node .agents/hooks/rogen-check.mjs"
 					},
 					{
 						"type": "command",

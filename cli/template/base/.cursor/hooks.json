@@ -18,7 +18,7 @@
 		],
 		"stop": [
 			{
-				"command": "node .agents/hooks/rogen-check.mjs cursor"
+				"command": "mise exec -- node .agents/hooks/rogen-check.mjs cursor"
 			},
 			{
 				"command": "mise exec -- node .agents/hooks/check.ts cursor",
