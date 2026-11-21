@@ -56,7 +56,7 @@ Keys and local paths go in `.env`: copy `.env.example`, which lists each one.
 
 `.github/workflows/ci.yml` runs `mise run ci` on Linux for every push and pull request: formatting, compile, lint, the place check, and the tests in ree. A second job runs every spec in real Roblox through Open Cloud once you add the repository secret `ROBLOX_OPEN_CLOUD_API_KEY` and the variables `ROBLOX_UNIVERSE_ID` and `ROBLOX_PLACE_ID` (Settings > Secrets and variables > Actions). Use an experience made only for tests, never the live game's: each run uploads to its place, and the key can write every place of the experience it's made for. The key needs the `universe-places:write` and `universe.place.luau-execution-session:write` scopes on that experience; [jest-roblox's README](https://github.com/christopher-buss/jest-roblox-cli) has the details.
 
-`.github/renovate.json` keeps packages and tools up to date. A tool's pin also needs its checksums in `mise.lock`, which `.github/workflows/mise-lock.yml` adds on Renovate's branches. For CI to run again on that commit, create a GitHub App with Contents read and write, install it on the repository, and add its client ID and private key as the secrets `LOCK_APP_CLIENT_ID` and `LOCK_APP_PRIVATE_KEY`.
+`.github/renovate.json` keeps packages and tools up to date. A tool's pin also needs its checksums in `mise.lock`, which `.github/workflows/mise-lock.yml` adds on Renovate's branches. For CI to run again on that commit, create a GitHub App with Contents read and write, install it on the repository, and add its client ID and private key as the secrets `BOT_APP_CLIENT_ID` and `BOT_APP_PRIVATE_KEY`.
 
 ## Layout
 

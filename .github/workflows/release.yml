@@ -5,6 +5,11 @@ name: Release
 # publishes the new version to npm, once publishing is switched on: set the repository variable
 # NPM_PUBLISH to true and add this workflow as a trusted publisher of create-baseplate on npmjs.com.
 # npm then takes the package from this workflow alone, with provenance, and no token is stored.
+#
+# A pull request opened with the default GITHUB_TOKEN starts no workflows, so the version PR's CI
+# wouldn't run. With the repository's GitHub App in BOT_APP_CLIENT_ID and BOT_APP_PRIVATE_KEY (the
+# one the mise lock workflow uses; it needs Contents and Pull requests: read and write), the PR is
+# opened as the app and its CI runs.
 
 on:
   push:
@@ -24,8 +29,18 @@ jobs:
     name: Version or publish
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      HAS_APP: ${{ secrets.BOT_APP_CLIENT_ID != '' }}
     steps:
+      - id: app
+        if: env.HAS_APP == 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.BOT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          token: ${{ steps.app.outputs.token || secrets.GITHUB_TOKEN }}
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
           version: 2026.11.8
@@ -40,5 +55,5 @@ jobs:
           commit-message: Version packages
           pr-title: Version packages
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app.outputs.token || secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"

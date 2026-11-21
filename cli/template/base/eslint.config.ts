@@ -1,3 +1,4 @@
+import { defineConfig } from "eslint/config";
 import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
 import importX from "eslint-plugin-import-x";
 import jest from "eslint-plugin-jest";
@@ -25,7 +26,7 @@ const zones = [
 	},
 ];
 
-export default tseslint.config(
+export default defineConfig(
 	{ ignores: ["**/out/", "**/include/", "**/build/", "node_modules/", "**/*.config.ts", ".agents/", "**/world.d.ts"] },
 	tseslint.configs.strictTypeChecked,
 	// The plugin types its presets as an open record; `recommended` exists.
