@@ -1,5 +1,0 @@
-{
-	"name": "agent-baseplate",
-	"owner": { "name": "agent-baseplate" },
-	"plugins": [{ "name": "roblox-ts", "source": "./roblox-ts" }]
-}

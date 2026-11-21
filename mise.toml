@@ -37,13 +37,7 @@ run = ["pnpm install --frozen-lockfile", "mise run generate", "mise run setup"]
 
 [tasks.setup]
 description = "Run the check before each commit, and give Claude Code the TypeScript language server; safe to rerun"
-run = """
-if git rev-parse --git-dir >/dev/null 2>&1; then git config core.hooksPath .githooks; fi
-if command -v claude >/dev/null 2>&1; then
-	claude plugin marketplace add ./.claude/plugins --scope local >/dev/null
-	claude plugin install roblox-ts@agent-baseplate --scope local >/dev/null
-fi
-"""
+run = "node scripts/setup.ts"
 
 [tasks.check]
 description = "The one command to run after every change: format, compile, type-check the tooling, lint, build, verify the place and run the tests"

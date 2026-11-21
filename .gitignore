@@ -41,3 +41,5 @@ sourcemap.json
 
 # Claude Code settings for this clone only; `mise run setup` writes the language server here
 /.claude/settings.local.json
+# Written by scripts/setup.ts, named for this clone
+/.claude/plugins/.claude-plugin/
