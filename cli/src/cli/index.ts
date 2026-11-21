@@ -1,7 +1,7 @@
 import * as p from "@clack/prompts";
 import { Command, CommanderError, Option } from "commander";
 import { DEFAULT_APP_NAME } from "../consts.ts";
-import { type AddOnChoices, addOns, NONE, valuesOf } from "../installers/index.ts";
+import { type AddOnChoices, addOns, findConflict, NONE, valuesOf } from "../installers/index.ts";
 import { parseNameAndPath } from "../utils/parseNameAndPath.ts";
 import { validateAppName } from "../utils/validateAppName.ts";
 
@@ -72,7 +72,8 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 				message: addOn.question,
 				initialValue: addOn.defaultValue,
 				options: [
-					...addOn.choices,
+					// Leave out what can't go with the answers so far, such as Reflex with Vide.
+					...addOn.choices.filter((choice) => findConflict({ ...chosen, [addOn.name]: choice.value }) === undefined),
 					...(addOn.allowNone ? [{ value: NONE, label: "None", hint: "add one later yourself" }] : []),
 				],
 			});

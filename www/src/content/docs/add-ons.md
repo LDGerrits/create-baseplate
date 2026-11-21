@@ -1,6 +1,6 @@
 ---
 title: Add-ons
-description: The libraries the CLI can add for state, player data and entities, or none.
+description: The UI library, and the libraries the CLI can add for state, player data and entities, or none.
 ---
 
 The base game brings Flamework and React with a few small helpers they work well with, and leaves libraries for state, data and entities to you. Like create-t3-app, the CLI asks about each, offering the most used libraries or none, which is the default. It also asks which UI library to use:

@@ -37,6 +37,51 @@
 			"file": "README.md",
 			"from": "- **React DevTools:** run `npx react-devtools`, set the attribute `ReactDevTools` to true on Workspace in Studio, and play: the app shows the UI's component tree, props and state. React logs one harmless telemetry error when it connects.\n",
 			"to": ""
+		},
+		{
+			"file": "AGENTS.md",
+			"from": " Keep `@rbxts/ripple` on 0.9: `@rbxts/pretty-react-hooks` is built for it, and the game loads one copy.",
+			"to": ""
+		},
+		{
+			"file": "tsconfig.json",
+			"from": "\"jsxFactory\": \"React.createElement\"",
+			"to": "\"jsxFactory\": \"Vide.jsx\""
+		},
+		{
+			"file": "tsconfig.json",
+			"from": "\"jsxFragmentFactory\": \"React.Fragment\"",
+			"to": "\"jsxFragmentFactory\": \"Vide.Fragment\""
+		},
+		{
+			"file": "eslint.config.ts",
+			"from": "import reactHooks from \"eslint-plugin-react-hooks\";\n",
+			"to": ""
+		},
+		{
+			"file": "eslint.config.ts",
+			"from": "import reactX from \"eslint-plugin-react-x\";\n",
+			"to": ""
+		},
+		{
+			"file": "eslint.config.ts",
+			"from": "\treactHooks.configs.flat[\"recommended-latest\"],\n",
+			"to": ""
+		},
+		{
+			"file": "eslint.config.ts",
+			"from": "\treactX.configs[\"recommended-type-checked\"],\n",
+			"to": ""
+		},
+		{
+			"file": "eslint.config.ts",
+			"from": "\t\t\t// React comes from @rbxts/react, a port of React 17.\n",
+			"to": ""
+		},
+		{
+			"file": "eslint.config.ts",
+			"from": "\t\t\t\"react-x\": { importSource: \"@rbxts/react\", version: \"17.0.2\" },\n",
+			"to": ""
 		}
 	]
 }

@@ -1,6 +1,6 @@
 ## UI
 
-Vide from `@rbxts/vide`. Components are functions that run once and return instances; reactive values are sources, functions read with `value()`, and a prop given a function updates when its sources change (`Text={() => \`Clicks: ${clicks()}\`}`). Make state with `source`, derive it with `derive`, run code on change with `effect`, and register disposal with `cleanup`, as `app.tsx` does. Give each component worth looking at a story beside it, `<component>.story.tsx`, made with `CreateVideStory` from `@rbxts/ui-labs`; copy `clicker-button.story.tsx`. A story renders the component alone, so pass in through props what comes from controllers.
+Vide from `@rbxts/vide`. Components are functions that run once and return instances. State lives in sources, read by calling them (`clicks()`), and a prop given a function updates when the sources it reads change (`Text={() => \`Clicks: ${clicks()}\`}`). Make state with `source`, derive values with `derive`, run code when sources change with `effect`, and dispose of subscriptions with `cleanup`. Give each component worth looking at a story beside it, `<component>.story.tsx`, made with `CreateVideStory` from `@rbxts/ui-labs`; copy `clicker-button.story.tsx`. A story renders the component alone, so pass in through props what comes from controllers.
 
 `mise run ui` renders every story offline and prints each picture's path. Open each picture you changed and look at it: text cut off, overlap, alignment, the empty state. A story that renders cleanly can still look wrong.
 

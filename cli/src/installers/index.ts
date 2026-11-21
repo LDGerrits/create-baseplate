@@ -109,7 +109,8 @@ export function findConflict(chosen: AddOnChoices): string | undefined {
 /** Applies each chosen add-on to the project in `dir`, in the order of `addOns`: the UI first. */
 export function installAddOns(dir: string, chosen: AddOnChoices) {
 	for (const addOn of addOns) {
-		const value = chosen[addOn.name];
+		const name = addOn.name;
+		const value = chosen[name];
 		const manifest = manifestOf(addOn.name, value);
 		if (manifest === undefined) continue; // "none", or the base's own choice
 		const from = path.join(TEMPLATE_EXTRAS, addOn.name, value);
@@ -124,7 +125,10 @@ export function installAddOns(dir: string, chosen: AddOnChoices) {
 		else replaceAgentsSection(dir, manifest.replaceAgentsSection, agents);
 		for (const { file, from: text, to } of manifest.replaceText ?? []) {
 			const at = path.join(dir, file);
-			fs.writeFileSync(at, fs.readFileSync(at, "utf8").replace(text, to));
+			const content = fs.readFileSync(at, "utf8");
+			// A base change the manifest doesn't know about; fail rather than leave the old text.
+			if (!content.includes(text)) throw new Error(`${name}: ${file} no longer has the text to replace: ${text}`);
+			fs.writeFileSync(at, content.replace(text, to));
 		}
 	}
 }
@@ -155,8 +159,8 @@ function addImports(file: string, imports: string[]) {
 function replaceAgentsSection(dir: string, heading: string, section: string) {
 	const file = path.join(dir, "AGENTS.md");
 	const agents = fs.readFileSync(file, "utf8");
-	const start = agents.indexOf(`## ${heading}\n`);
-	if (start === -1) throw new Error(`AGENTS.md has no "## ${heading}" section to replace`);
+	const start = agents.indexOf(`\n## ${heading}\n`) + 1;
+	if (start === 0) throw new Error(`AGENTS.md has no "## ${heading}" section to replace`);
 	const next = agents.indexOf("\n## ", start + 1);
 	const end = next === -1 ? agents.length : next + 1;
 	fs.writeFileSync(file, `${agents.slice(0, start)}${section.trim()}\n\n${agents.slice(end)}`);

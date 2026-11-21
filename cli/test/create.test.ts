@@ -131,7 +131,7 @@ test("swaps React for Vide", () => {
 	const agents = read("AGENTS.md");
 	assert.match(agents, /and Vide for the UI/);
 	assert.match(agents, /## UI\n\nVide/);
-	assert.doesNotMatch(agents, /@rbxts\/react/);
+	assert.doesNotMatch(agents, /react|ripple/i, "AGENTS.md names no React package");
 	assert.doesNotMatch(read("README.md"), /React DevTools/);
 });
 

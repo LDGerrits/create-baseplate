@@ -57,6 +57,7 @@ jobs:
           - --data lapis
           - --entities components
           - --entities jecs
+          - --ui vide
           - --state charm --data profilestore --entities components
           - --state reflex --data lapis --entities jecs
           - --ui vide --data profilestore --entities jecs
