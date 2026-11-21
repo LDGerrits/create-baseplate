@@ -20,8 +20,13 @@ _.file = ".env"
 # (src/syncback/mod.rs), not a stable option: check it still works when upgrading Rojo.
 ROJO_SYNCBACK_DEBUG = "2"
 
+[tasks.deps]
+description = "Make node_modules match pnpm-lock.yaml; instant when it already does, so every task runs on the locked packages"
+run = "pnpm install --frozen-lockfile --silent"
+
 [tasks.generate]
 description = "Write the generated files: default.project.json (code), game.project.json (code and world), src/world.d.ts"
+depends = ["deps"]
 run = ["rogen write --quiet", "node scripts/game-project.mjs", "node scripts/world-types.mjs"]
 
 [tasks.install]

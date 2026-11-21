@@ -172,9 +172,6 @@ importers:
 
   .:
     dependencies:
-      '@flamework/components':
-        specifier: 1.3.2
-        version: 1.3.2(@flamework/core@1.3.2)
       '@flamework/core':
         specifier: 1.3.2
         version: 1.3.2
@@ -500,11 +497,6 @@ packages:
   '@eslint/plugin-kit@0.7.3':
     resolution: {integrity: sha512-IkO+/KEUvwbVpiURZg+P7zF74z5Jxe0UgJxVni+RtoHQ6IZieXaO02kmadomap/q+l6bc/jdPGGqTjhuZnuz1Q==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
-
-  '@flamework/components@1.3.2':
-    resolution: {integrity: sha512-u9a8vwrCiXpG2LXihogsEb5DzDOSTJwxBON6XdQyQmobm0lPOQzRjtwvWRB83wMLtJPjzIs6T2L1Ce00yXw+WA==}
-    peerDependencies:
-      '@flamework/core': '*'
 
   '@flamework/core@1.3.2':
     resolution: {integrity: sha512-4/tY5plivbvr4vvwRtxzuym7Nl5eDHM3RAR2nZHuuNz31h2S2CIrCoGHjkod0I6qPpfs4eUw2TiIrvVN8iC8JQ==}
@@ -977,9 +969,6 @@ packages:
 
   '@rbxts/signal@1.1.1':
     resolution: {integrity: sha512-WX+ONE+ld4pG9PvRkR8OgDld9NpaV1RfXyUIw+Q2oXP/5rehkYzvt20NWtrLAP3NhMc5inYInLd+hnufey6nFw==}
-
-  '@rbxts/t@2.2.1':
-    resolution: {integrity: sha512-MoFLHRQdm1tpAviAVxgkQj/ktxtnGBund2HXQj5xRqgYUWuC3kYuLkctuxXiJHUd1o1JzfU/HvVHtZfpqp61tg==}
 
   '@rbxts/t@3.2.1':
     resolution: {integrity: sha512-/fnf2QSx+TI3HSJ6QW2ikvGQk0mlx/63UXo60pLAKGqbxXiAuTJh88bpKpHw6aCzfFLJAwrVIcgCUOokLMPcag==}
@@ -2125,14 +2114,6 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
-  '@flamework/components@1.3.2(@flamework/core@1.3.2)':
-    dependencies:
-      '@flamework/core': 1.3.2
-      '@rbxts/maid': 1.1.0
-      '@rbxts/services': 1.6.0
-      '@rbxts/signal': 1.1.1
-      '@rbxts/t': 2.2.1
-
   '@flamework/core@1.3.2':
     dependencies:
       '@rbxts/maid': 1.1.0
@@ -2768,8 +2749,6 @@ snapshots:
   '@rbxts/services@1.6.0': {}
 
   '@rbxts/signal@1.1.1': {}
-
-  '@rbxts/t@2.2.1': {}
 
   '@rbxts/t@3.2.1': {}
 
