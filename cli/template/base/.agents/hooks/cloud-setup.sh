@@ -6,9 +6,10 @@ set -euo pipefail
 [ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || exit 0
 cd "${CLAUDE_PROJECT_DIR:-.}"
 
-# mise itself, pinned and checked: the release CI uses (`version:` of jdx/mise-action in
-# .github/workflows/ci.yml), from GitHub, against the SHA-256s its release publishes (SHASUMS256.txt).
-# Renovate doesn't see this pin: when CI's version changes, change it and both sums here too.
+# mise itself, pinned and checked: the release CI uses, from GitHub, against the SHA-256s its release
+# publishes (SHASUMS256.txt). mise's version is pinned by hand in three files, which Renovate doesn't
+# update: here (with both sums), and `version:` of jdx/mise-action in .github/workflows/ci.yml and
+# .github/workflows/copilot-setup-steps.yml. Change them together.
 MISE_VERSION="2026.11.8"
 install_mise() {
 	local arch sum

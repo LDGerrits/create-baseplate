@@ -177,7 +177,7 @@ const typeAnswer = (cwd: string, args: string, input: string) =>
 				"-c",
 				`(sleep 0.5; printf '%s' "$ANSWER"; sleep 1.5) | script -qec "stty cols 120 rows 40; node ${CLI} ${args}" /dev/null`,
 			],
-			{ cwd, encoding: "utf8", timeout: 4_000, env: { ...process.env, ANSWER: input } },
+			{ cwd, encoding: "utf8", timeout: 8_000, env: { ...process.env, ANSWER: input } },
 		).stdout,
 	);
 

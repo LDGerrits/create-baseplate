@@ -30,7 +30,7 @@ function flagsNpmTook(): string[] {
 }
 
 /** Why the game can't be made in the folder `input` names, with `name` (--name) or the folder's name. */
-export function answerProblem(input: string, name: string | undefined): string | undefined {
+function answerProblem(input: string, name: string | undefined): string | undefined {
 	const parsed = parseNameAndPath(input);
 	return nameProblem(name ?? parsed.name) ?? folderProblem(parsed.dir);
 }

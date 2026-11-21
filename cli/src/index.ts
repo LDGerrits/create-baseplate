@@ -30,8 +30,8 @@ async function main() {
 		process.exit(1);
 	};
 
-	const invalid = nameProblem(options.name);
-	if (invalid !== undefined) fail(invalid);
+	const problem = nameProblem(options.name);
+	if (problem !== undefined) fail(problem);
 
 	const conflict = findConflict(options.addOns);
 	if (conflict !== undefined) fail(conflict);
