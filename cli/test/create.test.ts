@@ -196,13 +196,21 @@ test("lays out a multi-place game as Rogen prescribes", () => {
 		const tsconfig = JSON.parse(read(`tsconfig.${place}.json`));
 		assert.deepEqual(tsconfig.include, ["projects/common/src", `projects/${place}/src`]);
 		assert.equal(tsconfig.compilerOptions.outDir, `out/${place}`);
-		for (const file of ["world/default.project.json", "tests/e2e/clicker.luau", "jest.config.ts"]) {
+		for (const file of ["world/default.project.json", "jest.config.ts"]) {
 			assert.ok(exists(`projects/${place}/${file}`), `${place} has ${file}`);
 		}
 		assert.match(read(`projects/${place}/jest.config.ts`), new RegExp(`game\\.${place}\\.project\\.json`));
 		assert.match(read(`projects/${place}/rbx-forge.config.ts`), /node \.\.\/\.\.\/scripts\/game-project\.ts/);
 	}
 	assert.match(read(".gitignore"), /\/projects\/\*\/build/);
+	// Shared tests run once, in the game place.
+	assert.ok(exists("projects/game/tests/e2e/clicker.luau"));
+	assert.ok(!exists("projects/lobby/tests/e2e/clicker.luau"));
+	assert.equal(JSON.parse(read("tsconfig.game.json")).exclude, undefined);
+	assert.deepEqual(JSON.parse(read("tsconfig.lobby.json")).exclude, [
+		"projects/common/src/**/*.spec.ts",
+		"projects/common/src/**/*.spec.tsx",
+	]);
 	const agents = read("AGENTS.md");
 	assert.match(agents, /## Where code goes\n\nThis game has several places/);
 	assert.match(agents, /`projects\/common\/src\/features\/player-data\/server\/`/, "add-on notes name shared paths");

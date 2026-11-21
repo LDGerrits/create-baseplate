@@ -29,14 +29,40 @@ interface ReeSummary {
 	unemulated?: { member: string; first: string | null }[];
 }
 
+// Whether the game holds any spec ree runs: a compiled *.spec.luau in a folder its project mounts.
+// A place of a multi-place game may hold none (shared specs run in one place), and then the Jest
+// run is skipped rather than started for nothing.
+const mounts: string[] = [];
+const collectMounts = (node: unknown) => {
+	if (typeof node !== "object" || node === null) return;
+	for (const [key, value] of Object.entries(node)) {
+		if (key !== "$path") collectMounts(value);
+		else mounts.push(typeof value === "string" ? value : (value as { optional: string }).optional);
+	}
+};
+collectMounts(JSON.parse(fs.readFileSync("game.project.json", "utf8")));
+// Only the compiled code: packages in node_modules carry specs of their own.
+const hasSpecs = mounts.some(
+	(mount) =>
+		/(^|\/)out\//.test(mount) &&
+		fs.existsSync(mount) &&
+		fs.statSync(mount).isDirectory() &&
+		fs
+			.readdirSync(mount, { recursive: true, encoding: "utf8" })
+			.some((file) => file.endsWith(".spec.luau") && !file.endsWith(".engine.spec.luau")),
+);
+
 const runs: Run[] = [
-	{
-		name: "jest",
-		harness: path.join(import.meta.dirname, "test/jest.luau"),
-		args: ["--run-context", "server", "--seconds", "60"],
-	},
-	...fs
-		.readdirSync("tests/e2e")
+	...(hasSpecs
+		? [
+				{
+					name: "jest",
+					harness: path.join(import.meta.dirname, "test/jest.luau"),
+					args: ["--run-context", "server", "--seconds", "60"],
+				},
+			]
+		: []),
+	...(fs.existsSync("tests/e2e") ? fs.readdirSync("tests/e2e") : [])
 		.filter((file) => file.endsWith(".luau"))
 		.sort()
 		.map((file) => ({

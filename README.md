@@ -23,3 +23,7 @@ It creates the game, makes it a git repo, and installs everything with [mise](ht
 | `www/`                 | The docs site: Astro with Starlight, with `llms.txt` for agents  |
 
 `PLAN.md` holds the plan.
+
+## License
+
+MIT ([LICENSE](LICENSE)). The game template, `cli/template/`, is MIT No Attribution, so a game created with Baseplate is entirely yours: no notice to keep.

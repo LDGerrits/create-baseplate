@@ -4,6 +4,11 @@ import { TEMPLATE_EXTRAS } from "../consts.ts";
 
 /** The places a multi-place game starts with. */
 export const PLACES = ["lobby", "game"];
+/**
+ * The place that runs the shared code's tests. Each place compiles the shared code, so its specs
+ * and end-to-end tests would otherwise run once per place, for the same result.
+ */
+export const SHARED_TESTS_PLACE = "game";
 
 const GITIGNORE = `
 # Each place's generated files
@@ -55,7 +60,13 @@ export function makeMultiPlace(dir: string, name: string) {
 				code.replace(/^((?:import|export)\b[^"\n]*")\.\.\/\.\.\/(?!\.\.)/gm, "$1../../../../common/src/"),
 			);
 		}
-		for (const folder of ["world", "tests"]) fs.cpSync(at(folder), path.join(placeDir, folder), { recursive: true });
+		fs.cpSync(at("world"), path.join(placeDir, "world"), { recursive: true });
+		// The template's end-to-end tests are the shared features'; the other places start with none.
+		if (place === SHARED_TESTS_PLACE) fs.cpSync(at("tests"), path.join(placeDir, "tests"), { recursive: true });
+		else {
+			fs.mkdirSync(path.join(placeDir, "tests", "e2e"), { recursive: true });
+			fs.writeFileSync(path.join(placeDir, "tests", "e2e", ".gitkeep"), "");
+		}
 		fs.writeFileSync(
 			path.join(placeDir, "jest.config.ts"),
 			fs
@@ -102,6 +113,10 @@ export function makeMultiPlace(dir: string, name: string) {
 					noEmit: false,
 				},
 				include: ["projects/common/src", `projects/${place}/src`],
+				// The shared code's specs compile into one place only, so they run once.
+				...(place === SHARED_TESTS_PLACE
+					? {}
+					: { exclude: ["projects/common/src/**/*.spec.ts", "projects/common/src/**/*.spec.tsx"] }),
 			}),
 		);
 		fs.writeFileSync(path.join(placeDir, "tsconfig.json"), json({ extends: `../../tsconfig.${place}.json` }));

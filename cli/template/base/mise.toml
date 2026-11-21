@@ -79,7 +79,7 @@ run = '''node scripts/each-place.ts 'sloptor build -p "$TSCONFIG" --rojo "$PWD/d
 [tasks."test:engine"]
 description = "Run every Jest spec, *.engine.spec included, in Roblox Studio or Open Cloud through jest-roblox"
 depends = ["generate"]
-run = "node scripts/each-place.ts 'sloptor build -p \"$TSCONFIG\" --rojo \"$PWD/default.project.json\" --includePath \"$ROOT/include\" && jest-roblox'"
+run = "node scripts/each-place.ts 'sloptor build -p \"$TSCONFIG\" --rojo \"$PWD/default.project.json\" --includePath \"$ROOT/include\" && jest-roblox --passWithNoTests'"
 
 [tasks.ui]
 description = "Compile and render every UI story offline with rur; prints each picture's path"

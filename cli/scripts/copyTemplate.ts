@@ -28,7 +28,8 @@ for (const file of listed.stdout.split("\0").filter((f) => f !== "" && fs.exists
 		continue;
 	}
 	const name = path.basename(file) === ".gitignore" ? "_gitignore" : path.basename(file);
-	const to = path.join(OUT, kind, path.dirname(inKind), name);
+	// A file directly in template/, such as its LICENSE, stays there.
+	const to = rest.length === 0 ? path.join(OUT, name) : path.join(OUT, kind, path.dirname(inKind), name);
 	fs.mkdirSync(path.dirname(to), { recursive: true });
 	fs.copyFileSync(file, to);
 	fs.chmodSync(to, stat.mode);
