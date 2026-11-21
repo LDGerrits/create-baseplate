@@ -49,6 +49,9 @@ React from `@rbxts/react`. Give each component worth looking at a story beside i
 
 `mise run ui` renders every story offline and prints each picture's path. Open each picture you changed and look at it: text cut off, overlap, alignment, the empty state. A story that renders cleanly can still look wrong.
 
+- To check that a component responds to input, click or type into its story: `mise run ui -- --story <path>.story.tsx --actions '[{"type":"click","node":"TextButton","t":0.2}]'` prints what the story printed and the picture's path. Actions also take `key`, `text`, `drag` and `wheel`, aimed at a node name or `x`, `y`.
+- To see what your change did to a component: `mise run ui -- diff HEAD --story <path>.story.tsx` renders it before and after, and writes `diff.png`.
+
 - Animate with `useMotion` from `@rbxts/pretty-react-hooks`, as `clicker-button.tsx` does: the motion drives a binding, so nothing re-renders. The same package has hooks for events, timers, debouncing and the previous value.
 - A story renders inside a `Frame`, so a component whose root is a `ScreenGui` draws nothing.
 - rur needs Roblox Studio's fonts to draw text; outside Windows and WSL, set `RUR_ROBLOX_CONTENT` (see `.env.example`).
