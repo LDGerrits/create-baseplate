@@ -1,6 +1,9 @@
-// Stop hook for Claude Code, Codex and Cursor: when files changed, run `mise run check` (about five
+// Stop hook for Claude Code, Codex and Cursor: when files changed, run `mise run check` (about ten
 // seconds) and hand any failure back to the agent before it ends its turn. Pass "cursor" as the
 // first argument for Cursor, which replies with followup_message.
+// When the agent already had its chance in this stop and the check still fails, it may stop, so the
+// hook can't loop, and the user is told the check fails (Claude Code and Codex). Cursor has no
+// message for the user, so it gets a few follow-ups instead.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import { projectRoot } from "./project.ts";
@@ -17,8 +20,10 @@ try {
 	payload = JSON.parse(fs.readFileSync(0, "utf8")) as Payload;
 } catch {}
 const cursor = process.argv[2] === "cursor";
-// The agent already had one chance to fix a failure in this stop; don't loop.
-if (payload.stop_hook_active === true || (payload.loop_count ?? 0) > 0) process.exit(0);
+const CURSOR_FOLLOW_UPS = 3;
+if (cursor && (payload.loop_count ?? 0) >= CURSOR_FOLLOW_UPS) process.exit(0);
+// The agent already had one chance to fix a failure in this stop.
+const retried = !cursor && payload.stop_hook_active === true;
 
 // The session's own folder: in a worktree session, CLAUDE_PROJECT_DIR still names the main checkout.
 const start = payload.cwd ?? payload.workspace_roots?.[0] ?? process.env.CLAUDE_PROJECT_DIR ?? ".";
@@ -44,5 +49,10 @@ const check = spawnSync("mise", ["run", "--quiet", "check"], {
 if (check.error !== undefined || check.status === 0) process.exit(0);
 
 const output = `${check.stdout}${check.stderr}`.trim();
+if (retried) {
+	const notice = `The agent stopped, but \`mise run check\` still fails:\n${output.slice(-2000)}`;
+	console.log(JSON.stringify({ systemMessage: notice }));
+	process.exit(0);
+}
 const message = `\`mise run check\` fails after your changes. Fix it, or tell the user why it stays failing:\n${output.slice(-6000)}`;
 console.log(JSON.stringify(cursor ? { followup_message: message } : { decision: "block", reason: message }));
