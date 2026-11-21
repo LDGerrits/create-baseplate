@@ -9,7 +9,7 @@ Every game has an `AGENTS.md`, which Claude Code (through `CLAUDE.md`), Codex, C
 
 ## The check
 
-`mise run check` formats, compiles, lints, builds the place, verifies every import in it resolves, and runs the tests, in about five seconds. The agent runs it after each change.
+`mise run check` formats, compiles, lints, builds the place, verifies every import in it resolves, runs the tests and renders the UI stories, in about ten seconds. The agent runs it after each change.
 
 ## Hooks
 

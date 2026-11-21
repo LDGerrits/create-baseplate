@@ -3,7 +3,7 @@ title: Testing
 description: Specs, end-to-end tests and engine specs, offline in ree or in real Roblox.
 ---
 
-`mise run test` runs the tests offline in ree, an emulated Roblox engine, in about a second. `mise run check` runs them too.
+`mise run test` runs the tests offline in ree, an emulated Roblox engine, in a few seconds. `mise run check` runs them too.
 
 | What you test                                          | Kind            | File                             |
 | ------------------------------------------------------ | --------------- | -------------------------------- |

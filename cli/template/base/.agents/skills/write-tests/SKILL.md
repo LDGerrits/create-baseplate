@@ -7,7 +7,7 @@ description: Write or run this game's tests. Use when adding a spec, an end-to-e
 
 Every test runs in one of two engines:
 
-- **ree**, an emulated Roblox engine: `mise run test`, about a second, offline. `mise run check` runs it.
+- **ree**, an emulated Roblox engine: `mise run test`, a few seconds, offline. `mise run check` runs it.
 - **A real Roblox engine** through jest-roblox: `mise run test:engine`, about twenty seconds, in Studio or Open Cloud.
 
 When the two disagree, the real engine is right. ree lets a call to a member it doesn't emulate return nothing, so `mise run test` fails any run that reaches one and names the member and where the game first used it: prove that behaviour in an engine spec instead.

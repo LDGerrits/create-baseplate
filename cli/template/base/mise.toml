@@ -56,7 +56,7 @@ run = [
 	"node scripts/each-place.ts 'rogen check'",
 	# No --cache: type-aware rules depend on other files, which the cache doesn't track.
 	"eslint --max-warnings 0 --no-error-on-unmatched-pattern src projects",
-	'''node scripts/each-place.ts 'mkdir -p build && rojo build game.project.json --output build/game.rbxl && lune run "$ROOT/scripts/check-place" build/game.rbxl && node "$ROOT/scripts/test.ts"' ''',
+	'''node scripts/each-place.ts 'mkdir -p build && rojo build game.project.json --output build/game.rbxl && lune run "$ROOT/scripts/check-place" build/game.rbxl && node "$ROOT/scripts/test.ts" && node "$ROOT/scripts/ui.ts" --check' ''',
 ]
 
 [tasks.ci]
@@ -72,7 +72,7 @@ run = [
 	"[ ! -d projects ] || tsc --noEmit -p tsconfig.json",
 	"node scripts/each-place.ts 'rogen check'",
 	"eslint --max-warnings 0 --no-error-on-unmatched-pattern src projects",
-	'''node scripts/each-place.ts 'mkdir -p build && rojo build game.project.json --output build/game.rbxl && lune run "$ROOT/scripts/check-place" build/game.rbxl && node "$ROOT/scripts/test.ts"' ''',
+	'''node scripts/each-place.ts 'mkdir -p build && rojo build game.project.json --output build/game.rbxl && lune run "$ROOT/scripts/check-place" build/game.rbxl && node "$ROOT/scripts/test.ts" && node "$ROOT/scripts/ui.ts" --check' ''',
 ]
 
 [tasks.test]

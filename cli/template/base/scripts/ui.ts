@@ -1,6 +1,8 @@
 // Renders every UI story (`*.story.tsx`) offline with rur and lists each picture, so you can look
 // at it. Run it through `mise run ui`, which compiles first. Extra arguments go to `rur-native sweep`,
 // such as `--filter clicker-button`. Fails when a story doesn't render cleanly.
+// With --check, as `mise run check` runs it: prints only the stories that fail, and renders without
+// Studio's fonts when it can't find them, so a story that crashes fails the check even in CI.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -21,15 +23,16 @@ if (!process.env.RUR_ROBLOX_CONTENT && fs.existsSync("/mnt/c/Users")) {
 	if (newest !== undefined) process.env.RUR_ROBLOX_CONTENT = path.join(newest, "content");
 }
 
+const check = process.argv.includes("--check");
+const args = process.argv.slice(2).filter((arg) => arg !== "--check");
+
 // Without Studio's fonts rur draws no text; `rur-native doctor` says when it can't find them.
 const doctor = spawnSync("rur-native", ["doctor"], { encoding: "utf8" });
 const noStudio = `${doctor.stdout}${doctor.stderr}`.split("\n").find((line) => /^!\s*studio/.test(line));
-if (noStudio) {
+if (noStudio && !check) {
 	console.log(`rur can't draw text: ${noStudio.replace(/^!\s*studio\s*/, "")}`);
 	process.exit(1);
 }
-
-const args = process.argv.slice(2);
 
 // `mise run ui -- --story <story> --actions '<json>'`: render one story after clicks or key presses,
 // and list what it printed. `mise run ui -- diff <git ref> --story <story>`: render the story at that
@@ -96,7 +99,7 @@ try {
 }
 
 if (report.records.length === 0) {
-	console.log("No stories found. Add a `<component>.story.tsx` beside a component (see UI in AGENTS.md).");
+	if (!check) console.log("No stories found. Add a `<component>.story.tsx` beside a component (see UI in AGENTS.md).");
 	process.exit(0);
 }
 
@@ -104,16 +107,21 @@ let failed = 0;
 for (const record of report.records) {
 	const name = record.story.replace(/^(.*\/)?out\//, "").replace(/\.story\.luau$/, "");
 	const picture = path.join(OUT, record.out, "render.png");
-	const missingFonts = record.missingFonts ?? [];
+	// The check renders without fonts when Studio isn't there; only a story that breaks fails it.
+	const missingFonts = check ? [] : (record.missingFonts ?? []);
 	if (record.clean && missingFonts.length === 0) {
-		console.log(`✓ ${name}: ${picture}`);
+		if (!check) console.log(`✓ ${name}: ${picture}`);
 		continue;
 	}
 	failed++;
 	const reason = record.failure ?? (record.clean ? `no font to draw ${missingFonts.join(", ")}` : "not clean");
-	console.log(`✗ ${name} (${record.status}): ${reason}`);
+	console.log(`✗ story ${name} (${record.status}): ${reason}`);
+	// What the story's code raised, such as `Error: boom`; the errors below are often only the
+	// scheduler's trace around it.
+	for (const message of record.warningMessages ?? []) console.log(`  ${String(message).replaceAll("\n", "\n  ")}`);
 	for (const error of record.errors ?? []) console.log(`  ${String(error).replaceAll("\n", "\n  ")}`);
 	if (fs.existsSync(picture)) console.log(`  picture: ${picture}`);
 }
-console.log(`Full report: ${path.join(OUT, "summary.md")}`);
+if (check && failed > 0) console.log("Render one story to see it: mise run ui -- --story <path>.story.tsx");
+if (!check || failed > 0) console.log(`Full report: ${path.join(OUT, "summary.md")}`);
 process.exit(failed > 0 ? 1 : 0);

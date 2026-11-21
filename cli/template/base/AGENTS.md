@@ -4,7 +4,7 @@ A Roblox game in TypeScript: roblox-ts compiled by Sloptor, placed in the game b
 
 ## Checking your work
 
-`mise run check` is the check: it formats, compiles, lints, builds the place and runs the tests, in about five seconds. Run it after each change and fix what it reports until it passes. When you stop, a hook runs it again and hands back any failure; the commit hook runs it on what you commit.
+`mise run check` is the check: it formats, compiles, lints, builds the place, runs the tests and renders the UI stories, in about ten seconds. Run it after each change and fix what it reports until it passes. When you stop, a hook runs it again and hands back any failure; the commit hook runs it on what you commit.
 
 - While iterating, narrower loops are faster: `mise run test` for the tests, `mise run ui --filter <name>` for one story's picture.
 - When a lint rule is wrong for one line, disable it on that line with a comment saying why.
@@ -38,7 +38,7 @@ The rules the code follows:
 
 ## Tests
 
-`mise run test` runs them offline in ree, an emulated Roblox engine, in about a second. Pick the kind by what you test:
+`mise run test` runs them offline in ree, an emulated Roblox engine, in a few seconds. Pick the kind by what you test:
 
 - A service's rules and decisions: a spec, `<name>.spec.ts` beside the code. Pass time in as a parameter (`now = os.clock()`) so the spec doesn't wait. A spec elsewhere, or named `*.test.ts`, would never run, so the check fails on it.
 - A client's request through the real server and remotes: an end-to-end test, `tests/e2e/<feature>.luau`.
