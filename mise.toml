@@ -3,6 +3,8 @@
 [tools]
 node = "24.22.1"
 pnpm = "12.18.0"
+# rbx-forge patches Rojo's Studio plugin to connect by itself, and supports the plugin of Rojo 7.7.0
+# and 7.7.1. Before upgrading Rojo, check that rbx-forge supports the new version.
 "github:rojo-rbx/rojo" = "7.7.1"
 "github:howmanyslop/sloptor" = "2.8.3"
 "github:lune-org/lune" = "0.11.1"
