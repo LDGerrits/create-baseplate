@@ -1,0 +1,4 @@
+#!/bin/sh
+# Runs the full check before each commit. It checks the files on disk, not only the staged ones.
+# `mise run install` turns this folder on with `git config core.hooksPath .githooks`.
+exec mise run ci

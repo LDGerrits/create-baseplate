@@ -11,6 +11,8 @@ A Roblox game template in roblox-ts, set up for AI coding agents: one command ch
 - **The world is files, apart from the code.** Studio edits the map and [rbx-forge](https://github.com/christopher-buss/rbx-forge) syncs it back into `world/` as readable JSON, while Rojo serves only code. The map is typed: `Workspace.SpawnLocation` compiles only if it exists.
 - **Each feature is one folder.** [Rogen](https://github.com/LDGerrits/rogen) routes its `server/`, `client/` and `shared/` folders to the right place in the game.
 - **Instructions where agents look.** `AGENTS.md` covers the layout, adding a feature and the rules; `.agents/skills/` (linked as `.claude/skills/`) covers tests, the world and Studio. In Claude Code, a Stop hook runs the tests before the agent ends its turn.
+- **Type errors as it edits.** In Claude Code, the project's own TypeScript language server reports errors after every edit and answers go-to-definition and hover, with the roblox-ts types.
+- **Every commit is checked.** A git hook runs `mise run ci` before each commit, whichever agent or person makes it.
 
 ## Stack
 
@@ -30,13 +32,20 @@ Install [mise](https://mise.jdx.dev/getting-started.html), then:
 
 ```sh
 mise install       # Node, pnpm, Rojo, Sloptor, Lune, ree, rur, ror
-mise run install   # packages and the Rojo project file
+mise run install   # packages, generated files, the commit hook, Claude Code's language server
 mise run check     # everything should pass
 mise run dev       # compile on save, open Studio on the world, serve the code
 mise run sync      # write Studio's world edits into world/
 ```
 
 Keys and local paths go in `.env`: copy `.env.example`, which lists each one.
+
+## Working on it yourself
+
+- **Editor:** open the folder in VS Code and install the recommended extensions. The mise extension gives VS Code the pinned Node and tools; Biome formats on save and ESLint fixes what it can; the roblox-ts extension shows compile errors as you type.
+- **Other editors:** `.editorconfig` sets tabs and line endings, and any TypeScript language server works with `tsconfig.json`. Run `mise run check` to format.
+- **The commit hook** runs `mise run ci`, a few seconds. It checks the files on disk, so unstaged changes count too. To commit work in progress, `git commit --no-verify`.
+- **Tasks:** `mise tasks` lists every task with what it does.
 
 ## CI
 

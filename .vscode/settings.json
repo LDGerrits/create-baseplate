@@ -2,5 +2,14 @@
 	"editor.defaultFormatter": "biomejs.biome",
 	"editor.formatOnSave": true,
 	"editor.codeActionsOnSave": { "source.organizeImports.biome": "explicit", "source.fixAll.eslint": "explicit" },
-	"typescript.tsdk": "node_modules/typescript/lib"
+	"typescript.tsdk": "node_modules/typescript/lib",
+	"search.exclude": {
+		"out": true,
+		"include": true,
+		"build": true,
+		".rotor": true,
+		"flamework.build": true,
+		"default.project.json": true,
+		"game.project.json": true
+	}
 }

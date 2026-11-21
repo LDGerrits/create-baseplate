@@ -6,6 +6,7 @@ A Roblox game written in TypeScript with roblox-ts, compiled by Sloptor, synced 
 
 Run `mise run check` after every change, and fix what it reports until it passes. It formats with Biome, writes the Rojo project file, compiles and type-checks, runs `rogen check`, lints with ESLint, builds the place, checks that every import in the built place resolves, and runs the tests. It takes a few seconds.
 
+- Each commit runs `mise run ci` through a git hook. When it fails, fix what it reports and commit again; skipping it with `--no-verify` leaves the work unchecked.
 - A clean compile doesn't mean the game runs; the tests do run it. Add tests with every feature, as below.
 - Don't silence a lint rule to pass the check. If a rule is wrong for a line, disable it on that line with a comment that says why.
 - Never edit `out/`, `include/`, `build/`, `node_modules/`, `default.project.json`, `game.project.json` or `src/world.d.ts`; they're generated.

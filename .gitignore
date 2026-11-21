@@ -38,3 +38,6 @@ sourcemap.json
 /.env
 /.env.*
 !/.env.example
+
+# Claude Code settings for this clone only; `mise run setup` writes the language server here
+/.claude/settings.local.json

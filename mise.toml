@@ -30,8 +30,18 @@ depends = ["deps"]
 run = ["rogen write --quiet", "node scripts/game-project.mjs", "node scripts/world-types.mjs"]
 
 [tasks.install]
-description = "Install packages and write the generated files"
-run = ["pnpm install --frozen-lockfile", "mise run generate"]
+description = "Install packages, write the generated files, and set up this clone"
+run = ["pnpm install --frozen-lockfile", "mise run generate", "mise run setup"]
+
+[tasks.setup]
+description = "Run the check before each commit, and give Claude Code the TypeScript language server; safe to rerun"
+run = """
+if git rev-parse --git-dir >/dev/null 2>&1; then git config core.hooksPath .githooks; fi
+if command -v claude >/dev/null 2>&1; then
+	claude plugin marketplace add ./.claude/plugins --scope local >/dev/null
+	claude plugin install roblox-ts@agent-baseplate --scope local >/dev/null
+fi
+"""
 
 [tasks.check]
 description = "The one command to run after every change: format, compile, lint, build, verify the place and run the tests"

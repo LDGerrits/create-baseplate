@@ -1,3 +1,9 @@
 {
-	"recommendations": ["roblox-ts.vscode-roblox-ts", "biomejs.biome", "dbaeumer.vscode-eslint", "evaera.vscode-rojo"]
+	"recommendations": [
+		"hverlin.mise-vscode",
+		"roblox-ts.vscode-roblox-ts",
+		"biomejs.biome",
+		"dbaeumer.vscode-eslint",
+		"evaera.vscode-rojo"
+	]
 }
