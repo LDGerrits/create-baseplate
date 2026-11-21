@@ -7,7 +7,10 @@ import fs from "node:fs";
 const run = (command: string, args: string[]) =>
 	spawnSync(command, args, { encoding: "utf8", shell: process.platform === "win32" });
 
-if (run("git", ["rev-parse", "--git-dir"]).status === 0) {
+// The commit hook. When this project sits in a subfolder of a bigger repo, that repo's own hooks
+// decide, so leave them alone.
+const prefix = run("git", ["rev-parse", "--show-prefix"]);
+if (prefix.status === 0 && prefix.stdout.trim() === "") {
 	run("git", ["config", "core.hooksPath", ".githooks"]);
 }
 
@@ -15,12 +18,12 @@ if (run("git", ["rev-parse", "--git-dir"]).status === 0) {
 // marketplace. Each clone and worktree registers its own, named after its path: with one shared
 // name, every clone would load the plugin from whichever clone ran setup last, and break when that
 // clone is deleted.
-const marketplace = `agent-baseplate-${createHash("sha256").update(process.cwd()).digest("hex").slice(0, 8)}`;
+const marketplace = `baseplate-${createHash("sha256").update(process.cwd()).digest("hex").slice(0, 8)}`;
 fs.mkdirSync(".claude/plugins/.claude-plugin", { recursive: true });
 fs.writeFileSync(
 	".claude/plugins/.claude-plugin/marketplace.json",
 	`${JSON.stringify(
-		{ name: marketplace, owner: { name: "agent-baseplate" }, plugins: [{ name: "roblox-ts", source: "./roblox-ts" }] },
+		{ name: marketplace, owner: { name: "baseplate" }, plugins: [{ name: "roblox-ts", source: "./roblox-ts" }] },
 		undefined,
 		"\t",
 	)}\n`,

@@ -1,5 +1,5 @@
 {
-	"name": "agent-baseplate",
+	"name": "my-game",
 	"sourcePaths": ["src"],
 	"routes": {
 		"server": "ServerScriptService",

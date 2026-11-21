@@ -3,6 +3,7 @@
 // first argument for Cursor, which replies with followup_message.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import { projectRoot } from "./project.ts";
 
 interface Payload {
 	cwd?: string;
@@ -21,9 +22,9 @@ if (payload.stop_hook_active === true || (payload.loop_count ?? 0) > 0) process.
 
 // The session's own folder: in a worktree session, CLAUDE_PROJECT_DIR still names the main checkout.
 const start = payload.cwd ?? payload.workspace_roots?.[0] ?? process.env.CLAUDE_PROJECT_DIR ?? ".";
-const root = spawnSync("git", ["-C", start, "rev-parse", "--show-toplevel"], { encoding: "utf8" });
-if (root.status !== 0) process.exit(0);
-process.chdir(root.stdout.trim());
+const root = projectRoot(start);
+if (root === undefined) process.exit(0);
+process.chdir(root);
 
 const git = (...args: string[]) => {
 	const run = spawnSync("git", args, { encoding: "utf8" });

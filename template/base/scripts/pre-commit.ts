@@ -9,7 +9,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const staged = spawnSync("git", ["diff", "--cached", "--name-only", "--diff-filter=D", "-z"], { encoding: "utf8" });
+const staged = spawnSync("git", ["diff", "--cached", "--name-only", "--relative", "--diff-filter=D", "-z"], {
+	encoding: "utf8",
+});
 const kept = staged.stdout.split("\0").filter((file) => file !== "" && fs.existsSync(file));
 
 const backup = fs.mkdtempSync(path.join(os.tmpdir(), "pre-commit-"));

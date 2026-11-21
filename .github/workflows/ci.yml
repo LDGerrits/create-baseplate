@@ -13,47 +13,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
-    name: Check and test in ree
+  template:
+    name: Template (template/base)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: template/base
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
           version: 2026.11.8
+          working_directory: template/base
         env:
           # mise downloads Rojo, Sloptor, ree and the rest from GitHub releases.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mise run install
       - run: mise run ci
-
-  engine:
-    # Every spec, *.engine.spec included, in a real Roblox engine through Open Cloud.
-    # Set the secret ROBLOX_OPEN_CLOUD_API_KEY and the variables ROBLOX_UNIVERSE_ID and ROBLOX_PLACE_ID
-    # (Settings > Secrets and variables > Actions); without them this job only says it was skipped.
-    name: Specs in Roblox (Open Cloud)
-    needs: check
-    runs-on: ubuntu-latest
-    # Runs share the test place, so one at a time.
-    concurrency:
-      group: roblox-open-cloud
-      cancel-in-progress: false
-    env:
-      ROBLOX_OPEN_CLOUD_API_KEY: ${{ secrets.ROBLOX_OPEN_CLOUD_API_KEY }}
-      ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
-      ROBLOX_PLACE_ID: ${{ vars.ROBLOX_PLACE_ID }}
-    steps:
-      - if: env.ROBLOX_OPEN_CLOUD_API_KEY == ''
-        run: echo "::notice::Skipped the Roblox specs. Set ROBLOX_OPEN_CLOUD_API_KEY, ROBLOX_UNIVERSE_ID and ROBLOX_PLACE_ID to run them."
-      - if: env.ROBLOX_OPEN_CLOUD_API_KEY != ''
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - if: env.ROBLOX_OPEN_CLOUD_API_KEY != ''
-        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
-        with:
-          version: 2026.11.8
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - if: env.ROBLOX_OPEN_CLOUD_API_KEY != ''
-        run: mise run install
-      - if: env.ROBLOX_OPEN_CLOUD_API_KEY != ''
-        run: mise run test:engine

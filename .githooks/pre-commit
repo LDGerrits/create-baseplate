@@ -1,4 +1,9 @@
 #!/bin/sh
-# Runs the full check on exactly what is being committed: scripts/pre-commit.ts.
-# `mise run install` turns this folder on with `git config core.hooksPath .githooks`.
-exec mise exec -- node scripts/pre-commit.ts
+# The repo's commit hook. Each part with its own check runs it on what is being committed:
+# template/base runs its full check (scripts/pre-commit.ts) when the commit touches it.
+# `git config core.hooksPath .githooks` turns this folder on.
+set -e
+root="$(git rev-parse --show-toplevel)"
+if git diff --cached --name-only --diff-filter=ACMRD -- template/base | grep -q .; then
+	cd "$root/template/base" && mise exec -- node scripts/pre-commit.ts
+fi

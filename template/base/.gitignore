@@ -1,0 +1,45 @@
+# Project place file
+/my-game.rbxlx
+
+# Roblox Studio lock files
+/*.rbxlx.lock
+/*.rbxl.lock
+
+sourcemap.json
+*.project.json
+
+# Compiler output and installed packages
+/node_modules
+/out
+/include
+*.tsbuildinfo
+
+# Built places
+/build
+.eslintcache
+
+# Compiler caches
+/.rotor
+/flamework.build
+
+# jest-roblox run logs
+/.jest-roblox
+
+# The world's project files are written by hand and by syncback; keep them
+!/world/**/*.project.json
+
+# Generated from world/ by scripts/world-types.ts
+/src/world.d.ts
+
+# forge's session state and logs
+/.forge
+
+# Keys and local paths; .env.example shows what goes in them
+/.env
+/.env.*
+!/.env.example
+
+# Claude Code settings for this clone only; `mise run setup` writes the language server here
+/.claude/settings.local.json
+# Written by scripts/setup.ts, named for this clone
+/.claude/plugins/.claude-plugin/

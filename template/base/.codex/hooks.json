@@ -1,0 +1,30 @@
+{
+	"hooks": {
+		"PreToolUse": [
+			{
+				"matcher": "Bash|apply_patch",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "d=\"$PWD\"; while [ ! -f \"$d/.codex/hooks.json\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; cd \"$d\" && mise exec -- node .agents/hooks/guard.ts"
+					}
+				]
+			}
+		],
+		"Stop": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "d=\"$PWD\"; while [ ! -f \"$d/.codex/hooks.json\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; cd \"$d\" && node .agents/hooks/rogen-check.mjs"
+					},
+					{
+						"type": "command",
+						"command": "d=\"$PWD\"; while [ ! -f \"$d/.codex/hooks.json\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; cd \"$d\" && mise exec -- node .agents/hooks/check.ts",
+						"timeout": 180
+					}
+				]
+			}
+		]
+	}
+}

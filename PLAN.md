@@ -1,6 +1,6 @@
 # Plan: Baseplate
 
-Turn agent-baseplate into **Baseplate**: a CLI that creates a roblox-ts game set up for coding agents, with a docs site, in the way create-t3-app and create.t3.gg work. This file moves to the monorepo root in phase 1 and is deleted when the plan is done.
+Turn agent-baseplate into **Baseplate**: a CLI that creates a roblox-ts game set up for coding agents, with a docs site, in the way create-t3-app and create.t3.gg work. Delete this file when the plan is done.
 
 ## Decisions
 

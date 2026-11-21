@@ -5,6 +5,6 @@ import { type Storybook } from "@rbxts/ui-labs";
 const features = script.Parent?.Parent?.FindFirstChild("features");
 
 export = {
-	name: "agent-baseplate",
+	name: "my-game",
 	storyRoots: features ? [features] : [],
 } satisfies Storybook;

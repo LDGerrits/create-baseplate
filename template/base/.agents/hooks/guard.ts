@@ -1,9 +1,9 @@
 // PreToolUse guard for Claude Code, Codex and Cursor. It turns the rules agents most often break
 // here into blocks whose message says what to do instead. Pass "cursor" as the first argument for
 // Cursor's reply format.
-import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { projectRoot } from "./project.ts";
 
 interface Payload {
 	cwd?: string;
@@ -22,8 +22,7 @@ try {
 const cursor = process.argv[2] === "cursor";
 
 const start = payload.cwd ?? payload.workspace_roots?.[0] ?? process.cwd();
-const top = spawnSync("git", ["-C", start, "rev-parse", "--show-toplevel"], { encoding: "utf8" });
-const root = top.status === 0 ? top.stdout.trim() : start;
+const root = projectRoot(start) ?? start;
 
 // Files that only their generator writes, and what to run instead.
 const GENERATED: [RegExp, string][] = [
