@@ -1,5 +1,26 @@
 {
+	"permissions": {
+		"allow": [
+			"Bash(mise run:*)",
+			"Bash(mise tasks:*)",
+			"Bash(rogen check:*)",
+			"Bash(rogen where:*)",
+			"Bash(forge status:*)"
+		],
+		"deny": ["Read(./.env)"]
+	},
 	"hooks": {
+		"PreToolUse": [
+			{
+				"matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "mise exec -C \"$CLAUDE_PROJECT_DIR\" -- node \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/guard.ts"
+					}
+				]
+			}
+		],
 		"Stop": [
 			{
 				"hooks": [
@@ -9,7 +30,8 @@
 					},
 					{
 						"type": "command",
-						"command": "node \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/test-check.ts"
+						"command": "mise exec -C \"$CLAUDE_PROJECT_DIR\" -- node \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/check.ts",
+						"timeout": 180
 					}
 				]
 			}

@@ -1,0 +1,11 @@
+{
+	"version": 1,
+	"hooks": {
+		"beforeShellExecution": [{ "command": "mise exec -- node .agents/hooks/guard.ts cursor" }],
+		"preToolUse": [{ "command": "mise exec -- node .agents/hooks/guard.ts cursor" }],
+		"stop": [
+			{ "command": "node .agents/hooks/rogen-check.mjs cursor" },
+			{ "command": "mise exec -- node .agents/hooks/check.ts cursor", "timeout": 180 }
+		]
+	}
+}

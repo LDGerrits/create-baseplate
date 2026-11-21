@@ -10,16 +10,9 @@ Every test runs in one of two engines:
 - **ree**, an emulated Roblox engine: `mise run test`, about a second, offline. `mise run check` runs it.
 - **A real Roblox engine** through jest-roblox: `mise run test:engine`, about twenty seconds, in Studio or Open Cloud.
 
-When the two disagree, the real engine is right. ree lets a call to a member it doesn't emulate return nothing, so `mise run test` fails any run that reaches one and names the member: prove that behaviour in an engine spec instead.
+When the two disagree, the real engine is right. ree lets a call to a member it doesn't emulate return nothing, so `mise run test` fails any run that reaches one and names the member and where the game first used it: prove that behaviour in an engine spec instead.
 
-## Pick the kind of test
-
-| What you test                                                                                     | Kind            | File                             |
-| ------------------------------------------------------------------------------------------------- | --------------- | -------------------------------- |
-| Rules, formulas, a service's decisions                                                            | Spec            | `<name>.spec.ts` beside the code |
-| A request from a client, through the real server and remotes                                      | End-to-end test | `tests/e2e/<feature>.luau`       |
-| Collisions, physics beyond free fall, Humanoids (health, `Died`, movement), real DataStore limits | Engine spec     | `<name>.engine.spec.ts`          |
-| How UI looks                                                                                      | A story         | see UI in `AGENTS.md`            |
+AGENTS.md says which kind of test fits what you test. How to write each:
 
 ## Specs
 

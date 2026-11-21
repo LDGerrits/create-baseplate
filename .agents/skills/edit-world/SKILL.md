@@ -15,6 +15,9 @@ The world lives in `world/` as files, apart from the code:
 
 `mise run build`, then `ror render build/game.rbxl --views iso,top --out build/world-render`, and open the pictures. No Studio needed.
 
+- One model: add `--focus Workspace.<Name>`.
+- Before and after a change: render before with `--ids`; after the change, render again with `--ids --camera-from <before folder>`, so both use one camera. `ror diff <before> <after>` then names the parts that changed and writes a `.diff.png` per view.
+
 ## Change it in Studio
 
 1. Start the session in the background: `forge up --studio --syncback`. Studio opens on the world and Rojo adds the code. `forge status` shows each part.

@@ -26,7 +26,7 @@ interface ReeSummary {
 	failure?: string;
 	errors: number;
 	output?: ReeLine[];
-	unemulated?: { member: string }[];
+	unemulated?: { member: string; first: string | null }[];
 }
 
 const runs: Run[] = [
@@ -73,7 +73,7 @@ for (const run of runs) {
 		summary.status === "error" && (summary.failure ?? "the harness failed"),
 		summary.errors > 0 && `${summary.errors} script error(s)`,
 		(summary.unemulated ?? []).length > 0 &&
-			`reached what ree doesn't emulate (${(summary.unemulated ?? []).map((u) => u.member).join(", ")}); test that in a *.engine.spec`,
+			`reached what ree doesn't emulate (${(summary.unemulated ?? []).map((u) => (u.first === null ? u.member : `${u.member} at ${u.first}`)).join(", ")}); test that in a *.engine.spec`,
 		run.needsDone && !done && summary.status !== "error" && 'the test never printed "@done"',
 	].filter(Boolean);
 

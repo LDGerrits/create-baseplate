@@ -7,13 +7,25 @@ description: Run and drive the game in real Roblox Studio. Use to playtest, to c
 
 Reach for Studio last: `mise run test` and `mise run ui` answer most questions in seconds without it. Studio is for what they don't emulate: characters and Humanoids, collisions and physics, the whole game running with its UI, and how it feels to play.
 
-1. Start the session in the background: `forge up --studio --syncback` (the compiler on watch, Rojo serving the code, Studio on the world). `forge status` shows each part and the last compile's errors.
-2. Drive Studio with Roblox's Studio MCP. If its tools aren't available to you, ask the user to add it. In Claude Code on Windows: `claude mcp add roblox-studio -- "%LOCALAPPDATA%\Roblox\mcp.bat"`. From WSL: `claude mcp add roblox-studio -- cmd.exe /c 'C:\Users\<user>\AppData\Local\Roblox\mcp.bat'`.
-   - `list_roblox_studios` finds this session's Studio: its file is `world.rbxl`.
-   - `start_stop_play` starts and stops a play test.
-   - `execute_luau` runs Luau and needs `datamodel_type`: `Edit` to change the world, `Server` or `Client` during a play test. It runs as a plugin, so `_G` there isn't the game's.
-   - `get_console_output` reads the Output; `screen_capture` takes a screenshot.
-3. Turn what you found into a test where you can (see the `write-tests` skill), so it's checked without Studio from then on.
-4. `forge down` when you're done; Studio stays open otherwise.
+## Open Studio through forge
 
-Edits made during a play test are lost when it stops. To keep a world change, make it in `Edit` and sync it (see the `edit-world` skill).
+`forge up --studio --syncback --json` starts the session, or joins the running one: Studio opens hidden on the world, and Rojo syncs the compiled code into it. The session is yours when `data.started` is `true`; then `forge down --json` ends it when you're done. Leave a session someone else started running. `forge status --json` shows each part and the last compile's errors.
+
+- **The user's Studio:** when forge reports that a Studio already had the place open (`origin: "found"`), it's the user's. Ask before closing it or saving in it.
+- **To change the world** rather than look at it, follow the `edit-world` skill: saving and syncing back happen there, and only when the user asked for the change.
+
+## Drive it with the Studio MCP
+
+Roblox's Studio MCP drives Studio. If its tools aren't available to you, ask the user to install Roblox's official plugin: in Claude Code, `/plugin` and search for Roblox Studio; in Codex, `codex plugin marketplace add Roblox/roblox-studio-agent-plugin`. Studio then needs **Assistant → Settings → MCP Servers → Enable Studio as MCP server**.
+
+1. `list_roblox_studios` first, and pick the Studio whose place forge opened. Confirm the target before you change anything in it.
+2. Inspect without running code: `search_game_tree`, `inspect_instance`, `script_grep`.
+3. Playtest: `start_stop_play`, then play as the user would: `user_mouse_input` and `user_keyboard_input` (`datamodel_type` `Client`), `character_navigation`. Read `get_console_output`, and look with `screen_capture`.
+4. `execute_luau` runs Luau when the tools above can't answer. It needs `datamodel_type` (`Edit`, or `Server`/`Client` during a playtest) and runs as a plugin, so its `_G` isn't the game's.
+5. For debugging with breakpoints, profiling or other devices, Studio has Roblox's own skills: `list_skills`, then `skill` (`rbx-debug`, `rbx-perf-profiling`, `rbx-device-simulator-lua`). For API facts, `http_get` reads Roblox's documentation.
+
+Edits made during a playtest are lost when it stops.
+
+## Finish
+
+Turn what you found into a test where you can (the `write-tests` skill), so it's checked without Studio from then on. Then end the session if it's yours, and tell the user what you played and saw.
