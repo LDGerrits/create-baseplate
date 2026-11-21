@@ -2,7 +2,7 @@
 	"name": "my-game",
 	"version": "0.0.0",
 	"private": true,
-	"description": "Roblox game template built for AI coding agents",
+	"description": "A Roblox game in roblox-ts",
 	"type": "module",
 	"packageManager": "pnpm@12.18.0",
 	"dependencies": {
