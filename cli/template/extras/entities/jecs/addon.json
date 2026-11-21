@@ -1,0 +1,10 @@
+{
+	"dependencies": {
+		"@rbxts/jecs": "0.11.0"
+	},
+	"imports": {
+		"src/app/server/main.server.ts": [
+			"../../features/spinner/server/spinner-service"
+		]
+	}
+}

@@ -42,9 +42,17 @@ jobs:
       - run: mise run ci
 
   create:
-    # What a user gets: create a game with the CLI, then run that game's own checks.
-    name: Created game
+    # What a user gets: create a game with the CLI, then run that game's own checks. Together the
+    # combinations use every add-on choice once.
+    name: Created game (${{ matrix.addOns }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        addOns:
+          - ""
+          - --state charm --data profilestore --entities components
+          - --state reflex --data lapis --entities jecs
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
@@ -53,7 +61,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: pnpm install --frozen-lockfile && pnpm --filter create-baseplate build
-      - run: node cli/dist/index.js "$RUNNER_TEMP/coin-rush" --json
+      - run: node cli/dist/index.js "$RUNNER_TEMP/coin-rush" --json ${{ matrix.addOns }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mise run ci

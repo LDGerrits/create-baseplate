@@ -66,3 +66,46 @@ test("names and paths", () => {
 	assert.equal(validateAppName("coin-rush"), undefined);
 	assert.notEqual(validateAppName("_private"), undefined);
 });
+
+test("applies the chosen add-ons", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const run = create(cwd, "my-game", "--no-git", "--state", "charm", "--data", "lapis", "--entities", "jecs");
+	assert.equal(run.status, 0, run.stderr);
+	assert.deepEqual(JSON.parse(run.stdout).addOns, { state: "charm", data: "lapis", entities: "jecs" });
+
+	const dir = path.join(cwd, "my-game");
+	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+	const dependencies = JSON.parse(read("package.json")).dependencies as Record<string, string>;
+	for (const name of ["@rbxts/charm", "@rbxts/react-charm", "@rbxts/lapis", "@rbxts/jecs"]) {
+		assert.ok(dependencies[name] !== undefined, `${name} is a dependency`);
+	}
+	assert.ok(fs.existsSync(path.join(dir, "src/features/player-data/server/player-data-service.ts")));
+	assert.ok(fs.existsSync(path.join(dir, "tests/e2e/spinner.luau")));
+	assert.match(read("src/features/clicker/client/clicker-controller.ts"), /@rbxts\/charm/);
+
+	const main = read("src/app/server/main.server.ts");
+	assert.match(
+		main,
+		/import "\.\.\/\.\.\/features\/player-data\/server\/player-data-service";\n[\s\S]*Flamework\.ignite\(\)/,
+	);
+	assert.match(main, /features\/spinner\/server\/spinner-service/);
+
+	const agents = read("AGENTS.md");
+	assert.ok(agents.indexOf("## Player data") < agents.indexOf("<!-- rogen -->"), "add-on notes come before Rogen's");
+	assert.match(agents, /## State/);
+	assert.match(agents, /## Entities/);
+});
+
+test("takes no add-ons by default", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const run = create(cwd, "my-game", "--no-git");
+	assert.deepEqual(JSON.parse(run.stdout).addOns, { state: "none", data: "none", entities: "none" });
+	assert.ok(!fs.existsSync(path.join(cwd, "my-game/src/features/player-data")));
+});
+
+test("refuses an add-on choice that doesn't exist", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const run = create(cwd, "my-game", "--no-git", "--state", "redux");
+	assert.equal(run.status, 1);
+	assert.match(JSON.parse(run.stdout).error, /charm, reflex, none/);
+});

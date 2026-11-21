@@ -1,0 +1,10 @@
+{
+	"dependencies": {
+		"@flamework/components": "1.3.2"
+	},
+	"imports": {
+		"src/app/server/main.server.ts": [
+			"../../features/spinner/server/spinner-component"
+		]
+	}
+}

@@ -47,7 +47,7 @@ run = [
 	"sloptor build",
 	"tsc -p tsconfig.node.json",
 	"rogen check",
-	"eslint --cache --max-warnings 0 src",
+	"eslint --max-warnings 0 src",
 	"mkdir -p build && rojo build game.project.json --output build/game.rbxl",
 	"lune run scripts/check-place build/game.rbxl",
 	"node scripts/test.ts",

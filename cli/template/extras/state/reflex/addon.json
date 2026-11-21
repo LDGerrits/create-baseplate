@@ -1,0 +1,7 @@
+{
+	"dependencies": {
+		"@rbxts/reflex": "4.3.1",
+		"@rbxts/react-reflex": "0.3.7"
+	},
+	"imports": {}
+}

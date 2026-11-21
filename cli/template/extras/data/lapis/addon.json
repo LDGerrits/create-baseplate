@@ -1,0 +1,11 @@
+{
+	"dependencies": {
+		"@rbxts/lapis": "0.3.8",
+		"@rbxts/lapis-mockdatastore": "0.3.7"
+	},
+	"imports": {
+		"src/app/server/main.server.ts": [
+			"../../features/player-data/server/player-data-service"
+		]
+	}
+}

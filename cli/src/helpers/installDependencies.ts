@@ -5,11 +5,17 @@ export const isMiseInstalled = () =>
 
 /**
  * Installs the project's pinned tools and packages with mise: `mise install` (Node, pnpm, Rojo,
- * Sloptor and the rest), then `mise run install` (packages, generated files, hooks). Returns the
+ * Sloptor and the rest), `pnpm install` (which adds add-ons' packages to the lockfile), then
+ * `mise run install` (packages, generated files, hooks). Returns the
  * failing step's output, if any.
  */
 export function installDependencies(dir: string, quiet: boolean): string | undefined {
-	for (const args of [["trust", "--quiet", "."], ["install"], ["run", "install"]]) {
+	for (const args of [
+		["trust", "--quiet", "."],
+		["install"],
+		["exec", "--", "pnpm", "install", "--silent"],
+		["run", "install"],
+	]) {
 		const run = spawnSync("mise", args, {
 			cwd: dir,
 			encoding: "utf8",

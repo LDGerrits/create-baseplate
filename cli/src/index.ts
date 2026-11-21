@@ -8,6 +8,7 @@ import { installDependencies, isMiseInstalled } from "./helpers/installDependenc
 import { logNextSteps, nextSteps } from "./helpers/logNextSteps.ts";
 import { scaffoldProject } from "./helpers/scaffoldProject.ts";
 import { setProjectName } from "./helpers/setProjectName.ts";
+import { installAddOns, NONE } from "./installers/index.ts";
 import { logger, logToStderr } from "./utils/logger.ts";
 import { validateAppName } from "./utils/validateAppName.ts";
 
@@ -35,6 +36,8 @@ async function main() {
 		fail(error instanceof Error ? error.message : String(error));
 	}
 	setProjectName(options.dir, options.name);
+	installAddOns(options.dir, options.addOns);
+	const withAddOns = Object.values(options.addOns).some((value) => value !== NONE);
 	logger.success(`Created ${options.name} in ${options.dir}`);
 
 	const git = options.git && isGitInstalled() && initGit(options.dir);
@@ -69,12 +72,13 @@ async function main() {
 				dir: options.dir,
 				git,
 				installed,
+				addOns: options.addOns,
 				warnings,
-				nextSteps: nextSteps(options.dir, installed),
+				nextSteps: nextSteps(options.dir, installed, withAddOns),
 			}),
 		);
 	} else {
-		logNextSteps(options.dir, installed);
+		logNextSteps(options.dir, installed, withAddOns);
 		logger.info(pc.dim(`create-baseplate ${version}`));
 	}
 }

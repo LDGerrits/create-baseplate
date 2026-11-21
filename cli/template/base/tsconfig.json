@@ -15,6 +15,7 @@
 		"noUncheckedIndexedAccess": true,
 		"noImplicitOverride": true,
 		"noFallthroughCasesInSwitch": true,
+		"downlevelIteration": true,
 		"noImplicitReturns": true,
 		"allowUnreachableCode": false,
 		"noPropertyAccessFromIndexSignature": true,

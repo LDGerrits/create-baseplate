@@ -1,0 +1,10 @@
+{
+	"dependencies": {
+		"@rbxts/profile-store": "1.0.3"
+	},
+	"imports": {
+		"src/app/server/main.server.ts": [
+			"../../features/player-data/server/player-data-service"
+		]
+	}
+}

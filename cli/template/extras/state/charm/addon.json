@@ -1,0 +1,7 @@
+{
+	"dependencies": {
+		"@rbxts/charm": "0.11.1",
+		"@rbxts/react-charm": "0.4.1"
+	},
+	"imports": {}
+}

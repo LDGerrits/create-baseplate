@@ -128,6 +128,17 @@ for _, script in game:GetDescendants() do
 	end
 
 	-- require(script.Parent.Parent:WaitForChild("@rbxts-js").React), as packages written in Luau do
+	-- Packages built for both layouts probe for one name and fall back to the other, as in
+	-- `if script.Parent.Parent:FindFirstChild("react") then ... else require(script.Parent.Parent.React)`.
+	-- A require of a probed name in another case is that fallback, not a missing module.
+	local probed: { [string]: string } = {}
+	for name in string.gmatch(source, 'FindFirstChild%("([^"]+)"%)') do
+		probed[string.lower(name)] = name
+	end
+	local function isLayoutFallback(name: string): boolean
+		local other = probed[string.lower(name)]
+		return other ~= nil and other ~= name
+	end
 	for line in string.gmatch(source, "[^\n]+") do
 		if string.match(line, "^%s*%-%-") then
 			continue
@@ -157,7 +168,7 @@ for _, script in game:GetDescendants() do
 				position = nextPosition :: any
 				local from: Instance = current
 				current = if step == "Parent" then from.Parent else from:FindFirstChild(step)
-				if current == nil then
+				if current == nil and not isLayoutFallback(step) then
 					report(`require doesn't resolve: {pathOf(from)} has no {if step == "Parent" then "parent" else `child "{step}"`}`)
 				end
 			end

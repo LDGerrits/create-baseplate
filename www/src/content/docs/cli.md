@@ -14,9 +14,12 @@ pnpm create baseplate [dir] [flags]
 | `--no-git`     | Don't make the project a git repo.                                         |
 | `--no-install` | Don't install the tools and packages (`mise install`, `mise run install`). |
 | `--json`       | Print one JSON result on stdout. Implies `--yes`.                          |
+| `--state <library>` | Client state: `charm`, `reflex` or `none` (default). |
+| `--data <library>` | Player data: `profilestore`, `lapis` or `none` (default). |
+| `--entities <library>` | Entities: `components`, `jecs` or `none` (default). |
 | `-V, --version` | Print the CLI's version. |
 
-Without a terminal, as when an agent or CI runs it, it asks nothing and takes the defaults.
+Without a terminal, as when an agent or CI runs it, it asks nothing and takes the defaults. See [add-ons](/add-ons/) for what each library choice adds.
 
 ## For agents
 
