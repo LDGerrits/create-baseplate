@@ -1,14 +1,20 @@
-// Runs a shell command in each place of the game: the root, for a single-place game, or each
-// projects/<place>/ (except projects/common) for a multi-place one. The mise tasks run their
-// per-place steps through it. Extra arguments are appended to the command. In the command, $ROOT
-// is the repo root, $PLACE the place's name and $TSCONFIG the tsconfig that compiles it (the root's
-// tsconfig.json, or tsconfig.<place>.json: Sloptor writes only inside its tsconfig's folder).
+// Runs steps in each place of the game: the root, for a single-place game, or each projects/<place>/
+// (except projects/common) for a multi-place one. The mise tasks run their per-place steps through
+// it, so they work the same on Windows, macOS and Linux: no shell runs the steps.
 //
-//   node scripts/each-place.ts "<command>" [args...]
-//   node scripts/each-place.ts --one <place> "<command>"   only that place; a multi-place game needs it
-import { spawnSync } from "node:child_process";
+//   node scripts/each-place.ts "<step>" ["<step>"...] [-- <extra args for the last step>]
+//   node scripts/each-place.ts --one <place> "<step>"...   only that place; a multi-place game needs it
+//   node scripts/each-place.ts --if-multi "<step>"...      once, at the root, in a multi-place game only
+//
+// A step is a command and its arguments, split at spaces; "double quotes" keep spaces in one argument.
+// Each runs only if the one before it passed. In a step, {root} is the repo root, {dir} the place's
+// folder, {place} its name and {tsconfig} the tsconfig that compiles it (the root's tsconfig.json,
+// or tsconfig.<place>.json: Sloptor writes only inside its tsconfig's folder). `mkdir <folder>` makes
+// a folder and the folders above it. The steps also get ROOT, PLACE and TSCONFIG as environment
+// variables.
 import fs from "node:fs";
 import path from "node:path";
+import spawn from "cross-spawn";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const multi = fs.existsSync(path.join(ROOT, "projects"));
@@ -21,6 +27,11 @@ const places = multi
 
 let args = process.argv.slice(2);
 let only: string | undefined;
+let ifMulti = false;
+if (args[0] === "--if-multi") {
+	ifMulti = true;
+	args = args.slice(1);
+}
 if (args[0] === "--one") {
 	only = args[1] === "" ? undefined : args[1];
 	args = args.slice(2);
@@ -37,28 +48,47 @@ if (args[0] === "--one") {
 		process.exit(1);
 	}
 }
-const [command, ...extra] = args;
-if (command === undefined) {
-	console.error('Usage: node scripts/each-place.ts [--one <place>] "<command>" [args...]');
+const dash = args.indexOf("--");
+const steps = dash === -1 ? args : args.slice(0, dash);
+const extra = dash === -1 ? [] : args.slice(dash + 1);
+if (steps.length === 0) {
+	console.error('Usage: node scripts/each-place.ts [--one <place> | --if-multi] "<step>"... [-- <args>]');
 	process.exit(1);
 }
-const quote = (arg: string) => `'${arg.replaceAll("'", "'\\''")}'`;
-const line = [command, ...extra.map(quote)].join(" ");
+if (ifMulti && !multi) process.exit(0);
 
-const targets = multi ? places.filter((place) => only === undefined || place === only) : ["."];
+/** A step's words: split at spaces, with "double quotes" holding one word together. */
+const words = (step: string) => [...step.matchAll(/"([^"]*)"|(\S+)/g)].map((match) => match[1] ?? match[2] ?? "");
+
+const targets = multi && !ifMulti ? places.filter((place) => only === undefined || place === only) : ["."];
 for (const place of targets) {
-	const cwd = path.join(ROOT, multi ? path.join("projects", place) : "");
-	if (multi) console.log(`── ${place}`);
-	const run = spawnSync(line, {
-		cwd,
-		shell: true,
-		stdio: "inherit",
-		env: {
-			...process.env,
-			ROOT,
-			PLACE: multi ? place : path.basename(ROOT),
-			TSCONFIG: path.join(ROOT, multi ? `tsconfig.${place}.json` : "tsconfig.json"),
-		},
-	});
-	if (run.status !== 0) process.exit(run.status ?? 1);
+	const dir = path.join(ROOT, place === "." ? "" : path.join("projects", place));
+	const vars: Record<string, string> = {
+		root: ROOT,
+		dir,
+		place: place === "." ? path.basename(ROOT) : place,
+		tsconfig: path.join(ROOT, place === "." ? "tsconfig.json" : `tsconfig.${place}.json`),
+	};
+	if (multi && !ifMulti) console.log(`── ${place}`);
+	for (const [index, step] of steps.entries()) {
+		const [command, ...stepArgs] = words(step).map((word) =>
+			word.replaceAll(/\{(root|dir|place|tsconfig)\}/g, (_, name: string) => vars[name] ?? ""),
+		);
+		if (command === undefined) continue;
+		if (index === steps.length - 1) stepArgs.push(...extra);
+		if (command === "mkdir") {
+			for (const folder of stepArgs) fs.mkdirSync(path.resolve(dir, folder), { recursive: true });
+			continue;
+		}
+		const run = spawn.sync(command, stepArgs, {
+			cwd: dir,
+			stdio: "inherit",
+			env: { ...process.env, ROOT, PLACE: vars.place, TSCONFIG: vars.tsconfig },
+		});
+		if (run.error) {
+			console.error(`${command}: ${run.error.message}`);
+			process.exit(1);
+		}
+		if (run.status !== 0) process.exit(run.status ?? 1);
+	}
 }

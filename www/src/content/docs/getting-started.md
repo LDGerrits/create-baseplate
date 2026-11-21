@@ -9,6 +9,8 @@ description: Create a game, install its tools, and run its check.
 - git.
 - Roblox Studio, to play the game and edit the world. Checks and tests don't need it.
 
+Games work on Windows, macOS and Linux, and in WSL. On Windows, install mise with `winget install jdx.mise`, and git with [Git for Windows](https://git-scm.com/download/win), whose shell runs the commit hook; the game's tasks run in any terminal.
+
 ## Create a game
 
 ```sh

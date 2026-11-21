@@ -92,6 +92,39 @@ jobs:
         run: mise run release
         working-directory: ${{ runner.temp }}/coin-rush
 
+  windows:
+    # A created game on native Windows, where mise runs the tasks with cmd: the defaults, and every
+    # option together. The tasks run their steps without a shell (scripts/each-place.ts).
+    name: Created game on Windows (${{ matrix.addOns }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        addOns:
+          - ""
+          - --places multi --ui vide --state charm --data profilestore --entities jecs --assets asphalt --release darklua
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        with:
+          version: 2026.11.8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: pnpm install --frozen-lockfile && pnpm --filter create-baseplate pack --pack-destination "$RUNNER_TEMP"
+      - run: npm exec --yes --package="$(ls "$RUNNER_TEMP"/create-baseplate-*.tgz)" -- create-baseplate "$RUNNER_TEMP/coin-rush" --json ${{ matrix.addOns }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: mise run ci
+        working-directory: ${{ runner.temp }}/coin-rush
+      - if: contains(matrix.addOns, '--release')
+        run: mise run release
+        working-directory: ${{ runner.temp }}/coin-rush
+
   engine:
     # Created games' specs, *.engine.spec included, in a real Roblox server through Open Cloud:
     # what ree can't vouch for, such as an update that breaks only in the real engine. Set the

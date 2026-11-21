@@ -105,7 +105,10 @@ if (report.records.length === 0) {
 
 let failed = 0;
 for (const record of report.records) {
-	const name = record.story.replace(/^(.*\/)?out\//, "").replace(/\.story\.luau$/, "");
+	const name = record.story
+		.replaceAll("\\", "/")
+		.replace(/^(.*\/)?out\//, "")
+		.replace(/\.story\.luau$/, "");
 	const picture = path.join(OUT, record.out, "render.png");
 	// The check renders without fonts when Studio isn't there; only a story that breaks fails it.
 	const missingFonts = check ? [] : (record.missingFonts ?? []);
