@@ -16,6 +16,7 @@ jobs:
   check:
     name: Check and test in ree
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -36,6 +37,7 @@ jobs:
     name: Specs in Roblox (Open Cloud)
     needs: check
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # Runs share the test place, so one at a time.
     concurrency:
       group: roblox-open-cloud
@@ -43,7 +45,6 @@ jobs:
     # Without the variables, GitHub shows the job as skipped, not passed. With them but no key, the
     # specs fail. (A job's `if` can't read secrets; only the last step gets the key.)
     if: vars.ROBLOX_UNIVERSE_ID != '' && vars.ROBLOX_PLACE_ID != ''
-    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

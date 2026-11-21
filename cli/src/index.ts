@@ -13,7 +13,7 @@ import { scaffoldProject } from "./helpers/scaffoldProject.ts";
 import { setProjectName } from "./helpers/setProjectName.ts";
 import { findConflict, installAddOns } from "./installers/index.ts";
 import { logger, logToStderr } from "./utils/logger.ts";
-import { validateAppName } from "./utils/validateAppName.ts";
+import { nameProblem } from "./utils/validateAppName.ts";
 
 const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
 
@@ -30,8 +30,8 @@ async function main() {
 		process.exit(1);
 	};
 
-	const invalid = validateAppName(options.name);
-	if (invalid !== undefined) fail(`"${options.name}" can't name the game: ${invalid}`);
+	const invalid = nameProblem(options.name);
+	if (invalid !== undefined) fail(invalid);
 
 	const conflict = findConflict(options.addOns);
 	if (conflict !== undefined) fail(conflict);

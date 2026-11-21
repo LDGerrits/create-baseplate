@@ -5,6 +5,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
+import { stripVTControlCharacters } from "node:util";
 import { parseNameAndPath } from "../src/utils/parseNameAndPath.ts";
 import { validateAppName } from "../src/utils/validateAppName.ts";
 
@@ -164,6 +165,36 @@ test("rejects a bad name before asking anything", { skip: !hasScript }, () => {
 	assert.equal(run.status, 1, "exits at once, without waiting for answers");
 	assert.match(run.stdout, /can't name the game/);
 	assert.doesNotMatch(run.stdout, /Which UI library/);
+});
+
+/** Types `input` into the CLI's first question at a terminal, and returns what it showed. */
+const typeAnswer = (cwd: string, args: string, input: string) =>
+	stripVTControlCharacters(
+		spawnSync(
+			"sh",
+			// script ends when its input does, so the input waits for the prompt and stays open after.
+			[
+				"-c",
+				`(sleep 0.5; printf '%s' "$ANSWER"; sleep 1.5) | script -qec "stty cols 120 rows 40; node ${CLI} ${args}" /dev/null`,
+			],
+			{ cwd, encoding: "utf8", timeout: 4_000, env: { ...process.env, ANSWER: input } },
+		).stdout,
+	);
+
+test("takes a folder typed at the prompt that only --name can name", { skip: !hasScript }, () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const shown = typeAnswer(cwd, "--name coin-rush", "Coin Rush\r");
+	assert.doesNotMatch(shown, /can't name the game/);
+	assert.match(shown, /Which UI library/, "goes on to the next question");
+});
+
+test("refuses a folder with files at the prompt, before the other questions", { skip: !hasScript }, () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	fs.mkdirSync(path.join(cwd, "taken"));
+	fs.writeFileSync(path.join(cwd, "taken/file.txt"), "");
+	const shown = typeAnswer(cwd, "", "taken\r");
+	assert.match(shown, /already has files in it/);
+	assert.doesNotMatch(shown, /Which UI library/);
 });
 
 test("refuses a folder that has files", () => {

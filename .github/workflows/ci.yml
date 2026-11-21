@@ -16,6 +16,7 @@ jobs:
   template:
     name: Template (cli/template/base)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: cli/template/base
@@ -36,6 +37,7 @@ jobs:
   cli:
     name: CLI
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -50,6 +52,7 @@ jobs:
     # add-ons, each add-on alone, and two sets that use every question together.
     name: Created game (${{ matrix.addOns }})
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -97,6 +100,7 @@ jobs:
     # option together. The tasks run their steps without a shell (scripts/each-place.ts).
     name: Created game on Windows (${{ matrix.addOns }})
     runs-on: windows-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -134,6 +138,7 @@ jobs:
     name: Created game in Roblox (${{ matrix.addOns }})
     needs: create
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       # The runs share the test place, so one at a time within a workflow run; the concurrency
@@ -152,7 +157,6 @@ jobs:
     # Without the variables, GitHub shows the job as skipped, not passed. With them but no key, the
     # specs fail. (A job's `if` can't read secrets; only the last step gets the key.)
     if: vars.ROBLOX_UNIVERSE_ID != '' && vars.ROBLOX_PLACE_ID != ''
-    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

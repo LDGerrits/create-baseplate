@@ -15,7 +15,9 @@ pnpm = "12.18.0"
 
 [settings]
 # mise.lock records each tool's download and checksum for these platforms; `mise install` refuses a
-# download that doesn't match. After changing a pin above, run `mise lock` and commit mise.lock.
+# download that doesn't match, and, being locked, a tool the lock doesn't list. After changing a pin
+# above, by hand or in a Renovate update, run `mise lock` and commit mise.lock.
+locked = true
 lockfile_platforms = ["linux-x64", "linux-arm64", "macos-arm64", "windows-x64"]
 
 [env]

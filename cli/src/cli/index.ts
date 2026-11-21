@@ -4,7 +4,7 @@ import { DEFAULT_APP_NAME } from "../consts.ts";
 import { folderProblem } from "../helpers/scaffoldProject.ts";
 import { type AddOnChoices, addOns, findConflict, NONE, valuesOf } from "../installers/index.ts";
 import { parseNameAndPath } from "../utils/parseNameAndPath.ts";
-import { validateAppName } from "../utils/validateAppName.ts";
+import { nameProblem } from "../utils/validateAppName.ts";
 
 export interface CliResults {
 	name: string;
@@ -27,6 +27,12 @@ function flagsNpmTook(): string[] {
 	return names
 		.filter((name) => process.env[`npm_config_${name}`] !== undefined)
 		.map((name) => (name === "git" || name === "install" ? `--no-${name}` : `--${name}`));
+}
+
+/** Why the game can't be made in the folder `input` names, with `name` (--name) or the folder's name. */
+export function answerProblem(input: string, name: string | undefined): string | undefined {
+	const parsed = parseNameAndPath(input);
+	return nameProblem(name ?? parsed.name) ?? folderProblem(parsed.dir);
 }
 
 /**
@@ -77,12 +83,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 	let { git, install } = flags;
 	// What the command line already says can be wrong before any question: say so at once.
 	if (ask && given !== undefined) {
-		const { name, dir } = parseNameAndPath(given);
-		const invalid = validateAppName(flags.name ?? name);
-		const problem =
-			(invalid === undefined ? undefined : `"${flags.name ?? name}" can't name the game: ${invalid}`) ??
-			folderProblem(dir) ??
-			findConflict(chosen);
+		const problem = answerProblem(given, flags.name) ?? findConflict(chosen);
 		if (problem !== undefined) {
 			p.cancel(problem);
 			process.exit(1);
@@ -96,7 +97,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 				message: "What will your game be called?",
 				placeholder: DEFAULT_APP_NAME,
 				defaultValue: DEFAULT_APP_NAME,
-				validate: (value) => validateAppName(parseNameAndPath(value || DEFAULT_APP_NAME).name),
+				validate: (value) => answerProblem(value || DEFAULT_APP_NAME, flags.name),
 			}));
 		const cancelled = (value: unknown) => {
 			if (!p.isCancel(value)) return;
