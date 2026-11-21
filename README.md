@@ -14,7 +14,7 @@ A Roblox game template in roblox-ts, set up for AI coding agents: one command ch
 - **Hooks hold the rules, in Claude Code, Codex and Cursor.** Before the agent ends its turn, a Stop hook runs `mise run check` and hands back any failure. A guard blocks what agents get wrong here, and says what to do instead: editing generated files, skipping the commit hook, npm or yarn, and printing `.env`. Codex runs project hooks once you trust them with `/hooks`.
 - **Type errors as it edits.** In Claude Code, the project's own TypeScript language server reports errors after every edit and answers go-to-definition and hover, with the roblox-ts types.
 - **Every commit is checked.** A git hook runs `mise run ci` on exactly what is being committed, whichever agent or person commits.
-- **Ready for parallel and cloud agents.** `.worktreeinclude` copies `.env` into new worktrees, and `mise run install` gives each clone its own language server. GitHub Copilot's cloud agent gets the tools from `.github/workflows/copilot-setup-steps.yml`.
+- **Ready for parallel and cloud agents.** `.worktreeinclude` copies `.env` into new worktrees, and `mise run install` gives each clone its own language server. In Claude Code's cloud sessions, a SessionStart hook installs mise, the tools and the packages (`.agents/hooks/cloud-setup.sh`), and GitHub Copilot's cloud agent gets them from `.github/workflows/copilot-setup-steps.yml`. Neither has Roblox Studio, so story pictures there have no text.
 
 ## Stack
 
