@@ -47,7 +47,7 @@ async function main() {
 	if (options.install) {
 		if (isMiseInstalled()) {
 			const spinner = options.json ? undefined : p.spinner();
-			spinner?.start("Installing the tools and packages (mise install, mise run install)");
+			spinner?.start("Installing the tools and packages with mise");
 			const error = installDependencies(options.dir, options.json || spinner !== undefined);
 			spinner?.stop(error === undefined ? "Installed the tools and packages" : "Install failed");
 			if (error === undefined) installed = true;

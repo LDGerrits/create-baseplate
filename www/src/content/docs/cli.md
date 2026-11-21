@@ -12,7 +12,7 @@ pnpm create baseplate [dir] [flags]
 | `[dir]`        | The folder to create; its name names the game. Default: `my-game`.         |
 | `-y, --yes`    | Take the defaults for everything not given, without asking.                |
 | `--no-git`     | Don't make the project a git repo.                                         |
-| `--no-install` | Don't install the tools and packages (`mise install`, `mise run install`). |
+| `--no-install` | Don't install the tools and packages (with mise). |
 | `--json`       | Print one JSON result on stdout. Implies `--yes`.                          |
 | `--state <library>` | Client state: `charm`, `reflex` or `none` (default). |
 | `--data <library>` | Player data: `profilestore`, `lapis` or `none` (default). |

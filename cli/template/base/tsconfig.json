@@ -15,6 +15,7 @@
 		"noUncheckedIndexedAccess": true,
 		"noImplicitOverride": true,
 		"noFallthroughCasesInSwitch": true,
+		// Types `for...of` over Roblox iterators, such as Maps and Sets; without it they type as any.
 		"downlevelIteration": true,
 		"noImplicitReturns": true,
 		"allowUnreachableCode": false,

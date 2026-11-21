@@ -32,7 +32,7 @@ export class PlayerDataService implements OnStart {
 	}
 
 	onStart() {
-		Players.PlayerAdded.Connect((player) => {
+		const join = (player: Player) => {
 			this.load(player.UserId)
 				.then((loaded) => {
 					// The player may have left while their data loaded.
@@ -40,7 +40,10 @@ export class PlayerDataService implements OnStart {
 					else if (!loaded) player.Kick("Your data couldn't load. Please rejoin.");
 				})
 				.catch(warn);
-		});
+		};
+		// Players can join before this service starts, as in a Studio playtest.
+		for (const player of Players.GetPlayers()) join(player);
+		Players.PlayerAdded.Connect(join);
 		Players.PlayerRemoving.Connect((player) => {
 			this.release(player.UserId);
 		});

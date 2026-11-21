@@ -42,8 +42,8 @@ jobs:
       - run: mise run ci
 
   create:
-    # What a user gets: create a game with the CLI, then run that game's own checks. Together the
-    # combinations use every add-on choice once.
+    # What a user gets: create a game with the CLI, then run that game's own checks: with no
+    # add-ons, each add-on alone, and two sets that use every question together.
     name: Created game (${{ matrix.addOns }})
     runs-on: ubuntu-latest
     strategy:
@@ -51,6 +51,12 @@ jobs:
       matrix:
         addOns:
           - ""
+          - --state charm
+          - --state reflex
+          - --data profilestore
+          - --data lapis
+          - --entities components
+          - --entities jecs
           - --state charm --data profilestore --entities components
           - --state reflex --data lapis --entities jecs
     steps:

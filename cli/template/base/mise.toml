@@ -47,6 +47,7 @@ run = [
 	"sloptor build",
 	"tsc -p tsconfig.node.json",
 	"rogen check",
+	# No --cache: type-aware rules depend on other files, which the cache doesn't track.
 	"eslint --max-warnings 0 src",
 	"mkdir -p build && rojo build game.project.json --output build/game.rbxl",
 	"lune run scripts/check-place build/game.rbxl",

@@ -27,11 +27,15 @@ export class PlayerDataService implements OnStart {
 	}
 
 	onStart() {
-		Players.PlayerAdded.Connect((player) => {
-			if (!this.load(player.UserId, () => player.Parent === undefined)) {
-				player.Kick("Your data couldn't load. Please rejoin.");
-			}
-		});
+		const join = (player: Player) => {
+			const loaded = this.load(player.UserId, () => player.Parent === undefined);
+			// The player may have left while their data loaded, after it could still be cancelled.
+			if (player.Parent === undefined) this.release(player.UserId);
+			else if (!loaded) player.Kick("Your data couldn't load. Please rejoin.");
+		};
+		// Players can join before this service starts, as in a Studio playtest.
+		for (const player of Players.GetPlayers()) task.spawn(join, player);
+		Players.PlayerAdded.Connect(join);
 		Players.PlayerRemoving.Connect((player) => {
 			this.release(player.UserId);
 		});
@@ -44,7 +48,12 @@ export class PlayerDataService implements OnStart {
 		if (profile === undefined) return false;
 		profile.AddUserId(userId);
 		profile.Reconcile();
-		profile.OnSessionEnd.Connect(() => this.profiles.delete(userId));
+		profile.OnSessionEnd.Connect(() => {
+			this.profiles.delete(userId);
+			// The session ended without a release, as when another server took it: the player's
+			// changes would no longer save, so they rejoin with the latest data.
+			Players.GetPlayerByUserId(userId)?.Kick("Your data was loaded on another server. Please rejoin.");
+		});
 		this.profiles.set(userId, profile);
 		return true;
 	}

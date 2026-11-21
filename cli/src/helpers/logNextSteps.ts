@@ -7,7 +7,13 @@ export function nextSteps(dir: string, installed: boolean, withAddOns: boolean):
 	return [
 		...(relative === "" ? [] : [`cd ${relative}`]),
 		// Add-ons add packages the lockfile doesn't have yet, which a plain `pnpm install` adds.
-		...(installed ? [] : ["mise install", ...(withAddOns ? ["mise exec -- pnpm install"] : []), "mise run install"]),
+		...(installed
+			? []
+			: [
+					"mise install",
+					...(withAddOns ? ["mise exec -- pnpm install --no-frozen-lockfile"] : []),
+					"mise run install",
+				]),
 		"mise run check",
 		"mise run dev",
 	];

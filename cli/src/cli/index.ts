@@ -50,17 +50,32 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 	let { git, install } = flags;
 	if (ask) {
 		p.intro("create-baseplate");
+		const dir =
+			given ??
+			(await p.text({
+				message: "What will your game be called?",
+				placeholder: DEFAULT_APP_NAME,
+				defaultValue: DEFAULT_APP_NAME,
+				validate: (value) => validateAppName(parseNameAndPath(value || DEFAULT_APP_NAME).name),
+			}));
+		const cancelled = (value: unknown) => {
+			if (!p.isCancel(value)) return;
+			p.cancel("Cancelled.");
+			process.exit(1);
+		};
+		cancelled(dir);
+		for (const addOn of addOns) {
+			if (flags[addOn.name] !== undefined) continue;
+			const answer = await p.select({
+				message: addOn.question,
+				initialValue: NONE,
+				options: [...addOn.choices, { value: NONE, label: "None", hint: "add one later yourself" }],
+			});
+			cancelled(answer);
+			chosen[addOn.name] = answer as string;
+		}
 		const answers = await p.group(
 			{
-				dir: () =>
-					given === undefined
-						? p.text({
-								message: "What will your game be called?",
-								placeholder: DEFAULT_APP_NAME,
-								defaultValue: DEFAULT_APP_NAME,
-								validate: (value) => validateAppName(parseNameAndPath(value || DEFAULT_APP_NAME).name),
-							})
-						: Promise.resolve(given),
 				git: () =>
 					flags.git ? p.confirm({ message: "Make it a git repo?", initialValue: true }) : Promise.resolve(false),
 				install: () =>
@@ -75,20 +90,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 				},
 			},
 		);
-		for (const addOn of addOns) {
-			if (flags[addOn.name] !== undefined) continue;
-			const answer = await p.select({
-				message: addOn.question,
-				initialValue: NONE,
-				options: [...addOn.choices, { value: NONE, label: "None", hint: "add one later yourself" }],
-			});
-			if (p.isCancel(answer)) {
-				p.cancel("Cancelled.");
-				process.exit(1);
-			}
-			chosen[addOn.name] = answer;
-		}
-		input = answers.dir;
+		input = dir as string;
 		git = answers.git;
 		install = answers.install;
 	}
