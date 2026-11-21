@@ -1,5 +1,7 @@
-# Each part keeps its own ignores (template/base/.gitignore).
+# Each part keeps its own ignores (cli/template/base/.gitignore).
 node_modules/
 .DS_Store
 # Claude Code settings for this clone only
 /.claude/settings.local.json
+dist/
+.turbo/

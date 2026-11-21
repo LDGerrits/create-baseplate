@@ -20,8 +20,8 @@ jobs:
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
           version: 2026.11.8
-          working_directory: template/base
+          working_directory: cli/template/base
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mise run install
-        working-directory: template/base
+        working-directory: cli/template/base

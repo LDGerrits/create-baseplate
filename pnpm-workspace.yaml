@@ -1,0 +1,11 @@
+packages:
+  - cli
+  - www
+
+# Install only versions published at least two weeks ago (in minutes). The template has its own
+# workspace file with the same rule.
+minimumReleaseAge: 20160
+
+# Packages whose install scripts may run: esbuild fetches its binary (tsup builds the CLI with it).
+allowBuilds:
+  esbuild: true

@@ -1,2 +1,2 @@
 # Gitignored files to copy into a new worktree.
-template/base/.env
+cli/template/base/.env

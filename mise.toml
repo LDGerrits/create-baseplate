@@ -1,0 +1,15 @@
+# Tools for the CLI and the docs site. The template (cli/template/base) pins its own.
+[tools]
+node = "24.22.1"
+pnpm = "12.18.0"
+
+[env]
+_.path = ["{{config_root}}/node_modules/.bin"]
+
+[tasks.check]
+description = "The check after each change to the CLI or the docs site: format, lint, build, type-check and test"
+run = ["pnpm install --frozen-lockfile --silent", "biome check --write .", "turbo run build typecheck test"]
+
+[tasks.ci]
+description = "check, without writing fixes: fails on unformatted code"
+run = ["pnpm install --frozen-lockfile --silent", "biome ci .", "turbo run build typecheck test"]
