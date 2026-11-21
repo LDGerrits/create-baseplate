@@ -1,0 +1,36 @@
+{
+	"dependencies": {},
+	"imports": {},
+	"replaceText": [
+		{
+			"file": "mise.toml",
+			"from": "\t\"biome check --write --no-errors-on-unmatched .\",\n",
+			"to": "\t\"biome check --write --no-errors-on-unmatched .\",\n\t# Fails on a file in assets/ that isn't uploaded yet: `mise run assets` uploads it.\n\t\"asphalt sync cloud --dry-run --quiet\",\n"
+		},
+		{
+			"file": "mise.toml",
+			"from": "\t\"biome ci .\",\n",
+			"to": "\t\"biome ci .\",\n\t\"asphalt sync cloud --dry-run --quiet\",\n"
+		},
+		{
+			"file": "biome.json",
+			"from": "\"!**/SKILL.md\"]",
+			"to": "\"!**/SKILL.md\", \"!**/src/shared/assets.d.ts\"]"
+		},
+		{
+			"file": "eslint.config.ts",
+			"from": "\"**/world.d.ts\"]",
+			"to": "\"**/world.d.ts\", \"**/src/shared/assets.d.ts\"]"
+		},
+		{
+			"file": ".env.example",
+			"from": "# WSL only:",
+			"to": "# Asphalt, for `mise run assets`. Create the key at https://create.roblox.com/dashboard/credentials\n# with the scopes asset:read and asset:write, owned by the creator in asphalt.toml.\nASPHALT_API_KEY=\n\n# WSL only:"
+		},
+		{
+			"file": ".gitignore",
+			"from": "# forge's session state and logs",
+			"to": "# What `asphalt sync debug` writes, to see how Asphalt processes assets/\n/.asphalt-debug\n\n# forge's session state and logs"
+		}
+	]
+}

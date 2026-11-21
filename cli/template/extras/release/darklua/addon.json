@@ -1,0 +1,16 @@
+{
+	"dependencies": {},
+	"imports": {},
+	"replaceText": [
+		{
+			"file": ".gitignore",
+			"from": "\n/out\n",
+			"to": "\n/out\n/dist\n"
+		},
+		{
+			"file": ".github/workflows/ci.yml",
+			"from": "      - run: mise run ci\n",
+			"to": "      - run: mise run ci\n      - run: mise run release\n"
+		}
+	]
+}

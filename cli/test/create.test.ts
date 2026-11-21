@@ -77,6 +77,8 @@ test("applies the chosen add-ons", () => {
 		state: "charm",
 		data: "lapis",
 		entities: "jecs",
+		assets: "none",
+		release: "none",
 	});
 
 	const dir = path.join(cwd, "my-game");
@@ -111,7 +113,11 @@ test("takes no add-ons by default", () => {
 		state: "none",
 		data: "none",
 		entities: "none",
+		assets: "none",
+		release: "none",
 	});
+	const mise = fs.readFileSync(path.join(cwd, "my-game/mise.toml"), "utf8");
+	assert.doesNotMatch(mise, /asphalt|darklua/);
 	assert.ok(!fs.existsSync(path.join(cwd, "my-game/src/features/player-data")));
 });
 
@@ -218,4 +224,57 @@ test("lays out a multi-place game as Rogen prescribes", () => {
 	assert.match(read(".agents/skills/edit-world/SKILL.md"), /^# .+\n\n> This game has several places/m);
 	assert.match(read("README.md"), /mise run dev lobby/);
 	assert.deepEqual(JSON.parse(run.stdout).nextSteps.slice(-1), ["mise run dev lobby"]);
+});
+
+test("uploads assets with Asphalt", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const run = create(cwd, "my-game", "--no-git", "--assets", "asphalt");
+	assert.equal(run.status, 0, run.stderr);
+	const dir = path.join(cwd, "my-game");
+	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+
+	// The game's developer names the creator; the template leaves the ID unset.
+	assert.match(read("asphalt.toml"), /\[creator\]\ntype = "user"\nid = 0\n/);
+	assert.match(read("asphalt.toml"), /output_path = "src\/shared"/);
+	assert.ok(fs.existsSync(path.join(dir, "assets")));
+	const mise = read("mise.toml");
+	assert.match(
+		mise,
+		/\[tools\][^[]*"github:jackTabsCode\/asphalt" = "\d[^"]*"\n[^[]*\n\[env\]/,
+		"the tool joins [tools]",
+	);
+	assert.match(mise, /\n\[tasks\.assets\]\n/);
+	// check and ci fail on assets that aren't uploaded yet.
+	assert.equal(mise.match(/asphalt sync cloud --dry-run/g)?.length, 2);
+	assert.match(read("biome.json"), /src\/shared\/assets\.d\.ts/, "Biome leaves Asphalt's code alone");
+	assert.match(read("eslint.config.ts"), /src\/shared\/assets\.d\.ts/);
+	assert.match(read(".env.example"), /^ASPHALT_API_KEY=$/m);
+	assert.match(read(".gitignore"), /^\/\.asphalt-debug$/m);
+	assert.match(read("AGENTS.md"), /## Assets/);
+});
+
+test("builds a release with Darklua", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const run = create(cwd, "my-game", "--no-git", "--release", "darklua");
+	assert.equal(run.status, 0, run.stderr);
+	const dir = path.join(cwd, "my-game");
+	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+
+	assert.ok(fs.existsSync(path.join(dir, ".darklua.json")));
+	assert.ok(fs.existsSync(path.join(dir, "scripts/release-project.ts")));
+	const mise = read("mise.toml");
+	assert.match(mise, /\[tools\][^[]*"github:seaofvoices\/darklua" = "\d[^"]*"/);
+	assert.match(mise, /\n\[tasks\.release\]\n/);
+	assert.match(read(".gitignore"), /^\/dist$/m);
+	assert.match(read(".github/workflows/ci.yml"), /- run: mise run ci\n\s+- run: mise run release\n/);
+	assert.match(read("AGENTS.md"), /## Release builds/);
+});
+
+test("Asphalt writes its code into the shared code of a multi-place game", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const run = create(cwd, "my-game", "--no-git", "--places", "multi", "--assets", "asphalt", "--release", "darklua");
+	assert.equal(run.status, 0, run.stderr);
+	const read = (file: string) => fs.readFileSync(path.join(cwd, "my-game", file), "utf8");
+	assert.match(read("asphalt.toml"), /output_path = "projects\/common\/src\/shared"/);
+	assert.match(read("AGENTS.md"), /`projects\/common\/src\/shared\/assets\.luau`/);
 });

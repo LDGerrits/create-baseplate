@@ -5,7 +5,8 @@ import { TEMPLATE_EXTRAS } from "../consts.ts";
 // Add-ons, the way create-t3-app's installers work: each question offers the most popular
 // libraries, plus "none" where the game can go without. A choice is a folder in
 // template/extras/<question>/<choice>/ holding addon.json (see Manifest), AGENTS.md (its section
-// for the game's AGENTS.md) and files/ (copied over the game). The base template is the default
+// for the game's AGENTS.md), files/ (copied over the game) and, for a choice that brings a tool,
+// mise.toml (its pinned tools and tasks, added to the game's). The base template is the default
 // choice of a question without "none" (React, for the UI), so that choice has no folder.
 export interface AddOn {
 	/** The flag and the key in results, such as "state". */
@@ -77,6 +78,22 @@ export const addOns = [
 		defaultValue: NONE,
 		allowNone: true,
 	},
+	{
+		name: "assets",
+		valueName: "tool",
+		question: "Which tool to upload images and sounds?",
+		choices: [{ value: "asphalt", label: "Asphalt", hint: "uploads assets/ to Roblox and types their IDs" }],
+		defaultValue: NONE,
+		allowNone: true,
+	},
+	{
+		name: "release",
+		valueName: "tool",
+		question: "Which tool to process release builds?",
+		choices: [{ value: "darklua", label: "Darklua", hint: "minifies and optimizes the code you publish" }],
+		defaultValue: NONE,
+		allowNone: true,
+	},
 ] as const satisfies readonly AddOn[];
 
 export type AddOnChoices = Record<(typeof addOns)[number]["name"], string>;
@@ -136,6 +153,8 @@ export function installAddOns(dir: string, chosen: AddOnChoices) {
 		for (const file of manifest.removeFiles ?? []) fs.rmSync(path.join(dir, file), { force: true });
 		fs.cpSync(path.join(from, variant?.files ?? "files"), dir, { recursive: true });
 		editPackage(dir, variant?.dependencies ?? manifest.dependencies, manifest.removeDependencies ?? []);
+		const mise = path.join(from, "mise.toml");
+		if (fs.existsSync(mise)) addMise(dir, fs.readFileSync(mise, "utf8"));
 		for (const [file, imports] of Object.entries(manifest.imports)) addImports(path.join(dir, file), imports);
 		const agents = fs.readFileSync(path.join(from, variant?.agents ?? "AGENTS.md"), "utf8");
 		if (manifest.replaceAgentsSection === undefined) addAgentsSection(dir, agents);
@@ -190,4 +209,25 @@ function addAgentsSection(dir: string, section: string) {
 	const marker = agents.indexOf("<!-- rogen -->");
 	const at = marker === -1 ? agents.length : marker;
 	fs.writeFileSync(file, `${agents.slice(0, at)}${section.trim()}\n\n${agents.slice(at)}`);
+}
+
+/**
+ * Adds an add-on's mise.toml to the game's: the lines of its [tools] at the end of the game's
+ * [tools], and its other tables, such as tasks, at the end of the file. Renovate updates the pins
+ * in the add-on's file as it does any mise.toml.
+ */
+function addMise(dir: string, fragment: string) {
+	const file = path.join(dir, "mise.toml");
+	let mise = fs.readFileSync(file, "utf8");
+	const tools = /^\[tools\]\n([\s\S]*?)(?=^\[|$(?![\s\S]))/m.exec(fragment);
+	if (tools !== null) {
+		const start = mise.indexOf("[tools]\n");
+		if (start === -1) throw new Error("mise.toml has no [tools] table");
+		const next = mise.indexOf("\n[", start);
+		const end = mise.slice(0, next).trimEnd().length;
+		mise = `${mise.slice(0, end)}\n${tools[1]?.trim()}${mise.slice(end)}`;
+		fragment = fragment.replace(tools[0], "");
+	}
+	const rest = fragment.trim();
+	fs.writeFileSync(file, `${mise.trimEnd()}\n${rest === "" ? "" : `\n${rest}\n`}`);
 }

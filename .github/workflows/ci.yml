@@ -58,12 +58,14 @@ jobs:
           - --entities components
           - --entities jecs
           - --ui vide
+          - --assets asphalt
+          - --release darklua
           - --places multi
-          - --places multi --ui vide --state charm --data profilestore --entities jecs
+          - --places multi --ui vide --state charm --data profilestore --entities jecs --assets asphalt --release darklua
           - --places multi --state reflex --data lapis --entities components
-          - --state charm --data profilestore --entities components
-          - --state reflex --data lapis --entities jecs
-          - --ui vide --data profilestore --entities jecs
+          - --state charm --data profilestore --entities components --release darklua
+          - --state reflex --data lapis --entities jecs --assets asphalt
+          - --ui vide --data profilestore --entities jecs --assets asphalt --release darklua
           - --ui vide --state charm --data lapis --entities components
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -77,6 +79,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mise run ci
+        working-directory: ${{ runner.temp }}/coin-rush
+      # The game's own CI runs this too, with --release.
+      - if: contains(matrix.addOns, '--release')
+        run: mise run release
         working-directory: ${{ runner.temp }}/coin-rush
 
   engine:

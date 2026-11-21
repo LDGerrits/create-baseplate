@@ -1,0 +1,22 @@
+# Asphalt uploads the files in assets/ to Roblox (`mise run assets`) and writes their IDs as typed
+# code to output_path. Commit that code and asphalt.lock.toml, which records what is uploaded.
+
+# Who owns the uploads: a Roblox user (type = "user") or group (type = "group"), by its ID. The key
+# in .env, ASPHALT_API_KEY, must belong to the same creator.
+[creator]
+type = "user"
+id = 0
+
+[codegen]
+typescript = true
+# assets/icons/coin.png is assets.icons.coin.
+style = "nested"
+strip_extensions = true
+
+[inputs.assets]
+path = "assets/**/*"
+output_path = "src/shared"
+
+# Assets already on Roblox, by their path under assets/, to use in code like the uploaded ones:
+# [inputs.assets.web]
+# "icons/badge.png" = { id = 1234567890 }

@@ -136,6 +136,13 @@ export function makeMultiPlace(dir: string, name: string) {
 		),
 	);
 	fs.appendFileSync(at(".gitignore"), GITIGNORE);
+	// Asphalt, from the root, writes the assets' IDs into the shared code.
+	if (fs.existsSync(at("asphalt.toml"))) {
+		fs.writeFileSync(
+			at("asphalt.toml"),
+			replaceIn(read("asphalt.toml"), 'output_path = "src/shared"', 'output_path = "projects/common/src/shared"'),
+		);
+	}
 
 	const extra = (file: string) => fs.readFileSync(path.join(TEMPLATE_EXTRAS, "places", "multi", file), "utf8");
 	let agents = replaceSection(read("AGENTS.md"), "Where code goes", extra("AGENTS.md"));
@@ -176,6 +183,7 @@ export function makeMultiPlace(dir: string, name: string) {
 const PATHS: [string, string][] = [
 	["`src/features/", "`projects/common/src/features/"],
 	["`src/store/", "`projects/common/src/store/"],
+	["`src/shared/", "`projects/common/src/shared/"],
 	["`world/Workspace/", "`projects/<place>/world/Workspace/"],
 	["`tests/e2e/spinner.luau`", "`projects/<place>/tests/e2e/spinner.luau`"],
 	["`src/app/client/start.tsx`", "each place's `src/app/client/start.tsx`"],

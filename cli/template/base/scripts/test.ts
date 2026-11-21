@@ -1,5 +1,6 @@
 // Runs the tests offline in ree, the Roblox engine emulator: the Jest specs, then every end-to-end
-// harness in tests/e2e. Run it through `mise run test`, which compiles first.
+// harness in tests/e2e. Run it through `mise run test`, which compiles first. It runs the game of
+// game.project.json, or of the project file given: `node scripts/test.ts <project.json>`.
 // A run fails on a non-zero exit, on any script error (ree counts errors from scripts other than the
 // harness without failing the run), on reaching an engine member ree doesn't emulate, and, for an
 // end-to-end test, when it never prints "@done".
@@ -40,11 +41,12 @@ const collectMounts = (node: unknown) => {
 		else mounts.push(typeof value === "string" ? value : (value as { optional: string }).optional);
 	}
 };
-collectMounts(JSON.parse(fs.readFileSync("game.project.json", "utf8")));
-// Only the compiled code: packages in node_modules carry specs of their own.
+const project = process.argv[2] ?? "game.project.json";
+collectMounts(JSON.parse(fs.readFileSync(project, "utf8")));
+// Only the game's code: packages in node_modules carry specs of their own.
 const hasSpecs = mounts.some(
 	(mount) =>
-		/(^|\/)out\//.test(mount) &&
+		!/(^|\/)node_modules(\/|$)/.test(mount) &&
 		fs.existsSync(mount) &&
 		fs.statSync(mount).isDirectory() &&
 		fs
@@ -76,11 +78,10 @@ const runs: Run[] = [
 let failed = 0;
 for (const run of runs) {
 	const started = performance.now();
-	const ree = spawnSync(
-		"ree",
-		["run", "--rojo", "game.project.json", "--load-string", "--harness", run.harness, ...run.args],
-		{ encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
-	);
+	const ree = spawnSync("ree", ["run", "--rojo", project, "--load-string", "--harness", run.harness, ...run.args], {
+		encoding: "utf8",
+		maxBuffer: 64 * 1024 * 1024,
+	});
 	const seconds = ((performance.now() - started) / 1000).toFixed(2);
 
 	let summary: ReeSummary;

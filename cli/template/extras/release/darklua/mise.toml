@@ -1,0 +1,12 @@
+[tools]
+# Darklua processes the compiled code of release builds (.darklua.json).
+"github:seaofvoices/darklua" = "0.19.0"
+
+[tasks.release]
+description = "Build the release: compile, process the code with Darklua into dist/ (rules in .darklua.json), build build/release.rbxl from it and run the tests on it (in each place's folder, in a multi-place game)"
+depends = ["generate"]
+run = [
+	"node scripts/each-place.ts 'sloptor build -p \"$TSCONFIG\" --rojo \"$PWD/default.project.json\" --includePath \"$ROOT/include\"'",
+	"rm -rf dist && darklua process out dist",
+	'''node scripts/each-place.ts 'node "$ROOT/scripts/release-project.ts" && mkdir -p build && rojo build release.project.json --output build/release.rbxl && node "$ROOT/scripts/test.ts" release.project.json' ''',
+]
