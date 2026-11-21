@@ -150,7 +150,7 @@ export function makeMultiPlace(dir: string, name: string) {
 	agents = replaceIn(
 		agents,
 		"Import each in `src/app/server/main.server.ts` or `src/app/client/start.tsx`",
-		"Import each in the `src/app/server/main.server.ts` or `src/app/client/start.tsx` of each place that uses it",
+		"Import each in the entry script of every place that uses it, `projects/<place>/src/app/server/main.server.ts` or `projects/<place>/src/app/client/start.tsx`",
 	);
 	agents = replaceIn(agents, "`tests/e2e/<feature>.luau`", "`projects/<place>/tests/e2e/<feature>.luau`");
 	agents = replaceIn(

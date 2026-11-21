@@ -47,6 +47,8 @@ description = "The one command to run after every change: format, compile, type-
 depends = ["generate"]
 run = [
 	"biome check --write --no-errors-on-unmatched .",
+	# Tests named so they never run, and services nothing starts.
+	"node scripts/check-sources.ts",
 	"node scripts/each-place.ts 'sloptor build -p \"$TSCONFIG\" --rojo \"$PWD/default.project.json\" --includePath \"$ROOT/include\"'",
 	"tsc -p tsconfig.node.json",
 	# In a multi-place game, the shared code alone, so it can't lean on one place's map.
@@ -62,6 +64,8 @@ description = "check, without writing fixes: fails on unformatted code"
 depends = ["generate"]
 run = [
 	"biome ci .",
+	# Tests named so they never run, and services nothing starts.
+	"node scripts/check-sources.ts",
 	"node scripts/each-place.ts 'sloptor build -p \"$TSCONFIG\" --rojo \"$PWD/default.project.json\" --includePath \"$ROOT/include\"'",
 	"tsc -p tsconfig.node.json",
 	# In a multi-place game, the shared code alone, so it can't lean on one place's map.

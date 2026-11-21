@@ -23,7 +23,7 @@ Each feature is a folder, `src/features/<feature>/`; `src/features/clicker` is t
 ## Adding a feature
 
 1. Network events in `shared/<feature>-network.ts`, with `Networking.createEvent<ClientToServer, ServerToClient>()`.
-2. A service in `server/` and, if the client takes part, a controller in `client/`. Import each in `src/app/server/main.server.ts` or `src/app/client/start.tsx`, or Flamework never starts it.
+2. A service in `server/` and, if the client takes part, a controller in `client/`. Import each in `src/app/server/main.server.ts` or `src/app/client/start.tsx`, or Flamework never starts it; the check fails on one that isn't.
 3. UI as a component in `client/` with a story, rendered from `app.tsx`.
 4. Tests: a spec for the service, and an end-to-end test for each request a client sends.
 
@@ -37,7 +37,7 @@ The rules the code follows:
 
 `mise run test` runs them offline in ree, an emulated Roblox engine, in about a second. Pick the kind by what you test:
 
-- A service's rules and decisions: a spec, `<name>.spec.ts` beside the code. Pass time in as a parameter (`now = os.clock()`) so the spec doesn't wait.
+- A service's rules and decisions: a spec, `<name>.spec.ts` beside the code. Pass time in as a parameter (`now = os.clock()`) so the spec doesn't wait. A spec elsewhere, or named `*.test.ts`, would never run, so the check fails on it.
 - A client's request through the real server and remotes: an end-to-end test, `tests/e2e/<feature>.luau`.
 - Characters, physics, collisions or real DataStore limits, which ree doesn't emulate: an engine spec, `<name>.engine.spec.ts`, run in real Roblox by `mise run test:engine`.
 
