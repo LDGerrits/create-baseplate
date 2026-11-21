@@ -2,7 +2,8 @@
 # code to output_path. Commit that code and asphalt.lock.toml, which records what is uploaded.
 
 # Who owns the uploads: a Roblox user (type = "user") or group (type = "group"), by its ID. The key
-# in .env, ASPHALT_API_KEY, must belong to the same creator.
+# in .env, ASPHALT_API_KEY, must belong to the same creator. `mise run assets` refuses to upload
+# while the ID is 0.
 [creator]
 type = "user"
 id = 0

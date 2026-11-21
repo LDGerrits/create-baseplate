@@ -7,6 +7,6 @@ description = "Build the release: compile, process the code with Darklua into di
 depends = ["generate"]
 run = [
 	"node scripts/each-place.ts 'sloptor build -p \"$TSCONFIG\" --rojo \"$PWD/default.project.json\" --includePath \"$ROOT/include\"'",
-	"rm -rf dist && darklua process out dist",
+	"node scripts/darklua.ts",
 	'''node scripts/each-place.ts 'node "$ROOT/scripts/release-project.ts" && mkdir -p build && rojo build release.project.json --output build/release.rbxl && node "$ROOT/scripts/test.ts" release.project.json' ''',
 ]

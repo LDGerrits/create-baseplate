@@ -261,7 +261,8 @@ test("builds a release with Darklua", () => {
 	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
 
 	assert.ok(fs.existsSync(path.join(dir, ".darklua.json")));
-	assert.ok(fs.existsSync(path.join(dir, "scripts/release-project.ts")));
+	for (const script of ["darklua.ts", "release-project.ts"])
+		assert.ok(fs.existsSync(path.join(dir, "scripts", script)));
 	const mise = read("mise.toml");
 	assert.match(mise, /\[tools\][^[]*"github:seaofvoices\/darklua" = "\d[^"]*"/);
 	assert.match(mise, /\n\[tasks\.release\]\n/);
