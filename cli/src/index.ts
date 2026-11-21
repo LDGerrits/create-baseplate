@@ -12,8 +12,8 @@ import { makeMultiPlace, PLACES } from "./helpers/makeMultiPlace.ts";
 import { scaffoldProject } from "./helpers/scaffoldProject.ts";
 import { setProjectName } from "./helpers/setProjectName.ts";
 import { findConflict, installAddOns } from "./installers/index.ts";
+import { nameProblem } from "./utils/appName.ts";
 import { logger, logToStderr } from "./utils/logger.ts";
-import { nameProblem } from "./utils/validateAppName.ts";
 
 const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
 

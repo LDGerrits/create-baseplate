@@ -60,30 +60,41 @@ if (ifMulti && !multi) process.exit(0);
 /** A step's words: split at spaces, with "double quotes" holding one word together. */
 const words = (step: string) => [...step.matchAll(/"([^"]*)"|(\S+)/g)].map((match) => match[1] ?? match[2] ?? "");
 
-const targets = multi && !ifMulti ? places.filter((place) => only === undefined || place === only) : ["."];
-for (const place of targets) {
-	const dir = path.join(ROOT, place === "." ? "" : path.join("projects", place));
-	const vars: Record<string, string> = {
-		root: ROOT,
-		dir,
-		place: place === "." ? path.basename(ROOT) : place,
-		tsconfig: path.join(ROOT, place === "." ? "tsconfig.json" : `tsconfig.${place}.json`),
-	};
-	if (multi && !ifMulti) console.log(`── ${place}`);
+/** Where steps run: a place, or the repo root, which is the place in a single-place game. */
+interface Target {
+	/** The folder the steps run in. */
+	dir: string;
+	/** The place's name; the game's, for the root. */
+	place: string;
+	/** The tsconfig that compiles it. */
+	tsconfig: string;
+}
+const root: Target = { dir: ROOT, place: path.basename(ROOT), tsconfig: path.join(ROOT, "tsconfig.json") };
+const placeTarget = (place: string): Target => ({
+	dir: path.join(ROOT, "projects", place),
+	place,
+	tsconfig: path.join(ROOT, `tsconfig.${place}.json`),
+});
+const perPlace = multi && !ifMulti;
+const targets = perPlace ? places.filter((place) => only === undefined || place === only).map(placeTarget) : [root];
+
+for (const target of targets) {
+	const placeholders: Record<string, string> = { root: ROOT, ...target };
+	if (perPlace) console.log(`── ${target.place}`);
 	for (const [index, step] of steps.entries()) {
 		const [command, ...stepArgs] = words(step).map((word) =>
-			word.replaceAll(/\{(root|dir|place|tsconfig)\}/g, (_, name: string) => vars[name] ?? ""),
+			word.replaceAll(/\{(root|dir|place|tsconfig)\}/g, (_, name: string) => placeholders[name] ?? ""),
 		);
 		if (command === undefined) continue;
 		if (index === steps.length - 1) stepArgs.push(...extra);
 		if (command === "mkdir") {
-			for (const folder of stepArgs) fs.mkdirSync(path.resolve(dir, folder), { recursive: true });
+			for (const folder of stepArgs) fs.mkdirSync(path.resolve(target.dir, folder), { recursive: true });
 			continue;
 		}
 		const run = spawn.sync(command, stepArgs, {
-			cwd: dir,
+			cwd: target.dir,
 			stdio: "inherit",
-			env: { ...process.env, ROOT, PLACE: vars.place, TSCONFIG: vars.tsconfig },
+			env: { ...process.env, ROOT, PLACE: target.place, TSCONFIG: target.tsconfig },
 		});
 		if (run.error) {
 			console.error(`${command}: ${run.error.message}`);

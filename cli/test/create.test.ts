@@ -6,8 +6,8 @@ import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { stripVTControlCharacters } from "node:util";
+import { validateAppName } from "../src/utils/appName.ts";
 import { parseNameAndPath } from "../src/utils/parseNameAndPath.ts";
-import { validateAppName } from "../src/utils/validateAppName.ts";
 
 const CLI = path.resolve(import.meta.dirname, "../dist/index.js");
 const create = (cwd: string, ...args: string[]) =>
@@ -192,7 +192,10 @@ test("refuses a folder with files at the prompt, before the other questions", { 
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
 	fs.mkdirSync(path.join(cwd, "taken"));
 	fs.writeFileSync(path.join(cwd, "taken/file.txt"), "");
-	const shown = typeAnswer(cwd, "", "taken\r");
+	// The question stays open for another answer, as it should; Ctrl+C then cancels, as a person would.
+	const started = performance.now();
+	const shown = typeAnswer(cwd, "", "taken\r\u0003");
+	assert.ok(performance.now() - started < 4_000, "ends when cancelled, not at the time limit");
 	assert.match(shown, /already has files in it/);
 	assert.doesNotMatch(shown, /Which UI library/);
 });

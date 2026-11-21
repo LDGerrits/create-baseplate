@@ -4,9 +4,8 @@
 
 [tasks.release]
 description = "Build the release: compile, process the code with Darklua into dist/ (rules in .darklua.json), build build/release.rbxl from it and run the tests on it (in each place's folder, in a multi-place game)"
-depends = ["generate"]
+depends = ["compile"]
 run = [
-	'node scripts/each-place.ts "sloptor build -p {tsconfig} --rojo {dir}/default.project.json --includePath {root}/include"',
 	"node scripts/darklua.ts",
 	'node scripts/each-place.ts "node {root}/scripts/release-project.ts" "mkdir build" "rojo build release.project.json --output build/release.rbxl" "node {root}/scripts/test.ts release.project.json"',
 ]

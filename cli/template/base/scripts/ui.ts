@@ -25,6 +25,8 @@ if (!process.env.RUR_ROBLOX_CONTENT && fs.existsSync("/mnt/c/Users")) {
 
 const check = process.argv.includes("--check");
 const args = process.argv.slice(2).filter((arg) => arg !== "--check");
+/** What a person reads at `mise run ui`; the check prints only what fails. */
+const say = check ? () => {} : (line: string) => console.log(line);
 
 // Without Studio's fonts rur draws no text; `rur-native doctor` says when it can't find them.
 const doctor = spawnSync("rur-native", ["doctor"], { encoding: "utf8" });
@@ -99,7 +101,7 @@ try {
 }
 
 if (report.records.length === 0) {
-	if (!check) console.log("No stories found. Add a `<component>.story.tsx` beside a component (see UI in AGENTS.md).");
+	say("No stories found. Add a `<component>.story.tsx` beside a component (see UI in AGENTS.md).");
 	process.exit(0);
 }
 
@@ -113,7 +115,7 @@ for (const record of report.records) {
 	// The check renders without fonts when Studio isn't there; only a story that breaks fails it.
 	const missingFonts = check ? [] : (record.missingFonts ?? []);
 	if (record.clean && missingFonts.length === 0) {
-		if (!check) console.log(`✓ ${name}: ${picture}`);
+		say(`✓ ${name}: ${picture}`);
 		continue;
 	}
 	failed++;

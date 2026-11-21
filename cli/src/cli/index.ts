@@ -3,8 +3,8 @@ import { Command, CommanderError, Option } from "commander";
 import { DEFAULT_APP_NAME } from "../consts.ts";
 import { folderProblem } from "../helpers/scaffoldProject.ts";
 import { type AddOnChoices, addOns, findConflict, NONE, valuesOf } from "../installers/index.ts";
+import { nameProblem } from "../utils/appName.ts";
 import { parseNameAndPath } from "../utils/parseNameAndPath.ts";
-import { nameProblem } from "../utils/validateAppName.ts";
 
 export interface CliResults {
 	name: string;

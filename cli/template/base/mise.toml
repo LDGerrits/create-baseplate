@@ -16,7 +16,8 @@ pnpm = "12.18.0"
 [settings]
 # mise.lock records each tool's download and checksum for these platforms; `mise install` refuses a
 # download that doesn't match, and, being locked, a tool the lock doesn't list. After changing a pin
-# above, by hand or in a Renovate update, run `mise lock` and commit mise.lock.
+# above by hand, run `mise lock` and commit mise.lock; on Renovate's updates,
+# .github/workflows/mise-lock.yml does it.
 locked = true
 lockfile_platforms = ["linux-x64", "linux-arm64", "macos-arm64", "windows-x64"]
 
@@ -41,6 +42,11 @@ description = "Write the generated files of each place: default.project.json (co
 depends = ["deps"]
 run = 'node scripts/each-place.ts "rogen write --quiet" "node {root}/scripts/game-project.ts" "node {root}/scripts/world-types.ts"'
 
+[tasks.compile]
+description = "Compile the TypeScript to Luau with Sloptor, in each place; the tasks that need the Luau depend on it"
+depends = ["generate"]
+run = 'node scripts/each-place.ts "sloptor build -p {tsconfig} --rojo {dir}/default.project.json --includePath {root}/include"'
+
 [tasks.install]
 description = "Install packages, write the generated files, and set up this clone"
 run = ["pnpm install --frozen-lockfile", "mise run generate", "mise run setup"]
@@ -51,12 +57,11 @@ run = "node scripts/setup.ts"
 
 [tasks.check]
 description = "The one command to run after every change: format, compile, type-check the tooling, lint, build, verify each place and run the tests"
-depends = ["generate"]
+depends = ["compile"]
 run = [
 	"biome check --write --no-errors-on-unmatched .",
 	# Tests named so they never run, and services nothing starts.
 	"node scripts/check-sources.ts",
-	'node scripts/each-place.ts "sloptor build -p {tsconfig} --rojo {dir}/default.project.json --includePath {root}/include"',
 	"tsc -p tsconfig.node.json",
 	# In a multi-place game, the shared code alone, so it can't lean on one place's map.
 	'node scripts/each-place.ts --if-multi "tsc --noEmit -p tsconfig.json"',
@@ -68,12 +73,11 @@ run = [
 
 [tasks.ci]
 description = "check, without writing fixes: fails on unformatted code"
-depends = ["generate"]
+depends = ["compile"]
 run = [
 	"biome ci .",
 	# Tests named so they never run, and services nothing starts.
 	"node scripts/check-sources.ts",
-	'node scripts/each-place.ts "sloptor build -p {tsconfig} --rojo {dir}/default.project.json --includePath {root}/include"',
 	"tsc -p tsconfig.node.json",
 	# In a multi-place game, the shared code alone, so it can't lean on one place's map.
 	'node scripts/each-place.ts --if-multi "tsc --noEmit -p tsconfig.json"',
@@ -84,22 +88,22 @@ run = [
 
 [tasks.test]
 description = "Compile and run the tests offline in ree: Jest specs, except *.engine.spec, then tests/e2e"
-depends = ["generate"]
-run = 'node scripts/each-place.ts "sloptor build -p {tsconfig} --rojo {dir}/default.project.json --includePath {root}/include" "node {root}/scripts/test.ts"'
+depends = ["compile"]
+run = 'node scripts/each-place.ts "node {root}/scripts/test.ts"'
 
 [tasks."test:engine"]
 description = "Run every Jest spec, *.engine.spec included, in Roblox Studio or Open Cloud through jest-roblox"
-depends = ["generate"]
+depends = ["compile"]
 # Your keys and local paths (copy .env.example to .env) reach only the tasks that use them, so the
 # other tasks' tools never see them.
 env = { _.file = ".env" }
-run = 'node scripts/each-place.ts "sloptor build -p {tsconfig} --rojo {dir}/default.project.json --includePath {root}/include" "jest-roblox --passWithNoTests" --'
+run = 'node scripts/each-place.ts "jest-roblox --passWithNoTests" --'
 
 [tasks.ui]
 description = "Compile and render every UI story offline with rur; prints each picture's path"
-depends = ["generate"]
+depends = ["compile"]
 env = { _.file = ".env" }
-run = 'node scripts/each-place.ts "sloptor build -p {tsconfig} --rojo {dir}/default.project.json --includePath {root}/include" "node {root}/scripts/ui.ts" --'
+run = 'node scripts/each-place.ts "node {root}/scripts/ui.ts" --'
 
 [tasks.dev]
 description = "Start the dev session: compile on save, serve code to Studio, open Studio on the world, and sync each Studio save back to world/. A multi-place game names the place: mise run dev lobby"
@@ -114,5 +118,5 @@ run = 'node scripts/each-place.ts --one "{{usage.place}}" "forge save" "forge sy
 
 [tasks.build]
 description = "Compile and build the whole game, code and world, to build/game.rbxl (in each place's folder, in a multi-place game)"
-depends = ["generate"]
-run = 'node scripts/each-place.ts "sloptor build -p {tsconfig} --rojo {dir}/default.project.json --includePath {root}/include" "mkdir build" "rojo build game.project.json --output build/game.rbxl"'
+depends = ["compile"]
+run = 'node scripts/each-place.ts "mkdir build" "rojo build game.project.json --output build/game.rbxl"'
