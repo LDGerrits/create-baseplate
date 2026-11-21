@@ -10,7 +10,7 @@ import { installDependencies, isMiseInstalled } from "./helpers/installDependenc
 import { logNextSteps, nextSteps } from "./helpers/logNextSteps.ts";
 import { makeMultiPlace, PLACES } from "./helpers/makeMultiPlace.ts";
 import { scaffoldProject } from "./helpers/scaffoldProject.ts";
-import { setProjectName } from "./helpers/setProjectName.ts";
+import { recordOrigin, setProjectName } from "./helpers/setProjectName.ts";
 import { findConflict, installAddOns } from "./installers/index.ts";
 import { nameProblem } from "./utils/appName.ts";
 import { logger, logToStderr } from "./utils/logger.ts";
@@ -54,6 +54,7 @@ async function main() {
 	const baseTools = tools();
 	installAddOns(options.dir, options.addOns);
 	if (options.addOns.places === "multi") makeMultiPlace(options.dir, options.name);
+	recordOrigin(options.dir, version, options.addOns);
 	// The template's lockfile lists the base's packages only, until an install adds the add-ons'.
 	const packagesChanged = packages() !== basePackages;
 	const toolsChanged = tools() !== baseTools;

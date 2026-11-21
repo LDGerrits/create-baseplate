@@ -1,0 +1,54 @@
+// mise's own version is pinned by hand: in every workflow's jdx/mise-action `version:`, and in the
+// template's cloud setup, which also pins the SHA-256 of the binaries it downloads. This fails when
+// they disagree, or when those SHA-256s aren't the ones that release publishes, so a bump (Renovate's
+// or a person's) can't leave one behind. CI runs it: `node .github/scripts/check-mise-pins.ts`.
+import { execFileSync } from "node:child_process";
+import fs from "node:fs";
+
+const files = execFileSync("git", ["ls-files", "*.yml", "*.yaml", "*cloud-setup.sh"], { encoding: "utf8" })
+	.split("\n")
+	.filter((file) => file !== "");
+
+const versions = new Map<string, string[]>();
+const pin = (version: string, where: string) => versions.set(version, [...(versions.get(version) ?? []), where]);
+let sums: { file: string; arch: string; sum: string }[] = [];
+
+for (const file of files) {
+	const text = fs.readFileSync(file, "utf8");
+	for (const match of text.matchAll(/uses: jdx\/mise-action@\S+[^\n]*\n(?:\s+[^\n]*\n)*?\s+version: (\S+)/g)) {
+		pin(match[1] ?? "", file);
+	}
+	const misePin = /^MISE_VERSION="([^"]+)"/m.exec(text);
+	if (misePin?.[1] !== undefined) {
+		pin(misePin[1], file);
+		sums = [...text.matchAll(/(x86_64|aarch64)[^\n]*arch="(\w+)" sum="([0-9a-f]{64})"/g)].map((match) => ({
+			file,
+			arch: match[2] ?? "",
+			sum: match[3] ?? "",
+		}));
+	}
+}
+
+const problems: string[] = [];
+if (versions.size > 1) {
+	problems.push(
+		`mise is pinned to different versions:\n${[...versions].map(([version, where]) => `  ${version}: ${where.join(", ")}`).join("\n")}`,
+	);
+}
+const [version] = [...versions.keys()];
+if (version !== undefined && sums.length > 0) {
+	const response = await fetch(`https://github.com/jdx/mise/releases/download/v${version}/SHASUMS256.txt`);
+	if (!response.ok) throw new Error(`mise v${version}'s SHASUMS256.txt: HTTP ${response.status}`);
+	const published = await response.text();
+	for (const { file, arch, sum } of sums) {
+		const expected = new RegExp(
+			`^([0-9a-f]{64})\\s+\\./mise-v${version.replaceAll(".", "\\.")}-linux-${arch}$`,
+			"m",
+		).exec(published)?.[1];
+		if (expected !== sum) problems.push(`${file}: the linux-${arch} SHA-256 for mise ${version} should be ${expected}`);
+	}
+}
+
+for (const problem of problems) console.error(problem);
+if (problems.length > 0) process.exit(1);
+console.log(`mise ${version} everywhere, with the published SHA-256s.`);

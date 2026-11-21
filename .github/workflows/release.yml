@@ -1,0 +1,44 @@
+name: Release
+
+# On main, changesets opens (and keeps up to date) a "Version packages" pull request from the
+# changesets in .changeset/: the next version of create-baseplate and its CHANGELOG.md. Merging it
+# publishes the new version to npm, once publishing is switched on: set the repository variable
+# NPM_PUBLISH to true and add this workflow as a trusted publisher of create-baseplate on npmjs.com.
+# npm then takes the package from this workflow alone, with provenance, and no token is stored.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Version or publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        with:
+          version: 2026.11.8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: pnpm install --frozen-lockfile
+      - uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        with:
+          version-script: pnpm changeset version
+          # Empty until publishing is switched on: the action then only versions.
+          publish-script: ${{ vars.NPM_PUBLISH == 'true' && 'pnpm release' || '' }}
+          commit-message: Version packages
+          pr-title: Version packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"

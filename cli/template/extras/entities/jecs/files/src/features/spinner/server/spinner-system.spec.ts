@@ -1,5 +1,5 @@
-import { describe, expect, it } from "@rbxts/jest-globals";
 import { world } from "@rbxts/jecs";
+import { describe, expect, it } from "@rbxts/jest-globals";
 import { Part, Spin, spinnerSystem } from "./spinner-system";
 
 describe("spinnerSystem", () => {

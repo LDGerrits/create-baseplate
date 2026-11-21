@@ -1,5 +1,5 @@
-import { signal } from "@rbxts/charm";
 import { Controller, type OnStart } from "@flamework/core";
+import { signal } from "@rbxts/charm";
 import { ClickerNetwork } from "../shared/clicker-network";
 
 const events = ClickerNetwork.createClient({});

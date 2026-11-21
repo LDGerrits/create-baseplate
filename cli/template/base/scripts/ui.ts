@@ -105,6 +105,21 @@ if (report.records.length === 0) {
 	process.exit(0);
 }
 
+// Without a GPU or a software renderer (Mesa's Vulkan driver on Linux), rur can't draw at all. In CI
+// that's a setup error; elsewhere, as in a cloud session, the check says so and goes on.
+const noAdapter = (report.records as { failure?: string | null }[]).some((record) =>
+	/graphics adapter|WGPU adapter/i.test(record.failure ?? ""),
+);
+if (check && noAdapter) {
+	const message = "rur found no graphics adapter, so no story was rendered. On Linux, install mesa-vulkan-drivers.";
+	if (process.env.CI) {
+		console.log(`✗ ${message}`);
+		process.exit(1);
+	}
+	console.log(`! ${message}`);
+	process.exit(0);
+}
+
 let failed = 0;
 for (const record of report.records) {
 	const name = record.story

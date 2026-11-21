@@ -10,8 +10,19 @@ import { validateAppName } from "../src/utils/appName.ts";
 import { parseNameAndPath } from "../src/utils/parseNameAndPath.ts";
 
 const CLI = path.resolve(import.meta.dirname, "../dist/index.js");
+// CI has no git identity configured; a person's machine does.
+const GIT_IDENTITY = {
+	GIT_AUTHOR_NAME: "Test",
+	GIT_AUTHOR_EMAIL: "test@example.com",
+	GIT_COMMITTER_NAME: "Test",
+	GIT_COMMITTER_EMAIL: "test@example.com",
+};
 const create = (cwd: string, ...args: string[]) =>
-	spawnSync("node", [CLI, ...args, "--json", "--no-install"], { cwd, encoding: "utf8" });
+	spawnSync("node", [CLI, ...args, "--json", "--no-install"], {
+		cwd,
+		encoding: "utf8",
+		env: { ...process.env, ...GIT_IDENTITY },
+	});
 
 test("creates a named project an agent can read", () => {
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
@@ -36,6 +47,18 @@ test("creates a named project an agent can read", () => {
 	for (const generated of ["node_modules", "out", ".env", "default.project.json"]) {
 		assert.ok(!fs.existsSync(path.join(dir, generated)), `${generated} isn't copied`);
 	}
+});
+
+test("records which CLI and add-ons made the game", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const run = create(cwd, "coin-rush", "--no-git", "--state", "charm");
+	assert.equal(run.status, 0, run.stderr);
+	const pkg = JSON.parse(fs.readFileSync(path.join(cwd, "coin-rush/package.json"), "utf8"));
+	const cli = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, "../package.json"), "utf8"));
+	assert.equal(pkg.baseplate.version, cli.version);
+	assert.equal(pkg.baseplate.addOns.state, "charm");
+	assert.equal(pkg.baseplate.addOns.ui, "react");
+	assert.doesNotMatch(pkg.description ?? "", /template/i, "a game, not the template");
 });
 
 test("makes a git repo", () => {

@@ -21,8 +21,9 @@ export async function installDependencies(
 		["Installing the tools (Node, pnpm, Rojo, Sloptor, ree…)", ["install"]],
 		["Installing the packages", ["exec", "--", "pnpm", "install", "--no-frozen-lockfile", "--silent"]],
 		["Generating files and setting up the hooks", ["run", "install"]],
-		// What the CLI wrote, formatted as the first commit's check expects.
-		["Formatting", ["exec", "--", "biome", "format", "--write", "."]],
+		// What the CLI wrote, formatted and with sorted imports, as the game's check expects, whether or
+		// not a first commit's hook gets to fix it.
+		["Formatting", ["exec", "--", "biome", "check", "--write", "--no-errors-on-unmatched", "."]],
 	];
 	for (const [step, args] of steps) {
 		onStep(step);

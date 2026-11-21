@@ -10,3 +10,14 @@ export function setProjectName(dir: string, name: string) {
 		fs.writeFileSync(at, fs.readFileSync(at, "utf8").replaceAll(TEMPLATE_NAME, name));
 	}
 }
+
+/**
+ * Records in the game's package.json which create-baseplate made it, and with which add-ons, so a
+ * later update of the template can tell what the game started from.
+ */
+export function recordOrigin(dir: string, version: string, addOns: Record<string, string>) {
+	const file = path.join(dir, "package.json");
+	const pkg = JSON.parse(fs.readFileSync(file, "utf8")) as Record<string, unknown>;
+	pkg.baseplate = { version, addOns };
+	fs.writeFileSync(file, `${JSON.stringify(pkg, undefined, "\t")}\n`);
+}

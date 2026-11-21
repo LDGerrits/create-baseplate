@@ -1,6 +1,6 @@
 # my-game
 
-A Roblox game template in roblox-ts, set up for AI coding agents: one command checks everything, tests and UI run without Studio, and the world lives in files. Works with Claude Code, Codex and Cursor.
+A Roblox game in roblox-ts, set up for coding agents: one command checks everything, tests and UI run without Studio, and the world lives in files. Works with Claude Code, Codex, Cursor and GitHub Copilot.
 
 ## What it gives an agent
 

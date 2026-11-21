@@ -5,10 +5,13 @@
 	"packageManager": "pnpm@12.18.0",
 	"scripts": {
 		"build": "turbo run build",
-		"check": "mise run check"
+		"check": "mise run check",
+		"changeset": "changeset",
+		"release": "changeset publish"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.6.6",
+		"@changesets/cli": "2.31.1",
 		"turbo": "2.11.10",
 		"typescript": "6.0.3"
 	}
