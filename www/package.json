@@ -1,0 +1,19 @@
+{
+	"name": "www",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "astro dev",
+		"build": "astro build",
+		"typecheck": "astro sync && tsc --noEmit",
+		"test": "node --test test/*.test.ts"
+	},
+	"dependencies": {
+		"@astrojs/starlight": "0.42.10",
+		"astro": "7.4.7"
+	},
+	"devDependencies": {
+		"@types/node": "24.19.2",
+		"typescript": "6.0.3"
+	}
+}

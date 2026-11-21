@@ -7,7 +7,7 @@ Baseplate creates roblox-ts games set up for coding agents, the way create-t3-ap
 - `cli/`: `create-baseplate`, the CLI (`pnpm create baseplate`). `src/cli/index.ts` reads the flags and asks the questions; `src/helpers/` copy the template, name the project, install and commit; `src/installers/` will hold the add-ons.
 - `cli/template/base/`: the game every project starts from. It is a complete project with its own `AGENTS.md`, mise tasks, hooks and skills, which ship to every game created from it. To work on it, work inside `cli/template/base`: run its commands there and follow its `AGENTS.md`.
 - `cli/template/extras/`: one folder per add-on choice (none yet).
-- `www/` (planned): the docs site.
+- `www/`: the docs site, Astro with Starlight. Pages are Markdown in `www/src/content/docs/`; each is also served as `/<page>.md`, and `/llms.txt` lists them for agents. Write them from what the template actually does: its `AGENTS.md`, README, skills and mise tasks.
 
 The build copies the template into `cli/dist/template`, only the files git tracks or would track. npm drops `.gitignore` files and symbolic links from packages, so the copy holds `_gitignore` and `_symlinks.json`, and the CLI restores them.
 
