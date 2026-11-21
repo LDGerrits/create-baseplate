@@ -14,6 +14,7 @@ pnpm create baseplate [dir] [flags]
 | `--no-git`     | Don't make the project a git repo.                                         |
 | `--no-install` | Don't install the tools and packages (`mise install`, `mise run install`). |
 | `--json`       | Print one JSON result on stdout. Implies `--yes`.                          |
+| `-V, --version` | Print the CLI's version. |
 
 Without a terminal, as when an agent or CI runs it, it asks nothing and takes the defaults.
 

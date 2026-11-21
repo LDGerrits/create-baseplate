@@ -16,8 +16,8 @@ Every game has an `AGENTS.md`, which Claude Code (through `CLAUDE.md`), Codex, C
 The same hooks are set up for Claude Code, Codex and Cursor:
 
 - **Before the agent ends its turn**, the check runs; a failure goes back to the agent to fix.
-- **Before a command or an edit**, a guard blocks what agents get wrong in this project, and says what to do instead: editing generated files, skipping the commit hook, npm or yarn, and printing `.env`.
-- **Each commit** runs the check on exactly what is being committed, whoever commits.
+- **Before a command or an edit**, a guard blocks what agents get wrong in this project, and says what to do instead: editing generated files, skipping the commit hook, npm, yarn or npx in place of pnpm, and printing `.env`.
+- **Each commit** runs `mise run ci`, the check without its fixes, on exactly what is being committed, whoever commits.
 
 Codex runs project hooks once you trust them with `/hooks`.
 

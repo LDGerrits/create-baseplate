@@ -11,4 +11,4 @@ description: Specs, end-to-end tests and engine specs, offline in ree or in real
 | A client's request through the real server and remotes | End-to-end test | `tests/e2e/<feature>.luau`       |
 | Characters, physics, collisions, real DataStore limits | Engine spec     | `<name>.engine.spec.ts`          |
 
-Engine specs run in real Roblox, in Studio or through Open Cloud, with `mise run test:engine`. When a test reaches something ree doesn't emulate, it fails and names it, so that behaviour moves to an engine spec.
+`mise run test:engine` runs every spec, engine specs included, in real Roblox: in Studio, or through Open Cloud. When a test reaches something ree doesn't emulate, it fails and names it, so that behaviour moves to an engine spec.

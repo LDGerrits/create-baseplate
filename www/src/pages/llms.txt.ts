@@ -1,21 +1,26 @@
-// /llms.txt (https://llmstxt.org): what Baseplate is, and a link to each page's Markdown copy.
+// /llms.txt (https://llmstxt.org): what Baseplate is, and a link to each page's Markdown copy,
+// in the sidebar's reading order.
 
-import { getCollection } from "astro:content";
+import { getEntry } from "astro:content";
 import type { APIRoute } from "astro";
+import { SIDEBAR } from "../sidebar.ts";
 
 export const GET: APIRoute = async () => {
-	const pages = (await getCollection("docs")).sort((a, b) => (a.id === "index" ? -1 : a.id.localeCompare(b.id)));
+	const order = ["index", ...SIDEBAR.flatMap((group) => group.items)];
+	const pages = await Promise.all(order.map((id) => getEntry("docs", id)));
 	const lines = [
 		"# Baseplate",
 		"",
-		"> Baseplate creates roblox-ts Roblox games set up for coding agents: `pnpm create baseplate <name> --yes` creates, installs and commits a game; inside it, `mise run check` checks everything, and AGENTS.md explains the project.",
+		"> Baseplate creates roblox-ts Roblox games set up for coding agents: `pnpm create baseplate <name> --json` creates, installs and commits a game; inside it, `mise run check` checks everything, and AGENTS.md explains the project.",
 		"",
 		"## Docs",
 		"",
-		...pages.map(
-			(page) => `- [${page.data.title}](/${page.id}.md)${page.data.description ? `: ${page.data.description}` : ""}`,
+		...pages.flatMap((page) =>
+			page === undefined
+				? []
+				: [`- [${page.data.title}](/${page.id}.md)${page.data.description ? `: ${page.data.description}` : ""}`],
 		),
 		"",
 	];
-	return new Response(lines.join("\n"), { headers: { "Content-Type": "text/plain; charset=utf-8" } });
+	return new Response(lines.join("\n"));
 };

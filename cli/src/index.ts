@@ -13,9 +13,12 @@ import { validateAppName } from "./utils/validateAppName.ts";
 
 const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
 
+let json = false;
+
 async function main() {
 	const options = await runCli(version);
 	if (options === undefined) return;
+	json = options.json;
 	if (options.json) logToStderr();
 	const fail = (message: string) => {
 		if (options.json) console.log(JSON.stringify({ ok: false, error: message }));
@@ -77,6 +80,7 @@ async function main() {
 }
 
 main().catch((error: unknown) => {
+	if (json) console.log(JSON.stringify({ ok: false, error: error instanceof Error ? error.message : String(error) }));
 	logger.error(error instanceof Error ? (error.stack ?? error.message) : String(error));
 	process.exit(1);
 });

@@ -1,48 +1,53 @@
 // Checks the built site (`pnpm build` first; turbo's test task does): every page also exists as
-// Markdown for agents, and llms.txt lists them all.
+// Markdown for agents, llms.txt lists them in the sidebar's order, and the copies link to each other.
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
+import { SIDEBAR } from "../src/sidebar.ts";
 
 const DOCS = path.resolve(import.meta.dirname, "../src/content/docs");
 const DIST = path.resolve(import.meta.dirname, "../dist");
 
+// Pages are Markdown files: `cli.md` is the page `cli`.
 const pages = fs
 	.readdirSync(DOCS, { recursive: true, encoding: "utf8" })
-	.filter((file) => /\.mdx?$/.test(file))
-	.map((file) =>
-		file
-			.replace(/\.mdx?$/, "")
-			.split(path.sep)
-			.join("/"),
-	);
+	.filter((file) => file.endsWith(".md"))
+	.map((file) => file.slice(0, -".md".length).split(path.sep).join("/"));
 
-const titleOf = (page: string) => {
-	const file = fs.existsSync(path.join(DOCS, `${page}.md`)) ? `${page}.md` : `${page}.mdx`;
-	return /^title:\s*(.+)$/m.exec(fs.readFileSync(path.join(DOCS, file), "utf8"))?.[1]?.trim() ?? "";
-};
+const titleOf = (page: string) =>
+	/^title:\s*["']?(.+?)["']?\s*$/m.exec(fs.readFileSync(path.join(DOCS, `${page}.md`), "utf8"))?.[1] ?? "";
+const markdownOf = (page: string) => fs.readFileSync(path.join(DIST, `${page}.md`), "utf8");
+const llms = () => fs.readFileSync(path.join(DIST, "llms.txt"), "utf8");
 
-test("there are pages", () => {
-	assert.ok(pages.length >= 5, `found ${pages.length}`);
+test("finds the pages", () => {
+	assert.ok(pages.includes("index") && pages.includes("getting-started"), `found ${pages.join(", ")}`);
 });
 
-test("each page has a Markdown copy, with its title and no frontmatter", () => {
+test("each page has a Markdown copy that starts with its title, not frontmatter", () => {
 	for (const page of pages) {
-		const file = path.join(DIST, `${page}.md`);
-		assert.ok(fs.existsSync(file), `${page}.md is missing`);
-		const markdown = fs.readFileSync(file, "utf8");
-		assert.ok(markdown.startsWith(`# ${titleOf(page)}\n`), `${page}.md starts with its title`);
-		assert.doesNotMatch(markdown, /^---$/m, `${page}.md has no frontmatter`);
+		assert.ok(fs.existsSync(path.join(DIST, `${page}.md`)), `${page}.md is missing`);
+		const markdown = markdownOf(page);
+		assert.ok(markdown.startsWith(`# ${titleOf(page)}\n\n`), `${page}.md starts with its title`);
+		assert.doesNotMatch(markdown, /^title:/m, `${page}.md has no frontmatter`);
 	}
 });
 
-test("llms.txt names the project and links every page's Markdown", () => {
-	const llms = fs.readFileSync(path.join(DIST, "llms.txt"), "utf8");
-	assert.match(llms, /^# Baseplate\n\n> /);
-	for (const page of pages) {
-		assert.ok(llms.includes(`(/${page}.md)`), `llms.txt links ${page}.md`);
-	}
+test("the sidebar lists every page, and llms.txt follows its order", () => {
+	const listed = SIDEBAR.flatMap((group) => group.items);
+	assert.deepEqual([...listed].sort(), pages.filter((page) => page !== "index").sort());
+	assert.match(llms(), /^# Baseplate\n\n> /);
+	const order = [...llms().matchAll(/\(\/([\w/-]+)\.md\)/g)].map((match) => match[1]);
+	assert.deepEqual(order, ["index", ...listed]);
+});
+
+test("links between pages stay in the Markdown copies", () => {
+	assert.match(markdownOf("getting-started"), /\]\(\/cli\.md\)/);
+	assert.doesNotMatch(markdownOf("getting-started"), /\]\(\/cli\/\)/);
+});
+
+test("the home page's copy keeps its tagline", () => {
+	assert.match(markdownOf("index"), /agent-ready way to start a roblox-ts game\. One command/);
 });
 
 test("each page is built as HTML", () => {
