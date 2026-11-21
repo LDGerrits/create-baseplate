@@ -45,12 +45,13 @@ Name files in kebab-case, after what they hold: `inventory-service.ts`.
 
 ## UI
 
-UI is React from `@rbxts/react`. Give each component worth looking at a story beside it, `<component>.story.tsx`, in UI Labs' React format; copy `clicker-button.story.tsx`. A story renders the component alone, without Flamework or the server, so pass in through props what comes from controllers.
+UI is React from `@rbxts/react`. Give each component worth looking at a story beside it, `<component>.story.tsx`, made with `CreateReactStory` from `@rbxts/ui-labs`, whose controls (`Number`, `String`, `Choose`, …) set the props; copy `clicker-button.story.tsx`. A story renders the component alone, without Flamework or the server, so pass in through props what comes from controllers.
 
 `mise run ui` renders every story offline with rur and prints each picture's path; `--filter <name>` renders only matching stories. Open each picture you changed and look at it: text cut off, overlap, alignment, the empty state. A story that renders without errors can still look wrong.
 
 - rur needs Roblox Studio's fonts, or it draws no text. On Windows it finds them; from WSL the script finds the newest Windows Studio. Elsewhere, set `RUR_ROBLOX_CONTENT` (see `.env.example`).
 - A story renders inside a `Frame`, so a component whose root is a `ScreenGui` draws nothing.
+- Animate with Ripple (`@rbxts/ripple`): a spring drives a binding, so the instance moves without re-rendering. `clicker-button.tsx` shows it.
 - In Studio, React runs in development mode (`src/app/client/react-dev.ts`), with its warnings in the Output.
 
 ## World
@@ -66,8 +67,8 @@ ree and rur answer most questions without Studio. To run the game in real Studio
 The code is TypeScript but it runs as Luau. The compiler and ESLint catch most differences (`null`, `.length`, truthiness, `for...in`); these they don't explain:
 
 - There's no Node, DOM or npm ecosystem. Use Roblox's APIs instead: `HttpService:JSONEncode` for `JSON`, `task.delay` for `setTimeout`, `print` for `console`, `string.match` for regex, `pairs` for `Object.keys`.
-- Packages come from the `@rbxts` scope, with roblox-ts types. A plain npm package won't run in Roblox.
-- Check Roblox values with `typeIs(value, "Vector3")` and `classIs(instance, "Part")`.
+- Packages come from the `@rbxts` scope, with roblox-ts types. A plain npm package won't run in Roblox. pnpm installs only versions published at least two weeks ago; when it refuses one, pick an older version.
+- Check Roblox values with `typeIs(value, "Vector3")` and `classIs(instance, "Part")`. To check an instance and its children, let Flamework build the check from a type: `Flamework.createGuard<Model & { Humanoid: Humanoid }>()`.
 
 ## Packages
 

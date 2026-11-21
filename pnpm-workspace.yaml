@@ -6,7 +6,16 @@ nodeLinker: hoisted
 # eslint-plugin-roblox-ts pins an older typescript-eslint that rejects TypeScript 6.
 # Share the project's typescript-eslint instead.
 overrides:
-  "@typescript-eslint/utils": "8.72.2"
-  "@typescript-eslint/type-utils": "8.72.2"
-  "@typescript-eslint/typescript-estree": "8.72.2"
-  "@typescript-eslint/parser": "8.72.2"
+  "@typescript-eslint/utils": "8.72.1"
+  "@typescript-eslint/type-utils": "8.72.1"
+  "@typescript-eslint/typescript-estree": "8.72.1"
+  "@typescript-eslint/parser": "8.72.1"
+
+# Install only versions published at least two weeks ago (in minutes), so a fresh,
+# possibly compromised release never lands. Applies to every add and update.
+minimumReleaseAge: 20160
+# Allowed younger: rbx-forge 2.4.0 runs Studio from WSL; Rogen is this template's own router.
+minimumReleaseAgeExclude:
+  - rbx-forge
+  - "@rbx-forge/*"
+  - "@ldgerrits/rogen"

@@ -1,0 +1,10 @@
+# LF everywhere, also on Windows checkouts, so Biome, Rojo and the hooks see the same files.
+* text=auto eol=lf
+*.rbxl binary
+*.rbxm binary
+*.png binary
+*.jpg binary
+*.ogg binary
+*.mp3 binary
+*.ttf binary
+*.otf binary

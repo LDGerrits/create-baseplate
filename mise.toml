@@ -13,8 +13,8 @@ pnpm = "12.18.0"
 
 [env]
 _.path = ["{{config_root}}/node_modules/.bin"]
-# Your keys and local paths, if you have any: copy .env.example to .env.
-_.file = ".env"
+# Your keys and local paths, if you have any: copy .env.example to .env. mise hides their values in its output.
+_.file = { path = ".env", redact = true }
 # Syncback writes each new world instance as a readable .model.json instead of a binary .rbxm.
 # Set for every task so forge's sync on save gets it too. It's Rojo's undocumented debug switch
 # (src/syncback/mod.rs), not a stable option: check it still works when upgrading Rojo.

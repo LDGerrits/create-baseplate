@@ -1,0 +1,12 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"extends": ["config:recommended", ":pinAllExceptPeerDependencies", "helpers:pinGitHubActionDigests"],
+	"minimumReleaseAge": "14 days",
+	"schedule": ["before 9am on monday"],
+	"packageRules": [
+		{
+			"matchUpdateTypes": ["patch"],
+			"groupName": "patch updates"
+		}
+	]
+}

@@ -1,0 +1,34 @@
+{
+	"Flamework service": {
+		"scope": "typescript",
+		"prefix": "service",
+		"description": "A Flamework service, named after the file",
+		"body": [
+			"import { type OnStart, Service } from \"@flamework/core\";",
+			"",
+			"@Service()",
+			"export class ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/} implements OnStart {",
+			"\tonStart() {",
+			"\t\t$0",
+			"\t}",
+			"}",
+			""
+		]
+	},
+	"Flamework controller": {
+		"scope": "typescript",
+		"prefix": "controller",
+		"description": "A Flamework controller, named after the file",
+		"body": [
+			"import { Controller, type OnStart } from \"@flamework/core\";",
+			"",
+			"@Controller()",
+			"export class ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/} implements OnStart {",
+			"\tonStart() {",
+			"\t\t$0",
+			"\t}",
+			"}",
+			""
+		]
+	}
+}

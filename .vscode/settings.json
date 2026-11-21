@@ -2,7 +2,18 @@
 	"editor.defaultFormatter": "biomejs.biome",
 	"editor.formatOnSave": true,
 	"editor.codeActionsOnSave": { "source.organizeImports.biome": "explicit", "source.fixAll.eslint": "explicit" },
+	"files.eol": "\n",
 	"typescript.tsdk": "node_modules/typescript/lib",
+	"typescript.enablePromptUseWorkspaceTsdk": true,
+	"explorer.fileNesting.enabled": true,
+	"explorer.fileNesting.patterns": {
+		"*.ts": "${capture}.spec.ts, ${capture}.engine.spec.ts",
+		"*.tsx": "${capture}.story.tsx, ${capture}.spec.ts, ${capture}.spec.tsx",
+		"package.json": "pnpm-lock.yaml, pnpm-workspace.yaml",
+		"tsconfig.json": "eslint.config.js, biome.json, jest.config.ts",
+		".env.example": ".env",
+		"mise.toml": "rotor.toml, rbx-forge.config.ts, default.rogen.json"
+	},
 	"search.exclude": {
 		"out": true,
 		"include": true,
