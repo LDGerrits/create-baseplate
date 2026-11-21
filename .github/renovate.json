@@ -29,6 +29,11 @@
 			"description": "Patch and minor updates merge themselves once CI, with every created game, passes; majors wait for a person",
 			"matchUpdateTypes": ["patch", "minor", "digest"],
 			"automerge": true
+		},
+		{
+			"description": "Never merged without a person: the tools above come in on release day, before any wait could catch a hijacked release, and CI's engine job runs them with the Open Cloud key; and a Rojo update needs a check that CI can't make, that rbx-forge supports its Studio plugin",
+			"matchPackageNames": ["rbx-forge", "@rbx-forge/**", "@ldgerrits/rogen", "rojo-rbx/rojo", "github:rojo-rbx/rojo"],
+			"automerge": false
 		}
 	]
 }
