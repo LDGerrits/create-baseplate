@@ -261,8 +261,8 @@ importers:
         specifier: 17.6.0
         version: 17.6.0
       rbx-forge:
-        specifier: 2.4.0
-        version: 2.4.0
+        specifier: 2.4.1
+        version: 2.4.1
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -736,54 +736,54 @@ packages:
   '@oxc-project/types@0.146.0':
     resolution: {integrity: sha512-XC0QsnnhVe7sLIWmYmdPw7x5P0h4W8vUU3Nv1ySgWXtvCz8NizoAEpGXA0sOYoJQV2Rl13LgURAHQ5cI5ILCSA==}
 
-  '@rbx-forge/native-darwin-arm64@2.4.0':
-    resolution: {integrity: sha512-LWT5ByY0CqeggT5kW2a17osjnQ7EOTSEEhTopGEPlKpf/EGjunlTmCpdW7Qk3yazPNue2ob4pwYNl7gMj5OeAQ==}
+  '@rbx-forge/native-darwin-arm64@2.4.1':
+    resolution: {integrity: sha512-YBAbp2gmX8e8ivQy1ccHlVrNQk+b5h8QsY6X+xm4k5+V16Z0MoWi/9tyug37b5DqKhcsUrDGGgOdzVqvv619fw==}
     engines: {node: '>=24.12.0'}
     cpu: [arm64]
     os: [darwin]
 
-  '@rbx-forge/native-darwin-x64@2.4.0':
-    resolution: {integrity: sha512-yLHR+JXwJPBTz0B8ZaZPeIV8TnSiT7+paOLz4T3TGoPbYKOO6j+ZxROzoTNfrV1WhGJoWtkWliSWPHi26j3qXQ==}
+  '@rbx-forge/native-darwin-x64@2.4.1':
+    resolution: {integrity: sha512-arcvz4FQeTEwG5+vLmCkMKvSxgJYcnvo22Bcz4IRtlLsh6n9MFUnlEhss2FqicTcyurp3gW3oVRwSi5FQrNcFQ==}
     engines: {node: '>=24.12.0'}
     cpu: [x64]
     os: [darwin]
 
-  '@rbx-forge/native-linux-arm64-gnu@2.4.0':
-    resolution: {integrity: sha512-WB38b7mrSUDbx2Ol2Aq5P3VJTDNPlW/6XhDgIArm0sS5GbWBRIUAdWv+tzq2j+KDHejOo4VLP4FdsN151G0MuA==}
+  '@rbx-forge/native-linux-arm64-gnu@2.4.1':
+    resolution: {integrity: sha512-DI/sCrY8O33wiMPeyeiJbKJRZYnZ8LJi72jUKRtQlwYACW85ajW2B565FNPFPtpbhgH1vikgf48y+dAQQ3jafQ==}
     engines: {node: '>=24.12.0'}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@rbx-forge/native-linux-arm64-musl@2.4.0':
-    resolution: {integrity: sha512-aJ6DlSKAoi48Qmk/eJaot6fpYdplVNdTNR8WwUxYsg1e8Ft9oETZQQZWrCzK9hYB+1fBvL3lYJ/JIg49sv0Eyw==}
+  '@rbx-forge/native-linux-arm64-musl@2.4.1':
+    resolution: {integrity: sha512-JHTt0p4zwpA2z9GoSzIR7V5+UFU+/0JVg2+8wYko9wzszUyfUofsZqUI8yI1E7Oxfi4aUq+oEV4A+1UoGALgqQ==}
     engines: {node: '>=24.12.0'}
     cpu: [arm64]
     os: [linux]
     libc: [musl]
 
-  '@rbx-forge/native-linux-x64-gnu@2.4.0':
-    resolution: {integrity: sha512-RCBZN66JAdDsweRqRRqDVFxp7flisBkOfgETX7YTrulvPlleP29cVekfjTyZAO2smp3ODPEetaiyS11Bx2Du0Q==}
+  '@rbx-forge/native-linux-x64-gnu@2.4.1':
+    resolution: {integrity: sha512-F/M9H3jixLSYAe2aYQFtzF9YsosnJCGNo7lDJmPvIkzMiqqro3IVLpM71dPydlamEAe2j+PN9CAS8QgnFI88dQ==}
     engines: {node: '>=24.12.0'}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@rbx-forge/native-linux-x64-musl@2.4.0':
-    resolution: {integrity: sha512-rnKTiML9uCk3BiTVT1xgi9OlUVALdmFosDBHAez6vZ6qkTyRpSB26vvndRIaaI9prlfTDDVflMm1KjOkozzW6w==}
+  '@rbx-forge/native-linux-x64-musl@2.4.1':
+    resolution: {integrity: sha512-uqV3kDts1nRVBqSdbtq7M62A+e/iqwUiZuCZf61DcRRh0+t/l6QcNZNgeNPk+7qdPBlbTkYhr8e7Zl0R19ED/g==}
     engines: {node: '>=24.12.0'}
     cpu: [x64]
     os: [linux]
     libc: [musl]
 
-  '@rbx-forge/native-win32-arm64-msvc@2.4.0':
-    resolution: {integrity: sha512-ClZXs/hfaw2zZkxcd0C02WNIlqK0Mg7WI62pJPuueva8+6d/xEPNWhv8NaFFhCL6aBLdBpuSKxwRSDAuxPcoUQ==}
+  '@rbx-forge/native-win32-arm64-msvc@2.4.1':
+    resolution: {integrity: sha512-20NFKA3zeIaz4kr2Sv+miMsBXOcuutcXu7FUM+sMqL8A5s2iVZRGc/3E6drvtMpij5tr60V3FjPZs81vcItPPg==}
     engines: {node: '>=24.12.0'}
     cpu: [arm64]
     os: [win32]
 
-  '@rbx-forge/native-win32-x64-msvc@2.4.0':
-    resolution: {integrity: sha512-k+Xc7m/B/+fhs7+PCx2hrxg42M/MepGOg4xwbIf/qZPc6LI3kQj3wn9uKi7PnAXYa7DUm0o4QVq1xhzMc17Eqw==}
+  '@rbx-forge/native-win32-x64-msvc@2.4.1':
+    resolution: {integrity: sha512-+/8CuYVjjEZg57C0r3tYk48/98UNdRqwn1NTq08JPs+g45Yue0Y5oNAVWSaNZQ/LoKQxspJIUpAl4R3Yj1VCHQ==}
     engines: {node: '>=24.12.0'}
     cpu: [x64]
     os: [win32]
@@ -1777,8 +1777,8 @@ packages:
     resolution: {integrity: sha512-+Owyggi9IxT1ePKGafcI87ubSmxol6smwJ+RAHDQlx9+9cPwFWDiKFFCPuWhr9ignlGpZ9vDQLw67N4dcTVFEA==}
     engines: {node: '>=20'}
 
-  rbx-forge@2.4.0:
-    resolution: {integrity: sha512-ey44DkhsO09Lf2rmpJTbAIsX0HRnKWQswe5bnp+xlntAq9SrQe7meJVFwRkPozBWR+mkFkZ7u4k+3Hbjgd+2tw==}
+  rbx-forge@2.4.1:
+    resolution: {integrity: sha512-bEY9xhAGqVMklhDKu/uICMGUuwq9PgPMiZ+Fv6VCs3zjApX1Xtjzlutx+3PMOo6XSMwK5rhEKWo3B5AmXKzpgw==}
     engines: {node: '>=24.12.0'}
     hasBin: true
 
@@ -2399,28 +2399,28 @@ snapshots:
 
   '@oxc-project/types@0.146.0': {}
 
-  '@rbx-forge/native-darwin-arm64@2.4.0':
+  '@rbx-forge/native-darwin-arm64@2.4.1':
     optional: true
 
-  '@rbx-forge/native-darwin-x64@2.4.0':
+  '@rbx-forge/native-darwin-x64@2.4.1':
     optional: true
 
-  '@rbx-forge/native-linux-arm64-gnu@2.4.0':
+  '@rbx-forge/native-linux-arm64-gnu@2.4.1':
     optional: true
 
-  '@rbx-forge/native-linux-arm64-musl@2.4.0':
+  '@rbx-forge/native-linux-arm64-musl@2.4.1':
     optional: true
 
-  '@rbx-forge/native-linux-x64-gnu@2.4.0':
+  '@rbx-forge/native-linux-x64-gnu@2.4.1':
     optional: true
 
-  '@rbx-forge/native-linux-x64-musl@2.4.0':
+  '@rbx-forge/native-linux-x64-musl@2.4.1':
     optional: true
 
-  '@rbx-forge/native-win32-arm64-msvc@2.4.0':
+  '@rbx-forge/native-win32-arm64-msvc@2.4.1':
     optional: true
 
-  '@rbx-forge/native-win32-x64-msvc@2.4.0':
+  '@rbx-forge/native-win32-x64-msvc@2.4.1':
     optional: true
 
   '@rbxts-js/boolean@1.2.3-ts.1':
@@ -3656,7 +3656,7 @@ snapshots:
     dependencies:
       hookified: 2.2.0
 
-  rbx-forge@2.4.0:
+  rbx-forge@2.4.1:
     dependencies:
       '@msgpack/msgpack': 3.1.3
       arktype: 2.2.9
@@ -3664,14 +3664,14 @@ snapshots:
       jiti: 2.7.0
       strip-json-comments: 5.0.3
     optionalDependencies:
-      '@rbx-forge/native-darwin-arm64': 2.4.0
-      '@rbx-forge/native-darwin-x64': 2.4.0
-      '@rbx-forge/native-linux-arm64-gnu': 2.4.0
-      '@rbx-forge/native-linux-arm64-musl': 2.4.0
-      '@rbx-forge/native-linux-x64-gnu': 2.4.0
-      '@rbx-forge/native-linux-x64-musl': 2.4.0
-      '@rbx-forge/native-win32-arm64-msvc': 2.4.0
-      '@rbx-forge/native-win32-x64-msvc': 2.4.0
+      '@rbx-forge/native-darwin-arm64': 2.4.1
+      '@rbx-forge/native-darwin-x64': 2.4.1
+      '@rbx-forge/native-linux-arm64-gnu': 2.4.1
+      '@rbx-forge/native-linux-arm64-musl': 2.4.1
+      '@rbx-forge/native-linux-x64-gnu': 2.4.1
+      '@rbx-forge/native-linux-x64-musl': 2.4.1
+      '@rbx-forge/native-win32-arm64-msvc': 2.4.1
+      '@rbx-forge/native-win32-x64-msvc': 2.4.1
     transitivePeerDependencies:
       - dotenv
       - giget

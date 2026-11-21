@@ -48,4 +48,4 @@ Getting started (people and agents), the agent loop (check, hooks, skills, Studi
 2. **Done. CLI without add-ons:** create a project from `cli/template/base` with prompts and flags, with tests; CI creates one and checks it.
 3. **Docs site:** the pages above, built in CI; deploy to Vercel at publish.
 4. **Add-ons.** Done for libraries: state (Charm, Reflex), player data (ProfileStore, Lapis), entities (Flamework Components, Jecs), each or none. The UI library (React or Vide) and single or multi place (Rogen's `projects/` layout) are done too.
-5. **Publish** (when the user says): GitHub repo, npm package, Vercel site.
+5. **Publish** (when the user says): GitHub repo (install Renovate, and require the CI checks in branch protection so its automerge waits for them), npm package, Vercel site.

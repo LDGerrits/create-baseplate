@@ -1,0 +1,34 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"description": "Updates for the CLI, the docs site, the template and its add-ons. CI creates a game with every option on each update, so an update merges only when every option still works.",
+	"extends": ["config:recommended", ":pinAllExceptPeerDependencies", "helpers:pinGitHubActionDigests"],
+	"minimumReleaseAge": "14 days",
+	"internalChecksFilter": "strict",
+	"schedule": ["before 9am on monday"],
+	"customManagers": [
+		{
+			"description": "Add-ons pin their packages in cli/template/extras/**/addon.json",
+			"customType": "regex",
+			"managerFilePatterns": ["/^cli/template/extras/.+/addon\\.json$/"],
+			"matchStrings": ["\"(?<depName>@?[\\w./-]+)\":\\s*\"(?<currentValue>\\d[^\"]*)\""],
+			"datasourceTemplate": "npm"
+		}
+	],
+	"packageRules": [
+		{
+			"description": "Released fixes for the dev tools we rely on come in at once, as pnpm's minimumReleaseAgeExclude allows",
+			"matchPackageNames": ["rbx-forge", "@rbx-forge/**", "@ldgerrits/rogen"],
+			"minimumReleaseAge": "0 days",
+			"schedule": ["at any time"]
+		},
+		{
+			"matchUpdateTypes": ["patch"],
+			"groupName": "patch updates"
+		},
+		{
+			"description": "Patch and minor updates merge themselves once CI, with every created game, passes; majors wait for a person",
+			"matchUpdateTypes": ["patch", "minor", "digest"],
+			"automerge": true
+		}
+	]
+}

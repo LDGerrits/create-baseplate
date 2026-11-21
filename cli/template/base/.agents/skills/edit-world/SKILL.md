@@ -22,7 +22,7 @@ The world lives in `world/` as files, apart from the code:
 
 1. Start the session in the background: `forge up --studio --syncback`. Studio opens on the world and Rojo adds the code. `forge status` shows each part.
 2. Edit in Studio: by hand, or through the Studio MCP's `execute_luau` with `datamodel_type` `Edit` (see the `drive-studio` skill).
-3. Run `mise run sync`. It saves the place through Studio's File menu, then syncback writes the edits into `world/`, sorts the JSON and regenerates the types.
+3. Run `mise run sync`. forge saves the place through its Studio plugin, without showing Studio or taking focus, then syncback writes the edits into `world/`, sorts the JSON and regenerates the types.
 4. Read the diff of `world/`. Remove anything you didn't mean to change, such as an attribute a Studio plugin left.
 5. Run `mise run check`, and `forge down` when you're done.
 
@@ -32,7 +32,7 @@ Edit or add a `.model.json` under `world/<Service>/`, then run `mise run check`.
 
 ## Gotchas
 
-- Sync with `mise run sync`, not `forge sync` alone: without a save first, syncback reads the last saved place. forge's `capture` save method keeps instances deleted in Studio (rbx-forge#323), so the project keeps forge's default, which saves through the File menu.
+- Sync with `mise run sync`, which saves before it syncs: without a save, syncback reads the last saved place.
 - Syncback writes each new instance as a `.model.json`, because `mise.toml` sets `ROJO_SYNCBACK_DEBUG=2`. A link to another instance, such as a weld's `Part0`, is a `Rojo_Target_<Property>` attribute holding that instance's `Rojo_Id`. An instance keeps the file type it already has: read an `.rbxm` with Lune, `roblox.deserializeModel(fs.readFile(path))`.
 - Studio joins touching parts with a `Snap` when it opens the place; syncback keeps the joint, with `Rojo_Id` attributes to link it.
 - A service lives in the code or the world, never both. To add one, such as `SoundService`, give it a project file and a folder like `Workspace`, and map it in `world/default.project.json`.

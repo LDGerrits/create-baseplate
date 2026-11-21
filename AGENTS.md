@@ -18,6 +18,10 @@ The build copies the template into `cli/dist/template`, only the files git track
 - To see what a user gets: `pnpm --filter create-baseplate build`, then `node cli/dist/index.js <folder> --json`, and `mise run check` in that folder.
 - The commit hook (`.githooks/pre-commit`) runs each part's check when a commit touches it. Turn it on in a new clone with `git config core.hooksPath .githooks`.
 
+## Updates
+
+Renovate (`.github/renovate.json`) opens updates for every package, mise tool, GitHub Action and add-on pin (`addon.json`), at least two weeks after release, as pnpm requires; rbx-forge and Rogen come in at once. CI creates a game with every option on each update, so an update merges only when all of them still pass. Keep a new add-on's pins in its `addon.json` so Renovate finds them, and a new tool exempt from the two-week rule in both pnpm's `minimumReleaseAgeExclude` and Renovate's rule.
+
 ## Writing
 
 Write the template's files for the game's developers and agents, not for this repo: a created game has no `cli/` or `PLAN.md`, and its name replaces `my-game`. Comments, commit messages and pull requests are read by someone who never saw the conversation.

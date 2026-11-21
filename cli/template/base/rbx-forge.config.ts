@@ -9,6 +9,8 @@ export default defineConfig({
 	rojoAlias: "rogen",
 	rojoProjectPath: "default.project.json",
 	buildOutputPath: "build/code.rbxl",
+	// Save through forge's Studio plugin, without showing Studio's File menu or taking keyboard focus.
+	studio: { saveMethod: "capture" },
 	open: { projectPath: "world/default.project.json", buildOutputPath: "build/world.rbxl" },
 	// On start, first sync back what was saved in Studio last time, so a rebuild of world/ keeps it.
 	syncback: { inputPath: "build/world.rbxl", projectPath: "world/default.project.json", runOnStart: true },

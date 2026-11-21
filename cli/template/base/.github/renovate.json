@@ -5,8 +5,21 @@
 	"schedule": ["before 9am on monday"],
 	"packageRules": [
 		{
+			"description": "Released fixes for the dev tools the game relies on come in at once, as pnpm's minimumReleaseAgeExclude allows",
+			"matchPackageNames": ["rbx-forge", "@rbx-forge/**", "@ldgerrits/rogen"],
+			"minimumReleaseAge": "0 days",
+			"schedule": ["at any time"]
+		},
+		{
 			"matchUpdateTypes": ["patch"],
 			"groupName": "patch updates"
+		},
+		{
+			"description": "Patch and minor updates merge themselves once CI passes; majors wait for a person",
+			"matchUpdateTypes": ["patch", "minor", "digest"],
+			"automerge": true
 		}
-	]
+	],
+	"description": "Updates for this game. Its CI runs the full check on each update, so an update merges only when the game still builds and passes its tests.",
+	"internalChecksFilter": "strict"
 }
