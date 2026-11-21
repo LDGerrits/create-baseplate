@@ -25,9 +25,9 @@ const start = payload.cwd ?? payload.workspace_roots?.[0] ?? process.cwd();
 const root = projectRoot(start) ?? start;
 
 // Files that only their generator writes, and what to run instead. In a multi-place game each
-// place has its own, under projects/<place>/.
+// place has its own project files, world types and builds under projects/<place>/.
 const GENERATED: [RegExp, string][] = [
-	[/^(projects\/[^/]+\/)?(out|include)\//, "the compiler writes it: edit the source in src/ and run `mise run check`"],
+	[/^(out|include)\//, "the compiler writes it: edit its TypeScript source and run `mise run check`"],
 	[/^(projects\/[^/]+\/)?build\//, "builds write it: run `mise run build` or `mise run check`"],
 	[/^node_modules\//, "pnpm writes it: `pnpm add <package>`, or a patch with `pnpm patch`"],
 	[

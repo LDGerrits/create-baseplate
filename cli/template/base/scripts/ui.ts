@@ -37,8 +37,19 @@ const args = process.argv.slice(2);
 const story = args.indexOf("--story");
 if (story !== -1) {
 	const name = path.basename(args[story + 1] ?? "story", ".story.tsx").replace(/\.story\.luau$/, "");
-	// Accept the source path; rur renders the compiled story.
-	const compiled = (args[story + 1] ?? "").replace(/^src\//, "out/").replace(/\.story\.tsx$/, ".story.luau");
+	// Accept the source path; rur renders the compiled story. In a multi-place game the path is from
+	// the repo root (projects/...), each place compiles to $ROOT/out/<place>, and a place that
+	// doesn't hold the story skips it.
+	const given = args[story + 1] ?? "";
+	const root = process.env.ROOT ?? process.cwd();
+	const place = process.env.PLACE ?? "";
+	const inProjects = path.relative(path.join(root, "projects"), path.resolve(root, given));
+	const multi = fs.existsSync(path.join(root, "projects")) && !inProjects.startsWith("..");
+	if (multi && !["common", place].includes(inProjects.split(path.sep)[0] ?? "")) process.exit(0);
+	const compiled = (multi ? path.join(root, "out", place, inProjects) : given.replace(/^src\//, "out/")).replace(
+		/\.story\.tsx$/,
+		".story.luau",
+	);
 	const rest = args.filter((_, i) => i !== story && i !== story + 1);
 	const diff = rest[0] === "diff";
 	const dir = `build/ui-${diff ? "diff" : "try"}/${name}`;

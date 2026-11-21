@@ -6,7 +6,7 @@ import { runCli } from "./cli/index.ts";
 import { commitAll, initGit, isGitInstalled } from "./helpers/git.ts";
 import { installDependencies, isMiseInstalled } from "./helpers/installDependencies.ts";
 import { logNextSteps, nextSteps } from "./helpers/logNextSteps.ts";
-import { makeMultiPlace } from "./helpers/makeMultiPlace.ts";
+import { makeMultiPlace, PLACES } from "./helpers/makeMultiPlace.ts";
 import { scaffoldProject } from "./helpers/scaffoldProject.ts";
 import { setProjectName } from "./helpers/setProjectName.ts";
 import { addOns, findConflict, installAddOns } from "./installers/index.ts";
@@ -42,6 +42,8 @@ async function main() {
 	setProjectName(options.dir, options.name);
 	installAddOns(options.dir, options.addOns);
 	if (options.addOns.places === "multi") makeMultiPlace(options.dir, options.name);
+	// In a multi-place game, Studio commands name a place.
+	const place = options.addOns.places === "multi" ? (PLACES[0] ?? "") : "";
 	const withAddOns = addOns.some((addOn) => options.addOns[addOn.name] !== addOn.defaultValue);
 	logger.success(`Created ${options.name} in ${options.dir}`);
 
@@ -79,11 +81,11 @@ async function main() {
 				installed,
 				addOns: options.addOns,
 				warnings,
-				nextSteps: nextSteps(options.dir, installed, withAddOns),
+				nextSteps: nextSteps(options.dir, installed, withAddOns, place),
 			}),
 		);
 	} else {
-		logNextSteps(options.dir, installed, withAddOns);
+		logNextSteps(options.dir, installed, withAddOns, place);
 		logger.info(pc.dim(`create-baseplate ${version}`));
 	}
 }

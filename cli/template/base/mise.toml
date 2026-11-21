@@ -30,7 +30,7 @@ run = "pnpm install --frozen-lockfile --silent"
 # in each projects/<place>/ for a multi-place one. There, $ROOT is the repo root.
 
 [tasks.generate]
-description = "Write the generated files of each place: default.project.json (code), game.project.json (code and world), src/world.d.ts"
+description = "Write the generated files of each place: default.project.json (code), game.project.json (code and world), src/world.d.ts (its map's types)"
 depends = ["deps"]
 run = '''node scripts/each-place.ts 'rogen write --quiet && node "$ROOT/scripts/game-project.ts" && node "$ROOT/scripts/world-types.ts"' '''
 
@@ -49,6 +49,8 @@ run = [
 	"biome check --write --no-errors-on-unmatched .",
 	"node scripts/each-place.ts 'sloptor build -p \"$TSCONFIG\" --rojo \"$PWD/default.project.json\" --includePath \"$ROOT/include\"'",
 	"tsc -p tsconfig.node.json",
+	# In a multi-place game, the shared code alone, so it can't lean on one place's map.
+	"[ ! -d projects ] || tsc --noEmit -p tsconfig.json",
 	"node scripts/each-place.ts 'rogen check'",
 	# No --cache: type-aware rules depend on other files, which the cache doesn't track.
 	"eslint --max-warnings 0 --no-error-on-unmatched-pattern src projects",
@@ -62,6 +64,8 @@ run = [
 	"biome ci .",
 	"node scripts/each-place.ts 'sloptor build -p \"$TSCONFIG\" --rojo \"$PWD/default.project.json\" --includePath \"$ROOT/include\"'",
 	"tsc -p tsconfig.node.json",
+	# In a multi-place game, the shared code alone, so it can't lean on one place's map.
+	"[ ! -d projects ] || tsc --noEmit -p tsconfig.json",
 	"node scripts/each-place.ts 'rogen check'",
 	"eslint --max-warnings 0 --no-error-on-unmatched-pattern src projects",
 	'''node scripts/each-place.ts 'mkdir -p build && rojo build game.project.json --output build/game.rbxl && lune run "$ROOT/scripts/check-place" build/game.rbxl && node "$ROOT/scripts/test.ts"' ''',
@@ -85,11 +89,13 @@ run = '''node scripts/each-place.ts 'sloptor build -p "$TSCONFIG" --rojo "$PWD/d
 [tasks.dev]
 description = "Start the dev session: compile on save, serve code to Studio, open Studio on the world, and sync each Studio save back to world/. A multi-place game names the place: mise run dev lobby"
 depends = ["generate"]
-run = '''node scripts/each-place.ts --one "{{arg(name='place', default='')}}" 'forge start --syncback' '''
+usage = 'arg "[place]" help="The place, in a multi-place game"'
+run = '''node scripts/each-place.ts --one "${usage_place:-}" 'forge start --syncback' '''
 
 [tasks.sync]
 description = "Save the Studio place, then write its world edits into world/ (while a forge session runs). A multi-place game names the place: mise run sync lobby"
-run = '''node scripts/each-place.ts --one "{{arg(name='place', default='')}}" 'forge save && forge sync' '''
+usage = 'arg "[place]" help="The place, in a multi-place game"'
+run = '''node scripts/each-place.ts --one "${usage_place:-}" 'forge save && forge sync' '''
 
 [tasks.build]
 description = "Compile and build the whole game, code and world, to build/game.rbxl (in each place's folder, in a multi-place game)"

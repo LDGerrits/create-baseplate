@@ -196,11 +196,17 @@ test("lays out a multi-place game as Rogen prescribes", () => {
 		const tsconfig = JSON.parse(read(`tsconfig.${place}.json`));
 		assert.deepEqual(tsconfig.include, ["projects/common/src", `projects/${place}/src`]);
 		assert.equal(tsconfig.compilerOptions.outDir, `out/${place}`);
-		for (const file of ["world/default.project.json", "tests/e2e/clicker.luau", "rotor.toml", "jest.config.ts"]) {
+		for (const file of ["world/default.project.json", "tests/e2e/clicker.luau", "jest.config.ts"]) {
 			assert.ok(exists(`projects/${place}/${file}`), `${place} has ${file}`);
 		}
 		assert.match(read(`projects/${place}/rbx-forge.config.ts`), /node \.\.\/\.\.\/scripts\/game-project\.ts/);
 	}
 	assert.match(read(".gitignore"), /\/projects\/\*\/build/);
-	assert.match(read("AGENTS.md"), /## Where code goes\n\nThis game has several places/);
+	const agents = read("AGENTS.md");
+	assert.match(agents, /## Where code goes\n\nThis game has several places/);
+	assert.match(agents, /`projects\/common\/src\/features\/player-data\/server\/`/, "add-on notes name shared paths");
+	assert.doesNotMatch(agents, /`(src\/features|world\/Workspace|tests\/e2e\/<feature>)/, "no single-place paths left");
+	assert.match(read(".agents/skills/edit-world/SKILL.md"), /^# .+\n\n> This game has several places/m);
+	assert.match(read("README.md"), /mise run dev lobby/);
+	assert.deepEqual(JSON.parse(run.stdout).nextSteps.slice(-1), ["mise run dev lobby"]);
 });

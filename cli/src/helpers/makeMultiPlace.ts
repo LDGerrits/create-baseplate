@@ -10,8 +10,6 @@ const GITIGNORE = `
 /projects/*/build
 /projects/*/src/world.d.ts
 /projects/*/.forge
-/projects/*/.rotor
-/projects/*/flamework.build
 /projects/*/.jest-roblox
 !/projects/*/world/**/*.project.json
 `;
@@ -30,6 +28,11 @@ const GITIGNORE = `
 export function makeMultiPlace(dir: string, name: string) {
 	const at = (...parts: string[]) => path.join(dir, ...parts);
 	const read = (file: string) => fs.readFileSync(at(file), "utf8");
+	// The template's text this relies on; fail rather than leave a half-converted game.
+	const replaceIn = (text: string, from: string, to: string) => {
+		if (!text.includes(from)) throw new Error(`places: the template no longer has: ${from}`);
+		return text.replace(from, to);
+	};
 	const common = at("projects", "common", "src");
 	fs.mkdirSync(common, { recursive: true });
 
@@ -44,11 +47,15 @@ export function makeMultiPlace(dir: string, name: string) {
 		for (const file of fs.readdirSync(path.join(placeDir, "src", "app"), { recursive: true, encoding: "utf8" })) {
 			const source = path.join(placeDir, "src", "app", file);
 			if (!fs.statSync(source).isFile()) continue;
-			// From projects/<place>/src/app/<side>/, the shared code is four folders up.
-			fs.writeFileSync(source, fs.readFileSync(source, "utf8").replaceAll('"../../', '"../../../../common/src/'));
+			// Imports of src/ from src/app/<side>/ now reach the shared code, four folders up.
+			const code = fs.readFileSync(source, "utf8");
+			fs.writeFileSync(
+				source,
+				code.replace(/^((?:import|export)\b[^"\n]*")\.\.\/\.\.\/(?!\.\.)/gm, "$1../../../../common/src/"),
+			);
 		}
 		for (const folder of ["world", "tests"]) fs.cpSync(at(folder), path.join(placeDir, folder), { recursive: true });
-		for (const file of ["rotor.toml", "jest.config.ts"]) fs.copyFileSync(at(file), path.join(placeDir, file));
+		fs.copyFileSync(at("jest.config.ts"), path.join(placeDir, "jest.config.ts"));
 		fs.writeFileSync(
 			path.join(placeDir, "rbx-forge.config.ts"),
 			read("rbx-forge.config.ts")
@@ -101,15 +108,63 @@ export function makeMultiPlace(dir: string, name: string) {
 	// The root tsconfig holds the shared settings, and covers the shared code for editors and ESLint.
 	fs.writeFileSync(
 		at("tsconfig.json"),
-		read("tsconfig.json")
-			.replace('"rootDir": "src",', '"rootDir": "projects/common/src",\n\t\t"noEmit": true,')
-			.replace('"include": ["src"]', '"include": ["projects/common/src"]'),
+		replaceIn(
+			replaceIn(read("tsconfig.json"), '"rootDir": "src",', '"rootDir": "projects/common/src",\n\t\t"noEmit": true,'),
+			'"include": ["src"]',
+			'"include": ["projects/common/src"]',
+		),
 	);
 	fs.appendFileSync(at(".gitignore"), GITIGNORE);
 
-	const agents = read("AGENTS.md");
-	const start = agents.indexOf("\n## Where code goes\n") + 1;
-	const end = agents.indexOf("\n## ", start) + 1;
-	const section = fs.readFileSync(path.join(TEMPLATE_EXTRAS, "places", "multi", "AGENTS.md"), "utf8");
-	fs.writeFileSync(at("AGENTS.md"), `${agents.slice(0, start)}${section.trim()}\n\n${agents.slice(end)}`);
+	const extra = (file: string) => fs.readFileSync(path.join(TEMPLATE_EXTRAS, "places", "multi", file), "utf8");
+	let agents = replaceSection(read("AGENTS.md"), "Where code goes", extra("AGENTS.md"));
+	agents = replaceIn(agents, "`src/app/*/main` file", "`src/app/*/main` file of each place that uses it");
+	agents = replaceIn(agents, "`tests/e2e/<feature>.luau`", "`projects/<place>/tests/e2e/<feature>.luau`");
+	agents = replaceIn(
+		agents,
+		"live in `world/` as files; code reaches them through the types in `src/world.d.ts`",
+		"live in each place's `world/` as files; that place's code reaches them through the types in its `src/world.d.ts`",
+	);
+	agents = replaceIn(
+		agents,
+		"in `default.rogen.json`, like the existing scopes",
+		"in each place's `default.rogen.json`, like the existing scopes",
+	);
+	// The add-ons' sections name single-place paths.
+	for (const [from, to] of PATHS) agents = agents.replaceAll(from, to);
+	fs.writeFileSync(at("AGENTS.md"), agents);
+
+	let readme = replaceSection(read("README.md"), "Layout", extra("README-layout.md"));
+	readme = replaceIn(readme, "mise run dev       #", "mise run dev lobby #");
+	readme = replaceIn(readme, "mise run sync      #", "mise run sync lobby #");
+	fs.writeFileSync(at("README.md"), readme);
+
+	// Skills describe one place; say how their paths map.
+	for (const skill of fs.readdirSync(at(".agents", "skills"))) {
+		const file = at(".agents", "skills", skill, "SKILL.md");
+		const text = fs.readFileSync(file, "utf8");
+		fs.writeFileSync(file, text.replace(/^(# .+\n)/m, `$1\n${SKILL_NOTE}\n`));
+	}
+}
+
+/** Single-place paths in add-on notes, and where they are in a multi-place game. */
+const PATHS: [string, string][] = [
+	["`src/features/", "`projects/common/src/features/"],
+	["`src/store/", "`projects/common/src/store/"],
+	["`world/Workspace/", "`projects/<place>/world/Workspace/"],
+	["`tests/e2e/spinner.luau`", "`projects/<place>/tests/e2e/spinner.luau`"],
+	["`src/app/client/main.client.tsx`", "each place's `src/app/client/main.client.tsx`"],
+	["`src/app/server/main.server.ts`", "each place's `src/app/server/main.server.ts`"],
+];
+
+const SKILL_NOTE =
+	"> This game has several places (see `AGENTS.md`). Below, `world/`, `src/app/`, `src/world.d.ts`, `tests/e2e/`, `build/` and `game.project.json` are each place's, under `projects/<place>/`, and shared features are in `projects/common/src/features/`. Run forge, ror and rojo from the place's folder, and name the place: `mise run dev <place>`, `mise run sync <place>`.";
+
+/** Replaces the section under `## <heading>` with `section`, up to the next `## ` heading. */
+function replaceSection(text: string, heading: string, section: string) {
+	const start = text.indexOf(`\n## ${heading}\n`) + 1;
+	if (start === 0) throw new Error(`places: no "## ${heading}" section to replace`);
+	const next = text.indexOf("\n## ", start);
+	const end = next === -1 ? text.length : next + 1;
+	return `${text.slice(0, start)}${section.trim()}\n${next === -1 ? "" : "\n"}${text.slice(end)}`;
 }

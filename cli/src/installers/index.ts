@@ -10,6 +10,8 @@ import { TEMPLATE_EXTRAS } from "../consts.ts";
 export interface AddOn {
 	/** The flag and the key in results, such as "state". */
 	readonly name: string;
+	/** What the flag's value is called in --help, such as "library". */
+	readonly valueName: string;
 	readonly question: string;
 	readonly choices: readonly { readonly value: string; readonly label: string; readonly hint: string }[];
 	/** The choice taken when none is given; "none" unless the question has no "none". */
@@ -22,6 +24,7 @@ export const NONE = "none";
 export const addOns = [
 	{
 		name: "ui",
+		valueName: "library",
 		question: "Which UI library?",
 		choices: [
 			{ value: "react", label: "React", hint: "the most used" },
@@ -32,6 +35,7 @@ export const addOns = [
 	},
 	{
 		name: "places",
+		valueName: "layout",
 		question: "One place, or several?",
 		choices: [
 			{ value: "single", label: "One place", hint: "the whole game in one place" },
@@ -42,6 +46,7 @@ export const addOns = [
 	},
 	{
 		name: "state",
+		valueName: "library",
 		question: "Which library for client state?",
 		choices: [
 			{ value: "charm", label: "Charm", hint: "signals, the most used" },
@@ -52,6 +57,7 @@ export const addOns = [
 	},
 	{
 		name: "data",
+		valueName: "library",
 		question: "Which library to save player data?",
 		choices: [
 			{ value: "profilestore", label: "ProfileStore", hint: "the most used, with session locking" },
@@ -62,6 +68,7 @@ export const addOns = [
 	},
 	{
 		name: "entities",
+		valueName: "library",
 		question: "Which library for entities and components?",
 		choices: [
 			{ value: "components", label: "Flamework Components", hint: "classes on tagged instances" },

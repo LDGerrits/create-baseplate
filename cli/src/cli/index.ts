@@ -27,7 +27,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 		.option("--no-install", "don't install the tools and packages (mise install, mise run install)")
 		.option("--json", "print one JSON result on stdout, for agents and scripts; implies --yes", false);
 	for (const addOn of addOns) {
-		program.addOption(new Option(`--${addOn.name} <library>`, addOn.question).choices(valuesOf(addOn)));
+		program.addOption(new Option(`--${addOn.name} <${addOn.valueName}>`, addOn.question).choices(valuesOf(addOn)));
 	}
 	program.version(version).exitOverride();
 	try {

@@ -28,6 +28,10 @@ if (args[0] === "--one") {
 		console.error(`Name the place: ${places.join(", ")}. For example: mise run dev ${places[0] ?? "<place>"}`);
 		process.exit(1);
 	}
+	if (!multi && only !== undefined) {
+		console.error(`This game has one place: run it without a name.`);
+		process.exit(1);
+	}
 	if (multi && only !== undefined && !places.includes(only)) {
 		console.error(`No place "${only}". The places are: ${places.join(", ")}.`);
 		process.exit(1);

@@ -13,3 +13,5 @@ Inside a feature, the folder a file sits in decides where it runs:
 - `shared/`: both. It can't import `server/` or `client/` code; ESLint enforces the sides.
 
 `mise run check` builds, checks and tests every place; Studio commands name one: `mise run dev lobby`, `mise run sync lobby`. Files are kebab-case, named after what they hold: `inventory-service.ts`.
+
+Each place compiles from its own `tsconfig.<place>.json` at the root (the place's `tsconfig.json` extends it, for editors) into `out/<place>/`; `mise run check` also type-checks the shared code on its own. `mise run test:engine` runs each place's specs in turn, in the one test place set in `.env`.

@@ -31,7 +31,7 @@
 	},
 	"overrides": [
 		{
-			"includes": ["world/**"],
+			"includes": ["**/world/**"],
 			"assist": {
 				"actions": {
 					"source": {
