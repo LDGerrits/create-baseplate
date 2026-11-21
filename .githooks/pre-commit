@@ -1,4 +1,5 @@
 #!/bin/sh
-# Runs the full check on exactly what is being committed (lint-staged.config.ts).
+# Runs the full check on exactly what is being committed: --hide-all sets unstaged changes and
+# untracked files aside first (lint-staged.config.ts).
 # `mise run install` turns this folder on with `git config core.hooksPath .githooks`.
-exec mise exec -- lint-staged
+exec mise exec -- lint-staged --hide-all

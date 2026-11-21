@@ -44,7 +44,7 @@ Keys and local paths go in `.env`: copy `.env.example`, which lists each one.
 
 - **Editor:** open the folder in VS Code and install the recommended extensions. The mise extension gives VS Code the pinned Node and tools; Biome formats on save and ESLint fixes what it can; the roblox-ts extension shows compile errors as you type.
 - **Other editors:** `.editorconfig` sets tabs and line endings, and any TypeScript language server works with `tsconfig.json`. Run `mise run check` to format.
-- **The commit hook** runs `mise run ci`, a few seconds. It checks the files on disk, so unstaged changes count too. To commit work in progress, `git commit --no-verify`.
+- **The commit hook** formats the staged files and runs `mise run ci` on exactly what you commit: lint-staged sets unstaged changes and untracked files aside first, so `git add -p` works. It takes a few seconds. To commit work in progress anyway, `git commit --no-verify`.
 - **React DevTools:** run `npx react-devtools`, set the attribute `ReactDevTools` to true on Workspace in Studio, and play: the app shows the UI's component tree, props and state. React logs one harmless telemetry error when it connects.
 - **Tooling in TypeScript:** scripts, hooks and configs are `.ts`. Node runs them directly, ESLint loads its config through jiti, and `tsconfig.node.json` type-checks them in `mise run check`.
 - **Snippets:** in VS Code, type `service` or `controller` in a new file for a Flamework skeleton named after the file.
