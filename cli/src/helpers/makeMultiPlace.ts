@@ -20,10 +20,11 @@ const GITIGNORE = `
  * default.rogen.json (`sourcePaths` `["../common/src", "src"]`), tsconfig, entry scripts, world,
  * tests and forge config. Runs after the add-ons, so they land in the shared code.
  *
- * Each place compiles to out/<place> at the root, with the root's include/, from its own
- * tsconfig.<place>.json at the root: roblox-ts rejects project paths into a folder inside its
- * rootDir (projects/ for a place, so not projects/<place>/out), and Sloptor writes only inside
- * its tsconfig's folder.
+ * Rogen's own example compiles each place with rbxtsc into projects/<place>/out. Sloptor can't:
+ * it wants every source under its tsconfig's folder (rootDir), rejects project paths into a
+ * folder inside rootDir, and writes only inside its tsconfig's folder. So each place compiles
+ * from tsconfig.<place>.json at the root (rootDir projects/) to out/<place>, with the root's
+ * include/.
  */
 export function makeMultiPlace(dir: string, name: string) {
 	const at = (...parts: string[]) => path.join(dir, ...parts);
