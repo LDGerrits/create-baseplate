@@ -19,6 +19,8 @@ Each feature is a folder, `src/features/<feature>/`; `src/features/clicker` is t
 - `client/`: only on the player's device.
 - `shared/`: both. It can't import `server/` or `client/` code; ESLint enforces the sides.
 
+A file outside these three folders isn't placed in the game, and the check fails on it: there's no default side, so server code can't reach clients by mistake.
+
 `src/app/` holds the entry scripts: `app/server/main.server.ts` and `app/client/start.tsx` (which `main.client.tsx` runs) import every service and controller and start Flamework, and `app/client/app.tsx` is the root of the UI. Files are kebab-case, named after what they hold: `inventory-service.ts`.
 
 ## Adding a feature
