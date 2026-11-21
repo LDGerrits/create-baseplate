@@ -71,7 +71,13 @@ test("applies the chosen add-ons", () => {
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
 	const run = create(cwd, "my-game", "--no-git", "--state", "charm", "--data", "lapis", "--entities", "jecs");
 	assert.equal(run.status, 0, run.stderr);
-	assert.deepEqual(JSON.parse(run.stdout).addOns, { ui: "react", state: "charm", data: "lapis", entities: "jecs" });
+	assert.deepEqual(JSON.parse(run.stdout).addOns, {
+		ui: "react",
+		places: "single",
+		state: "charm",
+		data: "lapis",
+		entities: "jecs",
+	});
 
 	const dir = path.join(cwd, "my-game");
 	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
@@ -99,7 +105,13 @@ test("applies the chosen add-ons", () => {
 test("takes no add-ons by default", () => {
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
 	const run = create(cwd, "my-game", "--no-git");
-	assert.deepEqual(JSON.parse(run.stdout).addOns, { ui: "react", state: "none", data: "none", entities: "none" });
+	assert.deepEqual(JSON.parse(run.stdout).addOns, {
+		ui: "react",
+		places: "single",
+		state: "none",
+		data: "none",
+		entities: "none",
+	});
 	assert.ok(!fs.existsSync(path.join(cwd, "my-game/src/features/player-data")));
 });
 
@@ -153,4 +165,42 @@ test("refuses Reflex with Vide", () => {
 	assert.equal(run.status, 1);
 	assert.match(JSON.parse(run.stdout).error, /Reflex.*Vide.*charm/);
 	assert.ok(!fs.existsSync(path.join(cwd, "my-game")), "nothing is created");
+});
+
+test("lays out a multi-place game as Rogen prescribes", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const run = create(cwd, "my-game", "--no-git", "--places", "multi", "--data", "lapis");
+	assert.equal(run.status, 0, run.stderr);
+	const dir = path.join(cwd, "my-game");
+	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+	const exists = (file: string) => fs.existsSync(path.join(dir, file));
+
+	for (const gone of ["src", "world", "tests", "default.rogen.json", "rbx-forge.config.ts", "jest.config.ts"]) {
+		assert.ok(!exists(gone), `${gone} moved into the places`);
+	}
+	assert.ok(exists("projects/common/src/features/clicker/server/clicker-service.ts"));
+	assert.ok(exists("projects/common/src/features/player-data/server/player-data-service.ts"), "add-ons are shared");
+	assert.match(read("tsconfig.json"), /"include": \["projects\/common\/src"\]/);
+
+	for (const place of ["lobby", "game"]) {
+		const rogen = JSON.parse(read(`projects/${place}/default.rogen.json`));
+		assert.equal(rogen.name, `my-game-${place}`);
+		assert.deepEqual(rogen.sourcePaths, ["../common/src", "src"]);
+		assert.equal(rogen.compiledPath, `../../out/${place}`);
+		assert.equal(rogen.tree.ReplicatedStorage.rbxts_include.node_modules["@rbxts"].$path, "../../node_modules/@rbxts");
+		assert.match(
+			read(`projects/${place}/src/app/server/main.server.ts`),
+			/import "\.\.\/\.\.\/\.\.\/\.\.\/common\/src\/features\/clicker\/server\/clicker-service";/,
+		);
+		assert.equal(JSON.parse(read(`projects/${place}/tsconfig.json`)).extends, `../../tsconfig.${place}.json`);
+		const tsconfig = JSON.parse(read(`tsconfig.${place}.json`));
+		assert.deepEqual(tsconfig.include, ["projects/common/src", `projects/${place}/src`]);
+		assert.equal(tsconfig.compilerOptions.outDir, `out/${place}`);
+		for (const file of ["world/default.project.json", "tests/e2e/clicker.luau", "rotor.toml", "jest.config.ts"]) {
+			assert.ok(exists(`projects/${place}/${file}`), `${place} has ${file}`);
+		}
+		assert.match(read(`projects/${place}/rbx-forge.config.ts`), /node \.\.\/\.\.\/scripts\/game-project\.ts/);
+	}
+	assert.match(read(".gitignore"), /\/projects\/\*\/build/);
+	assert.match(read("AGENTS.md"), /## Where code goes\n\nThis game has several places/);
 });

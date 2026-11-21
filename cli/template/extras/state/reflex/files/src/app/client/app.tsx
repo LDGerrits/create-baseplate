@@ -3,7 +3,7 @@ import React from "@rbxts/react";
 import { ReflexProvider, useSelector } from "@rbxts/react-reflex";
 import { ClickerButton } from "../../features/clicker/client/clicker-button";
 import { type ClickerController } from "../../features/clicker/client/clicker-controller";
-import { type RootState, store } from "./store";
+import { type RootState, store } from "../../store/client-store";
 
 function Hud() {
 	const clicker = Dependency<ClickerController>();

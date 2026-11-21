@@ -6,6 +6,7 @@ import { runCli } from "./cli/index.ts";
 import { commitAll, initGit, isGitInstalled } from "./helpers/git.ts";
 import { installDependencies, isMiseInstalled } from "./helpers/installDependencies.ts";
 import { logNextSteps, nextSteps } from "./helpers/logNextSteps.ts";
+import { makeMultiPlace } from "./helpers/makeMultiPlace.ts";
 import { scaffoldProject } from "./helpers/scaffoldProject.ts";
 import { setProjectName } from "./helpers/setProjectName.ts";
 import { addOns, findConflict, installAddOns } from "./installers/index.ts";
@@ -40,6 +41,7 @@ async function main() {
 	}
 	setProjectName(options.dir, options.name);
 	installAddOns(options.dir, options.addOns);
+	if (options.addOns.places === "multi") makeMultiPlace(options.dir, options.name);
 	const withAddOns = addOns.some((addOn) => options.addOns[addOn.name] !== addOn.defaultValue);
 	logger.success(`Created ${options.name} in ${options.dir}`);
 

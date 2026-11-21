@@ -16,6 +16,8 @@ export function installDependencies(dir: string, quiet: boolean): string | undef
 		["install"],
 		["exec", "--", "pnpm", "install", "--no-frozen-lockfile", "--silent"],
 		["run", "install"],
+		// What the CLI wrote, formatted as the first commit's check expects.
+		["exec", "--", "biome", "format", "--write", "."],
 	]) {
 		const run = spawnSync("mise", args, {
 			cwd: dir,

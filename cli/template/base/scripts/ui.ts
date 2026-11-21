@@ -91,7 +91,7 @@ if (report.records.length === 0) {
 
 let failed = 0;
 for (const record of report.records) {
-	const name = record.story.replace(/^out\//, "").replace(/\.story\.luau$/, "");
+	const name = record.story.replace(/^(.*\/)?out\//, "").replace(/\.story\.luau$/, "");
 	const picture = path.join(OUT, record.out, "render.png");
 	const missingFonts = record.missingFonts ?? [];
 	if (record.clean && missingFonts.length === 0) {

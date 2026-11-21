@@ -15,6 +15,7 @@ pnpm create baseplate [dir] [flags]
 | `--no-install` | Don't install the tools and packages (with mise). |
 | `--json`       | Print one JSON result on stdout. Implies `--yes`.                          |
 | `--ui <library>` | UI: `react` (default) or `vide`. |
+| `--places <layout>` | `single` (default), or `multi`: a lobby and a game sharing code, laid out as Rogen does. |
 | `--state <library>` | Client state: `charm`, `reflex` or `none` (default). |
 | `--data <library>` | Player data: `profilestore`, `lapis` or `none` (default). |
 | `--entities <library>` | Entities: `components`, `jecs` or `none` (default). |

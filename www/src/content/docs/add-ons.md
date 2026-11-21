@@ -8,6 +8,7 @@ The base game brings Flamework and React with a few small helpers they work well
 | Question | Flag | Choices |
 | --- | --- | --- |
 | UI | `--ui` | `react` (default, [React](https://react.dev) for Roblox), `vide` ([Vide](https://github.com/centau/vide)) |
+| Places | `--places` | `single` (default), `multi` |
 | Client state | `--state` | `charm` ([Charm](https://github.com/littensy/charm)), `reflex` ([Reflex](https://github.com/littensy/reflex), no longer updated), `none` |
 | Player data | `--data` | `profilestore` ([ProfileStore](https://github.com/MadStudioRoblox/ProfileStore)), `lapis` ([Lapis](https://github.com/nezuo/lapis)), `none` |
 | Entities | `--entities` | `components` ([Flamework Components](https://flamework.fireboltofdeath.dev/docs/additional-modules/components)), `jecs` ([Jecs](https://github.com/Ukendio/jecs)), `none` |
@@ -18,6 +19,7 @@ pnpm create baseplate my-game --state charm --data profilestore --entities compo
 
 Each add-on arrives wired in and tested, with a section in the game's `AGENTS.md` that tells agents how to use it:
 
+- **Places:** with `multi`, the game is laid out as [Rogen](https://github.com/LDGerrits/rogen) does for roblox-ts: the shared code in `projects/common/src`, and a lobby and a game in `projects/`, each with its own entry scripts, world, tests and Rogen config. `mise run check` builds and tests every place; Studio commands name one: `mise run dev lobby`.
 - **UI:** with Vide, the example UI, its story, the lint rules and `AGENTS.md`'s UI section are Vide's, and React's packages are gone.
 - **State:** the clicker's controller keeps its count in the library, and the UI reads it from there. With Vide, Charm comes with its Vide binding; Reflex has none, so the CLI refuses Reflex with Vide.
 - **Player data:** `PlayerDataService` loads each player's data when they join and saves it when they leave, with specs against a mock store. Studio saves to a mock store too.

@@ -32,7 +32,7 @@ interface ReeSummary {
 const runs: Run[] = [
 	{
 		name: "jest",
-		harness: "scripts/test/jest.luau",
+		harness: path.join(import.meta.dirname, "test/jest.luau"),
 		args: ["--run-context", "server", "--seconds", "60"],
 	},
 	...fs

@@ -24,20 +24,24 @@ const cursor = process.argv[2] === "cursor";
 const start = payload.cwd ?? payload.workspace_roots?.[0] ?? process.cwd();
 const root = projectRoot(start) ?? start;
 
-// Files that only their generator writes, and what to run instead.
+// Files that only their generator writes, and what to run instead. In a multi-place game each
+// place has its own, under projects/<place>/.
 const GENERATED: [RegExp, string][] = [
-	[/^(out|include)\//, "the compiler writes it: edit the source in src/ and run `mise run check`"],
-	[/^build\//, "builds write it: run `mise run build` or `mise run check`"],
+	[/^(projects\/[^/]+\/)?(out|include)\//, "the compiler writes it: edit the source in src/ and run `mise run check`"],
+	[/^(projects\/[^/]+\/)?build\//, "builds write it: run `mise run build` or `mise run check`"],
 	[/^node_modules\//, "pnpm writes it: `pnpm add <package>`, or a patch with `pnpm patch`"],
 	[
-		/^default\.project\.json$/,
+		/^(projects\/[^/]+\/)?default\.project\.json$/,
 		"Rogen writes it from default.rogen.json: change that, or the file layout, and run `mise run check`",
 	],
 	[
-		/^game\.project\.json$/,
+		/^(projects\/[^/]+\/)?game\.project\.json$/,
 		"scripts/game-project.ts writes it from default.project.json and world/: run `mise run check`",
 	],
-	[/^src\/world\.d\.ts$/, "scripts/world-types.ts writes it from world/: change world/ and run `mise run check`"],
+	[
+		/^(projects\/[^/]+\/)?src\/world\.d\.ts$/,
+		"scripts/world-types.ts writes it from world/: change world/ and run `mise run check`",
+	],
 ];
 
 function checkFile(file: string): string | undefined {

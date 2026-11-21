@@ -1,5 +1,5 @@
 import { Controller, type OnStart } from "@flamework/core";
-import { store } from "../../../app/client/store";
+import { store } from "../../../store/client-store";
 import { ClickerNetwork } from "../shared/clicker-network";
 
 const events = ClickerNetwork.createClient({});

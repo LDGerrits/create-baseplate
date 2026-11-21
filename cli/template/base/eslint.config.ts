@@ -9,24 +9,24 @@ import tseslint from "typescript-eslint";
 /** Where code runs. Rogen sends `server/` to the server only and `shared/` to both sides. */
 const zones = [
 	{
-		target: "./src/**/shared/**",
-		from: ["./src/**/server/**", "./src/**/client/**"],
+		target: "./**/shared/**",
+		from: ["./**/server/**", "./**/client/**"],
 		message: "Shared code ships to both sides, so it can't import server or client code.",
 	},
 	{
-		target: "./src/**/client/**",
-		from: "./src/**/server/**",
+		target: "./**/client/**",
+		from: "./**/server/**",
 		message: "Client code can't import server code: it never reaches the client.",
 	},
 	{
-		target: "./src/**/server/**",
-		from: "./src/**/client/**",
+		target: "./**/server/**",
+		from: "./**/client/**",
 		message: "Server code can't import client code.",
 	},
 ];
 
 export default tseslint.config(
-	{ ignores: ["out/", "include/", "node_modules/", "*.config.ts", ".agents/", "src/world.d.ts"] },
+	{ ignores: ["**/out/", "**/include/", "**/build/", "node_modules/", "**/*.config.ts", ".agents/", "**/world.d.ts"] },
 	tseslint.configs.strictTypeChecked,
 	// The plugin types its presets as an open record; `recommended` exists.
 	roblox.configs.recommended!,
