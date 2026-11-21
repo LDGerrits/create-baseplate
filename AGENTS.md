@@ -16,7 +16,7 @@ The build copies the template into `cli/dist/template`, only the files git track
 - At the root, for the CLI and the docs site: `mise run check` (format, lint, build, type-check, test).
 - In `cli/template/base`: its own `mise run check`, as its `AGENTS.md` says.
 - To see what a user gets: `pnpm --filter create-baseplate build`, then `node cli/dist/index.js <folder> --json`, and `mise run check` in that folder.
-- The commit hook (`.githooks/pre-commit`) runs each part's check when a commit touches it. Turn it on in a new clone with `git config core.hooksPath .githooks`.
+- The commit hook (`.githooks/pre-commit`) runs the root's `mise run ci` on every commit, and the template's check when a commit touches `cli/template/base`. Turn it on in a new clone with `git config core.hooksPath .githooks`.
 
 ## Updates
 

@@ -1,7 +1,9 @@
 #!/bin/sh
-# The repo's commit hook: each part's check runs when the commit touches that part.
+# The repo's commit hook.
 # - cli/template/base: its own full check on exactly what is being committed (scripts/pre-commit.ts).
-# - everything else (the CLI, the docs site, the root): `mise run ci` at the root.
+# - Every commit: `mise run ci` at the root, for the CLI and the docs site. A change to the template or
+#   an add-on can break the CLI's tests (add-ons edit the template's files by their text), and turbo
+#   replays what didn't change from its cache, so this costs little.
 # `git config core.hooksPath .githooks` turns this folder on.
 set -e
 root="$(git rev-parse --show-toplevel)"
@@ -9,6 +11,6 @@ staged="$(git diff --cached --name-only --diff-filter=ACMRD)"
 if echo "$staged" | grep -q '^cli/template/base/'; then
 	(cd "$root/cli/template/base" && mise exec -- node scripts/pre-commit.ts)
 fi
-if echo "$staged" | grep -qv '^cli/template/'; then
+if [ -n "$staged" ]; then
 	(cd "$root" && mise run ci)
 fi
