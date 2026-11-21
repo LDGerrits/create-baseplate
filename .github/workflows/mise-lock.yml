@@ -6,7 +6,7 @@ name: Lock mise tools
 #
 # A push with the default GITHUB_TOKEN doesn't start CI again, so the update would stay red. Give
 # this workflow a GitHub App with Contents: read and write on this repository, installed on it, as
-# the secrets LOCK_APP_CLIENT_ID and LOCK_APP_PRIVATE_KEY: its push starts CI on the new lock.
+# the secrets BOT_APP_CLIENT_ID and BOT_APP_PRIVATE_KEY: its push starts CI on the new lock.
 
 on:
   push:
@@ -28,14 +28,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      HAS_APP: ${{ secrets.LOCK_APP_CLIENT_ID != '' }}
+      HAS_APP: ${{ secrets.BOT_APP_CLIENT_ID != '' }}
     steps:
       - id: app
         if: env.HAS_APP == 'true'
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          client-id: ${{ secrets.LOCK_APP_CLIENT_ID }}
-          private-key: ${{ secrets.LOCK_APP_PRIVATE_KEY }}
+          client-id: ${{ secrets.BOT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           token: ${{ steps.app.outputs.token || secrets.GITHUB_TOKEN }}
