@@ -10,4 +10,4 @@ Vide from `@rbxts/vide`. Components are functions that run once and return insta
 - Vide sets its own defaults on the instances it creates (such as a white background), unlike Roblox's: set the properties you rely on.
 - A story renders inside a `Frame`, so a component whose root is a `ScreenGui` draws nothing.
 - rur needs Roblox Studio's fonts to draw text; outside Windows and WSL, set `RUR_ROBLOX_CONTENT` (see `.env.example`).
-- In Studio, Vide runs in strict mode (`main.client.tsx`), which reports mistakes with readable errors.
+- In Studio, Vide runs in strict mode (`start.tsx`), which reports mistakes with readable errors.

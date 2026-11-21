@@ -18,12 +18,12 @@ Each feature is a folder, `src/features/<feature>/`; `src/features/clicker` is t
 - `client/`: only on the player's device.
 - `shared/`: both. It can't import `server/` or `client/` code; ESLint enforces the sides.
 
-`src/app/` holds the entry scripts: `app/server/main.server.ts` and `app/client/main.client.tsx` import every service and controller and start Flamework, and `app/client/app.tsx` is the root of the UI. Files are kebab-case, named after what they hold: `inventory-service.ts`.
+`src/app/` holds the entry scripts: `app/server/main.server.ts` and `app/client/start.tsx` (which `main.client.tsx` runs) import every service and controller and start Flamework, and `app/client/app.tsx` is the root of the UI. Files are kebab-case, named after what they hold: `inventory-service.ts`.
 
 ## Adding a feature
 
 1. Network events in `shared/<feature>-network.ts`, with `Networking.createEvent<ClientToServer, ServerToClient>()`.
-2. A service in `server/` and, if the client takes part, a controller in `client/`. Import each in the matching `src/app/*/main` file, or Flamework never starts it.
+2. A service in `server/` and, if the client takes part, a controller in `client/`. Import each in `src/app/server/main.server.ts` or `src/app/client/start.tsx`, or Flamework never starts it.
 3. UI as a component in `client/` with a story, rendered from `app.tsx`.
 4. Tests: a spec for the service, and an end-to-end test for each request a client sends.
 

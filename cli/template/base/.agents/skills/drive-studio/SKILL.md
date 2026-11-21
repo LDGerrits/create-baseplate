@@ -20,7 +20,14 @@ Roblox's Studio MCP drives Studio. If its tools aren't available to you, ask the
 
 1. `list_roblox_studios` first, and pick the Studio whose place forge opened. Confirm the target before you change anything in it.
 2. Inspect without running code: `search_game_tree`, `inspect_instance`, `script_grep`.
-3. Playtest: `start_stop_play`, then play as the user would: `user_mouse_input` and `user_keyboard_input` (`datamodel_type` `Client`), `character_navigation`. Read `get_console_output`, and look with `screen_capture`.
+3. Playtest: `start_stop_play`, then play as the user would: `user_mouse_input` and `user_keyboard_input` (`datamodel_type` `Client`), `character_navigation`. Read `get_console_output`, and look with `screen_capture`. To click a button, move to it by its path, which starts with `LocalPlayer`, then click:
+
+   ```json
+   [{ "action": "moveTo", "instance_path": "LocalPlayer.PlayerGui.ScreenGui.TextButton" },
+    { "action": "mouseButtonClick", "mouse_button": "left" }]
+   ```
+
+   Then read the result with `execute_luau` on the `Client`, such as the button's `Text`.
 4. `execute_luau` runs Luau when the tools above can't answer. It needs `datamodel_type` (`Edit`, or `Server`/`Client` during a playtest) and runs as a plugin, so its `_G` isn't the game's.
 5. For debugging with breakpoints, profiling or other devices, Studio has Roblox's own skills: `list_skills`, then `skill` (`rbx-debug`, `rbx-perf-profiling`, `rbx-device-simulator-lua`). For API facts, `http_get` reads Roblox's documentation.
 

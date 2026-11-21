@@ -3,7 +3,7 @@
 This game has several places, laid out as Rogen does for roblox-ts: each place is a folder in `projects/`, and the code they share is `projects/common/src`.
 
 - `projects/common/src/features/<feature>/`: one folder per feature that several places use; `features/clicker` is the example to copy.
-- `projects/<place>/src/`: what only that place has. Its `app/` holds the entry scripts: `app/server/main.server.ts` and `app/client/main.client.tsx` import every service and controller the place uses, shared ones included, and start Flamework; `app/client/app.tsx` is the root of its UI. A feature only one place uses goes in `projects/<place>/src/features/`.
+- `projects/<place>/src/`: what only that place has. Its `app/` holds the entry scripts: `app/server/main.server.ts` and `app/client/start.tsx` (which `main.client.tsx` runs) import every service and controller the place uses, shared ones included, and start Flamework; `app/client/app.tsx` is the root of its UI. A feature only one place uses goes in `projects/<place>/src/features/`.
 - Each place has its own `default.rogen.json` (`sourcePaths` `["../common/src", "src"]`), `tsconfig.json`, `world/` (its map, typed in its own `src/world.d.ts`), `tests/e2e/` and forge config. Shared code can't use one place's world types.
 
 Inside a feature, the folder a file sits in decides where it runs:

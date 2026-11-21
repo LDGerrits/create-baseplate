@@ -27,6 +27,7 @@ A ree harness in `tests/e2e/<feature>.luau`, run with the server and one player'
 - `Server` boots the game's own server script; keep its `bootServer` as it is.
 - `Client` talks to the server through the game's remotes, the way the real client would, and `assert`s on what comes back. Wait for what you expect with `waitFor`, not a fixed `task.wait`.
 - The test passes when the client prints `@done`. A failed `assert`, or any script error on either side, fails it.
+- To test what the player sees, start the client's own UI, as `tests/e2e/clicker-ui.luau` does: the client can't run a script's source in ree, so it calls `start()` from `src/app/client/start.tsx`, which `main.client.tsx` runs in the game, and reads the instances it mounts.
 
 ## Engine specs
 

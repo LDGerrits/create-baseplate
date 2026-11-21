@@ -123,7 +123,11 @@ export function makeMultiPlace(dir: string, name: string) {
 
 	const extra = (file: string) => fs.readFileSync(path.join(TEMPLATE_EXTRAS, "places", "multi", file), "utf8");
 	let agents = replaceSection(read("AGENTS.md"), "Where code goes", extra("AGENTS.md"));
-	agents = replaceIn(agents, "`src/app/*/main` file", "`src/app/*/main` file of each place that uses it");
+	agents = replaceIn(
+		agents,
+		"Import each in `src/app/server/main.server.ts` or `src/app/client/start.tsx`",
+		"Import each in the `src/app/server/main.server.ts` or `src/app/client/start.tsx` of each place that uses it",
+	);
 	agents = replaceIn(agents, "`tests/e2e/<feature>.luau`", "`projects/<place>/tests/e2e/<feature>.luau`");
 	agents = replaceIn(
 		agents,
@@ -158,7 +162,7 @@ const PATHS: [string, string][] = [
 	["`src/store/", "`projects/common/src/store/"],
 	["`world/Workspace/", "`projects/<place>/world/Workspace/"],
 	["`tests/e2e/spinner.luau`", "`projects/<place>/tests/e2e/spinner.luau`"],
-	["`src/app/client/main.client.tsx`", "each place's `src/app/client/main.client.tsx`"],
+	["`src/app/client/start.tsx`", "each place's `src/app/client/start.tsx`"],
 	["`src/app/server/main.server.ts`", "each place's `src/app/server/main.server.ts`"],
 ];
 
