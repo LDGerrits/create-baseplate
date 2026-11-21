@@ -1,5 +1,5 @@
-import React, { useBinding, useEffect, useMemo } from "@rbxts/react";
-import { createSpring } from "@rbxts/ripple";
+import { useMotion } from "@rbxts/pretty-react-hooks";
+import React from "@rbxts/react";
 
 export interface ClickerButtonProps {
 	readonly clicks: number;
@@ -8,20 +8,9 @@ export interface ClickerButtonProps {
 
 /** Shows the click count and reports presses. Takes everything as props, so its story renders it alone. */
 export function ClickerButton({ clicks, onClick }: ClickerButtonProps) {
-	// A Ripple spring shrinks the button on each press and lets it bounce back. It drives a
-	// binding, not state, so the animation updates the instance without re-rendering.
-	const [scale, setScale] = useBinding(1);
-	const spring = useMemo(() => createSpring(1, { tension: 500, friction: 15 }), []);
-	useEffect(() => {
-		spring.start();
-		const disconnect = spring.onChange((value) => {
-			setScale(value);
-		});
-		return () => {
-			disconnect();
-			spring.stop();
-		};
-	}, [spring, setScale]);
+	// A Ripple motion shrinks the button on each press and springs it back. `useMotion` returns it
+	// with a binding, so the animation updates the instance without re-rendering.
+	const [scale, scaleMotion] = useMotion(1);
 
 	return (
 		<textbutton
@@ -31,7 +20,8 @@ export function ClickerButton({ clicks, onClick }: ClickerButtonProps) {
 			Text={`Clicks: ${clicks}`}
 			Event={{
 				Activated: () => {
-					spring.setPosition(0.85);
+					scaleMotion.immediate(0.85);
+					scaleMotion.spring(1, { tension: 500, friction: 15 });
 					onClick();
 				},
 			}}

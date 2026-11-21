@@ -1,6 +1,6 @@
-// @ts-check
 import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
 import importX from "eslint-plugin-import-x";
+import jest from "eslint-plugin-jest";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactX from "eslint-plugin-react-x";
 import roblox from "eslint-plugin-roblox-ts";
@@ -26,9 +26,10 @@ const zones = [
 ];
 
 export default tseslint.config(
-	{ ignores: ["out/", "include/", "node_modules/", "*.config.js", ".agents/", "src/world.d.ts"] },
+	{ ignores: ["out/", "include/", "node_modules/", "*.config.ts", ".agents/", "src/world.d.ts"] },
 	tseslint.configs.strictTypeChecked,
-	roblox.configs.recommended,
+	// The plugin types its presets as an open record; `recommended` exists.
+	roblox.configs.recommended!,
 	reactHooks.configs.flat["recommended-latest"],
 	reactX.configs["recommended-type-checked"],
 	{
@@ -61,5 +62,12 @@ export default tseslint.config(
 			// `os.clock()` and Roblox APIs return numbers; templates are fine.
 			"@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
 		},
+	},
+	{
+		// Specs: no focused or skipped tests left behind, and every test asserts something.
+		files: ["src/**/*.spec.ts", "src/**/*.spec.tsx"],
+		...jest.configs["flat/recommended"],
+		// The specs import Jest's functions from @rbxts/jest-globals, not from globals.
+		settings: { jest: { globalPackage: "@rbxts/jest-globals", version: 29 } },
 	},
 );

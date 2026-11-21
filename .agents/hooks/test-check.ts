@@ -4,7 +4,7 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 
-let payload = {};
+let payload: { stop_hook_active?: boolean; cwd?: string } = {};
 try {
 	payload = JSON.parse(fs.readFileSync(0, "utf8"));
 } catch {}
@@ -16,7 +16,7 @@ try {
 	process.exit(0);
 }
 
-const git = (...args) => {
+const git = (...args: string[]) => {
 	const run = spawnSync("git", args, { encoding: "utf8" });
 	return run.status === 0 ? run.stdout : "";
 };

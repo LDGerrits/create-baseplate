@@ -28,7 +28,7 @@ sourcemap.json
 # The world's project files are written by hand and by syncback; keep them
 !/world/**/*.project.json
 
-# Generated from world/ by scripts/world-types.mjs
+# Generated from world/ by scripts/world-types.ts
 /src/world.d.ts
 
 # forge's session state and logs

@@ -16,15 +16,15 @@ A Roblox game template in roblox-ts, set up for AI coding agents: one command ch
 
 ## Stack
 
-|           |                                                                                                                                                                                                                              |
-| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Language  | TypeScript with [roblox-ts](https://roblox-ts.com), compiled by [Sloptor](https://github.com/howmanyslop/sloptor)                                                                                                            |
-| Sync      | [Rogen](https://github.com/LDGerrits/rogen) over [Rojo](https://rojo.space); [rbx-forge](https://github.com/christopher-buss/rbx-forge) runs Studio and syncback                                                             |
-| Framework | [Flamework](https://flamework.fireboltofdeath.dev): services, controllers, typed networking                                                                                                                                  |
-| UI        | [React](https://github.com/jsdotlua/react-lua), [Ripple](https://github.com/littensy/ripple) for animation, stories in [UI Labs](https://github.com/PepeElToro41/ui-labs) format                                             |
-| Checks    | ESLint with typescript-eslint, eslint-plugin-roblox-ts and React's rules (react-hooks, react-x), Biome for formatting, Lune for place checks                                                                                 |
-| Tests     | [Jest](https://github.com/jsdotlua/jest-lua) run in [ree](https://github.com/Anime-Vanguards/roblox-engine-emulator), and in Studio or Open Cloud through [jest-roblox](https://github.com/christopher-buss/jest-roblox-cli) |
-| Tools     | [mise](https://mise.jdx.dev) pins every tool; pnpm installs packages                                                                                                                                                         |
+|           |                                                                                                                                                                                                                                                                                      |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Language  | TypeScript with [roblox-ts](https://roblox-ts.com), compiled by [Sloptor](https://github.com/howmanyslop/sloptor)                                                                                                                                                                    |
+| Sync      | [Rogen](https://github.com/LDGerrits/rogen) over [Rojo](https://rojo.space); [rbx-forge](https://github.com/christopher-buss/rbx-forge) runs Studio and syncback                                                                                                                     |
+| Framework | [Flamework](https://flamework.fireboltofdeath.dev): services, controllers, typed networking                                                                                                                                                                                          |
+| UI        | [React](https://github.com/jsdotlua/react-lua) with [pretty-react-hooks](https://github.com/littensy/pretty-react-hooks), [Ripple](https://github.com/littensy/ripple) for animation, stories in [UI Labs](https://github.com/PepeElToro41/ui-labs) format, React DevTools in Studio |
+| Checks    | ESLint with typescript-eslint, eslint-plugin-roblox-ts, React's rules (react-hooks, react-x) and eslint-plugin-jest; Biome for formatting; Lune for place checks; the tooling scripts are TypeScript, type-checked too                                                               |
+| Tests     | [Jest](https://github.com/jsdotlua/jest-lua) run in [ree](https://github.com/Anime-Vanguards/roblox-engine-emulator), and in Studio or Open Cloud through [jest-roblox](https://github.com/christopher-buss/jest-roblox-cli)                                                         |
+| Tools     | [mise](https://mise.jdx.dev) pins every tool; pnpm installs packages                                                                                                                                                                                                                 |
 
 ## Getting started
 
@@ -45,6 +45,8 @@ Keys and local paths go in `.env`: copy `.env.example`, which lists each one.
 - **Editor:** open the folder in VS Code and install the recommended extensions. The mise extension gives VS Code the pinned Node and tools; Biome formats on save and ESLint fixes what it can; the roblox-ts extension shows compile errors as you type.
 - **Other editors:** `.editorconfig` sets tabs and line endings, and any TypeScript language server works with `tsconfig.json`. Run `mise run check` to format.
 - **The commit hook** runs `mise run ci`, a few seconds. It checks the files on disk, so unstaged changes count too. To commit work in progress, `git commit --no-verify`.
+- **React DevTools:** run `npx react-devtools`, set the attribute `ReactDevTools` to true on Workspace in Studio, and play: the app shows the UI's component tree, props and state. React logs one harmless telemetry error when it connects.
+- **Tooling in TypeScript:** scripts, hooks and configs are `.ts`. Node runs them directly, ESLint loads its config through jiti, and `tsconfig.node.json` type-checks them in `mise run check`.
 - **Snippets:** in VS Code, type `service` or `controller` in a new file for a Flamework skeleton named after the file.
 - **Tasks:** `mise tasks` lists every task with what it does.
 

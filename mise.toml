@@ -27,7 +27,7 @@ run = "pnpm install --frozen-lockfile --silent"
 [tasks.generate]
 description = "Write the generated files: default.project.json (code), game.project.json (code and world), src/world.d.ts"
 depends = ["deps"]
-run = ["rogen write --quiet", "node scripts/game-project.mjs", "node scripts/world-types.mjs"]
+run = ["rogen write --quiet", "node scripts/game-project.ts", "node scripts/world-types.ts"]
 
 [tasks.install]
 description = "Install packages, write the generated files, and set up this clone"
@@ -44,16 +44,17 @@ fi
 """
 
 [tasks.check]
-description = "The one command to run after every change: format, compile, lint, build, verify the place and run the tests"
+description = "The one command to run after every change: format, compile, type-check the tooling, lint, build, verify the place and run the tests"
 depends = ["generate"]
 run = [
 	"biome check --write --no-errors-on-unmatched .",
 	"sloptor build",
+	"tsc -p tsconfig.node.json",
 	"rogen check",
 	"eslint --cache --max-warnings 0 src",
 	"mkdir -p build && rojo build game.project.json --output build/game.rbxl",
 	"lune run scripts/check-place build/game.rbxl",
-	"node scripts/test.mjs",
+	"node scripts/test.ts",
 ]
 
 [tasks.ci]
@@ -62,17 +63,18 @@ depends = ["generate"]
 run = [
 	"biome ci .",
 	"sloptor build",
+	"tsc -p tsconfig.node.json",
 	"rogen check",
 	"eslint --max-warnings 0 src",
 	"mkdir -p build && rojo build game.project.json --output build/game.rbxl",
 	"lune run scripts/check-place build/game.rbxl",
-	"node scripts/test.mjs",
+	"node scripts/test.ts",
 ]
 
 [tasks.test]
 description = "Compile and run the tests offline in ree: Jest specs, except *.engine.spec, then tests/e2e"
 depends = ["generate"]
-run = ["sloptor build", "node scripts/test.mjs"]
+run = ["sloptor build", "node scripts/test.ts"]
 
 [tasks."test:engine"]
 description = "Run every Jest spec, *.engine.spec included, in Roblox Studio or Open Cloud through jest-roblox"
@@ -82,7 +84,7 @@ run = ["sloptor build", "jest-roblox"]
 [tasks.ui]
 description = "Compile and render every UI story offline with rur; prints each picture's path"
 depends = ["generate"]
-run = ["sloptor build", "node scripts/ui.mjs"]
+run = ["sloptor build", "node scripts/ui.ts"]
 
 [tasks.dev]
 description = "Start the dev session: compile on save, serve code to Studio, open Studio on the world, and sync each Studio save back to world/"

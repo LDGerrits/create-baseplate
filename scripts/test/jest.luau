@@ -1,5 +1,5 @@
 -- ree harness: runs every Jest spec in the game, except `*.engine.spec`, which need the real engine.
--- `scripts/test.mjs` runs it; `mise run test:engine` runs all specs in Roblox Studio instead.
+-- `scripts/test.ts` runs it; `mise run test:engine` runs all specs in Roblox Studio instead.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local roots = {

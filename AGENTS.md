@@ -51,7 +51,8 @@ UI is React from `@rbxts/react`. Give each component worth looking at a story be
 
 - rur needs Roblox Studio's fonts, or it draws no text. On Windows it finds them; from WSL the script finds the newest Windows Studio. Elsewhere, set `RUR_ROBLOX_CONTENT` (see `.env.example`).
 - A story renders inside a `Frame`, so a component whose root is a `ScreenGui` draws nothing.
-- Animate with Ripple (`@rbxts/ripple`): a spring drives a binding, so the instance moves without re-rendering. `clicker-button.tsx` shows it.
+- Animate with `useMotion` from `@rbxts/pretty-react-hooks`: it gives a Ripple motion and a binding, so the instance moves without re-rendering. `clicker-button.tsx` shows it. The same package has hooks for events, timers, debouncing and the previous value; look there before writing one.
+- To inspect components, props and state live, a person can run React DevTools: set the attribute `ReactDevTools` on Workspace to true in Studio (see `react-dev.ts`). When it connects, React logs one `ReactTelemetry ... LogCounter` error; ignore it.
 - In Studio, React runs in development mode (`src/app/client/react-dev.ts`), with its warnings in the Output.
 
 ## World
@@ -66,13 +67,13 @@ ree and rur answer most questions without Studio. To run the game in real Studio
 
 The code is TypeScript but it runs as Luau. The compiler and ESLint catch most differences (`null`, `.length`, truthiness, `for...in`); these they don't explain:
 
-- There's no Node, DOM or npm ecosystem. Use Roblox's APIs instead: `HttpService:JSONEncode` for `JSON`, `task.delay` for `setTimeout`, `print` for `console`, `string.match` for regex, `pairs` for `Object.keys`.
+- There's no Node, DOM or npm ecosystem. Use Roblox's APIs instead: `HttpService:JSONEncode` for `JSON`, `task.delay` for `setTimeout`, `print` for `console`, `string.match` for regex. For `Object.keys`, `values`, `entries`, `assign` and `deepCopy`, import `Object` from `@rbxts/object-utils`.
 - Packages come from the `@rbxts` scope, with roblox-ts types. A plain npm package won't run in Roblox. pnpm installs only versions published at least two weeks ago; when it refuses one, pick an older version.
 - Check Roblox values with `typeIs(value, "Vector3")` and `classIs(instance, "Part")`. To check an instance and its children, let Flamework build the check from a type: `Flamework.createGuard<Model & { Humanoid: Humanoid }>()`.
 
 ## Packages
 
-Add a package with `pnpm add <name>` (or `pnpm add -D` for build tools). If its scope is new, such as `@rbxts-js`, mount the scope under `ReplicatedStorage.rbxts_include.node_modules` in `default.rogen.json`, as the existing scopes are. `mise run check` reports any package the game can't reach.
+Add a package with `pnpm add <name>` (or `pnpm add -D` for build tools). Keep `@rbxts/ripple` on 0.9: `@rbxts/pretty-react-hooks` is built for it, and the game loads only one copy. If its scope is new, such as `@rbxts-js`, mount the scope under `ReplicatedStorage.rbxts_include.node_modules` in `default.rogen.json`, as the existing scopes are. `mise run check` reports any package the game can't reach.
 
 <!-- rogen -->
 ## Rogen

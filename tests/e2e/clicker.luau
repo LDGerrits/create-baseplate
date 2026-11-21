@@ -1,5 +1,5 @@
 -- End-to-end: the real server boots, one player clicks, and the server's cooldown and count come back.
--- ree runs the server and the client together (`--run-context loopback`); `scripts/test.mjs` runs every file here.
+-- ree runs the server and the client together (`--run-context loopback`); `scripts/test.ts` runs every file here.
 
 -- A harness replaces the place's own boot, so start the server's entry script ourselves.
 local function bootServer()

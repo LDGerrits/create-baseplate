@@ -10,7 +10,7 @@
 		"*.ts": "${capture}.spec.ts, ${capture}.engine.spec.ts",
 		"*.tsx": "${capture}.story.tsx, ${capture}.spec.ts, ${capture}.spec.tsx",
 		"package.json": "pnpm-lock.yaml, pnpm-workspace.yaml",
-		"tsconfig.json": "eslint.config.js, biome.json, jest.config.ts",
+		"tsconfig.json": "eslint.config.ts, biome.json, jest.config.ts",
 		".env.example": ".env",
 		"mise.toml": "rotor.toml, rbx-forge.config.ts, default.rogen.json"
 	},

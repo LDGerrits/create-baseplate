@@ -1,0 +1,19 @@
+{
+	// The project's Node tooling: scripts, agent hooks and config files. Node runs these .ts files
+	// directly by stripping the types, so only erasable syntax is allowed; `mise run check` type-checks them.
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"types": ["node"],
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"noImplicitReturns": true,
+		"erasableSyntaxOnly": true,
+		"verbatimModuleSyntax": true,
+		"allowImportingTsExtensions": true,
+		"skipLibCheck": true,
+		"noEmit": true
+	},
+	"include": ["scripts/**/*.ts", ".agents/hooks/*.ts", "*.config.ts"]
+}

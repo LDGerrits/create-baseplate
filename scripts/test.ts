@@ -7,7 +7,29 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
-const runs = [
+interface Run {
+	name: string;
+	harness: string;
+	args: string[];
+	needsDone?: boolean;
+}
+
+interface ReeLine {
+	message: string;
+	kind: string;
+	side?: string;
+	trace?: string;
+}
+
+interface ReeSummary {
+	status: string;
+	failure?: string;
+	errors: number;
+	output?: ReeLine[];
+	unemulated?: { member: string }[];
+}
+
+const runs: Run[] = [
 	{
 		name: "jest",
 		harness: "scripts/test/jest.luau",
@@ -35,7 +57,7 @@ for (const run of runs) {
 	);
 	const seconds = ((performance.now() - started) / 1000).toFixed(2);
 
-	let summary;
+	let summary: ReeSummary;
 	try {
 		summary = JSON.parse(ree.stdout);
 	} catch {
@@ -51,7 +73,7 @@ for (const run of runs) {
 		summary.status === "error" && (summary.failure ?? "the harness failed"),
 		summary.errors > 0 && `${summary.errors} script error(s)`,
 		(summary.unemulated ?? []).length > 0 &&
-			`reached what ree doesn't emulate (${summary.unemulated.map((u) => u.member).join(", ")}); test that in a *.engine.spec`,
+			`reached what ree doesn't emulate (${(summary.unemulated ?? []).map((u) => u.member).join(", ")}); test that in a *.engine.spec`,
 		run.needsDone && !done && summary.status !== "error" && 'the test never printed "@done"',
 	].filter(Boolean);
 

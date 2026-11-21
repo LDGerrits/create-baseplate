@@ -13,9 +13,9 @@ export default defineConfig({
 	// On start, first sync back what was saved in Studio last time, so a rebuild of world/ keeps it.
 	syncback: { inputPath: "build/world.rbxl", projectPath: "world/default.project.json", runOnStart: true },
 	hooks: {
-		compile: { post: ["rogen write --quiet", "node scripts/game-project.mjs", "node scripts/world-types.mjs"] },
+		compile: { post: ["rogen write --quiet", "node scripts/game-project.ts", "node scripts/world-types.ts"] },
 		syncback: {
-			post: ["biome check --write world", "node scripts/game-project.mjs", "node scripts/world-types.mjs"],
+			post: ["biome check --write world", "node scripts/game-project.ts", "node scripts/world-types.ts"],
 		},
 	},
 });

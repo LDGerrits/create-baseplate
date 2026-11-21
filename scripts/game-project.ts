@@ -8,20 +8,30 @@ const code = JSON.parse(fs.readFileSync("default.project.json", "utf8"));
 const world = JSON.parse(fs.readFileSync("world/default.project.json", "utf8"));
 
 // Re-root every `$path` in a world node, since game.project.json sits one folder up.
-const reroot = (node) =>
+type ProjectNode = Record<string, unknown>;
+const reroot = (node: ProjectNode): ProjectNode =>
 	Object.fromEntries(
 		Object.entries(node).map(([key, value]) => {
 			if (key === "$path") {
 				return typeof value === "string"
 					? [key, path.posix.join("world", value)]
-					: [key, { ...value, optional: path.posix.join("world", value.optional) }];
+					: [
+							key,
+							{
+								...(value as { optional: string }),
+								optional: path.posix.join("world", (value as { optional: string }).optional),
+							},
+						];
 			}
-			return [key, value !== null && typeof value === "object" && !key.startsWith("$") ? reroot(value) : value];
+			return [
+				key,
+				value !== null && typeof value === "object" && !key.startsWith("$") ? reroot(value as ProjectNode) : value,
+			];
 		}),
 	);
 
-const tree = { ...code.tree };
-for (const [service, node] of Object.entries(world.tree)) {
+const tree: ProjectNode = { ...code.tree };
+for (const [service, node] of Object.entries(world.tree as Record<string, ProjectNode>)) {
 	if (service.startsWith("$")) continue;
 	if (service in tree) {
 		console.error(`game-project: ${service} is in both default.project.json and world/; keep each service in one`);

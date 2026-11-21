@@ -17,7 +17,8 @@ if (!process.env.RUR_ROBLOX_CONTENT && fs.existsSync("/mnt/c/Users")) {
 		.flatMap((dir) => fs.readdirSync(dir).map((version) => path.join(dir, version)))
 		.filter((dir) => fs.existsSync(path.join(dir, "RobloxStudioBeta.exe")))
 		.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
-	if (installs.length > 0) process.env.RUR_ROBLOX_CONTENT = path.join(installs[0], "content");
+	const newest = installs[0];
+	if (newest !== undefined) process.env.RUR_ROBLOX_CONTENT = path.join(newest, "content");
 }
 
 // Without Studio's fonts rur draws no text; `rur-native doctor` says when it can't find them.
