@@ -7,7 +7,7 @@
 			"Bash(rogen where:*)",
 			"Bash(forge status:*)"
 		],
-		"deny": ["Read(./.env)"]
+		"deny": ["Read(./.env)", "Read(./.env.local)"]
 	},
 	"hooks": {
 		"PreToolUse": [

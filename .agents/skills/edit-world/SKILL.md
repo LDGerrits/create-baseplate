@@ -32,7 +32,7 @@ Edit or add a `.model.json` under `world/<Service>/`, then run `mise run check`.
 
 ## Gotchas
 
-- Sync with `mise run sync`, not `forge sync` alone: without a save first, syncback reads the last saved place. forge's `capture` save method keeps instances deleted in Studio (rbx-forge#323), so the config saves through the File menu.
+- Sync with `mise run sync`, not `forge sync` alone: without a save first, syncback reads the last saved place. forge's `capture` save method keeps instances deleted in Studio (rbx-forge#323), so the project keeps forge's default, which saves through the File menu.
 - Syncback writes each new instance as a `.model.json`, because `mise.toml` sets `ROJO_SYNCBACK_DEBUG=2`. A link to another instance, such as a weld's `Part0`, is a `Rojo_Target_<Property>` attribute holding that instance's `Rojo_Id`. An instance keeps the file type it already has: read an `.rbxm` with Lune, `roblox.deserializeModel(fs.readFile(path))`.
 - Studio joins touching parts with a `Snap` when it opens the place; syncback keeps the joint, with `Rojo_Id` attributes to link it.
 - A service lives in the code or the world, never both. To add one, such as `SoundService`, give it a project file and a folder like `Workspace`, and map it in `world/default.project.json`.

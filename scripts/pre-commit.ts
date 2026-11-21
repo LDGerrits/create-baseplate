@@ -18,7 +18,14 @@ for (const file of kept) {
 	fs.copyFileSync(file, path.join(backup, file));
 }
 
-const lintStaged = spawnSync("lint-staged", ["--hide-all"], { stdio: "inherit", shell: process.platform === "win32" });
+// ACMRD: deleted files count, or a commit that only deletes would skip the check.
+const lintStaged = spawnSync("lint-staged", ["--hide-all", "--diff-filter=ACMRD"], {
+	stdio: "inherit",
+	shell: process.platform === "win32",
+});
+if (lintStaged.error !== undefined) {
+	console.error(`pre-commit: couldn't run lint-staged (${lintStaged.error.message}). Run \`mise run install\` first.`);
+}
 
 for (const file of kept) {
 	if (!fs.existsSync(file)) {

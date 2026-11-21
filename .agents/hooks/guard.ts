@@ -7,6 +7,8 @@ import path from "node:path";
 
 interface Payload {
 	cwd?: string;
+	hook_event_name?: string;
+	file_path?: string; // Cursor's beforeReadFile
 	tool_name?: string;
 	tool_input?: { command?: string; file_path?: string; path?: string; notebook_path?: string };
 	command?: string; // Cursor's beforeShellExecution
@@ -47,8 +49,16 @@ function checkFile(file: string): string | undefined {
 	return undefined;
 }
 
+// `.env` and its variants hold keys; `.env.example` only lists their names.
+const SECRET_IN_COMMAND = /(^|[\s/'"<=])\.env(\.(?!example\b)[\w.-]+)?(?=$|[\s'"\\;|&)])/;
+const isSecretFile = (file: string) => /(^|[/\\])\.env(\.(?!example$)[\w.-]+)?$/.test(file);
+const SECRET =
+	".env holds secret keys: don't print it. .env.example lists the names it can hold; ask the user which are set.";
+
 function checkCommand(command: string): string | undefined {
-	if (/\bgit\b[^|;&]*\bcommit\b[^|;&]*(\s--no-verify\b|\s-[A-Za-z]*n[A-Za-z]*\b)/.test(command)) {
+	// Quoted text, such as a commit message, isn't flags.
+	const bare = command.replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, '""');
+	if (/\bgit\b[^|;&]*\bcommit\b[^|;&]*(\s--no-v[a-z-]*|\s-[A-Za-z]*n[A-Za-z]*)(?=\s|$)/.test(bare)) {
 		return "The commit hook runs the check on what you commit; commit without --no-verify, and fix what it reports.";
 	}
 	if (/core\.hooksPath|HUSKY=0|LINT_STAGED/.test(command)) {
@@ -57,16 +67,13 @@ function checkCommand(command: string): string | undefined {
 	if (/\b(npm|yarn|bun)\s+(i|install|add|ci|remove|rm|uninstall|update|up)\b/.test(command)) {
 		return "This project's packages are pnpm's: `pnpm add <package>` (or `pnpm add -D`), `pnpm install --frozen-lockfile`.";
 	}
-	if (/(^|[\s;&|(])(npx|rbxtsc)\s/.test(command)) {
+	if (/(^|[\s;&|(])(npx|bunx|rbxtsc|pnpm dlx|bun x)\s/.test(command)) {
 		return "Run tools through the project: `mise run check` compiles with Sloptor; other binaries with `pnpm exec <tool>`.";
 	}
-	if (
-		/\b(cat|less|more|head|tail|grep|rg|sed|awk|bat|xxd|od|strings|base64|source)\b[^|;&]*(^|[\s/'"])\.env(\s|$|['"])/.test(
-			command,
-		)
-	) {
-		return ".env holds secret keys: don't print it. .env.example lists the names it can hold; ask the user which are set.";
-	}
+	const reads =
+		/\b(cat|less|more|head|tail|grep|rg|sed|awk|bat|xxd|od|strings|base64|source|node|python3?)\b/.test(command) ||
+		/<\s*\S*\.env/.test(command);
+	if (reads && SECRET_IN_COMMAND.test(command)) return SECRET;
 	return undefined;
 }
 
@@ -76,11 +83,21 @@ const patched = (patch: string) =>
 		(m[1] ?? m[2] ?? "").trim(),
 	);
 
+// Tools that only read: generated files are fine to read, `.env` isn't.
+const READS = /read|grep|glob|search|list|^ls$|view|fetch/i;
+
 const input = payload.tool_input ?? {};
 const command = payload.command ?? input.command;
-const files = [input.file_path, input.path, input.notebook_path].filter((file): file is string => file !== undefined);
+const files = [input.file_path, input.path, input.notebook_path, payload.file_path].filter(
+	(file): file is string => file !== undefined,
+);
 let reason: string | undefined;
-if (payload.tool_name === "apply_patch" && command !== undefined) {
+if (
+	payload.hook_event_name === "beforeReadFile" ||
+	(payload.tool_name !== undefined && READS.test(payload.tool_name))
+) {
+	reason = files.some(isSecretFile) ? SECRET : undefined;
+} else if (payload.tool_name === "apply_patch" && command !== undefined) {
 	reason = patched(command)
 		.map(checkFile)
 		.find((r) => r !== undefined);
