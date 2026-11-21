@@ -38,6 +38,8 @@ mise run dev       # compile on save, open Studio on the world, serve the code
 mise run sync      # write Studio's world edits into world/
 ```
 
+Keys and local paths go in `.env`: copy `.env.example`, which lists each one.
+
 ## CI
 
 `.github/workflows/ci.yml` runs `mise run ci` on Linux for every push and pull request: formatting, compile, lint, the place check, and the tests in ree. A second job runs every spec in real Roblox through Open Cloud once you add the repository secret `ROBLOX_OPEN_CLOUD_API_KEY` and the variables `ROBLOX_UNIVERSE_ID` and `ROBLOX_PLACE_ID` (Settings > Secrets and variables > Actions). Use a place made for tests: each run uploads to it. The key needs the `universe-places:write` and `universe.place.luau-execution-session:write` scopes on that universe; [jest-roblox's README](https://github.com/christopher-buss/jest-roblox-cli) has the details.

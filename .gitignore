@@ -33,3 +33,8 @@ sourcemap.json
 
 # forge's session state and logs
 /.forge
+
+# Keys and local paths; .env.example shows what goes in them
+/.env
+/.env.*
+!/.env.example
