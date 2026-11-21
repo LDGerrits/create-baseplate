@@ -16,6 +16,7 @@ With npm, put the flags after `--`, as in `npm create baseplate@latest my-game -
 | `--no-git`             | Don't make the project a git repo.                                                           |
 | `--no-install`         | Don't install the tools and packages (with mise).                                            |
 | `--json`               | Print one JSON result on stdout, for agents and scripts. Implies `--yes`.                    |
+| `--name <name>`        | The game's name, when the folder's name can't be it. Default: the folder's name.             |
 | `--ui <library>`       | UI: `react` (default) or `vide`.                                                             |
 | `--places <layout>`    | `single` (default), or `multi`: a lobby and a game sharing code, laid out as Rogen does.     |
 | `--state <library>`    | Client state: `charm`, `reflex` or `none` (default).                                         |

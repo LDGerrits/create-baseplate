@@ -1,6 +1,7 @@
 import * as p from "@clack/prompts";
 import { Command, CommanderError, Option } from "commander";
 import { DEFAULT_APP_NAME } from "../consts.ts";
+import { folderProblem } from "../helpers/scaffoldProject.ts";
 import { type AddOnChoices, addOns, findConflict, NONE, valuesOf } from "../installers/index.ts";
 import { parseNameAndPath } from "../utils/parseNameAndPath.ts";
 import { validateAppName } from "../utils/validateAppName.ts";
@@ -39,7 +40,8 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 		.option("-y, --yes", "take the defaults for everything not given, without asking", false)
 		.option("--no-git", "don't make the project a git repo")
 		.option("--no-install", "don't install the tools and packages (mise install, mise run install)")
-		.option("--json", "print one JSON result on stdout, for agents and scripts; implies --yes", false);
+		.option("--json", "print one JSON result on stdout, for agents and scripts; implies --yes", false)
+		.option("--name <name>", "the game's name, when the folder's name can't be it (default: the folder's name)");
 	for (const addOn of addOns) {
 		program.addOption(new Option(`--${addOn.name} <${addOn.valueName}>`, addOn.question).choices(valuesOf(addOn)));
 	}
@@ -62,7 +64,9 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 		process.exit(error.exitCode);
 	}
 
-	const flags = program.opts<{ yes: boolean; git: boolean; install: boolean; json: boolean } & Partial<AddOnChoices>>();
+	const flags = program.opts<
+		{ yes: boolean; git: boolean; install: boolean; json: boolean; name?: string } & Partial<AddOnChoices>
+	>();
 	const chosen = Object.fromEntries(
 		addOns.map((addOn) => [addOn.name, flags[addOn.name] ?? addOn.defaultValue]),
 	) as AddOnChoices;
@@ -71,6 +75,19 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 
 	let input = given ?? DEFAULT_APP_NAME;
 	let { git, install } = flags;
+	// What the command line already says can be wrong before any question: say so at once.
+	if (ask && given !== undefined) {
+		const { name, dir } = parseNameAndPath(given);
+		const invalid = validateAppName(flags.name ?? name);
+		const problem =
+			(invalid === undefined ? undefined : `"${flags.name ?? name}" can't name the game: ${invalid}`) ??
+			folderProblem(dir) ??
+			findConflict(chosen);
+		if (problem !== undefined) {
+			p.cancel(problem);
+			process.exit(1);
+		}
+	}
 	if (ask) {
 		p.intro("create-baseplate");
 		const dir =
@@ -123,5 +140,5 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 	}
 
 	const { name, dir } = parseNameAndPath(input);
-	return { name, dir, git, install, json: flags.json, addOns: chosen };
+	return { name: flags.name ?? name, dir, git, install, json: flags.json, addOns: chosen };
 }

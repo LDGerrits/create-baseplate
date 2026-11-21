@@ -36,8 +36,9 @@ async function main() {
 	const conflict = findConflict(options.addOns);
 	if (conflict !== undefined) fail(conflict);
 
+	let replaced: string[] = [];
 	try {
-		scaffoldProject(options.dir);
+		replaced = scaffoldProject(options.dir);
 	} catch (error) {
 		fail(error instanceof Error ? error.message : String(error));
 	}
@@ -61,6 +62,9 @@ async function main() {
 	logger.success(`Created ${options.name} in ${options.dir}`);
 
 	const warnings: string[] = [];
+	if (replaced.length > 0) {
+		warnings.push(`Replaced ${replaced.join(", ")} with the template's; git history still has the originals.`);
+	}
 	const gitSkipped = options.git ? initGit(options.dir) : undefined;
 	if (gitSkipped !== undefined) warnings.push(gitSkipped);
 	const git = options.git && gitSkipped === undefined;
@@ -70,7 +74,7 @@ async function main() {
 		if (isMiseInstalled()) {
 			const spinner = options.json ? undefined : p.spinner();
 			spinner?.start("Installing the tools and packages with mise");
-			const error = installDependencies(options.dir, options.json || spinner !== undefined, toolsChanged);
+			const error = await installDependencies(options.dir, toolsChanged, (step) => spinner?.message(step));
 			spinner?.stop(error === undefined ? "Installed the tools and packages" : "Install failed");
 			if (error === undefined) installed = true;
 			else warnings.push(error);
@@ -87,7 +91,10 @@ async function main() {
 		);
 	} else if (git) {
 		// Once installed, this commit goes through the project's commit hook, which runs its check.
-		const error = commitAll(options.dir, "Initial commit from create-baseplate");
+		const spinner = options.json || !installed ? undefined : p.spinner();
+		spinner?.start("Making the first commit; its hook runs the game's check");
+		const error = await commitAll(options.dir, "Initial commit from create-baseplate");
+		spinner?.stop(error === undefined ? "Made the first commit; the check passed" : "The first commit failed");
 		if (error === undefined) committed = true;
 		else warnings.push(`The first commit failed:\n${error}`);
 	}

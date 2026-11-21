@@ -2,11 +2,29 @@ import fs from "node:fs";
 import path from "node:path";
 import { SYMLINKS_FILE, TEMPLATE_BASE } from "../consts.ts";
 
-/** Copies the base template into `dir`, which must be missing or empty. */
-export function scaffoldProject(dir: string) {
-	if (fs.existsSync(dir) && fs.readdirSync(dir).length > 0) {
-		throw new Error(`${dir} already has files in it. Pick a new folder, or empty this one.`);
-	}
+/** What a new repo may already hold, from `git init`, GitHub's "Create repository" or the OS: kept. */
+const KEPT = new Set([".git", "LICENSE", "LICENSE.md", "LICENSE.txt", ".DS_Store", "Thumbs.db"]);
+/** Files GitHub can create that the template has its own of: replaced. */
+const REPLACED = new Set(["README.md", ".gitignore", ".gitattributes"]);
+
+/** Why the game can't be created in `dir`, if it can't. */
+export function folderProblem(dir: string): string | undefined {
+	if (!fs.existsSync(dir)) return undefined;
+	if (!fs.statSync(dir).isDirectory()) return `${dir} is a file. Pick a folder.`;
+	const others = fs.readdirSync(dir).filter((file) => !KEPT.has(file) && !REPLACED.has(file));
+	return others.length === 0
+		? undefined
+		: `${dir} already has files in it (${others.join(", ")}). Pick a new folder, or empty this one.`;
+}
+
+/**
+ * Copies the base template into `dir`, which must be missing, empty or a new repo (see KEPT and
+ * REPLACED). Returns the files the template replaced.
+ */
+export function scaffoldProject(dir: string): string[] {
+	const problem = folderProblem(dir);
+	if (problem !== undefined) throw new Error(problem);
+	const present = fs.existsSync(dir) ? fs.readdirSync(dir) : [];
 	fs.cpSync(TEMPLATE_BASE, dir, { recursive: true });
 
 	// npm drops .gitignore files from packages, so the template ships them as _gitignore.
@@ -29,4 +47,5 @@ export function scaffoldProject(dir: string) {
 			fs.cpSync(path.resolve(path.dirname(at), target), at, { recursive: true });
 		}
 	}
+	return present.filter((file) => REPLACED.has(file));
 }

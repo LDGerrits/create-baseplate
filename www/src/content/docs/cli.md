@@ -17,6 +17,7 @@ With npm, the flags go after `--`: npm reads flags before it as its own, and the
 | `--no-git`     | Don't make the project a git repo.                                         |
 | `--no-install` | Don't install the tools and packages (with mise). |
 | `--json`       | Print one JSON result on stdout. Implies `--yes`.                          |
+| `--name <name>` | The game's name, when the folder's name can't be it. Default: the folder's name. |
 | `--ui <library>` | UI: `react` (default) or `vide`. |
 | `--places <layout>` | `single` (default), or `multi`: a lobby and a game sharing code, laid out as Rogen does. |
 | `--state <library>` | Client state: `charm`, `reflex` or `none` (default). |
@@ -26,7 +27,7 @@ With npm, the flags go after `--`: npm reads flags before it as its own, and the
 | `--release <tool>` | Release builds: `darklua`, to minify and optimize the code you publish, or `none` (default). |
 | `-V, --version` | Print the CLI's version. |
 
-Without a terminal, as when an agent or CI runs it, it asks nothing and takes the defaults. See [add-ons](/add-ons/) for what each library choice adds.
+Without a terminal, as when an agent or CI runs it, it asks nothing and takes the defaults. The folder may be a fresh clone: `.git`, a license and the OS's own files stay, and a README, `.gitignore` or `.gitattributes` from GitHub is replaced by the template's, with a warning; the first commit goes on top of the clone's. See [add-ons](/add-ons/) for what each library choice adds.
 
 ## For agents
 

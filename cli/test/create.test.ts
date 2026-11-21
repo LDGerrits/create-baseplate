@@ -118,6 +118,54 @@ test("quotes the folder in the next steps", () => {
 	assert.equal(JSON.parse(run.stdout).nextSteps[0], "cd 'My Games/coin-rush'");
 });
 
+test("creates into a freshly cloned repo, and commits there", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const dir = path.join(cwd, "coin-rush");
+	const git = (...args: string[]) => spawnSync("git", args, { cwd: dir, encoding: "utf8" });
+	// What GitHub's "Create repository" with a README and a license, then a clone, leaves.
+	fs.mkdirSync(dir);
+	git("init", "--quiet", "--initial-branch", "main");
+	fs.writeFileSync(path.join(dir, "README.md"), "# coin-rush\n");
+	fs.writeFileSync(path.join(dir, "LICENSE"), "My license\n");
+	git("add", "--all");
+	git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "--quiet", "--message", "Initial commit");
+
+	const run = create(cwd, "coin-rush");
+	assert.equal(run.status, 0, run.stderr);
+	const result = JSON.parse(run.stdout) as { ok: boolean; git: boolean; committed: boolean; warnings: string[] };
+	assert.equal(result.ok, true);
+	assert.equal(result.git, true);
+	assert.equal(result.committed, true);
+	assert.equal(fs.readFileSync(path.join(dir, "LICENSE"), "utf8"), "My license\n", "keeps the repo's license");
+	assert.match(fs.readFileSync(path.join(dir, "README.md"), "utf8"), /^# coin-rush\n\nA Roblox game/m);
+	assert.match(result.warnings.join("\n"), /Replaced README\.md/);
+	assert.match(git("log", "--oneline").stdout, /Initial commit from create-baseplate\n.*Initial commit\n/);
+});
+
+test("names the game apart from its folder with --name", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const run = create(cwd, "Coin Rush", "--name", "coin-rush", "--no-git");
+	assert.equal(run.status, 0, run.stderr);
+	const result = JSON.parse(run.stdout) as { name: string; dir: string };
+	assert.equal(result.name, "coin-rush");
+	assert.equal(path.basename(result.dir), "Coin Rush");
+	assert.equal(JSON.parse(fs.readFileSync(path.join(cwd, "Coin Rush/package.json"), "utf8")).name, "coin-rush");
+});
+
+// A person at a terminal: `script` gives the CLI one, sized so prompts draw. Skipped where `script` isn't there.
+const hasScript = spawnSync("script", ["--version"]).status === 0;
+test("rejects a bad name before asking anything", { skip: !hasScript }, () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const run = spawnSync("script", ["-qec", `stty cols 120 rows 40; node ${CLI} "Bad Name"`, "/dev/null"], {
+		cwd,
+		encoding: "utf8",
+		timeout: 10_000,
+	});
+	assert.equal(run.status, 1, "exits at once, without waiting for answers");
+	assert.match(run.stdout, /can't name the game/);
+	assert.doesNotMatch(run.stdout, /Which UI library/);
+});
+
 test("refuses a folder that has files", () => {
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
 	fs.mkdirSync(path.join(cwd, "taken"));
