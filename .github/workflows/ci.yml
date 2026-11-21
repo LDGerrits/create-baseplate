@@ -74,8 +74,9 @@ jobs:
           version: 2026.11.8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: pnpm install --frozen-lockfile && pnpm --filter create-baseplate build
-      - run: node cli/dist/index.js "$RUNNER_TEMP/coin-rush" --json ${{ matrix.addOns }}
+      # The package as npm would publish it: packing builds it (prepack), from this clean checkout.
+      - run: pnpm install --frozen-lockfile && pnpm --filter create-baseplate pack --pack-destination "$RUNNER_TEMP"
+      - run: npm exec --yes --package="$(ls "$RUNNER_TEMP"/create-baseplate-*.tgz)" -- create-baseplate "$RUNNER_TEMP/coin-rush" --json ${{ matrix.addOns }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mise run ci

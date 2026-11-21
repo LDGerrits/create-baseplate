@@ -1,15 +1,17 @@
 #!/usr/bin/env node
+import fs from "node:fs";
 import { createRequire } from "node:module";
+import path from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { runCli } from "./cli/index.ts";
-import { commitAll, initGit, isGitInstalled } from "./helpers/git.ts";
+import { commitAll, initGit } from "./helpers/git.ts";
 import { installDependencies, isMiseInstalled } from "./helpers/installDependencies.ts";
 import { logNextSteps, nextSteps } from "./helpers/logNextSteps.ts";
 import { makeMultiPlace, PLACES } from "./helpers/makeMultiPlace.ts";
 import { scaffoldProject } from "./helpers/scaffoldProject.ts";
 import { setProjectName } from "./helpers/setProjectName.ts";
-import { addOns, findConflict, installAddOns } from "./installers/index.ts";
+import { findConflict, installAddOns } from "./installers/index.ts";
 import { logger, logToStderr } from "./utils/logger.ts";
 import { validateAppName } from "./utils/validateAppName.ts";
 
@@ -40,15 +42,23 @@ async function main() {
 		fail(error instanceof Error ? error.message : String(error));
 	}
 	setProjectName(options.dir, options.name);
+	const packages = () => {
+		const pkg = JSON.parse(fs.readFileSync(path.join(options.dir, "package.json"), "utf8")) as Record<string, unknown>;
+		return JSON.stringify([pkg.dependencies, pkg.devDependencies]);
+	};
+	const basePackages = packages();
 	installAddOns(options.dir, options.addOns);
 	if (options.addOns.places === "multi") makeMultiPlace(options.dir, options.name);
+	// The template's lockfile lists the base's packages only, until an install adds the add-ons'.
+	const packagesChanged = packages() !== basePackages;
 	// In a multi-place game, Studio commands name a place.
 	const place = options.addOns.places === "multi" ? (PLACES[0] ?? "") : "";
-	const withAddOns = addOns.some((addOn) => options.addOns[addOn.name] !== addOn.defaultValue);
 	logger.success(`Created ${options.name} in ${options.dir}`);
 
-	const git = options.git && isGitInstalled() && initGit(options.dir);
 	const warnings: string[] = [];
+	const gitSkipped = options.git ? initGit(options.dir) : undefined;
+	if (gitSkipped !== undefined) warnings.push(gitSkipped);
+	const git = options.git && gitSkipped === undefined;
 
 	let installed = false;
 	if (options.install) {
@@ -64,10 +74,17 @@ async function main() {
 		}
 	}
 
-	if (git) {
+	let committed = false;
+	if (git && !installed && packagesChanged) {
+		// Committed now, the lockfile wouldn't match package.json, and the game's install fails on that.
+		warnings.push(
+			"Nothing is committed yet: pnpm-lock.yaml doesn't list the add-ons' packages until the next steps install them. Commit after that.",
+		);
+	} else if (git) {
 		// Once installed, this commit goes through the project's commit hook, which runs its check.
 		const error = commitAll(options.dir, "Initial commit from create-baseplate");
-		if (error !== undefined) warnings.push(`The first commit failed:\n${error}`);
+		if (error === undefined) committed = true;
+		else warnings.push(`The first commit failed:\n${error}`);
 	}
 
 	for (const warning of warnings) logger.warn(warning);
@@ -78,14 +95,20 @@ async function main() {
 				name: options.name,
 				dir: options.dir,
 				git,
+				committed,
 				installed,
 				addOns: options.addOns,
 				warnings,
-				nextSteps: nextSteps(options.dir, installed, withAddOns, place),
+				nextSteps: nextSteps(options.dir, {
+					installed,
+					packagesChanged,
+					commit: git && !committed && packagesChanged,
+					place,
+				}),
 			}),
 		);
 	} else {
-		logNextSteps(options.dir, installed, withAddOns, place);
+		logNextSteps(options.dir, { installed, packagesChanged, commit: git && !committed && packagesChanged, place });
 		logger.info(pc.dim(`create-baseplate ${version}`));
 	}
 }

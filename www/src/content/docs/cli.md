@@ -5,7 +5,10 @@ description: Every flag of create-baseplate, and how agents use it.
 
 ```sh
 pnpm create baseplate [dir] [flags]
+npm create baseplate@latest [dir] -- [flags]
 ```
+
+With npm, the flags go after `--`: npm reads flags before it as its own, and the CLI stops with an error when that happens.
 
 | Flag           | What                                                                       |
 | -------------- | -------------------------------------------------------------------------- |
@@ -35,10 +38,14 @@ Without a terminal, as when an agent or CI runs it, it asks nothing and takes th
 	"name": "my-game",
 	"dir": "/path/to/my-game",
 	"git": true,
+	"committed": true,
 	"installed": true,
+	"addOns": { "ui": "react", "places": "single", "state": "none", "data": "none", "entities": "none", "assets": "none", "release": "none" },
 	"warnings": [],
 	"nextSteps": ["cd my-game", "mise run check", "mise run dev"]
 }
 ```
 
-On failure it prints `{ "ok": false, "error": "..." }` and exits with 1.
+`git` says whether the game is a git repo of its own, and `committed` whether the first commit is made. With `--no-install` and add-ons that change the packages, the commit waits for the install, which brings their packages into the lockfile: `nextSteps` holds the commit. `warnings` says why git or a step was skipped.
+
+On failure it prints `{ "ok": false, "error": "..." }` and exits with 1, or with 2 for a wrong command line.

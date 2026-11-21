@@ -7,6 +7,8 @@ pnpm create baseplate my-game
 npm create baseplate@latest my-game
 ```
 
+With npm, put the flags after `--`, as in `npm create baseplate@latest my-game -- --yes`: npm reads flags before it as its own.
+
 | Flag                   | What                                                                                         |
 | ---------------------- | -------------------------------------------------------------------------------------------- |
 | `[dir]`                | The folder to create; its name names the game. Default: `my-game`.                           |

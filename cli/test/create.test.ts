@@ -45,6 +45,67 @@ test("makes a git repo", () => {
 	assert.match(log.stdout, /Initial commit from create-baseplate/);
 });
 
+test("leaves the first commit until an install brings the add-ons' packages into the lockfile", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const run = create(cwd, "my-game", "--state", "charm");
+	assert.equal(run.status, 0, run.stderr);
+	const result = JSON.parse(run.stdout) as {
+		git: boolean;
+		committed: boolean;
+		warnings: string[];
+		nextSteps: string[];
+	};
+	assert.equal(result.git, true);
+	assert.equal(result.committed, false);
+	assert.match(result.warnings.join("\n"), /Nothing is committed yet/);
+	const steps = result.nextSteps;
+	const install = steps.indexOf("mise exec -- pnpm install --no-frozen-lockfile");
+	const commit = steps.findIndex((step) => step.startsWith("git add --all && git commit"));
+	assert.ok(install !== -1 && commit > install, steps.join("\n"));
+	const log = spawnSync("git", ["log"], { cwd: path.join(cwd, "my-game"), encoding: "utf8" });
+	assert.notEqual(log.status, 0, "no commit yet");
+});
+
+test("says why the game isn't its own git repo", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	spawnSync("git", ["init", "--quiet"], { cwd });
+	const run = create(cwd, "my-game");
+	assert.equal(run.status, 0, run.stderr);
+	const result = JSON.parse(run.stdout) as { git: boolean; warnings: string[] };
+	assert.equal(result.git, false);
+	assert.match(result.warnings.join("\n"), /inside the git repo at .*, so it isn't a repo of its own/);
+});
+
+test("refuses flags that npm create kept for itself", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	// What `npm create baseplate my-game --json --no-git --ui vide` passes on: no flags, `vide` as a
+	// second argument, and the flags as npm_config_* variables.
+	const run = spawnSync("node", [CLI, "my-game", "vide"], {
+		cwd,
+		encoding: "utf8",
+		env: {
+			...process.env,
+			npm_command: "init",
+			npm_config_json: "true",
+			npm_config_git: "false",
+			npm_config_ui: "true",
+		},
+	});
+	assert.equal(run.status, 2);
+	const result = JSON.parse(run.stdout) as { ok: boolean; error: string };
+	assert.equal(result.ok, false);
+	assert.match(result.error, /npm read --json, --no-git, --ui as its own options/);
+	assert.match(result.error, /npm create baseplate@latest my-game -- --yes/);
+	assert.ok(!fs.existsSync(path.join(cwd, "my-game")), "creates nothing");
+});
+
+test("quotes the folder in the next steps", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const run = create(cwd, "My Games/coin-rush", "--no-git");
+	assert.equal(run.status, 0, run.stderr);
+	assert.equal(JSON.parse(run.stdout).nextSteps[0], "cd 'My Games/coin-rush'");
+});
+
 test("refuses a folder that has files", () => {
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
 	fs.mkdirSync(path.join(cwd, "taken"));

@@ -15,6 +15,20 @@ export interface CliResults {
 }
 
 /**
+ * The flags `npm create` kept for itself. Before a `--`, npm reads every flag as its own option and
+ * passes it on only as an npm_config_* variable, with a value flag's value turned into a second
+ * folder argument (`--ui vide` arrives as `ui=true` and `vide`), so they can't be recovered. npm's
+ * own `--yes` isn't listed: npm uses it too.
+ */
+function flagsNpmTook(): string[] {
+	if (process.env.npm_command !== "init") return [];
+	const names = ["json", "git", "install", ...addOns.map((addOn) => addOn.name)];
+	return names
+		.filter((name) => process.env[`npm_config_${name}`] !== undefined)
+		.map((name) => (name === "git" || name === "install" ? `--no-${name}` : `--${name}`));
+}
+
+/**
  * Reads the options from flags, and asks for what's missing when a person runs it in a terminal.
  * With --yes, --json or no terminal (an agent, CI), it asks nothing and takes the defaults.
  */
@@ -30,6 +44,13 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 		program.addOption(new Option(`--${addOn.name} <${addOn.valueName}>`, addOn.question).choices(valuesOf(addOn)));
 	}
 	program.version(version).exitOverride();
+	const taken = flagsNpmTook();
+	if (taken.length > 0) {
+		const message = `npm read ${taken.join(", ")} as its own option${taken.length > 1 ? "s" : ""}, so create-baseplate never got ${taken.length > 1 ? "them" : "it"}. With npm, put the flags after --: npm create baseplate@latest my-game -- --yes`;
+		if (process.env.npm_config_json === "true") console.log(JSON.stringify({ ok: false, error: message }));
+		else console.error(message);
+		process.exit(2);
+	}
 	try {
 		program.parse();
 	} catch (error) {
