@@ -1,0 +1,60 @@
+name: Lock mise tools
+
+# mise.toml is locked: `mise install` refuses a tool that mise.lock doesn't list with its checksums.
+# Renovate updates a tool's pin in mise.toml but not mise.lock (the hosted Renovate app runs no
+# post-upgrade commands), so this regenerates mise.lock on Renovate's branches and pushes it.
+#
+# A push with the default GITHUB_TOKEN doesn't start CI again, so the update would stay red. Give
+# this workflow a GitHub App with Contents: read and write on this repository, installed on it, as
+# the secrets LOCK_APP_CLIENT_ID and LOCK_APP_PRIVATE_KEY: its push starts CI on the new lock.
+
+on:
+  push:
+    branches: ["renovate/**"]
+    paths: ["**/mise.toml", "**/mise.lock"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mise-lock-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lock:
+    name: Regenerate mise.lock
+    # Only Renovate's own pushes: a person's push to its branch is left alone.
+    if: github.actor == 'renovate[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HAS_APP: ${{ secrets.LOCK_APP_CLIENT_ID != '' }}
+    steps:
+      - id: app
+        if: env.HAS_APP == 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.LOCK_APP_CLIENT_ID }}
+          private-key: ${{ secrets.LOCK_APP_PRIVATE_KEY }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          token: ${{ steps.app.outputs.token || secrets.GITHUB_TOKEN }}
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        with:
+          version: 2026.11.8
+          install: false
+      - name: Lock and push
+        env:
+          # Safe mode: mise reads the configs without running their hooks or env scripts, since the
+          # branch's mise.toml is what changed.
+          MISE_SAFE: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for lock in $(git ls-files -- '*mise.lock'); do
+            (cd "$(dirname "$lock")" && mise trust --quiet . && mise lock)
+          done
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --all --quiet --message "Lock the updated mise tools"
+          git push
