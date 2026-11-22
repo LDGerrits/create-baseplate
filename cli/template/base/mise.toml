@@ -52,7 +52,7 @@ description = "Install packages, write the generated files, and set up this clon
 run = ["pnpm install --frozen-lockfile", "mise run generate", "mise run setup"]
 
 [tasks.setup]
-description = "Run the check before each commit, and give Claude Code the TypeScript language server; safe to rerun"
+description = "Run the check before each commit, restore the .claude/skills link on Windows clones without symbolic links, and give Claude Code the TypeScript language server; safe to rerun"
 run = "node scripts/setup.ts"
 
 [tasks.check]
@@ -63,6 +63,8 @@ run = [
 	# Tests named so they never run, and services nothing starts.
 	"node scripts/check-sources.ts",
 	"tsc -p tsconfig.node.json",
+	# The agent hooks' and scripts' own tests.
+	'node --test --test-reporter=dot ".agents/hooks/*.test.ts" "scripts/*.test.ts"',
 	# In a multi-place game, the shared code alone, so it can't lean on one place's map.
 	'node scripts/each-place.ts --if-multi "tsc --noEmit -p tsconfig.json"',
 	'node scripts/each-place.ts "rogen check"',
@@ -79,6 +81,8 @@ run = [
 	# Tests named so they never run, and services nothing starts.
 	"node scripts/check-sources.ts",
 	"tsc -p tsconfig.node.json",
+	# The agent hooks' and scripts' own tests.
+	'node --test --test-reporter=dot ".agents/hooks/*.test.ts" "scripts/*.test.ts"',
 	# In a multi-place game, the shared code alone, so it can't lean on one place's map.
 	'node scripts/each-place.ts --if-multi "tsc --noEmit -p tsconfig.json"',
 	'node scripts/each-place.ts "rogen check"',

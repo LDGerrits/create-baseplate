@@ -18,3 +18,11 @@ export function projectRoot(sessionDir: string): string | undefined {
 	if (hereTop === undefined || sessionTop === undefined) return undefined;
 	return path.join(sessionTop, path.relative(hereTop, here));
 }
+
+// The reply format a hook speaks, from its first argument: each agent tool reads its own. Codex
+// reads Claude Code's.
+export type Format = "claude" | "cursor" | "copilot" | "gemini";
+
+export function formatArg(arg: string | undefined): Format {
+	return arg === "cursor" || arg === "copilot" || arg === "gemini" ? arg : "claude";
+}

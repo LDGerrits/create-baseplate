@@ -1,0 +1,13 @@
+#!/bin/sh
+# Starts one of this folder's hooks with the project's pinned Node, for every agent tool:
+#   .agents/hooks/run guard.ts <format>
+# It runs from the project folder whichever folder the tool started it in, and finds mise on the
+# PATH or where mise's installer puts it (~/.local/bin), which apps started outside a shell may not
+# have on their PATH. Without mise, or when the hook itself fails, it exits 0 and prints nothing:
+# a broken hook lets the agent carry on rather than blocking every command.
+cd "$(dirname "$0")/../.." 2>/dev/null || exit 0
+mise=$(command -v mise 2>/dev/null) || mise="$HOME/.local/bin/mise"
+[ -x "$mise" ] || exit 0
+hook=$1
+shift
+"$mise" exec --quiet -- node ".agents/hooks/$hook" "$@" || exit 0

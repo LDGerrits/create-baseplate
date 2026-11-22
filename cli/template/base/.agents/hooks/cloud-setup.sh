@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
-# SessionStart hook for Claude Code's cloud sessions (CLAUDE_CODE_REMOTE=true): installs mise, the
-# pinned tools and the packages, so `mise run check` works there too. Locally it does nothing.
-# Cloud sessions have no Roblox Studio: `mise run ui` draws no text, and Studio work isn't possible.
+# Sets up a fresh Linux machine for agents: installs mise, the pinned tools and the packages, so
+# `mise run check` works there too.
+# - Claude Code's cloud sessions run it as a SessionStart hook (CLAUDE_CODE_REMOTE=true). On your
+#   own machine that hook does nothing.
+# - Elsewhere, run it with --force: Cursor's cloud agents (.cursor/environment.json), Codespaces and
+#   dev containers (.devcontainer/devcontainer.json), or Codex cloud's setup script. --force also
+#   puts mise on the PATH of later shells, through ~/.bashrc.
+# These machines have no Roblox Studio: `mise run ui` draws no text, and Studio work isn't possible.
 set -euo pipefail
-[ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || exit 0
-cd "${CLAUDE_PROJECT_DIR:-.}"
+force=false
+[ "${1:-}" = "--force" ] && force=true
+[ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || $force || exit 0
+cd "${CLAUDE_PROJECT_DIR:-$(dirname "$0")/../..}"
 
 # mise itself, pinned and checked: the release CI uses, from GitHub, against the SHA-256s its release
 # publishes (SHASUMS256.txt). mise's version is also the `version:` of jdx/mise-action in each
@@ -27,9 +34,24 @@ install_mise() {
 	chmod +x "$HOME/.local/bin/mise"
 }
 
+# rur renders the stories in the check through Vulkan; with no GPU it needs Mesa's software driver.
+# Best effort: only where apt and root (or sudo without a password) are at hand.
+install_vulkan() {
+	command -v apt-get >/dev/null || return 0
+	dpkg -s mesa-vulkan-drivers >/dev/null 2>&1 && return 0
+	local sudo=""
+	if [ "$(id -u)" != 0 ]; then
+		sudo -n true 2>/dev/null || return 0
+		sudo="sudo -n"
+	fi
+	$sudo apt-get update -q && $sudo apt-get install -y -q --no-install-recommends mesa-vulkan-drivers ||
+		echo "Couldn't install mesa-vulkan-drivers; story pictures may fail to render." >&2
+}
+
 # What this prints becomes context for the agent, so the install's output goes to stderr.
 {
 	export PATH="$HOME/.local/bin:$PATH"
+	install_vulkan
 	command -v mise >/dev/null || install_mise
 	mise trust --quiet .
 	mise install
@@ -37,7 +59,10 @@ install_mise() {
 } >&2
 
 # Later shell commands in the session find mise and the tools.
+path_line="export PATH=\"$HOME/.local/bin:$HOME/.local/share/mise/shims:\$PATH\""
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-	echo "export PATH=\"$HOME/.local/bin:$HOME/.local/share/mise/shims:\$PATH\"" >>"$CLAUDE_ENV_FILE"
+	echo "$path_line" >>"$CLAUDE_ENV_FILE"
+elif $force && ! grep -qsF "$path_line" "$HOME/.bashrc"; then
+	echo "$path_line" >>"$HOME/.bashrc"
 fi
 echo "Cloud setup done: tools and packages are installed; run \`mise run check\`. No Studio here, so story pictures have no text."

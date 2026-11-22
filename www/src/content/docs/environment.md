@@ -3,7 +3,7 @@ title: Environment variables
 description: Every key and path a game reads, which command needs it, and the CI secrets.
 ---
 
-None of these is needed for `mise run check`. Copy `.env.example` to `.env` and fill in what you use; git ignores `.env`, and mise loads it only into the tasks that use it, so other tools never see your keys.
+None of these is needed for `mise run check`, nor for agents in the cloud, which set themselves up with `.agents/hooks/cloud-setup.sh` (see [How agents work in it](/agents/)). Copy `.env.example` to `.env` and fill in what you use; git ignores `.env`, and mise loads it only into the tasks that use it, so other tools never see your keys.
 
 ## In `.env`
 

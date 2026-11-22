@@ -1,14 +1,32 @@
 {
 	"permissions": {
 		"allow": [
-			"Bash(mise run:*)",
-			"Bash(mise tasks:*)",
-			"Bash(rogen check:*)",
-			"Bash(rogen where:*)",
-			"Bash(forge status:*)",
-			"Bash(mise x -- rogen check:*)",
-			"Bash(mise x -- rogen where:*)",
-			"Bash(mise x -- forge status:*)"
+			"Bash(mise run *)",
+			"Bash(mise tasks *)",
+			"Bash(rogen check *)",
+			"Bash(rogen where *)",
+			"Bash(rogen write *)",
+			"Bash(rogen doc *)",
+			"Bash(rogen help *)",
+			"Bash(rogen serve *)",
+			"Bash(forge up *)",
+			"Bash(forge down *)",
+			"Bash(forge status *)",
+			"Bash(forge restart *)",
+			"Bash(ror render *)",
+			"Bash(ror diff *)",
+			"Bash(mise x -- rogen check *)",
+			"Bash(mise x -- rogen where *)",
+			"Bash(mise x -- rogen write *)",
+			"Bash(mise x -- rogen doc *)",
+			"Bash(mise x -- rogen help *)",
+			"Bash(mise x -- rogen serve *)",
+			"Bash(mise x -- forge up *)",
+			"Bash(mise x -- forge down *)",
+			"Bash(mise x -- forge status *)",
+			"Bash(mise x -- forge restart *)",
+			"Bash(mise x -- ror render *)",
+			"Bash(mise x -- ror diff *)"
 		],
 		"deny": ["Read(./.env)", "Read(./.env.local)"]
 	},
@@ -27,11 +45,11 @@
 		],
 		"PreToolUse": [
 			{
-				"matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit",
+				"matcher": "Bash|Edit|Write|NotebookEdit",
 				"hooks": [
 					{
 						"type": "command",
-						"command": "mise exec -C \"$CLAUDE_PROJECT_DIR\" -- node \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/guard.ts"
+						"command": "sh \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/run guard.ts claude"
 					}
 				]
 			}
@@ -45,7 +63,7 @@
 					},
 					{
 						"type": "command",
-						"command": "mise exec -C \"$CLAUDE_PROJECT_DIR\" -- node \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/check.ts",
+						"command": "sh \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/run check.ts claude",
 						"timeout": 180
 					}
 				]

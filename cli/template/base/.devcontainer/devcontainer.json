@@ -1,0 +1,14 @@
+// Codespaces and dev containers: a Linux machine with the pinned tools and packages, set up by the
+// same script as the cloud agents. It has no Roblox Studio, so story pictures have no text.
+{
+	"image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+	"postCreateCommand": "bash .agents/hooks/cloud-setup.sh --force",
+	"remoteEnv": {
+		"PATH": "${containerEnv:HOME}/.local/bin:${containerEnv:HOME}/.local/share/mise/shims:${containerEnv:PATH}"
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": ["hverlin.mise-vscode", "biomejs.biome", "dbaeumer.vscode-eslint", "roblox-ts.vscode-roblox-ts"]
+		}
+	}
+}
