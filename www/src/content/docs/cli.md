@@ -60,3 +60,13 @@ pnpm dlx create-baseplate@<version> sync --check  # change nothing; exit 1 if an
 ```
 
 `sync` brings a game's agent files (`AGENTS.md`, skills, hooks and the agent tools' settings) up to that version's template, for the add-ons in `package.json`'s `baseplate.addOns`, and keeps the game's own edits. It exits with 1 when an edit clashes with the template's change, leaving the template's version beside the file as `<file>.baseplate-new`. Games normally don't need it run by hand: see [keeping the agent files current](/agents/#keeping-the-agent-files-current).
+
+## Reading the docs offline
+
+```sh
+pnpm dlx create-baseplate@<version> doc            # list the topics
+pnpm dlx create-baseplate@<version> doc testing    # print one page as Markdown
+pnpm dlx create-baseplate@<version> doc --json     # { "ok": true, "topics": [...] } or { "ok": true, "topic", "text" }
+```
+
+`doc` prints the pages of this site as that version ships them, so an agent reads the docs for the version a game came from. In a game, `mise run doc <topic>` runs it at the version `package.json`'s `baseplate.version` pins. An unknown topic exits with 1 and names the closest one. To create a game in a folder named `doc`, write `./doc`.

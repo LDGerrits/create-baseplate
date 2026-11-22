@@ -51,6 +51,11 @@ run = 'node scripts/each-place.ts "sloptor build -p {tsconfig} --rojo {dir}/defa
 description = "Install packages, write the generated files, set up this clone, and bring the agent files up to the create-baseplate version package.json pins"
 run = ["pnpm install --frozen-lockfile", "mise run generate", "mise run setup", "node scripts/agent-files.ts"]
 
+[tasks.doc]
+description = "Print a page of Baseplate's docs, for the create-baseplate version package.json pins: mise run doc testing. Without a topic, lists them"
+usage = 'arg "[topic]" help="The page, such as testing, ui or publishing"'
+run = 'node scripts/doc.ts {{usage.topic}}'
+
 [tasks.setup]
 description = "Run the check before each commit, restore the .claude/skills link on Windows clones without symbolic links, and give Claude Code the TypeScript language server; safe to rerun"
 run = "node scripts/setup.ts"

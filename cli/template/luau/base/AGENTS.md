@@ -11,6 +11,7 @@ What you remember of Luau's type system, react-lua, Rogen and the Roblox API is 
 - React: react-lua follows React 17; how it differs is in `Packages/_Index/jsdotlua_react@*/react/README.md` and https://jsdotlua.github.io/react-lua/. Ripple's hooks: `Packages/_Index/littensy_react-ripple@*/`.
 - Any other package: its folder under `Packages/_Index/` (or `ServerPackages/`, `DevPackages/`): the `README.md` when there is one, and the types its source exports.
 - Rogen: `rogen doc <topic>` and `rogen help <command> --json`. Other tools: `<tool> --help`, and the skills below for how this game uses them.
+- How this game is set up (the check, tests, UI, the world, publishing, its keys): `mise run doc <topic>`, Baseplate's docs for the version this game came from; `mise run doc` lists the topics.
 
 ## Checking your work
 
