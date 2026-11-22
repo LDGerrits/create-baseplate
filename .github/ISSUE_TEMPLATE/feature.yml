@@ -1,0 +1,16 @@
+name: Feature or add-on
+description: Suggest a change to the template, the CLI or the docs, or a new add-on.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What and why
+      description: The problem it solves for someone making a game, or for their agent.
+    validations:
+      required: true
+  - type: textarea
+    id: addon
+    attributes:
+      label: For a new add-on
+      description: Which library or tool, which question it answers (or a new one), how widely it's used, and whether it's maintained. See CONTRIBUTING.md.

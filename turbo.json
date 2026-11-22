@@ -2,8 +2,16 @@
 	"$schema": "https://turbo.build/schema.json",
 	"tasks": {
 		"build": { "dependsOn": ["^build"], "outputs": ["dist/**"] },
-		"typecheck": { "dependsOn": ["^build"] },
-		"test": { "dependsOn": ["build"] },
+		"typecheck": { "dependsOn": ["^build"], "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/.github/scripts/**"] },
+		"test": {
+			"dependsOn": ["build"],
+			"inputs": [
+				"$TURBO_DEFAULT$",
+				"$TURBO_ROOT$/.github/scripts/**",
+				"$TURBO_ROOT$/README.md",
+				"$TURBO_ROOT$/www/src/content/docs/**"
+			]
+		},
 		"dev": { "cache": false, "persistent": true }
 	}
 }

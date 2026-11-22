@@ -1,0 +1,18 @@
+{
+	"permissions": {
+		"allow": ["Bash(mise run:*)", "Bash(pnpm changeset:*)"]
+	},
+	"hooks": {
+		"Stop": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "mise exec -C \"$CLAUDE_PROJECT_DIR\" -- node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check.ts",
+						"timeout": 600
+					}
+				]
+			}
+		]
+	}
+}

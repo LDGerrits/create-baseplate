@@ -13,6 +13,18 @@ pnpm create baseplate my-game --yes  # takes the defaults: what agents and scrip
 
 It creates the game, makes it a git repo, and installs everything with [mise](https://mise.jdx.dev). `--json` prints one machine-readable result; `--no-git` and `--no-install` skip those steps.
 
+Each add-on question has a flag; the first choice listed is the default:
+
+| Flag         | Choices                               |
+| ------------ | ------------------------------------- |
+| `--ui`       | `react`, `vide`                       |
+| `--places`   | `single`, `multi`                     |
+| `--state`    | `none`, `charm`, `reflex`             |
+| `--data`     | `none`, `profilestore`, `lapis`       |
+| `--entities` | `none`, `components`, `jecs`          |
+| `--assets`   | `none`, `asphalt`                     |
+| `--release`  | `none`, `darklua`                     |
+
 ## Repo
 
 | Folder                 | What                                                                                  |
