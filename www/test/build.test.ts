@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import { SIDEBAR } from "../src/sidebar.ts";
+import { SITE_URL } from "../src/site.ts";
 
 const DOCS = path.resolve(import.meta.dirname, "../src/content/docs");
 const DIST = path.resolve(import.meta.dirname, "../dist");
@@ -37,8 +38,28 @@ test("the sidebar lists every page, and llms.txt follows its order", () => {
 	const listed = SIDEBAR.flatMap((group) => group.items);
 	assert.deepEqual([...listed].sort(), pages.filter((page) => page !== "index").sort());
 	assert.match(llms(), /^# Baseplate\n\n> /);
-	const order = [...llms().matchAll(/\(\/([\w/-]+)\.md\)/g)].map((match) => match[1]);
+	const order = [...llms().matchAll(/\((?:https?:\/\/[^/)]+)?\/([\w/-]+)\.md\)/g)].map((match) => match[1]);
 	assert.deepEqual(order, ["index", ...listed]);
+});
+
+test("llms.txt links by full URL once the site's address is set", () => {
+	const links = [...llms().matchAll(/\]\(([^)]+)\)/g)].map((match) => match[1] ?? "");
+	assert.ok(links.length > 0);
+	for (const link of links) {
+		if (SITE_URL === undefined) assert.match(link, /^\//);
+		else assert.ok(link.startsWith(new URL("/", SITE_URL).href), link);
+	}
+});
+
+test("llms-full.txt holds every page's Markdown copy, in llms.txt's order", () => {
+	const full = fs.readFileSync(path.join(DIST, "llms-full.txt"), "utf8");
+	assert.match(full, /^# Baseplate\n\n> /);
+	let at = 0;
+	for (const page of ["index", ...SIDEBAR.flatMap((group) => group.items)]) {
+		const found = full.indexOf(markdownOf(page), at);
+		assert.ok(found > at, `${page} follows the page before it`);
+		at = found;
+	}
 });
 
 test("links between pages stay in the Markdown copies", () => {

@@ -1,24 +1,25 @@
 // /llms.txt (https://llmstxt.org): what Baseplate is, and a link to each page's Markdown copy,
-// in the sidebar's reading order.
+// in the sidebar's reading order: by full URL once the site's address is set (src/site.ts).
 
-import { getEntry } from "astro:content";
 import type { APIRoute } from "astro";
-import { SIDEBAR } from "../sidebar.ts";
+import { pagesInOrder } from "../lib/markdown.ts";
+import { SUMMARY } from "../site.ts";
 
-export const GET: APIRoute = async () => {
-	const order = ["index", ...SIDEBAR.flatMap((group) => group.items)];
-	const pages = await Promise.all(order.map((id) => getEntry("docs", id)));
+export const GET: APIRoute = async ({ site }) => {
+	const url = (path: string) => (site === undefined ? path : new URL(path, site).href);
+	const pages = await pagesInOrder();
 	const lines = [
 		"# Baseplate",
 		"",
-		"> Baseplate creates roblox-ts Roblox games set up for coding agents: `pnpm create baseplate <name> --json` creates, installs and commits a game; inside it, `mise run check` checks everything, and AGENTS.md explains the project.",
+		`> ${SUMMARY}`,
+		"",
+		`Every page in one file: [llms-full.txt](${url("/llms-full.txt")})`,
 		"",
 		"## Docs",
 		"",
-		...pages.flatMap((page) =>
-			page === undefined
-				? []
-				: [`- [${page.data.title}](/${page.id}.md)${page.data.description ? `: ${page.data.description}` : ""}`],
+		...pages.map(
+			(page) =>
+				`- [${page.data.title}](${url(`/${page.id}.md`)})${page.data.description ? `: ${page.data.description}` : ""}`,
 		),
 		"",
 	];
