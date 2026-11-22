@@ -39,31 +39,39 @@ async function main() {
 	const problem = nameProblem(options.name);
 	if (problem !== undefined) fail(problem);
 
-	const conflict = findConflict(options.addOns);
+	const conflict = findConflict(options.language, options.addOns);
 	if (conflict !== undefined) fail(conflict);
 
 	let replaced: string[] = [];
 	try {
-		replaced = scaffoldProject(options.dir);
+		replaced = scaffoldProject(options.dir, options.language);
 	} catch (error) {
 		fail(error instanceof Error ? error.message : String(error));
 	}
 	setProjectName(options.dir, options.name);
+	// package.json's packages, which pnpm-lock.yaml locks.
 	const packages = () => {
 		const pkg = JSON.parse(fs.readFileSync(path.join(options.dir, "package.json"), "utf8")) as Record<string, unknown>;
 		return JSON.stringify([pkg.dependencies, pkg.devDependencies]);
 	};
+	// A Luau game's Roblox packages, which wally.lock locks.
+	const wallyPackages = () => {
+		const wally = path.join(options.dir, "wally.toml");
+		return fs.existsSync(wally) ? fs.readFileSync(wally, "utf8") : undefined;
+	};
 	const basePackages = packages();
+	const baseWallyPackages = wallyPackages();
 	// The [tools] of mise.toml, which the template's mise.lock covers until an add-on brings a tool.
 	const tools = () =>
 		/^\[tools\]\n([\s\S]*?)(?=^\[)/m.exec(fs.readFileSync(path.join(options.dir, "mise.toml"), "utf8"))?.[1];
 	const baseTools = tools();
-	installAddOns(options.dir, options.addOns);
-	if (options.addOns.places === "multi") makeMultiPlace(options.dir, options.name);
-	recordOrigin(options.dir, version, options.addOns);
+	installAddOns(options.dir, options.language, options.addOns);
+	if (options.addOns.places === "multi") makeMultiPlace(options.dir, options.name, options.language);
+	recordOrigin(options.dir, version, options.language, options.addOns);
 	recordAgentFiles(options.dir, version);
 	// The template's lockfile lists the base's packages only, until an install adds the add-ons'.
 	const packagesChanged = packages() !== basePackages;
+	const wallyPackagesChanged = wallyPackages() !== baseWallyPackages;
 	const toolsChanged = tools() !== baseTools;
 	// In a multi-place game, Studio commands name a place.
 	const place = options.addOns.places === "multi" ? (PLACES[0] ?? "") : "";
@@ -93,12 +101,14 @@ async function main() {
 
 	let committed = false;
 	// Committed now, pnpm-lock.yaml wouldn't match package.json, or mise.lock wouldn't record the
-	// add-ons' tools, and the game's install (locked, frozen) fails on that.
-	const waitForInstall = git && !installed && (packagesChanged || toolsChanged);
+	// add-ons' tools, and the game's install (locked, frozen) fails on that; or wally.lock wouldn't
+	// list the add-ons' Wally packages, and the first install would leave it changed.
+	const waitForInstall = git && !installed && (packagesChanged || wallyPackagesChanged || toolsChanged);
 	if (waitForInstall) {
 		const stale = [
 			...(toolsChanged ? ["mise.lock doesn't record the add-ons' tools until `mise lock`"] : []),
 			...(packagesChanged ? ["pnpm-lock.yaml doesn't list the add-ons' packages until `pnpm install`"] : []),
+			...(wallyPackagesChanged ? ["wally.lock doesn't list the add-ons' packages until `mise run install`"] : []),
 		];
 		warnings.push(`Nothing is committed yet: ${stale.join(", and ")}. Run the next steps, then commit.`);
 	} else if (git) {
@@ -122,6 +132,7 @@ async function main() {
 				git,
 				committed,
 				installed,
+				language: options.language,
 				addOns: options.addOns,
 				warnings,
 				nextSteps: nextSteps(options.dir, steps),

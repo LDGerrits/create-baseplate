@@ -14,14 +14,17 @@ const listed = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--ex
 if (listed.status !== 0) throw new Error(`git ls-files failed: ${listed.stderr}`);
 
 fs.rmSync(OUT, { recursive: true, force: true });
+/** Symbolic links by the folder whose _symlinks.json lists them: a language's base, or an add-on choice. */
 const links: Record<string, Record<string, string>> = {};
+const languages = new Set<string>();
 for (const file of listed.stdout.split("\0").filter((f) => f !== "" && fs.existsSync(f))) {
 	const relative = path.relative(SOURCE, file);
-	const [kind = "", ...rest] = relative.split(path.sep);
-	const inKind = rest.join("/");
+	const parts = relative.split(path.sep);
+	// template/<language>/base/..., template/<language>/extras/<question>/<choice>/...
+	if (parts.length > 2) languages.add(parts[0] ?? "");
 	const stat = fs.lstatSync(file);
 	if (stat.isSymbolicLink()) {
-		const top = kind === "base" ? "base" : path.join(kind, rest[0] ?? "");
+		const top = parts.slice(0, parts[1] === "base" ? 2 : 4).join("/");
 		const within = path.relative(path.join(SOURCE, top), file).split(path.sep).join("/");
 		links[top] ??= {};
 		links[top][within] = fs.readlinkSync(file);
@@ -29,7 +32,7 @@ for (const file of listed.stdout.split("\0").filter((f) => f !== "" && fs.exists
 	}
 	const name = path.basename(file) === ".gitignore" ? "_gitignore" : path.basename(file);
 	// A file directly in template/, such as its LICENSE, stays there.
-	const to = rest.length === 0 ? path.join(OUT, name) : path.join(OUT, kind, path.dirname(inKind), name);
+	const to = path.join(OUT, path.dirname(relative), name);
 	fs.mkdirSync(path.dirname(to), { recursive: true });
 	fs.copyFileSync(file, to);
 	fs.chmodSync(to, stat.mode);
@@ -37,7 +40,8 @@ for (const file of listed.stdout.split("\0").filter((f) => f !== "" && fs.exists
 for (const [top, list] of Object.entries(links)) {
 	fs.writeFileSync(path.join(OUT, top, "_symlinks.json"), `${JSON.stringify(list, undefined, "\t")}\n`);
 }
-if (!fs.existsSync(path.join(OUT, "base", "_symlinks.json"))) {
-	fs.writeFileSync(path.join(OUT, "base", "_symlinks.json"), "{}\n");
+for (const language of languages) {
+	const list = path.join(OUT, language, "base", "_symlinks.json");
+	if (!fs.existsSync(list)) fs.writeFileSync(list, "{}\n");
 }
 console.log(`Copied the template to ${OUT}`);

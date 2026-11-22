@@ -1,13 +1,16 @@
 import fs from "node:fs";
 import path from "node:path";
-import { TEMPLATE_EXTRAS } from "../consts.ts";
+import { templateExtras } from "../consts.ts";
 
 // Add-ons, the way create-t3-app's installers work: each question offers the most popular
-// libraries, plus "none" where the game can go without. A choice is a folder in
-// template/extras/<question>/<choice>/ holding addon.json (see Manifest), AGENTS.md (its section
-// for the game's AGENTS.md), files/ (copied over the game) and, for a choice that brings a tool,
-// mise.toml (its pinned tools and tasks, added to the game's). The base template is the default
-// choice of a question without "none" (React, for the UI), so that choice has no folder.
+// libraries, plus "none" where the game can go without. The first question is the language, a fork
+// in the road: TypeScript (roblox-ts) and Luau each have their own template,
+// template/<language>/base, and their own questions, with the tools that language's developers use.
+// A choice is a folder in template/<language>/extras/<question>/<choice>/ holding addon.json (see
+// Manifest), AGENTS.md (its section for the game's AGENTS.md), files/ (copied over the game) and,
+// for a choice that brings a tool, mise.toml (its pinned tools and tasks, added to the game's). The
+// base template is the default choice of a question without "none" (React, for the UI), so that
+// choice has no folder.
 export interface AddOn {
 	/** The flag and the key in results, such as "state". */
 	readonly name: string;
@@ -22,81 +25,157 @@ export interface AddOn {
 
 export const NONE = "none";
 
-export const addOns = [
-	{
-		name: "ui",
-		valueName: "library",
-		question: "Which UI library?",
-		choices: [
-			{ value: "react", label: "React", hint: "the most used" },
-			{ value: "vide", label: "Vide", hint: "fine-grained reactivity, no re-renders" },
-		],
-		defaultValue: "react",
-		allowNone: false,
-	},
-	{
-		name: "places",
-		valueName: "layout",
-		question: "One place, or several?",
-		choices: [
-			{ value: "single", label: "One place", hint: "the whole game in one place" },
-			{ value: "multi", label: "Several places", hint: "a lobby and a game sharing code, laid out as Rogen does" },
-		],
-		defaultValue: "single",
-		allowNone: false,
-	},
-	{
-		name: "state",
-		valueName: "library",
-		question: "Which library for client state?",
-		choices: [
-			{ value: "charm", label: "Charm", hint: "signals, the most used" },
-			{ value: "reflex", label: "Reflex", hint: "a Redux-like store; no longer updated" },
-		],
-		defaultValue: NONE,
-		allowNone: true,
-	},
-	{
-		name: "data",
-		valueName: "library",
-		question: "Which library to save player data?",
-		choices: [
-			{ value: "profilestore", label: "ProfileStore", hint: "the most used, with session locking" },
-			{ value: "lapis", label: "Lapis", hint: "validated documents" },
-		],
-		defaultValue: NONE,
-		allowNone: true,
-	},
-	{
-		name: "entities",
-		valueName: "library",
-		question: "Which library for entities and components?",
-		choices: [
-			{ value: "components", label: "Flamework Components", hint: "classes on tagged instances" },
-			{ value: "jecs", label: "Jecs", hint: "an entity component system" },
-		],
-		defaultValue: NONE,
-		allowNone: true,
-	},
-	{
-		name: "assets",
-		valueName: "tool",
-		question: "Which tool to upload images and sounds?",
-		choices: [{ value: "asphalt", label: "Asphalt", hint: "uploads assets/ to Roblox and types their IDs" }],
-		defaultValue: NONE,
-		allowNone: true,
-	},
-	{
-		name: "release",
-		valueName: "tool",
-		question: "Which tool to process release builds?",
-		choices: [{ value: "darklua", label: "Darklua", hint: "minifies and optimizes the code you publish" }],
-		defaultValue: NONE,
-		allowNone: true,
-	},
-] as const satisfies readonly AddOn[];
+export const languages = [
+	{ value: "typescript", label: "TypeScript", hint: "roblox-ts, with Flamework" },
+	{ value: "luau", label: "Luau", hint: "Rojo, Wally, StyLua, Selene and luau-lsp" },
+] as const;
 
-export type AddOnChoices = Record<(typeof addOns)[number]["name"], string>;
+export type Language = (typeof languages)[number]["value"];
+
+export const DEFAULT_LANGUAGE: Language = "typescript";
+
+export const isLanguage = (value: string): value is Language => languages.some((language) => language.value === value);
+
+const LANGUAGE_NAMES: Record<Language, string> = { typescript: "TypeScript", luau: "Luau" };
+export const languageName = (language: Language) => LANGUAGE_NAMES[language];
+
+const places: AddOn = {
+	name: "places",
+	valueName: "layout",
+	question: "One place, or several?",
+	choices: [
+		{ value: "single", label: "One place", hint: "the whole game in one place" },
+		{ value: "multi", label: "Several places", hint: "a lobby and a game sharing code, laid out as Rogen does" },
+	],
+	defaultValue: "single",
+	allowNone: false,
+};
+
+const assets: AddOn = {
+	name: "assets",
+	valueName: "tool",
+	question: "Which tool to upload images and sounds?",
+	choices: [{ value: "asphalt", label: "Asphalt", hint: "uploads assets/ to Roblox and types their IDs" }],
+	defaultValue: NONE,
+	allowNone: true,
+};
+
+const release: AddOn = {
+	name: "release",
+	valueName: "tool",
+	question: "Which tool to process release builds?",
+	choices: [{ value: "darklua", label: "Darklua", hint: "minifies and optimizes the code you publish" }],
+	defaultValue: NONE,
+	allowNone: true,
+};
+
+/** Each language's questions, in the order they're asked and applied: the UI first. */
+export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
+	typescript: [
+		{
+			name: "ui",
+			valueName: "library",
+			question: "Which UI library?",
+			choices: [
+				{ value: "react", label: "React", hint: "the most used" },
+				{ value: "vide", label: "Vide", hint: "fine-grained reactivity, no re-renders" },
+			],
+			defaultValue: "react",
+			allowNone: false,
+		},
+		places,
+		{
+			name: "state",
+			valueName: "library",
+			question: "Which library for client state?",
+			choices: [
+				{ value: "charm", label: "Charm", hint: "signals, the most used" },
+				{ value: "reflex", label: "Reflex", hint: "a Redux-like store; no longer updated" },
+			],
+			defaultValue: NONE,
+			allowNone: true,
+		},
+		{
+			name: "data",
+			valueName: "library",
+			question: "Which library to save player data?",
+			choices: [
+				{ value: "profilestore", label: "ProfileStore", hint: "the most used, with session locking" },
+				{ value: "lapis", label: "Lapis", hint: "validated documents" },
+			],
+			defaultValue: NONE,
+			allowNone: true,
+		},
+		{
+			name: "entities",
+			valueName: "library",
+			question: "Which library for entities and components?",
+			choices: [
+				{ value: "components", label: "Flamework Components", hint: "classes on tagged instances" },
+				{ value: "jecs", label: "Jecs", hint: "an entity component system" },
+			],
+			defaultValue: NONE,
+			allowNone: true,
+		},
+		assets,
+		release,
+	],
+	luau: [
+		{
+			name: "ui",
+			valueName: "library",
+			question: "Which UI library?",
+			choices: [
+				{ value: "react", label: "React", hint: "react-lua, the most used" },
+				{ value: "vide", label: "Vide", hint: "fine-grained reactivity, no re-renders" },
+			],
+			defaultValue: "react",
+			allowNone: false,
+		},
+		places,
+		{
+			name: "state",
+			valueName: "library",
+			question: "Which library for client state?",
+			choices: [{ value: "charm", label: "Charm", hint: "signals, the most used" }],
+			defaultValue: NONE,
+			allowNone: true,
+		},
+		{
+			name: "data",
+			valueName: "library",
+			question: "Which library to save player data?",
+			choices: [
+				{ value: "profilestore", label: "ProfileStore", hint: "the most used, with session locking" },
+				{ value: "lapis", label: "Lapis", hint: "validated documents" },
+			],
+			defaultValue: NONE,
+			allowNone: true,
+		},
+		{
+			name: "entities",
+			valueName: "library",
+			question: "Which library for entities and components?",
+			choices: [{ value: "jecs", label: "Jecs", hint: "an entity component system" }],
+			defaultValue: NONE,
+			allowNone: true,
+		},
+		assets,
+		release,
+	],
+};
+
+/** Every question of any language, once by name, the way the flags list them. */
+export const allAddOns: readonly AddOn[] = [
+	...new Map(
+		Object.values(addOnsByLanguage)
+			.flat()
+			.map((addOn) => [addOn.name, addOn]),
+	).values(),
+];
+
+/** The answers to a language's questions, by question name. */
+export type AddOnChoices = Record<string, string>;
 
 /** The values a question accepts, with "none" where it has one. */
 export const valuesOf = (addOn: AddOn) => [
@@ -104,12 +183,47 @@ export const valuesOf = (addOn: AddOn) => [
 	...(addOn.allowNone ? [NONE] : []),
 ];
 
+/** Every value a flag accepts in any language. */
+export const flagValuesOf = (name: string) => [
+	...new Set(
+		Object.values(addOnsByLanguage)
+			.flat()
+			.filter((addOn) => addOn.name === name)
+			.flatMap(valuesOf),
+	),
+];
+
+/** A language's answers: `given` where set, each question's default otherwise. */
+export const choicesFor = (language: Language, given: Partial<AddOnChoices>): AddOnChoices =>
+	Object.fromEntries(addOnsByLanguage[language].map((addOn) => [addOn.name, given[addOn.name] ?? addOn.defaultValue]));
+
+/** Why a flag's value doesn't fit the language, such as Flamework Components in a Luau game. */
+export function flagProblem(language: Language, given: Partial<AddOnChoices>): string | undefined {
+	for (const [name, value] of Object.entries(given)) {
+		if (value === undefined) continue;
+		const addOn = addOnsByLanguage[language].find((candidate) => candidate.name === name);
+		const values = addOn === undefined ? [] : valuesOf(addOn);
+		if (values.includes(value)) continue;
+		const takes = values.length === 0 ? "has no such question" : `takes ${values.join(", ")}`;
+		return `--${name} ${value} isn't a ${languageName(language)} choice: a ${languageName(language)} game ${takes}.`;
+	}
+	return undefined;
+}
+
 interface Manifest {
-	/** Packages to add, pinned. */
+	/**
+	 * Packages to add, pinned: npm packages for package.json in TypeScript, Wally packages for
+	 * wally.toml's [dependencies] in Luau (`{ "Charm": "littensy/charm@0.11.1" }`).
+	 */
 	dependencies: Record<string, string>;
-	/** Side-effect imports to add to a main file, so Flamework starts what they define. */
+	/** Luau: Wally packages only the server loads, for wally.toml's [server-dependencies]. */
+	serverDependencies?: Record<string, string>;
+	/**
+	 * What a main file starts. TypeScript: side-effect imports, so Flamework starts what they define.
+	 * Luau: require expressions added to the main script's list of services or controllers.
+	 */
 	imports: Record<string, string[]>;
-	/** Packages the choice replaces, from dependencies or devDependencies. */
+	/** Packages the choice replaces, from dependencies or devDependencies (by alias, in wally.toml). */
 	removeDependencies?: string[];
 	/** Base files the choice replaces. */
 	removeFiles?: string[];
@@ -118,41 +232,56 @@ interface Manifest {
 	/** Exact text to replace in the game's files. */
 	replaceText?: { file: string; from: string; to: string }[];
 	/** What changes with another question's choice: `{ vide: { dependencies, files, agents } }` under the UI. */
-	byUi?: Record<string, { dependencies?: Record<string, string>; files?: string; agents?: string }>;
+	byUi?: Record<
+		string,
+		{
+			dependencies?: Record<string, string>;
+			serverDependencies?: Record<string, string>;
+			files?: string;
+			agents?: string;
+		}
+	>;
 	/** Choices of other questions this one can't go with, and why. */
 	conflicts?: Record<string, Record<string, string>>;
 }
 
-const manifestOf = (name: string, value: string): Manifest | undefined => {
-	const file = path.join(TEMPLATE_EXTRAS, name, value, "addon.json");
+const manifestOf = (language: Language, name: string, value: string): Manifest | undefined => {
+	const file = path.join(templateExtras(language), name, value, "addon.json");
 	return fs.existsSync(file) ? (JSON.parse(fs.readFileSync(file, "utf8")) as Manifest) : undefined;
 };
 
 /** Why the chosen add-ons can't go together, if they can't. */
-export function findConflict(chosen: AddOnChoices): string | undefined {
+export function findConflict(language: Language, chosen: AddOnChoices): string | undefined {
 	for (const [name, value] of Object.entries(chosen)) {
-		const conflicts = manifestOf(name, value)?.conflicts ?? {};
+		const conflicts = manifestOf(language, name, value)?.conflicts ?? {};
 		for (const [other, reasons] of Object.entries(conflicts)) {
-			const reason = reasons[(chosen as Record<string, string>)[other] ?? ""];
+			const reason = reasons[chosen[other] ?? ""];
 			if (reason !== undefined) return reason;
 		}
 	}
 	return undefined;
 }
 
-/** Applies each chosen add-on to the project in `dir`, in the order of `addOns`: the UI first. */
-export function installAddOns(dir: string, chosen: AddOnChoices) {
-	for (const addOn of addOns) {
+/** Applies each chosen add-on to the project in `dir`, in the order of the language's questions: the UI first. */
+export function installAddOns(dir: string, language: Language, chosen: AddOnChoices) {
+	for (const addOn of addOnsByLanguage[language]) {
 		const name = addOn.name;
-		const value = chosen[name];
-		const manifest = manifestOf(addOn.name, value);
+		const value = chosen[name] ?? addOn.defaultValue;
+		const manifest = manifestOf(language, name, value);
 		if (manifest === undefined) continue; // "none", or the base's own choice
-		const from = path.join(TEMPLATE_EXTRAS, addOn.name, value);
-		const variant = manifest.byUi?.[chosen.ui];
+		const from = path.join(templateExtras(language), name, value);
+		const variant = manifest.byUi?.[chosen.ui ?? ""];
 
 		for (const file of manifest.removeFiles ?? []) fs.rmSync(path.join(dir, file), { force: true });
 		fs.cpSync(path.join(from, variant?.files ?? "files"), dir, { recursive: true });
-		editPackage(dir, variant?.dependencies ?? manifest.dependencies, manifest.removeDependencies ?? []);
+		const remove = manifest.removeDependencies ?? [];
+		if (language === "luau") {
+			editWally(dir, "dependencies", variant?.dependencies ?? manifest.dependencies, remove);
+			editWally(dir, "server-dependencies", variant?.serverDependencies ?? manifest.serverDependencies ?? {}, remove);
+			editWally(dir, "dev-dependencies", {}, remove);
+		} else {
+			editPackage(dir, variant?.dependencies ?? manifest.dependencies, remove);
+		}
 		const mise = path.join(from, "mise.toml");
 		if (fs.existsSync(mise)) addMise(dir, fs.readFileSync(mise, "utf8"));
 		for (const [file, imports] of Object.entries(manifest.imports)) addImports(path.join(dir, file), imports);
@@ -183,12 +312,55 @@ function editPackage(dir: string, add: Record<string, string>, remove: string[])
 	fs.writeFileSync(file, `${JSON.stringify(pkg, undefined, "\t")}\n`);
 }
 
-/** Adds side-effect imports after the main file's last import, so Flamework starts what they define. */
+/**
+ * Adds what a main file starts. TypeScript: side-effect imports after its last import, so Flamework
+ * starts what they define. Luau: `require(...)` entries after the last one in its list of modules.
+ */
 function addImports(file: string, imports: string[]) {
 	const lines = fs.readFileSync(file, "utf8").split("\n");
-	const last = lines.findLastIndex((line) => line.startsWith("import "));
-	lines.splice(last + 1, 0, ...imports.map((module) => `import "${module}";`));
+	if (file.endsWith(".luau")) {
+		const last = lines.findLastIndex((line) => /^\s+require\(/.test(line));
+		if (last === -1) throw new Error(`${file} has no list of required modules to add to`);
+		const indent = /^\s+/.exec(lines[last] ?? "")?.[0] ?? "\t";
+		lines.splice(last + 1, 0, ...imports.map((module) => `${indent}require(${module}),`));
+	} else {
+		const last = lines.findLastIndex((line) => line.startsWith("import "));
+		lines.splice(last + 1, 0, ...imports.map((module) => `import "${module}";`));
+	}
 	fs.writeFileSync(file, lines.join("\n"));
+}
+
+/**
+ * Adds packages to a table of wally.toml (`Charm = "littensy/charm@0.11.1"`), sorted by alias, and
+ * drops the aliases in `remove`. Adds the table when it's missing and has something to hold.
+ */
+function editWally(dir: string, table: string, add: Record<string, string>, remove: string[]) {
+	const file = path.join(dir, "wally.toml");
+	const toml = fs.readFileSync(file, "utf8");
+	const header = `[${table}]`;
+	const start = toml.indexOf(`${header}\n`);
+	const bodyStart = start === -1 ? toml.length : start + header.length + 1;
+	const next = toml.indexOf("\n[", bodyStart);
+	const bodyEnd = start === -1 ? toml.length : next === -1 ? toml.length : next + 1;
+	const entries = new Map<string, string>();
+	for (const line of toml.slice(bodyStart, bodyEnd).split("\n")) {
+		const match = /^\s*([\w-]+)\s*=\s*"([^"]*)"/.exec(line);
+		if (match?.[1] !== undefined && match[2] !== undefined) entries.set(match[1], match[2]);
+	}
+	for (const [alias, spec] of Object.entries(add)) entries.set(alias, spec);
+	for (const alias of remove) entries.delete(alias);
+	if (start === -1 && entries.size === 0) return;
+	const body = [...entries]
+		.sort(([a], [b]) => a.localeCompare(b))
+		.map(([alias, spec]) => `${alias} = "${spec}"\n`)
+		.join("");
+	const rest = toml.slice(bodyEnd);
+	fs.writeFileSync(
+		file,
+		start === -1
+			? `${toml.trimEnd()}\n\n${header}\n${body}`
+			: `${toml.slice(0, bodyStart)}${body}${rest === "" ? "" : `\n${rest.replace(/^\n+/, "")}`}`,
+	);
 }
 
 /** Replaces the section under `## <heading>` with the add-on's, up to the next `## ` heading. */

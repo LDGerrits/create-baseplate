@@ -66,6 +66,7 @@ test("records which CLI and add-ons made the game", () => {
 	const pkg = JSON.parse(fs.readFileSync(path.join(cwd, "coin-rush/package.json"), "utf8"));
 	const cli = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, "../package.json"), "utf8"));
 	assert.equal(pkg.baseplate.version, cli.version);
+	assert.equal(pkg.baseplate.language, "typescript");
 	assert.equal(pkg.baseplate.addOns.state, "charm");
 	assert.equal(pkg.baseplate.addOns.ui, "react");
 	assert.doesNotMatch(pkg.description ?? "", /template/i, "a game, not the template");
@@ -239,7 +240,7 @@ test("takes a folder typed at the prompt that only --name can name", { skip: !ha
 	const cwd = tempDir();
 	const shown = typeAnswer(cwd, "--name coin-rush", "Coin Rush\r");
 	assert.doesNotMatch(shown, /can't name the game/);
-	assert.match(shown, /Which UI library/, "goes on to the next question");
+	assert.match(shown, /Which language/, "goes on to the next question");
 });
 
 test("refuses a folder with files at the prompt, before the other questions", { skip: !hasScript }, () => {
@@ -251,7 +252,35 @@ test("refuses a folder with files at the prompt, before the other questions", { 
 	const shown = typeAnswer(cwd, "", "taken\r\u0003");
 	assert.ok(performance.now() - started < 4_000, "ends when cancelled, not at the time limit");
 	assert.match(shown, /already has files in it/);
-	assert.doesNotMatch(shown, /Which UI library/);
+	assert.doesNotMatch(shown, /Which language/);
+});
+
+test("refuses flags that can't go together at the prompt, before asking a question with no choice", {
+	skip: !hasScript,
+}, () => {
+	const cwd = tempDir();
+	// With a folder: every language that takes the flags conflicts, so it refuses before asking anything.
+	const withFolder = spawnSync(
+		"script",
+		["-qec", `stty cols 120 rows 40; node ${CLI} z/g --ui vide --state reflex --no-install --no-git`, "/dev/null"],
+		{ cwd, encoding: "utf8", timeout: 10_000 },
+	);
+	assert.equal(withFolder.status, 1);
+	assert.match(withFolder.stdout, /Reflex has no Vide binding/);
+	assert.doesNotMatch(withFolder.stdout, /TypeError|Which language/);
+	// Without one: it asks the name and the language, then refuses.
+	const shown = stripVTControlCharacters(
+		spawnSync(
+			"sh",
+			[
+				"-c",
+				`(sleep 0.5; printf 'g2\\r'; sleep 1; printf '\\r'; sleep 1.5) | script -qec "stty cols 120 rows 40; node ${CLI} --ui vide --state reflex --no-install --no-git" /dev/null`,
+			],
+			{ cwd, encoding: "utf8", timeout: 8_000 },
+		).stdout,
+	);
+	assert.match(shown, /Reflex has no Vide binding/);
+	assert.doesNotMatch(shown, /TypeError|One place, or several/);
 });
 
 test("refuses a folder that has files", () => {
@@ -328,6 +357,161 @@ test("takes no add-ons by default", () => {
 	const mise = fs.readFileSync(path.join(cwd, "my-game/mise.toml"), "utf8");
 	assert.doesNotMatch(mise, /asphalt|darklua/);
 	assert.ok(!fs.existsSync(path.join(cwd, "my-game/src/features/player-data")));
+});
+
+test("creates a Luau game from the Luau template", () => {
+	const cwd = tempDir();
+	const run = create(cwd, "coin-rush", "--no-git", "--language", "luau");
+	assert.equal(run.status, 0, run.stderr);
+	const result = JSON.parse(run.stdout) as { language: string; addOns: Record<string, string> };
+	assert.equal(result.language, "luau");
+	assert.deepEqual(result.addOns, {
+		ui: "react",
+		places: "single",
+		state: "none",
+		data: "none",
+		entities: "none",
+		assets: "none",
+		release: "none",
+	});
+
+	const dir = path.join(cwd, "coin-rush");
+	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+	const pkg = JSON.parse(read("package.json"));
+	assert.equal(pkg.name, "coin-rush");
+	assert.equal(pkg.baseplate.language, "luau");
+	assert.equal(pkg.dependencies, undefined, "the game's packages are Wally's");
+	assert.match(read("wally.toml"), /React = "jsdotlua\/react@=/);
+	assert.ok(fs.existsSync(path.join(dir, "wally.lock")));
+	assert.equal(JSON.parse(read("default.rogen.json")).name, "coin-rush");
+	assert.match(read("src/App/Client/Game.storybook.luau"), /name = "coin-rush"/);
+	assert.match(read("AGENTS.md"), /^# coin-rush\n\nA Roblox game in Luau/);
+	assert.ok(fs.existsSync(path.join(dir, "src/Features/Clicker/Server/ClickerService.luau")));
+	assert.ok(fs.existsSync(path.join(dir, ".claude/plugins/luau/.claude-plugin/plugin.json")));
+	assert.ok(fs.lstatSync(path.join(dir, ".claude/skills")).isSymbolicLink());
+	assert.ok(fs.existsSync(path.join(dir, ".gitignore")), ".gitignore restored from _gitignore");
+	assert.ok(!fs.existsSync(path.join(dir, "_symlinks.json")));
+	for (const typescript of ["tsconfig.json", "eslint.config.ts", "src/app", "src/features"]) {
+		assert.ok(!fs.existsSync(path.join(dir, typescript)), `${typescript} is the TypeScript template's`);
+	}
+	for (const generated of ["node_modules", "Packages", "DevPackages", ".luau-lsp", "sourcemap.json"]) {
+		assert.ok(!fs.existsSync(path.join(dir, generated)), `${generated} isn't copied`);
+	}
+});
+
+test("applies Luau add-ons: Wally packages, files and the services they start", () => {
+	const cwd = tempDir();
+	const run = create(
+		cwd,
+		"my-game",
+		"--no-git",
+		"--language",
+		"luau",
+		"--state",
+		"charm",
+		"--data",
+		"profilestore",
+		"--entities",
+		"jecs",
+	);
+	assert.equal(run.status, 0, run.stderr);
+	const dir = path.join(cwd, "my-game");
+	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+
+	const wally = read("wally.toml");
+	assert.match(wally, /\[dependencies\][^[]*Charm = "littensy\/charm@=/);
+	assert.match(wally, /\[dependencies\][^[]*Jecs = "ukendio\/jecs@=/);
+	assert.match(wally, /\[server-dependencies\]\nProfileStore = "lm-loleris\/profilestore@=/);
+	assert.equal(JSON.parse(read("package.json")).dependencies, undefined, "no npm packages for the game");
+
+	const main = read("src/App/Server/Main.server.luau");
+	assert.match(
+		main,
+		/require\(ServerScriptService\.Features\.Clicker\.ClickerService\),\n\trequire\(ServerScriptService\.Features\.PlayerData\.PlayerDataService\),\n\trequire\(ServerScriptService\.Features\.Spinner\.SpinnerService\),\n\}/,
+	);
+	assert.ok(fs.existsSync(path.join(dir, "src/Features/PlayerData/Server/PlayerDataService.spec.luau")));
+	assert.ok(fs.existsSync(path.join(dir, "tests/e2e/spinner.luau")));
+	assert.match(read("src/Features/Clicker/Client/ClickerController.luau"), /Charm\.signal/);
+
+	const agents = read("AGENTS.md");
+	assert.ok(agents.indexOf("## Player data") < agents.indexOf("<!-- rogen -->"), "add-on notes come before Rogen's");
+	assert.match(agents, /## State/);
+	assert.match(agents, /## Entities/);
+});
+
+test("swaps react-lua for Vide in a Luau game, with Charm's Vide binding", () => {
+	const cwd = tempDir();
+	const run = create(cwd, "my-game", "--no-git", "--language", "luau", "--ui", "vide", "--state", "charm");
+	assert.equal(run.status, 0, run.stderr);
+	const dir = path.join(cwd, "my-game");
+	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+	const wally = read("wally.toml");
+	assert.match(wally, /Vide = "centau\/vide@=/);
+	assert.match(wally, /VideCharm = "littensy\/vide-charm@=/);
+	for (const react of ["React =", "ReactRoblox =", "ReactRipple =", "ReactCharm ="]) {
+		assert.doesNotMatch(wally, new RegExp(`^${react}`, "m"), `${react} is gone`);
+	}
+	assert.match(read("src/Features/Clicker/Client/ClickerButton.story.luau"), /CreateVideStory/);
+	assert.match(read("src/App/Client/App.luau"), /VideCharm/);
+	const agents = read("AGENTS.md");
+	assert.match(agents, /## UI\n\nVide/);
+	assert.doesNotMatch(agents, /react-lua|ReactRipple/, "AGENTS.md names no React package");
+});
+
+test("adds the Luau tools: Asphalt's Luau module and Darklua's release", () => {
+	const cwd = tempDir();
+	const run = create(cwd, "my-game", "--no-git", "--language", "luau", "--assets", "asphalt", "--release", "darklua");
+	assert.equal(run.status, 0, run.stderr);
+	const dir = path.join(cwd, "my-game");
+	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+	const mise = read("mise.toml");
+	assert.match(mise, /asphalt/);
+	assert.match(mise, /darklua/);
+	assert.match(mise, /\[tasks\.release\]/);
+	assert.match(mise, /\[tasks\.assets\]/);
+	assert.match(read("asphalt.toml"), /src\/Shared/);
+	assert.ok(fs.existsSync(path.join(dir, ".darklua.json")));
+	assert.match(read(".gitignore"), /^\/dist$/m);
+	assert.match(read(".github/workflows/ci.yml"), /mise run release/);
+});
+
+test("lays out a multi-place Luau game as Rogen prescribes for Luau", () => {
+	const cwd = tempDir();
+	const run = create(cwd, "my-game", "--no-git", "--language", "luau", "--places", "multi", "--assets", "asphalt");
+	assert.equal(run.status, 0, run.stderr);
+	const dir = path.join(cwd, "my-game");
+	const exists = (file: string) => fs.existsSync(path.join(dir, file));
+	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+	for (const place of ["lobby", "game"]) {
+		const config = JSON.parse(read(`${place}.rogen.json`));
+		assert.deepEqual(config.sourcePaths, ["projects/common/src", `projects/${place}/src`]);
+		assert.ok(exists(`projects/${place}/src/App/Server/Main.server.luau`));
+		assert.ok(exists(`projects/${place}/world/default.project.json`));
+	}
+	assert.ok(exists("projects/common/src/Features/Clicker/Server/ClickerService.luau"));
+	assert.ok(exists("projects/game/tests/e2e/clicker.luau"), "the shared code's end-to-end tests run in one place");
+	assert.ok(!exists("projects/lobby/tests/e2e/clicker.luau"));
+	for (const gone of ["src", "world", "tests", "default.rogen.json"]) assert.ok(!exists(gone), `${gone} moved`);
+	assert.ok(exists("wally.toml"), "the packages stay shared at the root");
+	assert.match(read("asphalt.toml"), /output_path = "projects\/common\/src\/Shared"/);
+	assert.match(read("AGENTS.md"), /projects\/common\/src/);
+});
+
+test("refuses a choice the language doesn't have", () => {
+	const cwd = tempDir();
+	const run = create(cwd, "my-game", "--no-git", "--language", "luau", "--entities", "components");
+	assert.equal(run.status, 1);
+	const error = JSON.parse(run.stdout).error as string;
+	assert.match(error, /--entities components isn't a Luau choice/);
+	assert.match(error, /jecs, none/);
+	assert.ok(!fs.existsSync(path.join(cwd, "my-game")), "creates nothing");
+});
+
+test("refuses a language that doesn't exist", () => {
+	const cwd = tempDir();
+	const run = create(cwd, "my-game", "--no-git", "--language", "python");
+	assert.equal(run.status, 1);
+	assert.match(JSON.parse(run.stdout).error, /typescript, luau/);
 });
 
 test("refuses an add-on choice that doesn't exist", () => {

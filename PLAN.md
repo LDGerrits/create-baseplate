@@ -14,8 +14,8 @@ Turn agent-baseplate into **Baseplate**: a CLI that creates a roblox-ts game set
 
 ```
 cli/                 create-baseplate: prompts, flags, copy base, apply extras, install
-  template/base/     a complete game that passes `mise run check` on its own
-  template/extras/   one folder per add-on choice: files, a manifest, its AGENTS.md section and tests
+  template/<language>/base/     a complete game that passes `mise run check` on its own (typescript, luau)
+  template/<language>/extras/   one folder per add-on choice: files, a manifest, its AGENTS.md section and tests
 www/                 the docs site: Astro + Starlight, llms.txt, a Markdown copy of each page
 AGENTS.md            how to work on this repo (not the template's AGENTS.md)
 ```
@@ -47,5 +47,5 @@ Getting started (people and agents), the agent loop (check, hooks, skills, Studi
 1. **Done. Restructure and rename:** move the game into `cli/template/base`, rename to Baseplate, make its hooks and setup work from the subfolder, add the root AGENTS.md and workspace. Done when `cli/template/base` passes `mise run ci` and the root CI runs it.
 2. **Done. CLI without add-ons:** create a project from `cli/template/base` with prompts and flags, with tests; CI creates one and checks it.
 3. **Docs site:** the pages above, built in CI; deploy to Vercel at publish.
-4. **Add-ons.** Done for libraries: state (Charm, Reflex), player data (ProfileStore, Lapis), entities (Flamework Components, Jecs), each or none. The UI library (React or Vide), single or multi place (Rogen's `projects/` layout), assets (Asphalt) and release builds (Darklua) are done too.
+4. **Add-ons.** Done for libraries: state (Charm, Reflex), player data (ProfileStore, Lapis), entities (Flamework Components, Jecs), each or none. The UI library (React or Vide), single or multi place (Rogen's `projects/` layout), assets (Asphalt) and release builds (Darklua) are done too. Done: Luau as a first language choice, a fork in the road with its own template (Wally, StyLua, Selene, luau-lsp) and its own add-ons: React or Vide, places, Charm, ProfileStore or Lapis, Jecs, Asphalt, Darklua.
 5. **Publish** (when the user says): GitHub repo (install Renovate, and require the CI checks in branch protection so its automerge waits for them), npm package, Vercel site.

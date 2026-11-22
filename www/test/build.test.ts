@@ -68,7 +68,7 @@ test("links between pages stay in the Markdown copies", () => {
 });
 
 test("the home page's copy keeps its tagline", () => {
-	assert.match(markdownOf("index"), /agent-ready way to start a roblox-ts game\. One command/);
+	assert.match(markdownOf("index"), /agent-ready way to start a Roblox game, in roblox-ts or Luau\. One command/);
 });
 
 test("each page is built as HTML", () => {

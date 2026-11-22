@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { SYMLINKS_FILE, TEMPLATE_BASE } from "../consts.ts";
+import { SYMLINKS_FILE, templateBase } from "../consts.ts";
+import type { Language } from "../installers/index.ts";
 
 /** What a new repo may already hold, from `git init`, GitHub's "Create repository" or the OS: kept. */
 const KEPT = new Set([".git", "LICENSE", "LICENSE.md", "LICENSE.txt", ".DS_Store", "Thumbs.db"]);
@@ -18,14 +19,14 @@ export function folderProblem(dir: string): string | undefined {
 }
 
 /**
- * Copies the base template into `dir`, which must be missing, empty or a new repo (see KEPT and
- * REPLACED). Returns the files the template replaced.
+ * Copies the language's base template into `dir`, which must be missing, empty or a new repo (see
+ * KEPT and REPLACED). Returns the files the template replaced.
  */
-export function scaffoldProject(dir: string): string[] {
+export function scaffoldProject(dir: string, language: Language): string[] {
 	const problem = folderProblem(dir);
 	if (problem !== undefined) throw new Error(problem);
 	const present = fs.existsSync(dir) ? fs.readdirSync(dir) : [];
-	fs.cpSync(TEMPLATE_BASE, dir, { recursive: true });
+	fs.cpSync(templateBase(language), dir, { recursive: true });
 
 	// npm drops .gitignore files from packages, so the template ships them as _gitignore.
 	for (const file of fs.readdirSync(dir, { recursive: true, encoding: "utf8" })) {

@@ -1,0 +1,60 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"extends": ["config:recommended", ":pinAllExceptPeerDependencies", "helpers:pinGitHubActionDigests"],
+	"minimumReleaseAge": "14 days",
+	"schedule": ["before 9am on monday"],
+	"packageRules": [
+		{
+			"description": "Released fixes for the dev tools the game relies on come in at once, as pnpm's minimumReleaseAgeExclude allows",
+			"matchPackageNames": ["rbx-forge", "@rbx-forge/**", "@ldgerrits/rogen"],
+			"minimumReleaseAge": "0 days",
+			"schedule": ["at any time"]
+		},
+		{
+			"matchUpdateTypes": ["patch"],
+			"groupName": "patch updates"
+		},
+		{
+			"description": "Patch and minor updates merge themselves once CI passes; majors wait for a person",
+			"matchUpdateTypes": ["patch", "minor", "digest"],
+			"automerge": true
+		},
+		{
+			"description": "Never merged without a person: the tools above come in on release day, before any wait could catch a hijacked release, and CI's engine job runs them with the Open Cloud key; and a Rojo update needs a check that CI can't make, that rbx-forge supports its Studio plugin",
+			"matchPackageNames": ["rbx-forge", "@rbx-forge/**", "@ldgerrits/rogen", "rojo-rbx/rojo", "github:rojo-rbx/rojo"],
+			"automerge": false
+		},
+		{
+			"description": "Wally's registry gives no release dates, so the two-week wait can't hold back a fresh release of a Roblox package: it shows up at once, and a person merges it",
+			"matchDatasources": ["custom.wally"],
+			"minimumReleaseAge": null,
+			"automerge": false
+		}
+	],
+	"description": "Updates for this game. Its CI runs the full check on each update, so an update merges only when the game still builds and passes its tests.",
+	"internalChecksFilter": "strict",
+	"customManagers": [
+		{
+			"description": "The create-baseplate whose agent files (AGENTS.md, skills, hooks) the game keeps: .github/workflows/renovate-fixups.yml syncs them on the update's branch",
+			"customType": "regex",
+			"managerFilePatterns": ["/^package\\.json$/"],
+			"matchStrings": ["\"baseplate\":\\s*\\{\\s*\"version\":\\s*\"(?<currentValue>[^\"]+)\""],
+			"depNameTemplate": "create-baseplate",
+			"datasourceTemplate": "npm"
+		},
+		{
+			"description": "The game's Roblox packages, pinned exactly in wally.toml (`React = \"jsdotlua/react@=17.2.1\"`): .github/workflows/renovate-fixups.yml writes wally.lock on the update's branch",
+			"customType": "regex",
+			"managerFilePatterns": ["/(^|/)wally\\.toml$/"],
+			"matchStrings": ["\"(?<depName>[\\w-]+/[\\w-]+)@=(?<currentValue>[^\"]+)\""],
+			"datasourceTemplate": "custom.wally",
+			"versioningTemplate": "semver"
+		}
+	],
+	"customDatasources": {
+		"wally": {
+			"defaultRegistryUrlTemplate": "https://api.wally.run/v1/package-metadata/{{packageName}}",
+			"transformTemplates": ["{ \"releases\": [versions.{ \"version\": package.version }] }"]
+		}
+	}
+}

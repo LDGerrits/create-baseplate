@@ -7,11 +7,12 @@ The base game brings Flamework and React with a few small helpers they work well
 
 | Question | Flag | Choices |
 | --- | --- | --- |
+| Language | `--language` | `typescript` (default, roblox-ts), `luau` |
 | UI | `--ui` | `react` (default, [React](https://react.dev) for Roblox), `vide` ([Vide](https://github.com/centau/vide)) |
 | Places | `--places` | `single` (default), `multi` |
-| Client state | `--state` | `charm` ([Charm](https://github.com/littensy/charm)), `reflex` ([Reflex](https://github.com/littensy/reflex), no longer updated), `none` |
+| Client state | `--state` | `charm` ([Charm](https://github.com/littensy/charm)), `reflex` ([Reflex](https://github.com/littensy/reflex), no longer updated; TypeScript only), `none` |
 | Player data | `--data` | `profilestore` ([ProfileStore](https://github.com/MadStudioRoblox/ProfileStore)), `lapis` ([Lapis](https://github.com/nezuo/lapis)), `none` |
-| Entities | `--entities` | `components` ([Flamework Components](https://flamework.fireboltofdeath.dev/docs/additional-modules/components)), `jecs` ([Jecs](https://github.com/Ukendio/jecs)), `none` |
+| Entities | `--entities` | `components` ([Flamework Components](https://flamework.fireboltofdeath.dev/docs/additional-modules/components); TypeScript only), `jecs` ([Jecs](https://github.com/Ukendio/jecs)), `none` |
 | Assets | `--assets` | `asphalt` ([Asphalt](https://github.com/jackTabsCode/asphalt)), `none` |
 | Release builds | `--release` | `darklua` ([Darklua](https://darklua.com)), `none` |
 
@@ -76,6 +77,23 @@ To remove it, delete those files and the generated ones, the Asphalt lines in `m
 `--release darklua` adds `mise run release`: it processes the compiled code with [Darklua](https://darklua.com) into `dist/`, by the rules in `.darklua.json` (minified, dead code removed, locals renamed), builds `build/release.rbxl` from it and runs the tests on that build, so what you publish is what was tested. The game's CI runs it too. When the tests pass in `check` and fail in `release`, a rule broke the code: remove it from `.darklua.json`. Files: `.darklua.json`, `scripts/darklua.ts`, `scripts/release-project.ts`; the tool and the `release` task in `mise.toml`.
 
 To remove it, delete those files, the Darklua lines in `mise.toml` (then `mise lock`), `/dist` in `.gitignore`, and the `mise run release` step in `.github/workflows/ci.yml`.
+
+## In a Luau game
+
+A [Luau game](/luau/) asks the same questions, with what Luau games use, and each choice does what its section above says, in Luau's files:
+
+| Add-on | Packages (Wally) | Files |
+| --- | --- | --- |
+| `--places multi` | | Rogen's Luau layout: `<place>.rogen.json` at the root, shared code in `projects/common/src`, each place in `projects/<place>/` (see [Luau games](/luau/#several-places)) |
+| `--ui vide` | `centau/vide`, `littensy/vide-ripple`, in place of react-lua | Vide versions of `src/App/Client/App.luau` and `Start.luau`, and of the clicker button and its story (`CreateVideStory`) |
+| `--state charm` | `littensy/charm`, with `littensy/react-charm` or `littensy/vide-charm` | `ClickerController.luau` keeps the count in a Charm signal, and `App.luau` reads it |
+| `--data profilestore` | `lm-loleris/profilestore`, a server package | `src/Features/PlayerData/Server/`: `PlayerData.luau`, `PlayerDataService.luau` and its spec |
+| `--data lapis` | `nezuo/lapis`, `nezuo/data-store-service-mock`, server packages | the same three files, on Lapis |
+| `--entities jecs` | `ukendio/jecs` | `src/Features/Spinner/Server/`: `SpinnerSystem.luau` and its spec, `SpinnerService.luau`; the world part and `tests/e2e/spinner.luau` |
+| `--assets asphalt` | | `assets/`, `asphalt.toml`, `scripts/assets.ts`; uploads write `src/Shared/Assets.luau`, which luau-lsp types from its table |
+| `--release darklua` | | `.darklua.json`, `scripts/darklua.ts`, `scripts/release-project.ts`; `mise run release` processes `src/` and the packages into `dist/` |
+
+A Luau add-on's packages are in `wally.toml`; to remove one, delete its lines there and run `mise run install`. Services an add-on starts are listed in `src/App/Server/Main.server.luau`. Reflex and Flamework Components are roblox-ts choices.
 
 ## Removing an add-on
 

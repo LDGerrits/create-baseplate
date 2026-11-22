@@ -1,0 +1,21 @@
+{
+	"dependencies": {},
+	"imports": {},
+	"replaceText": [
+		{
+			"file": ".gitignore",
+			"from": "# Built places\n/build\n",
+			"to": "# Built places, and the code Darklua processed for the release (mise run release)\n/build\n/dist\n"
+		},
+		{
+			"file": ".styluaignore",
+			"from": "/build\n",
+			"to": "/build\n/dist\n"
+		},
+		{
+			"file": ".github/workflows/ci.yml",
+			"from": "      - run: mise run ci\n",
+			"to": "      - run: mise run ci\n      - run: mise run release\n"
+		}
+	]
+}

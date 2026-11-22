@@ -1,0 +1,20 @@
+{
+	"name": "lighting",
+	"tree": {
+		"$className": "Lighting",
+		"$path": "Lighting",
+		"$properties": {
+			"Brightness": 1.0,
+			"ClockTime": 14.0,
+			"LightAttenuationMode": {
+				"Enum": 0
+			},
+			"LightingStyle": "Realistic",
+			"PrioritizeLightingQuality": true,
+			"SerializedOverrides": {
+				"BinaryString": ""
+			},
+			"Technology": "Future"
+		}
+	}
+}

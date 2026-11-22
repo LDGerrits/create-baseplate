@@ -36,4 +36,4 @@ Claude Code, Codex, Cursor and GitHub Copilot read `AGENTS.md` (Claude Code thro
 
 ## Can I use Luau instead of TypeScript?
 
-No. The checks, tests, Flamework and the add-ons are built for roblox-ts.
+Yes: `--language luau`, the first question the CLI asks. A Luau game has its own template with the tools Luau developers use (Wally, StyLua, Selene, luau-lsp) and the same checks, hooks, tests and skills. See [Luau games](/luau/). A game can't switch languages once created.

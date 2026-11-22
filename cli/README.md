@@ -1,6 +1,6 @@
 # create-baseplate
 
-Creates a roblox-ts game set up for coding agents.
+Creates a Roblox game, in roblox-ts or Luau, set up for coding agents.
 
 ```sh
 pnpm create baseplate my-game
@@ -17,11 +17,12 @@ With npm, put the flags after `--`, as in `npm create baseplate@latest my-game -
 | `--no-install`         | Don't install the tools and packages (with mise).                                            |
 | `--json`               | Print one JSON result on stdout, for agents and scripts. Implies `--yes`.                    |
 | `--name <name>`        | The game's name, when the folder's name can't be it. Default: the folder's name.             |
+| `--language <language>` | `typescript` (default): roblox-ts with Flamework; or `luau`: Luau with Wally, StyLua, Selene and luau-lsp. Asked first; each language has its own questions. |
 | `--ui <library>`       | UI: `react` (default) or `vide`.                                                             |
 | `--places <layout>`    | `single` (default), or `multi`: a lobby and a game sharing code, laid out as Rogen does.     |
-| `--state <library>`    | Client state: `charm`, `reflex` or `none` (default).                                         |
+| `--state <library>`    | Client state: `charm`, `reflex` (TypeScript only) or `none` (default).                       |
 | `--data <library>`     | Player data: `profilestore`, `lapis` or `none` (default).                                    |
-| `--entities <library>` | Entities: `components`, `jecs` or `none` (default).                                          |
+| `--entities <library>` | Entities: `components` (TypeScript only), `jecs` or `none` (default).                        |
 | `--assets <tool>`      | Assets: `asphalt`, to upload images and sounds and type their IDs, or `none` (default).      |
 | `--release <tool>`     | Release builds: `darklua`, to minify and optimize the code you publish, or `none` (default). |
 | `-V, --version`        | Print the CLI's version.                                                                     |

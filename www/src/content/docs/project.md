@@ -3,6 +3,8 @@ title: The project
 description: Where code goes, adding a feature, and the rules the code follows.
 ---
 
+This page describes a TypeScript game. A Luau game has the same shape in Luau's names (`src/Features/<Feature>/Server/`), with plain modules for services and controllers and remotes taken through `Serve`: see [Luau games](/luau/).
+
 ## Where code goes
 
 Each feature is a folder, `src/features/<feature>/`. Inside it, the folder a file sits in decides where it runs:

@@ -109,6 +109,27 @@ test("a new game records its agent files as the template made them", () => {
 	assert.equal(check.status, 0, check.stdout + check.stderr);
 });
 
+test("a Luau game keeps the Luau template's agent files", () => {
+	const dir = createGame("--language", "luau");
+	const { files } = readBase(dir);
+	assert.ok(files[".claude/plugins/luau/.claude-plugin/plugin.json"], "the Luau language server");
+	assert.ok(!files[".claude/plugins/roblox-ts/.claude-plugin/plugin.json"]);
+	assert.match(files["AGENTS.md"] ?? "", /A Roblox game in Luau/);
+	const check = sync(dir, "--check");
+	assert.equal(check.status, 0, check.stdout + check.stderr);
+});
+
+test("a game made before the language question syncs as TypeScript", () => {
+	const dir = createGame();
+	const file = path.join(dir, "package.json");
+	const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
+	assert.equal(pkg.baseplate.language, "typescript");
+	delete pkg.baseplate.language;
+	fs.writeFileSync(file, `${JSON.stringify(pkg, undefined, "\t")}\n`);
+	const check = sync(dir, "--check");
+	assert.equal(check.status, 0, check.stdout + check.stderr);
+});
+
 test("updates a game's agent files from an older template, keeping its own edits", () => {
 	const dir = createGame("--state", "charm");
 	const base = readBase(dir);

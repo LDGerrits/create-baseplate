@@ -1,0 +1,11 @@
+[tools]
+# Darklua processes the code of release builds (.darklua.json).
+"github:seaofvoices/darklua" = "0.19.0"
+
+[tasks.release]
+description = "Build the release: process the code and the shipped packages with Darklua into dist/ (rules in .darklua.json), build build/release.rbxl from it and run the tests on it (in each place's folder, in a multi-place game)"
+depends = ["generate"]
+run = [
+	"node scripts/darklua.ts",
+	'node scripts/each-place.ts "node {root}/scripts/release-project.ts" "mkdir build" "rojo build release.project.json --output build/release.rbxl" "node {root}/scripts/test.ts release.project.json"',
+]

@@ -1,17 +1,28 @@
 {
 	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
-	"description": "Updates for the CLI, the docs site, the template and its add-ons. CI creates a game with every option on each update, so an update merges only when every option still works.",
+	"description": "Updates for the CLI, the docs site, the templates and their add-ons. CI creates games with every option on each update, so an update merges only when every option still works.",
 	"extends": ["config:recommended", ":pinAllExceptPeerDependencies", "helpers:pinGitHubActionDigests"],
 	"minimumReleaseAge": "14 days",
 	"internalChecksFilter": "strict",
 	"schedule": ["before 9am on monday"],
 	"customManagers": [
 		{
-			"description": "Add-ons pin their packages in cli/template/extras/**/addon.json",
+			"description": "TypeScript add-ons pin their npm packages in cli/template/typescript/extras/**/addon.json",
 			"customType": "regex",
-			"managerFilePatterns": ["/^cli/template/extras/.+/addon\\.json$/"],
+			"managerFilePatterns": ["/^cli/template/typescript/extras/.+/addon\\.json$/"],
 			"matchStrings": ["\"(?<depName>@?[\\w./-]+)\":\\s*\"(?<currentValue>\\d[^\"]*)\""],
 			"datasourceTemplate": "npm"
+		},
+		{
+			"description": "The Luau template and its add-ons pin their Wally packages, exactly (`scope/name@=1.2.3`), in wally.toml and cli/template/luau/extras/**/addon.json",
+			"customType": "regex",
+			"managerFilePatterns": [
+				"/^cli/template/luau/base/wally\\.toml$/",
+				"/^cli/template/luau/extras/.+/addon\\.json$/"
+			],
+			"matchStrings": ["\"(?<depName>[\\w-]+/[\\w-]+)@=(?<currentValue>[^\"]+)\""],
+			"datasourceTemplate": "custom.wally",
+			"versioningTemplate": "semver"
 		},
 		{
 			"description": "mise's own version: every workflow's jdx/mise-action `version:` and the template's cloud setup. Grouped into one update; .github/scripts/check-mise-pins.ts then fails until cloud-setup.sh's SHA-256s match the new release.",
@@ -54,6 +65,18 @@
 			"matchDepNames": ["mise"],
 			"groupName": "mise",
 			"automerge": false
+		},
+		{
+			"description": "Wally's registry gives no release dates, so the two-week wait can't hold back a fresh release of a Roblox package: it shows up at once, and a person merges it",
+			"matchDatasources": ["custom.wally"],
+			"minimumReleaseAge": null,
+			"automerge": false
 		}
-	]
+	],
+	"customDatasources": {
+		"wally": {
+			"defaultRegistryUrlTemplate": "https://api.wally.run/v1/package-metadata/{{packageName}}",
+			"transformTemplates": ["{ \"releases\": [versions.{ \"version\": package.version }] }"]
+		}
+	}
 }

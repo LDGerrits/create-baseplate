@@ -1,0 +1,2 @@
+# Gitignored files to copy into a new worktree (Claude Code worktree sessions, and other tools that read it).
+.env

@@ -1,2 +1,3 @@
 # Gitignored files to copy into a new worktree.
-cli/template/base/.env
+cli/template/typescript/base/.env
+cli/template/luau/base/.env

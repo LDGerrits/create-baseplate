@@ -1,0 +1,11 @@
+# The game's Node tools: Rogen, rbx-forge, jest-roblox, Biome and the commit hook's lint-staged.
+# The game's own Roblox packages come from Wally (wally.toml).
+
+# Install only versions published at least two weeks ago (in minutes), so a fresh,
+# possibly compromised release never lands. Applies to every add and update.
+minimumReleaseAge: 20160
+# Allowed younger: rbx-forge 2.4.0 runs Studio from WSL; Rogen is this template's own router.
+minimumReleaseAgeExclude:
+  - rbx-forge
+  - "@rbx-forge/*"
+  - "@ldgerrits/rogen"

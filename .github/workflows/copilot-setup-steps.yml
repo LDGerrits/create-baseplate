@@ -21,8 +21,13 @@ jobs:
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
           version: 2026.11.8
-          working_directory: cli/template/base
+          working_directory: cli/template/typescript/base
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mise run install
-        working-directory: cli/template/base
+        working-directory: cli/template/typescript/base
+      # The Luau template pins its own tools beside the TypeScript one's.
+      - run: mise trust --quiet . && mise install && mise run install
+        working-directory: cli/template/luau/base
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

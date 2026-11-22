@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { TEMPLATE_EXTRAS } from "../consts.ts";
+import { templateExtras } from "../consts.ts";
+import type { Language } from "../installers/index.ts";
+import { makeMultiPlaceLuau } from "./makeMultiPlaceLuau.ts";
 
 /** The places a multi-place game starts with. */
 export const PLACES = ["lobby", "game"];
@@ -20,7 +22,7 @@ const GITIGNORE = `
 `;
 
 /**
- * Turns the single-place game in `dir` into places laid out as Rogen prescribes for roblox-ts:
+ * Turns the single-place game in `dir` into places laid out as Rogen prescribes. For roblox-ts:
  * the shared code in projects/common/src, and each place a folder in projects/ with its own
  * default.rogen.json (`sourcePaths` `["../common/src", "src"]`), tsconfig, entry scripts, world,
  * tests and forge config. Runs after the add-ons, so they land in the shared code.
@@ -32,7 +34,12 @@ const GITIGNORE = `
  * into a folder inside rootDir), and Sloptor writes only inside its tsconfig's folder. So each
  * place compiles from tsconfig.<place>.json at the root to out/<place>, with the root's include/.
  */
-export function makeMultiPlace(dir: string, name: string) {
+export function makeMultiPlace(dir: string, name: string, language: Language) {
+	if (language === "luau") makeMultiPlaceLuau(dir, name);
+	else makeMultiPlaceTypeScript(dir, name);
+}
+
+function makeMultiPlaceTypeScript(dir: string, name: string) {
 	const at = (...parts: string[]) => path.join(dir, ...parts);
 	const read = (file: string) => fs.readFileSync(at(file), "utf8");
 	// The template's text this relies on; fail rather than leave a half-converted game.
@@ -71,7 +78,7 @@ export function makeMultiPlace(dir: string, name: string) {
 		fs.writeFileSync(
 			path.join(placeDir, "jest.config.ts"),
 			fs
-				.readFileSync(path.join(TEMPLATE_EXTRAS, "places", "multi", "jest.config.ts"), "utf8")
+				.readFileSync(path.join(templateExtras("typescript"), "places", "multi", "jest.config.ts"), "utf8")
 				.replaceAll("PLACE", place),
 		);
 		fs.writeFileSync(
@@ -145,7 +152,8 @@ export function makeMultiPlace(dir: string, name: string) {
 		);
 	}
 
-	const extra = (file: string) => fs.readFileSync(path.join(TEMPLATE_EXTRAS, "places", "multi", file), "utf8");
+	const extra = (file: string) =>
+		fs.readFileSync(path.join(templateExtras("typescript"), "places", "multi", file), "utf8");
 	let agents = replaceSection(read("AGENTS.md"), "Where code goes", extra("AGENTS.md"));
 	agents = replaceIn(
 		agents,
@@ -196,7 +204,7 @@ const SKILL_NOTE =
 	"> This game has several places (see `AGENTS.md`). Below, `world/`, `src/app/`, `src/world.d.ts`, `tests/e2e/`, `build/` and `game.project.json` are each place's, under `projects/<place>/`, and shared features are in `projects/common/src/features/`. Run forge, ror and rojo from the place's folder, and name the place: `mise run dev <place>`, `mise run sync <place>`.";
 
 /** Replaces the section under `## <heading>` with `section`, up to the next `## ` heading. */
-function replaceSection(text: string, heading: string, section: string) {
+export function replaceSection(text: string, heading: string, section: string) {
 	const start = text.indexOf(`\n## ${heading}\n`) + 1;
 	if (start === 0) throw new Error(`places: no "## ${heading}" section to replace`);
 	const next = text.indexOf("\n## ", start);

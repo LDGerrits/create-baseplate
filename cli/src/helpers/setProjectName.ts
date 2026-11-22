@@ -12,12 +12,12 @@ export function setProjectName(dir: string, name: string) {
 }
 
 /**
- * Records in the game's package.json which create-baseplate made it, and with which add-ons, so a
- * later update of the template can tell what the game started from.
+ * Records in the game's package.json which create-baseplate made it, in which language and with
+ * which add-ons, so a later update of the template can tell what the game started from.
  */
-export function recordOrigin(dir: string, version: string, addOns: Record<string, string>) {
+export function recordOrigin(dir: string, version: string, language: string, addOns: Record<string, string>) {
 	const file = path.join(dir, "package.json");
 	const pkg = JSON.parse(fs.readFileSync(file, "utf8")) as Record<string, unknown>;
-	pkg.baseplate = { version, addOns };
+	pkg.baseplate = { version, language, addOns };
 	fs.writeFileSync(file, `${JSON.stringify(pkg, undefined, "\t")}\n`);
 }

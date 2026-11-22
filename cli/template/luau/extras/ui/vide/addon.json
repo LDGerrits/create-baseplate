@@ -1,0 +1,36 @@
+{
+	"dependencies": {
+		"Vide": "centau/vide@=0.4.1",
+		"VideRipple": "littensy/vide-ripple@=0.10.2"
+	},
+	"removeDependencies": ["React", "ReactRipple", "ReactRoblox"],
+	"imports": {},
+	"replaceAgentsSection": "UI",
+	"replaceText": [
+		{
+			"file": "AGENTS.md",
+			"from": "Services and controllers are plain modules; React draws the UI.",
+			"to": "Services and controllers are plain modules; Vide draws the UI."
+		},
+		{
+			"file": "AGENTS.md",
+			"from": "What you remember of Luau's type system, react-lua, Rogen and the Roblox API",
+			"to": "What you remember of Luau's type system, Vide, Rogen and the Roblox API"
+		},
+		{
+			"file": "AGENTS.md",
+			"from": "- React: react-lua follows React 17; how it differs is in `Packages/_Index/jsdotlua_react@*/react/README.md` and https://jsdotlua.github.io/react-lua/. Ripple's hooks: `Packages/_Index/littensy_react-ripple@*/`.\n",
+			"to": "- Vide: https://centau.github.io/vide/ (a crash course, then the API), and its source in `Packages/_Index/centau_vide@*/vide/src/`. Ripple's Vide hooks: `Packages/_Index/littensy_vide-ripple@*/vide-ripple/src/`; the `README.md` beside them covers Ripple's springs, tweens and their options.\n"
+		},
+		{
+			"file": "README.md",
+			"from": "| UI        | [React](https://github.com/jsdotlua/react-lua) (react-lua), [Ripple](https://github.com/littensy/ripple) for animation, stories in [UI Labs](https://github.com/PepeElToro41/ui-labs) format              |",
+			"to": "| UI        | [Vide](https://github.com/centau/vide), [Ripple](https://github.com/littensy/ripple) for animation, stories in [UI Labs](https://github.com/PepeElToro41/ui-labs) format                                  |"
+		},
+		{
+			"file": "selene.toml",
+			"from": "std = \"roblox\"\n",
+			"to": "std = \"roblox\"\n\n[lints]\n# Vide takes an instance's properties and its children in one table.\nmixed_table = \"allow\"\n"
+		}
+	]
+}

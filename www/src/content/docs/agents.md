@@ -18,8 +18,8 @@ Models know roblox-ts, Flamework and Rogen poorly, and the Roblox API changes fa
 The same hooks are set up for Claude Code, Codex, Cursor, GitHub Copilot (its cloud agent and CLI) and Gemini CLI:
 
 - **Before the agent ends its turn**, the check runs; a failure goes back to the agent to fix, once. When nothing changed since the last pass, the check is skipped. In Cursor it runs only when the turn finished, not when you pressed Stop.
-- **Before a command or an edit**, a guard blocks what agents get wrong in this project, and says what to do instead: editing generated files, skipping the commit hook, npm, yarn or npx in place of pnpm, and printing `.env`.
-- **After each file edit**, Biome formats the file and ESLint applies its fixes to it, then the lint problems left go back to the agent at once, in a few seconds, instead of at the end of the turn. Fixes that would undo what the agent is still writing are reported but not applied: removing an import not used yet, `let` to `const`, an import made type-only. Only the edited file is linted and the compiler doesn't run; the check at the end of the turn covers the rest. Cursor doesn't show the agent what this hook says, so there it only applies the fixes.
+- **Before a command or an edit**, a guard blocks what agents get wrong in this project, and says what to do instead: editing generated files (and, in a Luau game, Wally's package folders), skipping the commit hook, npm, yarn or npx in place of pnpm (or, in a Luau game, Wally), and printing `.env`.
+- **After each file edit**, Biome formats the file and ESLint applies its fixes to it, then the lint problems left go back to the agent at once, in a few seconds, instead of at the end of the turn. Fixes that would undo what the agent is still writing are reported but not applied: removing an import not used yet, `let` to `const`, an import made type-only. Only the edited file is linted and the compiler doesn't run; the check at the end of the turn covers the rest. Cursor doesn't show the agent what this hook says, so there it only applies the fixes. In a Luau game, StyLua formats the file and Selene lints it.
 - **Each commit** runs `mise run ci`, the check without its fixes, on exactly what is being committed, whoever commits.
 
 Each tool's config runs the same scripts in `.agents/hooks/`:
@@ -42,7 +42,7 @@ Skills in `.agents/skills/` cover what only some tasks need: writing tests, edit
 
 ## Type errors as it edits
 
-In Claude Code, `mise run install` adds the project's TypeScript language server, so the agent gets type errors and go-to-definition with the roblox-ts types.
+In Claude Code, `mise run install` adds the project's language server, so the agent gets type errors and go-to-definition: TypeScript's, with the roblox-ts types, or in a Luau game luau-lsp, with the game's instances and Roblox's API typed.
 
 ## Parallel and cloud agents
 
