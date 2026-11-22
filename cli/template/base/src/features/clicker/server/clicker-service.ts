@@ -1,11 +1,14 @@
 import { type OnStart, Service } from "@flamework/core";
 import { Players } from "@rbxts/services";
+import { rateLimit } from "../../../network/server/rate-limit";
 import { ClickerNetwork } from "../shared/clicker-network";
 
 /** Seconds a player waits between counted clicks. */
 export const CLICK_COOLDOWN_SECONDS = 0.1;
 
-const events = ClickerNetwork.createServer({});
+// Every client-to-server event needs middleware, or the check fails: the rate limit drops floods
+// before they reach the service, which still applies its own cooldown.
+const events = ClickerNetwork.createServer({ middleware: { click: [rateLimit(20)] } });
 
 /** Owns every player's click count. Clients ask to click; this service decides. */
 @Service()

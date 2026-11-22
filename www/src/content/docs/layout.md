@@ -13,6 +13,7 @@ src/
       server/          clicker-service.ts: owns the counts, checks the cooldown; its spec
       client/          clicker-controller.ts, clicker-button.tsx and its story
       shared/          clicker-network.ts
+  network/server/      rate-limit.ts: middleware that rate-limits a remote per player; its spec
 tests/e2e/             end-to-end tests: clicker.luau
 world/                 the map and lighting, edited in Studio and synced back
 scripts/               the tasks' scripts: tests, UI pictures, the source checks
@@ -27,12 +28,13 @@ With `--places multi`, laid out as [Rogen](https://github.com/LDGerrits/rogen) d
 ```
 projects/
   common/src/features/   code every place shares: clicker/, as an example feature
+  common/src/network/    the rate-limit middleware
   lobby/                 a place: default.rogen.json, src/app (its entry scripts), world/, tests/e2e/
   game/                  another place, laid out the same
 tsconfig.<place>.json    compiles each place into out/<place>/
 ```
 
-Below, `src/features/` is `projects/common/src/features/` in a multi-place game, and `world/` and `tests/e2e/` are each place's.
+Below, `src/features/` is `projects/common/src/features/` and `src/network/` is `projects/common/src/network/` in a multi-place game, and `world/` and `tests/e2e/` are each place's.
 
 ## What each add-on adds
 

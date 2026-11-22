@@ -43,7 +43,7 @@ A file outside these three folders isn't placed in the game, and the check fails
 
 The rules the code follows:
 
-- **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. Flamework checks the types of remote arguments, not whether the request is allowed.
+- **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. Flamework checks the types of remote arguments, not whether the request is allowed. The check fails on a client-to-server event or function that `createServer` takes without middleware: give it `rateLimit` from `src/network/server/rate-limit.ts`, as the clicker does, or mark its handler `// trusts-client: <why>`.
 - **Services own server state.** Only a service changes its state; other code calls its methods. Depend on another service through the constructor: `constructor(private readonly data: PlayerDataService) {}`.
 - **Controllers run the client side.** A controller handles input and the server's events and keeps what the UI shows; `app.tsx` subscribes to it, as with `ClickerController`.
 
