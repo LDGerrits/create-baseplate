@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { changedFiles, failureOutput, passFile, treeHash, wantsCheck } from "./check.ts";
+import { biomeProblems, editedFiles, editedOutput, filesToCheck } from "./edited.ts";
 import { guardOutput, guardReason, type Payload } from "./guard.ts";
 
 const root = "/game";
@@ -59,6 +60,90 @@ test("answers in each tool's format", () => {
 	assert.deepEqual(guardOutput("copilot", "no"), { permissionDecision: "deny", permissionDecisionReason: "no" });
 	assert.equal(guardOutput("gemini", undefined), undefined);
 	assert.deepEqual(guardOutput("gemini", "no"), { decision: "deny", reason: "no" });
+});
+
+test("finds the edited files in each tool's payload, and none where it names none", () => {
+	const edits: [Payload, string[]][] = [
+		[
+			{ tool_name: "Edit", tool_input: { file_path: "/game/src/a.ts", old_string: "a", new_string: "b" } },
+			["/game/src/a.ts"],
+		], // Claude Code
+		[
+			{
+				tool_name: "apply_patch",
+				tool_input: {
+					command:
+						"*** Begin Patch\n*** Update File: src/a.ts\n@@\n-a\n+b\n*** Add File: src/b.ts\n+x\n*** Delete File: src/c.ts\n*** End Patch",
+				},
+			},
+			["src/a.ts", "src/b.ts", "src/c.ts"],
+		], // Codex; a deleted file no longer exists, so the hook drops it
+		[{ toolName: "edit", toolArgs: '{"path":"/game/src/a.ts","old_str":"a","new_str":"b"}' }, ["/game/src/a.ts"]], // Copilot
+		[{ toolName: "create", toolArgs: { path: "src/b.ts", file_text: "" } }, ["src/b.ts"]],
+		[{ tool_name: "replace", tool_input: { file_path: "src/a.ts", old_string: "a", new_string: "b" } }, ["src/a.ts"]], // Gemini CLI
+		[{ hook_event_name: "afterFileEdit", file_path: "/game/src/a.ts", workspace_roots: ["/game"] }, ["/game/src/a.ts"]], // Cursor
+		[{ tool_name: "Edit", tool_input: {} }, []],
+		[{ tool_name: "apply_patch", tool_input: {} }, []],
+		[{}, []],
+	];
+	for (const [payload, files] of edits) assert.deepEqual(editedFiles(payload), files, JSON.stringify(payload));
+});
+
+test("checks only the project's own files that Biome formats, not generated ones", () => {
+	const files = [
+		"/game/src/a.ts",
+		"src/a.ts",
+		"src/app/app.tsx",
+		"/game/tsconfig.json",
+		"README.md",
+		"tests/e2e/clicker.luau",
+		"/elsewhere/x.ts",
+		"../x.ts",
+		"out/app/main.server.luau",
+		"include/Promise.ts",
+		"default.project.json",
+		"src/world.d.ts",
+		"projects/lobby/src/world.d.ts",
+		"node_modules/x/index.js",
+	];
+	assert.deepEqual(filesToCheck(files, root, root), ["src/a.ts", "src/app/app.tsx", "tsconfig.json"]);
+	assert.deepEqual(filesToCheck(["b.ts", "../c.ts"], root, "/game/src"), ["src/b.ts", "c.ts"]);
+});
+
+test("reads Biome's errors", () => {
+	const output =
+		"::error title=parse,file=/game/world/x.json,line=3,endLine=3,col=9,endColumn=10::Expected a property but instead found ','.\n\nSome errors were emitted\n";
+	assert.deepEqual(biomeProblems(output, root), [
+		"world/x.json:3 biome(parse): Expected a property but instead found ','.",
+	]);
+	assert.deepEqual(biomeProblems("Checked 1 file in 5ms. No fixes applied.\n", root), []);
+});
+
+test("hands the problems left to the agent in each tool's format, and caps them", () => {
+	const problem = "src/a.ts:3 prefer-const: 'x' is never reassigned.";
+	for (const format of ["claude", "copilot", "gemini", "cursor"] as const)
+		assert.equal(editedOutput(format, []), undefined);
+	assert.equal(editedOutput("cursor", [problem]), undefined);
+	const message = (output: object | undefined) => JSON.stringify(output);
+	assert.deepEqual(Object.keys(editedOutput("claude", [problem]) ?? {}), ["hookSpecificOutput"]);
+	assert.match(
+		message(editedOutput("claude", [problem])),
+		/"hookEventName":"PostToolUse","additionalContext":".*prefer-const/,
+	);
+	assert.match(
+		message(editedOutput("gemini", [problem])),
+		/"hookEventName":"AfterTool","additionalContext":".*prefer-const/,
+	);
+	assert.match(message(editedOutput("copilot", [problem])), /^\{"additionalContext":".*prefer-const/);
+	const many = message(
+		editedOutput(
+			"claude",
+			Array.from({ length: 25 }, (_, i) => `src/a.ts:${i} rule: x`),
+		),
+	);
+	assert.match(many, /src\/a\.ts:9 rule/);
+	assert.doesNotMatch(many, /src\/a\.ts:10 rule/);
+	assert.match(many, /and 15 more/);
 });
 
 test("Cursor's stop runs the check only after a finished turn, a few times", () => {

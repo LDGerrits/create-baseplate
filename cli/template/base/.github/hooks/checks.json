@@ -11,6 +11,16 @@
 				"timeoutSec": 30
 			}
 		],
+		"postToolUse": [
+			{
+				"type": "command",
+				"matcher": "edit|create",
+				"bash": "sh .agents/hooks/run edited.ts copilot",
+				"powershell": "if (Get-Command mise -ErrorAction SilentlyContinue) { mise exec --quiet -- node .agents/hooks/edited.ts copilot }; exit 0",
+				"cwd": ".",
+				"timeoutSec": 30
+			}
+		],
 		"agentStop": [
 			{
 				"type": "command",

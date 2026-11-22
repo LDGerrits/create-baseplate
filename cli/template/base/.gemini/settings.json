@@ -16,6 +16,19 @@
 				]
 			}
 		],
+		"AfterTool": [
+			{
+				"matcher": "write_file|replace",
+				"hooks": [
+					{
+						"name": "edited",
+						"type": "command",
+						"command": "sh \"$GEMINI_PROJECT_DIR\"/.agents/hooks/run edited.ts gemini",
+						"timeout": 30000
+					}
+				]
+			}
+		],
 		"AfterAgent": [
 			{
 				"hooks": [

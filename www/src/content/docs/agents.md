@@ -19,6 +19,7 @@ The same hooks are set up for Claude Code, Codex, Cursor, GitHub Copilot (its cl
 
 - **Before the agent ends its turn**, the check runs; a failure goes back to the agent to fix, once. When nothing changed since the last pass, the check is skipped. In Cursor it runs only when the turn finished, not when you pressed Stop.
 - **Before a command or an edit**, a guard blocks what agents get wrong in this project, and says what to do instead: editing generated files, skipping the commit hook, npm, yarn or npx in place of pnpm, and printing `.env`.
+- **After each file edit**, Biome formats the file and ESLint applies its fixes to it, then the lint problems left go back to the agent at once, in a few seconds, instead of at the end of the turn. Fixes that would undo what the agent is still writing are reported but not applied: removing an import not used yet, `let` to `const`, an import made type-only. Only the edited file is linted and the compiler doesn't run; the check at the end of the turn covers the rest. Cursor doesn't show the agent what this hook says, so there it only applies the fixes.
 - **Each commit** runs `mise run ci`, the check without its fixes, on exactly what is being committed, whoever commits.
 
 Each tool's config runs the same scripts in `.agents/hooks/`:
@@ -31,7 +32,7 @@ Each tool's config runs the same scripts in `.agents/hooks/`:
 | GitHub Copilot | `.github/hooks/checks.json` |
 | Gemini CLI | `.gemini/settings.json` |
 
-A hook that can't find mise does nothing, so a machine without the tools never blocks the agent. Codex runs project hooks once you trust them with `/hooks`, and Gemini CLI once you trust the folder. Copilot's CLI also reads `.claude/settings.json`, so there the guard and the check can run twice.
+A hook that can't find mise does nothing, so a machine without the tools never blocks the agent. Codex runs project hooks once you trust them with `/hooks`, and Gemini CLI once you trust the folder. Copilot's CLI also reads `.claude/settings.json`, so there the hooks can run twice.
 
 In Claude Code, the commands the skills use (`forge`, `ror`, `rogen`, `mise run`, and their `mise x --` forms) are allowed in `.claude/settings.json`, so the agent isn't stopped to ask.
 

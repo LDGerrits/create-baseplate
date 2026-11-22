@@ -20,7 +20,7 @@ export interface Payload {
 
 // Files that only their generator writes, and what to run instead. In a multi-place game each
 // place has its own project files, world types and builds under projects/<place>/.
-const GENERATED: [RegExp, string][] = [
+export const GENERATED: [RegExp, string][] = [
 	[/^(out|include)\//, "the compiler writes it: edit its TypeScript source and run `mise run check`"],
 	[/^(projects\/[^/]+\/)?build\//, "builds write it: run `mise run build` or `mise run check`"],
 	[/^node_modules\//, "pnpm writes it: `pnpm add <package>`, or a patch with `pnpm patch`"],
@@ -67,7 +67,7 @@ function checkCommand(command: string): string | undefined {
 }
 
 // Codex reports file edits as an apply_patch command; its file names follow these markers.
-const patched = (patch: string) =>
+export const patched = (patch: string) =>
 	[...patch.matchAll(/^\*\*\* (?:Add|Update|Delete) File: (.+)$|^\*\*\* Move to: (.+)$/gm)].map((m) =>
 		(m[1] ?? m[2] ?? "").trim(),
 	);
@@ -79,7 +79,7 @@ const READS = /read|grep|glob|search|list|^ls$|view|fetch/i;
 // Gemini CLI), path (Copilot), notebook_path (Claude Code), target_file (Cursor's own tools).
 const PATH_KEYS = new Set(["file_path", "path", "notebook_path", "target_file", "filePath"]);
 
-function toolInput(payload: Payload): Record<string, unknown> {
+export function toolInput(payload: Payload): Record<string, unknown> {
 	let input = payload.tool_input ?? payload.toolArgs;
 	if (typeof input === "string") {
 		try {
@@ -89,6 +89,16 @@ function toolInput(payload: Payload): Record<string, unknown> {
 		}
 	}
 	return typeof input === "object" && input !== null ? (input as Record<string, unknown>) : {};
+}
+
+/** The files a tool call names in its arguments, or Cursor in its payload. */
+export function namedFiles(payload: Payload, input = toolInput(payload)): string[] {
+	return [
+		payload.file_path,
+		...Object.entries(input)
+			.filter(([key, value]) => PATH_KEYS.has(key) && typeof value === "string")
+			.map(([, value]) => value as string),
+	].filter((file): file is string => file !== undefined && file !== "");
 }
 
 /** The reason to block this tool call, or undefined to let it through. */
@@ -103,12 +113,7 @@ export function guardReason(payload: Payload, root: string, start: string): stri
 	const toolName = payload.tool_name ?? payload.toolName;
 	const input = toolInput(payload);
 	const command = payload.command ?? (typeof input.command === "string" ? input.command : undefined);
-	const files = [
-		payload.file_path,
-		...Object.entries(input)
-			.filter(([key, value]) => PATH_KEYS.has(key) && typeof value === "string")
-			.map(([, value]) => value as string),
-	].filter((file): file is string => file !== undefined && file !== "");
+	const files = namedFiles(payload, input);
 
 	if (payload.hook_event_name === "beforeReadFile" || (toolName !== undefined && READS.test(toolName))) {
 		return files.some(isSecretFile) ? SECRET : undefined;

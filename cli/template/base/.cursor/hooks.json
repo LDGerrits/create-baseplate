@@ -6,6 +6,12 @@
 				"command": "mise exec --quiet -- node .agents/hooks/guard.ts cursor"
 			}
 		],
+		"afterFileEdit": [
+			{
+				"command": "mise exec --quiet -- node .agents/hooks/edited.ts cursor",
+				"timeout": 30
+			}
+		],
 		"stop": [
 			{
 				"command": "mise exec -- node .agents/hooks/rogen-check.mjs cursor"
