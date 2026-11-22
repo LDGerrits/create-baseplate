@@ -5,9 +5,9 @@ import { defineConfig } from "@isentinel/jest-roblox";
 
 // The place compiles to out/PLACE at the repo root, which jest-roblox can't find through the
 // place's tsconfig. So it runs from the root, on the root's copy of the place's project
-// (game.PLACE.project.json, which `mise run generate` writes), and gets the compiled folders that
+// (test.PLACE.project.json, which `mise run generate` writes), and gets the compiled folders that
 // project mounts.
-const project = "game.PLACE.project.json";
+const project = "test.PLACE.project.json";
 const mounts: string[] = [];
 const collect = (node: unknown) => {
 	if (typeof node !== "object" || node === null) return;
@@ -24,7 +24,7 @@ collect(JSON.parse(fs.readFileSync(new URL(`../../${project}`, import.meta.url),
 export default defineConfig({
 	rootDir: "../..",
 	placeFile: "projects/PLACE/build/test.rbxl",
-	// The whole place, code and world, as the tests in ree see it.
+	// The whole place, code and world, as the tests in ree see it, with the loadstring() Jest needs.
 	rojoProject: project,
 	luauRoots: mounts,
 	formatters: ["agent"],

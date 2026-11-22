@@ -383,7 +383,7 @@ test("lays out a multi-place game as Rogen prescribes", () => {
 		for (const file of ["world/default.project.json", "jest.config.ts"]) {
 			assert.ok(exists(`projects/${place}/${file}`), `${place} has ${file}`);
 		}
-		assert.match(read(`projects/${place}/jest.config.ts`), new RegExp(`game\\.${place}\\.project\\.json`));
+		assert.match(read(`projects/${place}/jest.config.ts`), new RegExp(`test\\.${place}\\.project\\.json`));
 		assert.match(read(`projects/${place}/rbx-forge.config.ts`), /node \.\.\/\.\.\/scripts\/game-project\.ts/);
 	}
 	assert.match(read(".gitignore"), /\/projects\/\*\/build/);

@@ -1,6 +1,9 @@
 // Writes game.project.json, the whole game: the code from default.project.json (which Rogen writes)
 // plus every service in world/default.project.json. Builds, the place check and the tests use it;
 // Rojo serves default.project.json alone, so syncing never touches the world.
+//
+// Also writes test.project.json, the same game with loadstring() on, for jest-roblox: Jest needs
+// it, and a live game shouldn't have it, so only the place the engine tests upload gets it.
 import fs from "node:fs";
 import path from "node:path";
 
@@ -43,9 +46,23 @@ for (const [service, node] of Object.entries(world.tree as Record<string, Projec
 const game = { ...code, name: "game", tree };
 fs.writeFileSync("game.project.json", `${JSON.stringify(game, undefined, "\t")}\n`);
 
+const serverScripts = (tree.ServerScriptService ?? { $className: "ServerScriptService" }) as ProjectNode;
+const test = {
+	...game,
+	name: "test",
+	tree: {
+		...tree,
+		ServerScriptService: {
+			...serverScripts,
+			$properties: { ...(serverScripts.$properties as ProjectNode | undefined), LoadStringEnabled: true },
+		},
+	},
+};
+fs.writeFileSync("test.project.json", `${JSON.stringify(test, undefined, "\t")}\n`);
+
 // In a multi-place game this runs in projects/<place>/. jest-roblox matches its compiled folders
 // against the project's $path strings as written, which here start with ../../, so it also gets a
-// copy at the repo root with paths from there: game.<place>.project.json.
+// copy at the repo root with paths from there: test.<place>.project.json.
 const placesDir = path.dirname(process.cwd());
 if (path.basename(placesDir) === "projects") {
 	const place = path.basename(process.cwd());
@@ -65,7 +82,7 @@ if (path.basename(placesDir) === "projects") {
 		);
 	};
 	fs.writeFileSync(
-		path.join(placesDir, "..", `game.${place}.project.json`),
-		`${JSON.stringify(fromRoot(game), undefined, "\t")}\n`,
+		path.join(placesDir, "..", `test.${place}.project.json`),
+		`${JSON.stringify(fromRoot(test), undefined, "\t")}\n`,
 	);
 }

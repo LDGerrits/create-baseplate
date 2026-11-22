@@ -35,7 +35,7 @@ const GENERATED: [RegExp, string][] = [
 		"Rogen writes it from default.rogen.json: change that, or the file layout, and run `mise run check`",
 	],
 	[
-		/^(projects\/[^/]+\/)?game\.project\.json$/,
+		/^((projects\/[^/]+\/)?(game|test)|test\.[^/]+)\.project\.json$/,
 		"scripts/game-project.ts writes it from default.project.json and world/: run `mise run check`",
 	],
 	[
