@@ -36,8 +36,8 @@ return function()
 			results.numTotalTests
 		)
 	)
-	-- From the counts, not `results.success`: jest-lua 3.10 (Wally's newest) reports success false
-	-- in ree when every test passed.
+	-- From the counts, which hold whatever Jest's version: jest-lua 3.10 reports `success` inverted,
+	-- which scripts/packages.ts fixes in the installed copy.
 	if results.numFailedTests > 0 or results.numRuntimeErrorTestSuites > 0 or results.snapshot.failure then
 		error("Jest: tests failed", 0)
 	end

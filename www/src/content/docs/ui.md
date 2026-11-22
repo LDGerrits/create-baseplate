@@ -3,13 +3,13 @@ title: UI
 description: React or Vide components, stories, and checking them as pictures without Studio.
 ---
 
-UI is React from `@rbxts/react`, or [Vide](#vide) with `--ui vide`. Each component worth looking at has a story beside it, `<component>.story.tsx`, in UI Labs' format, so it shows in the UI Labs plugin in Studio too.
+UI is React from `@rbxts/react`, or [Vide](#vide) with `--ui vide`. Each component worth looking at has a story beside it, `<component>.story.tsx`, in UI Labs' format, so it shows in the UI Labs plugin in Studio too. In a [Luau game](/luau/), React is react-lua from Wally, written with `React.createElement`, and stories are `<Component>.story.luau`; the commands below are the same.
 
 - `mise run ui` renders every story to a picture, offline, and prints each picture's path.
 - `mise run ui -- --story <path>.story.tsx --actions '<json>'` clicks or types into a story and prints what it printed, to check a component responds.
 - `mise run ui -- diff HEAD --story <path>.story.tsx` renders a story before and after your change, with a picture of the difference.
 
-Animation uses `useMotion` from `@rbxts/pretty-react-hooks`, with Ripple. To inspect components live in Studio, the game can connect React DevTools.
+Animation uses `useMotion` from `@rbxts/pretty-react-hooks`, with Ripple; a Luau game uses Ripple's own React hooks. To inspect components live in Studio, a TypeScript game can connect React DevTools.
 
 ## Vide
 

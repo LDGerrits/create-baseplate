@@ -1,6 +1,6 @@
 # create-baseplate
 
-Creates a roblox-ts game set up for coding agents.
+Creates a Roblox game, in roblox-ts or Luau, set up for coding agents.
 
 ```sh
 pnpm create baseplate my-game

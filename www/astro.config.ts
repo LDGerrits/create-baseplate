@@ -8,7 +8,7 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: "Baseplate",
-			description: "The agent-ready way to start a roblox-ts game.",
+			description: "The agent-ready way to start a Roblox game, in roblox-ts or Luau.",
 			social: [{ icon: "github", label: "GitHub", href: REPOSITORY }],
 			editLink: { baseUrl: `${REPOSITORY}/edit/main/www/` },
 			sidebar: SIDEBAR.map((group) => ({ label: group.label, items: [...group.items] })),

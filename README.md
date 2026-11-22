@@ -1,6 +1,6 @@
 # Baseplate
 
-The agent-ready way to start a roblox-ts game.
+The agent-ready way to start a Roblox game, in roblox-ts or Luau.
 
 Baseplate creates a Roblox game in TypeScript that coding agents can work on well: one command checks everything, tests and UI run without Studio, hooks keep agents to the rules, and the world lives in files. It works with Claude Code, Codex, Cursor and Copilot.
 

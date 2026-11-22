@@ -331,6 +331,46 @@ test("takes no add-ons by default", () => {
 	assert.ok(!fs.existsSync(path.join(cwd, "my-game/src/features/player-data")));
 });
 
+test("creates a Luau game from the Luau template", () => {
+	const cwd = tempDir();
+	const run = create(cwd, "coin-rush", "--no-git", "--language", "luau");
+	assert.equal(run.status, 0, run.stderr);
+	const result = JSON.parse(run.stdout) as { language: string; addOns: Record<string, string> };
+	assert.equal(result.language, "luau");
+	assert.deepEqual(result.addOns, {
+		ui: "react",
+		places: "single",
+		state: "none",
+		data: "none",
+		entities: "none",
+		assets: "none",
+		release: "none",
+	});
+
+	const dir = path.join(cwd, "coin-rush");
+	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+	const pkg = JSON.parse(read("package.json"));
+	assert.equal(pkg.name, "coin-rush");
+	assert.equal(pkg.baseplate.language, "luau");
+	assert.equal(pkg.dependencies, undefined, "the game's packages are Wally's");
+	assert.match(read("wally.toml"), /React = "jsdotlua\/react@=/);
+	assert.ok(fs.existsSync(path.join(dir, "wally.lock")));
+	assert.equal(JSON.parse(read("default.rogen.json")).name, "coin-rush");
+	assert.match(read("src/App/Client/Game.storybook.luau"), /name = "coin-rush"/);
+	assert.match(read("AGENTS.md"), /^# coin-rush\n\nA Roblox game in Luau/);
+	assert.ok(fs.existsSync(path.join(dir, "src/Features/Clicker/Server/ClickerService.luau")));
+	assert.ok(fs.existsSync(path.join(dir, ".claude/plugins/luau/.claude-plugin/plugin.json")));
+	assert.ok(fs.lstatSync(path.join(dir, ".claude/skills")).isSymbolicLink());
+	assert.ok(fs.existsSync(path.join(dir, ".gitignore")), ".gitignore restored from _gitignore");
+	assert.ok(!fs.existsSync(path.join(dir, "_symlinks.json")));
+	for (const typescript of ["tsconfig.json", "eslint.config.ts", "src/app", "src/features"]) {
+		assert.ok(!fs.existsSync(path.join(dir, typescript)), `${typescript} is the TypeScript template's`);
+	}
+	for (const generated of ["node_modules", "Packages", "DevPackages", ".luau-lsp", "sourcemap.json"]) {
+		assert.ok(!fs.existsSync(path.join(dir, generated)), `${generated} isn't copied`);
+	}
+});
+
 test("refuses a choice the language doesn't have", () => {
 	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--language", "luau", "--entities", "components");

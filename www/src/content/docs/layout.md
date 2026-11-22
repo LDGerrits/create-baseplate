@@ -5,6 +5,8 @@ description: What a created game holds, with one place or several, and what each
 
 ## One place
 
+A TypeScript game:
+
 ```
 src/
   app/                 entry scripts: start Flamework, mount the UI
@@ -19,6 +21,24 @@ world/                 the map and lighting, edited in Studio and synced back
 scripts/               the tasks' scripts: tests, UI pictures, the source checks
 .agents/               agents' skills and hooks, shared by Claude Code, Codex and Cursor
 mise.toml, mise.lock   the pinned tools and their checksums, and the tasks
+```
+
+A [Luau game](/luau/):
+
+```
+src/
+  App/                 entry scripts: start the services and controllers, mount the UI
+  Features/
+    Clicker/           an example feature
+      Server/          ClickerService.luau: owns the counts, checks the cooldown; its spec
+      Client/          ClickerController.luau, ClickerButton.luau and its story
+      Shared/          ClickerNetwork.luau: the remotes, their types and checks
+  Network/             Remote.luau declares remotes; Serve.luau and RateLimit.luau take them on the server
+tests/e2e/             end-to-end tests: clicker.luau
+world/                 the map and lighting, edited in Studio and synced back
+wally.toml, wally.lock the Roblox packages
+selene.toml, stylua.toml, .luaurc   lint, format and strict types
+scripts/, .agents/, mise.toml       as in a TypeScript game
 ```
 
 ## Several places

@@ -31,6 +31,30 @@ const run = (command: string, args: string[]) => {
 };
 
 const read = (file: string) => (fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "");
+
+// jest-lua 3.10, Wally's newest Jest, reports a run's `success` inverted: true when a test failed,
+// false when all passed. jest-roblox (`mise run test:engine`) reads it for its exit code, so fix that
+// one line in each installed jest-core. A Jest without the line (a fixed release) is left alone.
+const INVERTED_SUCCESS =
+	"aggregatedResults.success = anyTestFailures or aggregatedResults.snapshot.failure or anyReporterErrors";
+function fixJestSuccess() {
+	const index = path.join("DevPackages", "_Index");
+	if (!fs.existsSync(index)) return;
+	for (const entry of fs.readdirSync(index)) {
+		if (!entry.startsWith("jsdotlua_jest-core@")) continue;
+		const file = path.join(index, entry, "jest-core", "src", "TestScheduler.lua");
+		const text = read(file);
+		if (text.includes(INVERTED_SUCCESS)) {
+			fs.writeFileSync(
+				file,
+				text.replace(
+					INVERTED_SUCCESS,
+					"aggregatedResults.success = not (anyTestFailures or aggregatedResults.snapshot.failure or anyReporterErrors)",
+				),
+			);
+		}
+	}
+}
 const manifestHash = () =>
 	createHash("sha256").update(read("wally.toml")).update("\0").update(read("wally.lock")).digest("hex");
 
@@ -42,6 +66,7 @@ if (!process.argv.includes("--types")) {
 		fs.writeFileSync(STAMP, manifestHash());
 		fs.writeFileSync(UNTYPED, "");
 	}
+	fixJestSuccess();
 } else {
 	// Wally's package files only point at the package; this copies the package's types into them, so
 	// `require(ReplicatedStorage.Packages.React)` is typed. It reads the instance paths from the sourcemap.
