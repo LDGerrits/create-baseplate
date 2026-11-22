@@ -1,0 +1,7 @@
+/Packages
+/ServerPackages
+/DevPackages
+/build
+/dist
+/node_modules
+/.luau-lsp

@@ -1,0 +1,26 @@
+{
+	"name": "luau",
+	"description": "The project's own luau-lsp, so Claude sees type errors after each edit, with the game's instances and Roblox's API typed",
+	"version": "1.0.0",
+	"lspServers": {
+		"luau": {
+			"command": "mise",
+			"args": [
+				"exec",
+				"-C",
+				"${CLAUDE_PROJECT_DIR}",
+				"--",
+				"luau-lsp",
+				"lsp",
+				"--stdio",
+				"--settings=${CLAUDE_PROJECT_DIR}/.vscode/settings.json",
+				"--definitions=@roblox=${CLAUDE_PROJECT_DIR}/.luau-lsp/globalTypes.d.luau",
+				"--base-luaurc=${CLAUDE_PROJECT_DIR}/.luaurc"
+			],
+			"extensionToLanguage": {
+				".luau": "luau",
+				".lua": "luau"
+			}
+		}
+	}
+}

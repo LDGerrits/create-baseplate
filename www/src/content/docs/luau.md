@@ -49,6 +49,10 @@ The type gives both sides the arguments; the [`t`](https://github.com/osyrisrblx
 
 Specs are `<Name>.spec.luau` beside the code, with Jest from `ReplicatedStorage.DevPackages.JestGlobals`; end-to-end tests are the same `tests/e2e/*.luau` harnesses as in a roblox-ts game. A failing frame names its file and line: `ServerScriptService.Features.Clicker.ClickerService.spec:22 → src/Features/Clicker/Server/ClickerService.spec.luau:22`. Stories are `<Component>.story.luau`, made with UI Labs' `CreateReactStory`, and `mise run ui` renders them as in a roblox-ts game.
 
+## Several places
+
+With `--places multi`, a Luau game takes Rogen's Luau layout: a `<place>.rogen.json` at the root for each place (`lobby`, `game`), the shared code in `projects/common/src`, and each place's entry scripts, world and end-to-end tests in `projects/<place>/`. Wally's packages stay at the root, shared. luau-lsp types each place with its own sourcemap, and the shared code's specs run in one place. Studio commands name the place: `mise run dev lobby`.
+
 ## Add-ons
 
 The Luau questions offer what Luau games use: React or Vide, one place or several, Charm for state, ProfileStore or Lapis for saved data, Jecs for entities, Asphalt and Darklua. Reflex and Flamework Components are roblox-ts choices; the CLI refuses them in a Luau game. See [add-ons](/add-ons/).

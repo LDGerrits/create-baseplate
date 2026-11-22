@@ -1,5 +1,6 @@
 // Processes the code players run with Darklua into dist/, by the rules in .darklua.json: the game's
-// code in src/ and the Wally packages it ships, Packages/ and ServerPackages/. DevPackages/ (Jest,
+// code in src/ (projects/, in a multi-place game) and the Wally packages it ships, Packages/ and
+// ServerPackages/. DevPackages/ (Jest,
 // UI Labs) only run in tests and stories, so they stay as they are. Each folder lands at the same
 // path under dist/; .darklua.json's loaders copy every other file unchanged, so the Rojo files
 // (init.meta.json, *.model.json, a package's default.project.json) still describe the same instances,
@@ -8,7 +9,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
-const FOLDERS = ["src", "Packages", "ServerPackages"];
+const FOLDERS = ["src", "projects", "Packages", "ServerPackages"];
 
 fs.rmSync("dist", { recursive: true, force: true });
 for (const folder of FOLDERS) {

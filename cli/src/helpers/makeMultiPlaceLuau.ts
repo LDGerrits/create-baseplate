@@ -97,6 +97,13 @@ export function makeMultiPlaceLuau(dir: string, name: string) {
 	fs.appendFileSync(at(".gitignore"), GITIGNORE);
 	fs.appendFileSync(at(".styluaignore"), "/projects/*/build\n");
 	fs.writeFileSync(at("mise.toml"), replaceIn(read("mise.toml"), '"selene src tests"', '"selene projects"'));
+	// Asphalt, from the root, writes the assets' IDs into the shared code.
+	if (fs.existsSync(at("asphalt.toml"))) {
+		fs.writeFileSync(
+			at("asphalt.toml"),
+			replaceIn(read("asphalt.toml"), 'output_path = "src/Shared"', 'output_path = "projects/common/src/Shared"'),
+		);
+	}
 
 	// Editors type one place at a time, from sourcemap.json at the root: the shared-tests place's,
 	// with absolute paths, since its own sourcemap's paths are from its folder.

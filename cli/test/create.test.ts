@@ -447,6 +447,28 @@ test("adds the Luau tools: Asphalt's Luau module and Darklua's release", () => {
 	assert.match(read(".github/workflows/ci.yml"), /mise run release/);
 });
 
+test("lays out a multi-place Luau game as Rogen prescribes for Luau", () => {
+	const cwd = tempDir();
+	const run = create(cwd, "my-game", "--no-git", "--language", "luau", "--places", "multi", "--assets", "asphalt");
+	assert.equal(run.status, 0, run.stderr);
+	const dir = path.join(cwd, "my-game");
+	const exists = (file: string) => fs.existsSync(path.join(dir, file));
+	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+	for (const place of ["lobby", "game"]) {
+		const config = JSON.parse(read(`${place}.rogen.json`));
+		assert.deepEqual(config.sourcePaths, ["projects/common/src", `projects/${place}/src`]);
+		assert.ok(exists(`projects/${place}/src/App/Server/Main.server.luau`));
+		assert.ok(exists(`projects/${place}/world/default.project.json`));
+	}
+	assert.ok(exists("projects/common/src/Features/Clicker/Server/ClickerService.luau"));
+	assert.ok(exists("projects/game/tests/e2e/clicker.luau"), "the shared code's end-to-end tests run in one place");
+	assert.ok(!exists("projects/lobby/tests/e2e/clicker.luau"));
+	for (const gone of ["src", "world", "tests", "default.rogen.json"]) assert.ok(!exists(gone), `${gone} moved`);
+	assert.ok(exists("wally.toml"), "the packages stay shared at the root");
+	assert.match(read("asphalt.toml"), /output_path = "projects\/common\/src\/Shared"/);
+	assert.match(read("AGENTS.md"), /projects\/common\/src/);
+});
+
 test("refuses a choice the language doesn't have", () => {
 	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--language", "luau", "--entities", "components");

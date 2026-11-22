@@ -1,0 +1,16 @@
+{
+	"name": "workspace",
+	"tree": {
+		"$className": "Workspace",
+		"$path": "Workspace",
+		"$properties": {
+			"ExplorerIconContent": { "Content": "None" },
+			"InputSinkEnabled": { "Enum": 0 },
+			"NextGenerationPhysicsSolver": { "Enum": 0 },
+			"ParticlesUseDynamicWind": { "Enum": 0 },
+			"ReplicationFrequency": { "Enum": 0 },
+			"ReplicationThroughput": { "Enum": 0 },
+			"SerializedOverrides": { "BinaryString": "" }
+		}
+	}
+}

@@ -1,0 +1,13 @@
+-- The server's entry script: loads every service, then starts each. Add a feature's services to
+-- the list to start them; the check fails on a service that isn't here.
+local ServerScriptService = game:GetService("ServerScriptService")
+
+local services: { { start: () -> () } } = {
+	require(ServerScriptService.Features.Clicker.ClickerService),
+	require(ServerScriptService.Features.PlayerData.PlayerDataService),
+	require(ServerScriptService.Features.Spinner.SpinnerService),
+}
+
+for _, service in services do
+	service.start()
+end

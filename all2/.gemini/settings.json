@@ -1,0 +1,45 @@
+{
+	"context": {
+		"fileName": ["AGENTS.md"]
+	},
+	"hooks": {
+		"BeforeTool": [
+			{
+				"matcher": "run_shell_command|write_file|replace|read_file",
+				"hooks": [
+					{
+						"name": "guard",
+						"type": "command",
+						"command": "sh \"$GEMINI_PROJECT_DIR\"/.agents/hooks/run guard.ts gemini",
+						"timeout": 30000
+					}
+				]
+			}
+		],
+		"AfterTool": [
+			{
+				"matcher": "write_file|replace",
+				"hooks": [
+					{
+						"name": "edited",
+						"type": "command",
+						"command": "sh \"$GEMINI_PROJECT_DIR\"/.agents/hooks/run edited.ts gemini",
+						"timeout": 30000
+					}
+				]
+			}
+		],
+		"AfterAgent": [
+			{
+				"hooks": [
+					{
+						"name": "check",
+						"type": "command",
+						"command": "sh \"$GEMINI_PROJECT_DIR\"/.agents/hooks/run check.ts gemini",
+						"timeout": 180000
+					}
+				]
+			}
+		]
+	}
+}

@@ -1,0 +1,7 @@
+# Selene lints the game's Luau in `mise run check`. `roblox` knows Roblox's globals and API; Selene
+# downloads it the first time.
+std = "roblox"
+
+[lints]
+# Vide takes an instance's properties and its children in one table.
+mixed_table = "allow"
