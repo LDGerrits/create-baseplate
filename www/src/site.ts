@@ -3,7 +3,7 @@
 // and canonical links. Until then, links stay relative to the site.
 export const SITE_URL: string | undefined = undefined;
 
-export const REPOSITORY = "https://github.com/LDGerrits/baseplate";
+export const REPOSITORY = "https://github.com/LDGerrits/create-baseplate";
 
 /** What Baseplate is, atop llms.txt and llms-full.txt. */
 export const SUMMARY =
