@@ -33,9 +33,11 @@ const run = (command: string, args: string[]) => {
 
 const read = (file: string) => (fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "");
 
-// jest-lua 3.10, Wally's newest Jest, reports a run's `success` inverted: true when a test failed,
-// false when all passed. jest-roblox (`mise run test:engine`) reads it for its exit code, so fix that
-// one line in each installed jest-core. A Jest without the line (a fixed release) is left alone.
+// jsdotlua/jest 3.10, the last jest-lua release under that name, reports a run's `success` inverted:
+// true when a test failed, false when all passed. jest-roblox (`mise run test:engine`) reads it for
+// its exit code, so fix that one line in each installed jest-core. Roblox's own roblox/jest (3.20 and
+// later, on Wally) has the fix, but needs ScriptService.ResolveModulePath, which ree doesn't emulate
+// yet; move to it once ree does, and this goes. A Jest without the line is left alone.
 const INVERTED_SUCCESS =
 	"aggregatedResults.success = anyTestFailures or aggregatedResults.snapshot.failure or anyReporterErrors";
 function fixJestSuccess() {
@@ -59,8 +61,32 @@ function fixJestSuccess() {
 const manifestHash = () =>
 	createHash("sha256").update(read("wally.toml")).update("\0").update(read("wally.lock")).digest("hex");
 
+/** The package folders wally.toml fills: one per table with packages in it. */
+const neededFolders = () => {
+	const tables: Record<string, string> = {
+		dependencies: "Packages",
+		"server-dependencies": "ServerPackages",
+		"dev-dependencies": "DevPackages",
+	};
+	const needed: string[] = [];
+	for (const [, table = "", body = ""] of read("wally.toml").matchAll(
+		/^\[([\w-]+)\]\n([\s\S]*?)(?=^\[|(?![\s\S]))/gm,
+	)) {
+		const folder = tables[table];
+		if (folder !== undefined && /^\s*[\w-]+\s*=/m.test(body)) needed.push(folder);
+	}
+	return needed;
+};
+
 if (!process.argv.includes("--types")) {
-	if (read(STAMP) !== manifestHash()) {
+	// Install when the manifest or lock changed, a package folder went missing (deleted by hand), or
+	// typing the last install failed partway: wally-package-types can't type a folder twice, so the
+	// packages start over.
+	if (
+		read(STAMP) !== manifestHash() ||
+		neededFolders().some((folder) => !fs.existsSync(folder)) ||
+		fs.existsSync(UNTYPED)
+	) {
 		for (const folder of FOLDERS) fs.rmSync(folder, { recursive: true, force: true });
 		run("wally", ["install"]);
 		fs.mkdirSync(CACHE, { recursive: true });

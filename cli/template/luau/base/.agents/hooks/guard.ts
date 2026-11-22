@@ -29,6 +29,11 @@ export const GENERATED: [RegExp, string][] = [
 		"Wally installs it from wally.toml: add or change the package there and run `mise run install`",
 	],
 	[/^wally\.lock$/, "Wally writes it: change wally.toml and run `mise run install`"],
+	[/^dist\//, "`mise run release` writes it with Darklua from the code: change the code, or .darklua.json"],
+	[
+		/^(projects\/[^/]+\/)?release\.project\.json$/,
+		"`mise run release` writes it from game.project.json: change the code's layout and run `mise run release`",
+	],
 	[/^\.luau-lsp\//, "scripts/packages.ts fetches it for the pinned luau-lsp: run `mise run generate`"],
 	[
 		/^\.baseplate\//,

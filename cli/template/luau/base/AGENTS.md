@@ -83,6 +83,7 @@ luau-lsp and Selene catch most mistakes. These they don't explain:
 - Arrays start at 1, `#` counts only up to the first `nil`, and `nil` in a table removes the key. Use `table.insert`, `table.remove` and `table.clear`; iterate with `for i, v in list do`.
 - Only `nil` and `false` are falsy: `0` and `""` are true.
 - Instances from `FindFirstChild` and `WaitForChild` can be `nil` or of any class to the type checker; check with `if part and part:IsA("BasePart") then`, rather than casting with `::`.
+- luau-lsp knows only the instances in the project and `world/`. What appears at runtime, such as a player's `Character` and its `Humanoid`, a `ScreenGui` your code mounts in `PlayerGui`, or a part a script creates, isn't typed: `character.Humanoid` fails the check. Reach it with `WaitForChild` or `FindFirstChildOfClass` and check its class.
 - Yielding functions (`task.wait`, `WaitForChild`, `InvokeServer`, DataStore calls) pause the thread: never call them where the order of events matters without saying so, and use `task.spawn` or `task.defer` to run something alongside.
 
 ## Packages

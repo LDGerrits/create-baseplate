@@ -21,6 +21,11 @@
 			"file": ".gitignore",
 			"from": "# forge's session state and logs",
 			"to": "# What `asphalt sync debug` writes, to see how Asphalt processes assets/\n/.asphalt-debug\n\n# forge's session state and logs"
+		},
+		{
+			"file": ".agents/hooks/guard.ts",
+			"from": "\t[/^wally\\.lock$/, \"Wally writes it: change wally.toml and run `mise run install`\"],\n",
+			"to": "\t[/^wally\\.lock$/, \"Wally writes it: change wally.toml and run `mise run install`\"],\n\t[\n\t\t/^(projects\\/common\\/)?src\\/Shared\\/Assets\\.luau$/,\n\t\t\"`mise run assets` writes it with Asphalt from assets/: add or change files there and run `mise run assets`\",\n\t],\n"
 		}
 	]
 }

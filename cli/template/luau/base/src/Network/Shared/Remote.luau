@@ -27,7 +27,8 @@ export type ClientRequest<T..., R...> = {
 	name: string,
 	instance: RemoteFunction,
 	check: Check,
-	-- Client: call the server and wait for its answer.
+	-- Client: call the server and wait for its answer. A call the server drops (over the rate limit,
+	-- or arguments its check refuses) answers nothing, so check for nil before using the answer.
 	invoke: (self: ClientRequest<T..., R...>, T...) -> R...,
 }
 
@@ -43,8 +44,20 @@ export type ServerEvent<T...> = {
 }
 
 local FOLDER = "Remotes"
+-- How long a client waits for the server to make a remote before it says which one is missing.
+local CLIENT_WAIT_SECONDS = 30
 
-local function remote(name: string, className: "RemoteEvent" | "RemoteFunction"): Instance
+-- Which module declared each remote name. Names are global, so a second feature using one would
+-- share the first's remote, and its client calls would reach both handlers.
+local declaredBy: { [string]: string } = {}
+
+local function remote(name: string, className: "RemoteEvent" | "RemoteFunction", declarer: string): Instance
+	local first = declaredBy[name]
+	if first ~= nil and first ~= declarer then
+		error(`remote "{name}" is declared by both {first} and {declarer}: give each its own name`, 3)
+	end
+	declaredBy[name] = declarer
+
 	if RunService:IsServer() then
 		local folder = ReplicatedStorage:FindFirstChild(FOLDER)
 		if folder == nil then
@@ -62,14 +75,22 @@ local function remote(name: string, className: "RemoteEvent" | "RemoteFunction")
 		created.Parent = folder
 		return created
 	end
-	return ReplicatedStorage:WaitForChild(FOLDER):WaitForChild(name)
+	local folder = ReplicatedStorage:WaitForChild(FOLDER, CLIENT_WAIT_SECONDS)
+	local found = if folder then folder:WaitForChild(name, CLIENT_WAIT_SECONDS) else nil
+	if found == nil then
+		error(
+			`remote "{name}" never appeared: the server makes it when {declarer} loads, so a service that requires it must be listed in this place's Main.server.luau`,
+			3
+		)
+	end
+	return found
 end
 
 local Remote = {}
 
 -- An event a client sends. `check` validates its arguments on the server.
 function Remote.clientEvent<T...>(name: string, check: Check): ClientEvent<T...>
-	local instance = remote(name, "RemoteEvent") :: RemoteEvent
+	local instance = remote(name, "RemoteEvent", debug.info(2, "s")) :: RemoteEvent
 	return {
 		name = name,
 		instance = instance,
@@ -82,7 +103,7 @@ end
 
 -- A request a client sends and waits on. `check` validates its arguments on the server.
 function Remote.clientRequest<T..., R...>(name: string, check: Check): ClientRequest<T..., R...>
-	local instance = remote(name, "RemoteFunction") :: RemoteFunction
+	local instance = remote(name, "RemoteFunction", debug.info(2, "s")) :: RemoteFunction
 	return {
 		name = name,
 		instance = instance,
@@ -95,7 +116,7 @@ end
 
 -- An event the server sends.
 function Remote.serverEvent<T...>(name: string): ServerEvent<T...>
-	local instance = remote(name, "RemoteEvent") :: RemoteEvent
+	local instance = remote(name, "RemoteEvent", debug.info(2, "s")) :: RemoteEvent
 	return {
 		name = name,
 		instance = instance,

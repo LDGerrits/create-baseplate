@@ -54,7 +54,7 @@
 	"customDatasources": {
 		"wally": {
 			"defaultRegistryUrlTemplate": "https://api.wally.run/v1/package-metadata/{{packageName}}",
-			"transformTemplates": ["{ \"releases\": versions.{ \"version\": package.version } }"]
+			"transformTemplates": ["{ \"releases\": [versions.{ \"version\": package.version }] }"]
 		}
 	}
 }

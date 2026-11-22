@@ -5,9 +5,10 @@
 // editor agree: types for every instance (`luau-lsp.diagnostics.strictDatamodelTypes`; without it,
 // `game`, `script` and `workspace` are untyped). Reports problems in the game's own
 // code; the packages' are theirs. Runs in a place's folder, as `mise run check` runs it.
-import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+// cross-spawn finds luau-lsp on Windows without a shell, which would split paths with spaces.
+import spawn from "cross-spawn";
 
 const ROOT = process.env.ROOT ?? process.cwd();
 const definitions = path.join(ROOT, ".luau-lsp", "globalTypes.d.luau");
@@ -23,7 +24,7 @@ const project = JSON.parse(fs.readFileSync("game.project.json", "utf8")) as { gl
 // luau-lsp matches its globs against paths from here, as the project file's are.
 const ignored = (project.globIgnorePaths ?? []).map((glob) => `--ignore=${glob}`);
 
-const run = spawnSync(
+const run = spawn.sync(
 	"luau-lsp",
 	[
 		"analyze",
@@ -39,7 +40,7 @@ const run = spawnSync(
 		...ignored,
 		...sources,
 	],
-	{ encoding: "utf8", maxBuffer: 64 * 1024 * 1024, shell: process.platform === "win32" },
+	{ encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
 );
 if (run.error) {
 	console.error(`luau-lsp: ${run.error.message}`);

@@ -3,8 +3,9 @@
 // - a test named *.test.luau: Jest here runs *.spec.luau files only, and skips the rest without a word;
 // - a spec outside the source folders: no project file mounts it, so it never runs;
 // - a service or controller no entry script lists: nothing requires it, so it never starts.
-//   Services (*Service.luau in a Server/ folder) start from src/App/Server/Main.server.luau,
-//   controllers (*Controller.luau in a Client/ folder) from src/App/Client/Start.luau;
+//   Services (*Service.luau that Rogen routes to the server: under a Server/ folder, at any depth,
+//   or named *Service@Server) start from src/App/Server/Main.server.luau, controllers
+//   (*Controller.luau routed to the client) from src/App/Client/Start.luau;
 // - a remote the server takes outside Network/Server/Serve.luau, with no rate limit or argument
 //   check (see unguarded-remotes.ts).
 // `mise run check` runs it. In a multi-place game, a place's entry scripts start its own code and
@@ -70,27 +71,56 @@ const entries = places.map((place) => {
 	return { root, server: code(`${root}/${SERVER_ENTRY}`), client: code(`${root}/${CLIENT_ENTRY}`) };
 });
 
-/** Whether an entry script's code requires the module at `file`: its folder and name, as `Clicker.ClickerService)`. */
-function lists(entry: string, file: string): boolean {
-	const parts = file.replace(/\.luau?$/, "").split("/");
-	const name = parts.at(-1) ?? "";
-	// The routing folder (Server/, Client/) leaves no instance, so the feature folder sits above it.
-	const feature = parts.at(-3) ?? "";
-	return new RegExp(`\\b${feature}\\s*\\.\\s*${name}\\s*\\)`).test(entry);
+const ROUTE = /^[Ss](erver|hared)$|^[Cc]lient$/;
+const SUFFIX = /@([Ss]erver|[Cc]lient|[Ss]hared)$/;
+
+/**
+ * Where Rogen routes a source file, and its instance names below the route's target: the governing
+ * route is the outermost routing folder (`Server/`) or `@` suffix (`Bank@Server.luau`), and that
+ * folder leaves no instance, while the suffix comes off the name.
+ */
+function routeOf(file: string): { side: string; names: string[] } | undefined {
+	const root = sourceRoots.find((dir) => file.startsWith(`${dir}/`)) ?? "";
+	const parts = file
+		.slice(root.length + 1)
+		.replace(/\.luau?$/, "")
+		.split("/");
+	let side: string | undefined;
+	const names: string[] = [];
+	for (const part of parts) {
+		const folder = side === undefined ? ROUTE.exec(part)?.[0] : undefined;
+		if (folder !== undefined) {
+			side = folder.toLowerCase();
+			continue;
+		}
+		const suffix = SUFFIX.exec(part)?.[1];
+		if (side === undefined && suffix !== undefined) side = suffix.toLowerCase();
+		names.push(part.replace(SUFFIX, ""));
+	}
+	return side === undefined ? undefined : { side, names };
+}
+
+/** Whether an entry script's code requires the module: its parent and name, as `Clicker.ClickerService)`. */
+function lists(entry: string, names: string[]): boolean {
+	const tail = names.slice(-2).map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+	return new RegExp(`\\b${tail.join("\\s*\\.\\s*")}\\s*\\)`).test(entry);
 }
 
 for (const file of sources) {
-	const side = /\/Server\/[^/]+Service\.luau?$/.test(file)
-		? "server"
-		: /\/Client\/[^/]+Controller\.luau?$/.test(file)
-			? "client"
-			: undefined;
-	if (side === undefined) continue;
+	const route = routeOf(file);
+	const name = route?.names.at(-1) ?? "";
+	const side =
+		route?.side === "server" && name.endsWith("Service")
+			? "server"
+			: route?.side === "client" && name.endsWith("Controller")
+				? "client"
+				: undefined;
+	if (route === undefined || side === undefined) continue;
 	// A place's own file must be started by that place; shared code by any place.
 	const owners = entries.filter(
 		(entry) => !multi || file.startsWith("projects/common/") || file.startsWith(`${entry.root}/`),
 	);
-	if (owners.some((entry) => lists(side === "server" ? entry.server : entry.client, file))) continue;
+	if (owners.some((entry) => lists(side === "server" ? entry.server : entry.client, route.names))) continue;
 	const kind = side === "server" ? "service" : "controller";
 	const root = multi ? "projects/<place>/src" : "src";
 	const where = side === "server" ? SERVER_ENTRY : CLIENT_ENTRY;

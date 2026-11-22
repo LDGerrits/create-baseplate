@@ -48,20 +48,16 @@ const project = process.argv[2] ?? "game.project.json";
 const projectFile = JSON.parse(fs.readFileSync(project, "utf8")) as { globIgnorePaths?: string[] };
 collectMounts(projectFile);
 const ignored = (file: string) => (projectFile.globIgnorePaths ?? []).some((glob) => path.matchesGlob(file, glob));
-const hasSpecs = mounts.some(
-	(mount) =>
-		!PACKAGES.test(mount) &&
-		fs.existsSync(mount) &&
-		fs.statSync(mount).isDirectory() &&
-		fs
-			.readdirSync(mount, { recursive: true, encoding: "utf8" })
-			.some(
-				(file) =>
-					file.endsWith(".spec.luau") &&
-					!file.endsWith(".engine.spec.luau") &&
-					!ignored(path.posix.join(mount, file.split(path.sep).join("/"))),
-			),
-);
+const isSpec = (file: string) => file.endsWith(".spec.luau") && !file.endsWith(".engine.spec.luau") && !ignored(file);
+// A folder mount holds specs among its files; Rogen mounts some folders file by file (one split to
+// leave out the shared specs in a multi-place game), and then a spec is a mount of its own.
+const hasSpecs = mounts.some((mount) => {
+	if (PACKAGES.test(mount) || !fs.existsSync(mount)) return false;
+	if (!fs.statSync(mount).isDirectory()) return isSpec(mount);
+	return fs
+		.readdirSync(mount, { recursive: true, encoding: "utf8" })
+		.some((file) => isSpec(path.posix.join(mount, file.split(path.sep).join("/"))));
+});
 
 const runs: Run[] = [
 	...(hasSpecs

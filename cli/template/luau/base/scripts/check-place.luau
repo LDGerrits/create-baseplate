@@ -54,7 +54,11 @@ for _, serviceName in CLIENT_VISIBLE do
 		end
 		local source = (descendant :: any).Source :: string
 		for _, serverOnly in SERVER_ONLY do
-			if string.find(source, `GetService%(%s*["']{serverOnly}["']%s*%)`) then
+			-- game:GetService("X"), game:GetService "X", game:FindService("X"), game.X, game["X"]
+			local reached = string.find(source, `[GF][ei][tn]d?Service%s*%(?%s*["']{serverOnly}["']`)
+				or string.find(source, `game%s*%.%s*{serverOnly}%f[^%w_]`)
+				or string.find(source, `game%s*%[%s*["']{serverOnly}["']%s*%]`)
+			if reached then
 				table.insert(
 					problems,
 					`{descendant:GetFullName()} reaches {serverOnly}, which is empty on clients. Move the code it needs into a Shared/ folder, or this file into a Server/ one.`

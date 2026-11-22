@@ -20,4 +20,6 @@ Require by instance path, the way `rogen where <file>` prints it: `require(Repli
 
 `mise run check` builds, type-checks and tests every place; Studio commands name one: `mise run dev lobby`, `mise run sync lobby`. luau-lsp types each place against its own sourcemap in the check; your editor types one place at a time, `game`, from `sourcemap.json` at the root: to switch, change the place in `luau-lsp.sourcemap.generatorCommand` in `.vscode/settings.json` and run `mise run generate`. Files are PascalCase, named after what they hold: `InventoryService.luau`.
 
+Rogen's own section below gives the commands for a roblox-ts game's layout; here the configs are at the root. Run `rogen check` and `rogen write` from the root with no path, which covers every place, or name a place's config to work on one: `rogen write lobby`, `rogen check lobby`. `rogen where <path>` works on shared and place files alike.
+
 A new place: copy `projects/lobby` to `projects/<place>` and `lobby.rogen.json` to `<place>.rogen.json`, and in the copy change `name` and the place's source path. `mise run check` then builds and tests it too.

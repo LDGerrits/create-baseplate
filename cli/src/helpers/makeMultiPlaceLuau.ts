@@ -101,7 +101,15 @@ export function makeMultiPlaceLuau(dir: string, name: string) {
 	if (fs.existsSync(at("asphalt.toml"))) {
 		fs.writeFileSync(
 			at("asphalt.toml"),
-			replaceIn(read("asphalt.toml"), 'output_path = "src/Shared"', 'output_path = "projects/common/src/Shared"'),
+			replaceIn(
+				read("asphalt.toml"),
+				'output_path = "src/Shared"',
+				'output_path = "projects/common/src/Shared"',
+			).replaceAll("src/Shared/Assets.luau", "projects/common/src/Shared/Assets.luau"),
+		);
+		fs.writeFileSync(
+			at("mise.toml"),
+			read("mise.toml").replaceAll("src/Shared/Assets.luau", "projects/common/src/Shared/Assets.luau"),
 		);
 	}
 
