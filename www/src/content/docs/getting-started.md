@@ -6,6 +6,7 @@ description: Create a game, install its tools, and run its check.
 ## What you need
 
 - [mise](https://mise.jdx.dev/getting-started.html), which installs every tool the game pins: Node, pnpm, Rojo, Sloptor, Lune and the offline engine and renderers.
+- Node and pnpm, to run `pnpm create`. Without them, let mise bring them for that one command: `mise x node@24 pnpm@12 -- pnpm create baseplate my-game`.
 - git.
 - Roblox Studio, to play the game and edit the world. Checks and tests don't need it.
 
@@ -17,7 +18,7 @@ Games work on Windows, macOS and Linux, and in WSL. On Windows, install mise wit
 pnpm create baseplate my-game
 ```
 
-It asks whether to make a git repo and install now, then creates the folder, installs the tools and packages, and makes the first commit. To skip the questions, as an agent would:
+It asks which add-ons to use (and the game's name, when no folder is given) (see [add-ons](/add-ons/)), then whether to make a git repo and install now. Then it creates the folder, installs the tools and packages, and makes the first commit. To skip the questions, as an agent would:
 
 ```sh
 pnpm create baseplate my-game --yes

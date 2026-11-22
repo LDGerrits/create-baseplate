@@ -24,5 +24,6 @@ With npm, put the flags after `--`, as in `npm create baseplate@latest my-game -
 | `--entities <library>` | Entities: `components`, `jecs` or `none` (default).                                          |
 | `--assets <tool>`      | Assets: `asphalt`, to upload images and sounds and type their IDs, or `none` (default).      |
 | `--release <tool>`     | Release builds: `darklua`, to minify and optimize the code you publish, or `none` (default). |
+| `-V, --version`        | Print the CLI's version.                                                                     |
 
 Without a terminal (an agent, CI) it asks nothing and takes the defaults. Installing needs [mise](https://mise.jdx.dev/getting-started.html).

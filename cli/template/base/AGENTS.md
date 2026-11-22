@@ -6,7 +6,7 @@ A Roblox game in TypeScript: roblox-ts compiled by Sloptor, placed in the game b
 
 `mise run check` is the check: it formats, compiles, lints, builds the place, runs the tests and renders the UI stories, in about ten seconds. Run it after each change and fix what it reports until it passes. When you stop, a hook runs it again and hands back any failure; the commit hook runs it on what you commit.
 
-- While iterating, narrower loops are faster: `mise run test` for the tests, `mise run ui --filter <name>` for one story's picture.
+- While iterating, narrower loops are faster: `mise run compile` for type errors, `mise run test` for the tests, `mise run ui --filter <name>` for one story's picture.
 - When a lint rule is wrong for one line, disable it on that line with a comment saying why.
 - The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `lune` and the rest are on the PATH only where your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills. To change a tool's pin in `mise.toml`, run `mise lock` after it: `mise install` refuses a tool that `mise.lock` doesn't list with its checksums.
 - Generated files change through their generator, and a hook blocks direct edits: `out/` and `include/` (the compiler), `build/` (builds), `default.project.json` (Rogen), `game.project.json`, `test.project.json` and `src/world.d.ts` (`mise run check`, from the code and `world/`).
@@ -57,7 +57,7 @@ React from `@rbxts/react`. Give each component worth looking at a story beside i
 
 - Animate with `useMotion` from `@rbxts/pretty-react-hooks`, as `clicker-button.tsx` does: the motion drives a binding, so nothing re-renders. The same package has hooks for events, timers, debouncing and the previous value.
 - A story renders inside a `Frame`, so a component whose root is a `ScreenGui` draws nothing.
-- rur needs Roblox Studio's fonts to draw text; outside Windows and WSL, set `RUR_ROBLOX_CONTENT` (see `.env.example`).
+- rur needs Roblox Studio's fonts to draw text; outside Windows and WSL, set `RUR_ROBLOX_CONTENT` (see `.env.example`). Without them, as in a cloud session, the pictures have no text: judge layout, size and overlap.
 
 ## World and Studio
 

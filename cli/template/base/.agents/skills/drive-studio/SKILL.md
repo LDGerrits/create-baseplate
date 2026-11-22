@@ -18,7 +18,13 @@ Run `forge`, `ror` and the other tools below as `mise x -- forge …` when your 
 
 ## Drive it with the Studio MCP
 
-Roblox's Studio MCP drives Studio. If its tools aren't available to you, ask the user to install Roblox's official plugin: in Claude Code, `/plugin` and search for Roblox Studio; in Codex, `codex plugin marketplace add Roblox/roblox-studio-agent-plugin`. Studio then needs **Assistant → Settings → MCP Servers → Enable Studio as MCP server**.
+Roblox's Studio MCP drives Studio. If its tools aren't available to you, ask the user to connect it: in Studio, **Assistant → … → Manage MCP Servers → Enable Studio as MCP server**, then under **Quick connect** turn on their agent (Claude Code, Codex CLI, Cursor, Gemini CLI and VS Code are listed), and restart the agent. Its server is named `Roblox_Studio`.
+
+The MCP can change the place in ways this project doesn't keep, so leave these alone:
+
+- **Scripts** (`multi_edit`): the code lives in `src/` and Rojo overwrites scripts in Studio. Change the TypeScript and let forge sync it.
+- **Saving** (`save_place`): saving and syncing back to `world/` happen in the `edit-world` skill, and only when the user asked for the change.
+- **Assets** (`insert_asset`, `generate_*`, `upload_image`): only as part of a world change the user asked for, through `edit-world`.
 
 1. `list_roblox_studios` first, and pick the Studio whose place forge opened. Confirm the target before you change anything in it.
 2. Inspect without running code: `search_game_tree`, `inspect_instance`, `script_grep`.

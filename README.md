@@ -15,12 +15,12 @@ It creates the game, makes it a git repo, and installs everything with [mise](ht
 
 ## Repo
 
-| Folder                 | What                                                             |
-| ---------------------- | ---------------------------------------------------------------- |
-| `cli/`                 | `create-baseplate`: prompts or flags, copies the template        |
-| `cli/template/base/`   | The game template: a complete project that passes its own checks |
-| `cli/template/extras/` | Add-ons: state, player data and entities, one folder per choice  |
-| `www/`                 | The docs site: Astro with Starlight, with `llms.txt` for agents  |
+| Folder                 | What                                                                                  |
+| ---------------------- | ------------------------------------------------------------------------------------- |
+| `cli/`                 | `create-baseplate`: prompts or flags, copies the template                             |
+| `cli/template/base/`   | The game template: a complete project that passes its own checks                      |
+| `cli/template/extras/` | Add-ons, one folder per choice: UI, places, state, data, entities, assets and release |
+| `www/`                 | The docs site: Astro with Starlight, with `llms.txt` for agents                       |
 
 `PLAN.md` holds the plan.
 
