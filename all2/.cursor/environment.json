@@ -1,3 +1,0 @@
-{
-	"install": "bash .agents/hooks/cloud-setup.sh --force"
-}

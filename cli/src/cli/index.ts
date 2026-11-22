@@ -42,6 +42,18 @@ function flagsNpmTook(): string[] {
 		.map((name) => (name === "git" || name === "install" ? `--no-${name}` : `--${name}`));
 }
 
+/**
+ * Why the add-on flags can't go together: in the language given, or, without --language, in every
+ * language that takes them, so no answer to the language question could make them work.
+ */
+function flagsConflict(given: Language | undefined, addOns: Partial<AddOnChoices>): string | undefined {
+	const candidates = given === undefined ? languages.map((language) => language.value) : [given];
+	const problems = candidates
+		.filter((language) => flagProblem(language, addOns) === undefined)
+		.map((language) => findConflict(language, choicesFor(language, addOns)));
+	return problems.length > 0 && problems.every((problem) => problem !== undefined) ? problems[0] : undefined;
+}
+
 /** Why the game can't be made in the folder `input` names, with `name` (--name) or the folder's name. */
 function answerProblem(input: string, name: string | undefined): string | undefined {
 	const parsed = parseNameAndPath(input);
@@ -125,9 +137,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 	}
 	// What the command line already says can be wrong before any question: say so at once.
 	if (ask && given !== undefined) {
-		const problem =
-			answerProblem(given, flags.name) ??
-			(flags.language === undefined ? undefined : findConflict(language, choicesFor(language, givenAddOns)));
+		const problem = answerProblem(given, flags.name) ?? flagsConflict(flags.language, givenAddOns);
 		if (problem !== undefined) refuse(problem);
 	}
 	let chosen = choicesFor(language, givenAddOns);
@@ -162,6 +172,10 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 			if (problem !== undefined) refuse(problem);
 			chosen = choicesFor(language, givenAddOns);
 		}
+		// Flags that can't go together, such as --ui vide with --state reflex, would leave a later
+		// question with no choice to offer: refuse before asking it.
+		const conflict = findConflict(language, chosen);
+		if (conflict !== undefined) refuse(conflict);
 		for (const addOn of addOnsByLanguage[language]) {
 			if (givenAddOns[addOn.name] !== undefined) continue;
 			const answer = await p.select({

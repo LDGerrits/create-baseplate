@@ -17,7 +17,7 @@ Like create-t3-app, each question offers the most used libraries and "none", whi
 
 ### Pin everything, and wait
 
-Every tool is pinned in `mise.toml` with its checksums in `mise.lock`, and every package in `pnpm-lock.yaml` (and `wally.lock`, in a Luau game). pnpm installs only versions published at least two weeks ago, and Renovate proposes updates on the same rule: most hijacked releases are caught and pulled within days, so the wait keeps them out. Two tools the game's workflow rests on, rbx-forge and Rogen, come in on release day for their fixes, so their updates never merge without a person.
+Every tool is pinned in `mise.toml` with its checksums in `mise.lock`, and every package in `pnpm-lock.yaml` (and `wally.lock`, in a Luau game). pnpm installs only versions published at least two weeks ago, and Renovate proposes updates on the same rule: most hijacked releases are caught and pulled within days, so the wait keeps them out. Two tools the game's workflow rests on, rbx-forge and Rogen, come in on release day for their fixes, so their updates never merge without a person. So do a Luau game's Wally packages: Wally's registry gives no release dates for the wait to count from.
 
 ### Tested in the real engine
 

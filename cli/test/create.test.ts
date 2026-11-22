@@ -255,6 +255,34 @@ test("refuses a folder with files at the prompt, before the other questions", { 
 	assert.doesNotMatch(shown, /Which language/);
 });
 
+test("refuses flags that can't go together at the prompt, before asking a question with no choice", {
+	skip: !hasScript,
+}, () => {
+	const cwd = tempDir();
+	// With a folder: every language that takes the flags conflicts, so it refuses before asking anything.
+	const withFolder = spawnSync(
+		"script",
+		["-qec", `stty cols 120 rows 40; node ${CLI} z/g --ui vide --state reflex --no-install --no-git`, "/dev/null"],
+		{ cwd, encoding: "utf8", timeout: 10_000 },
+	);
+	assert.equal(withFolder.status, 1);
+	assert.match(withFolder.stdout, /Reflex has no Vide binding/);
+	assert.doesNotMatch(withFolder.stdout, /TypeError|Which language/);
+	// Without one: it asks the name and the language, then refuses.
+	const shown = stripVTControlCharacters(
+		spawnSync(
+			"sh",
+			[
+				"-c",
+				`(sleep 0.5; printf 'g2\\r'; sleep 1; printf '\\r'; sleep 1.5) | script -qec "stty cols 120 rows 40; node ${CLI} --ui vide --state reflex --no-install --no-git" /dev/null`,
+			],
+			{ cwd, encoding: "utf8", timeout: 8_000 },
+		).stdout,
+	);
+	assert.match(shown, /Reflex has no Vide binding/);
+	assert.doesNotMatch(shown, /TypeError|One place, or several/);
+});
+
 test("refuses a folder that has files", () => {
 	const cwd = tempDir();
 	fs.mkdirSync(path.join(cwd, "taken"));

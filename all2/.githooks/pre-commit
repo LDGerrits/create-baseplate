@@ -1,4 +1,0 @@
-#!/bin/sh
-# Runs the full check on exactly what is being committed: scripts/pre-commit.ts.
-# `mise run install` turns this folder on with `git config core.hooksPath .githooks`.
-exec mise exec -- node scripts/pre-commit.ts
