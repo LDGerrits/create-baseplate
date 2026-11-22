@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "@rbxts/jest-globals";
 import { setConfig } from "@rbxts/lapis";
 import DataStoreServiceMock from "@rbxts/lapis-mockdatastore";
+import { RunService } from "@rbxts/services";
 import { DEFAULT_PLAYER_DATA } from "./player-data";
 import { PlayerDataService } from "./player-data-service";
 
@@ -8,18 +9,23 @@ import { PlayerDataService } from "./player-data-service";
 let collections = 0;
 const newService = () => PlayerDataService.withCollection(`Test_${++collections}`);
 
+// Lapis and its mock DataStore move only on RunService.PostSimulation, which fires only while physics
+// runs. It does in ree, Studio's play mode and a live server, but not in an Open Cloud execution
+// session (`mise run test:engine` in CI), where a load would wait forever; there these skip.
+const whileSimulating = RunService.IsRunning() ? it : it.skip;
+
 describe("PlayerDataService", () => {
 	beforeAll(() => {
 		setConfig({ dataStoreService: new DataStoreServiceMock() });
 	});
 
-	it("starts a new player with the defaults", async () => {
+	whileSimulating("starts a new player with the defaults", async () => {
 		const service = newService();
 		expect(await service.load(1)).toBe(true);
 		expect(service.get(1)).toEqual(DEFAULT_PLAYER_DATA);
 	});
 
-	it("keeps an update after the player leaves and rejoins", async () => {
+	whileSimulating("keeps an update after the player leaves and rejoins", async () => {
 		const service = newService();
 		await service.load(1);
 		service.update(1, (data) => ({ ...data, coins: data.coins + 5 }));
