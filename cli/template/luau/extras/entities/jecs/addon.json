@@ -1,0 +1,8 @@
+{
+	"dependencies": {
+		"Jecs": "ukendio/jecs@=0.11.0"
+	},
+	"imports": {
+		"src/App/Server/Main.server.luau": ["ServerScriptService.Features.Spinner.SpinnerService"]
+	}
+}
