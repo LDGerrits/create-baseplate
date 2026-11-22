@@ -22,6 +22,6 @@ Each feature is a folder, `src/features/<feature>/`. Inside it, the folder a fil
 
 ## The rules
 
-- **Never trust the client.** Clients ask; services decide, and check every request.
+- **Never trust the client.** Clients ask; services decide, and check every request. `mise run check` fails on a client-to-server event or function the server takes without middleware: give it `rateLimit` from `src/network/server/rate-limit.ts`, which drops a player's calls beyond a number a second, or mark its handler `// trusts-client: <why>`. The limit is a floor; the service still checks the request.
 - **Services own server state.** Other code calls their methods.
 - **Controllers run the client side** and keep what the UI shows.

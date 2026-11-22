@@ -183,6 +183,7 @@ export function makeMultiPlace(dir: string, name: string) {
 /** Single-place paths in add-on notes, and where they are in a multi-place game. */
 const PATHS: [string, string][] = [
 	["`src/features/", "`projects/common/src/features/"],
+	["`src/network/", "`projects/common/src/network/"],
 	["`src/store/", "`projects/common/src/store/"],
 	["`src/shared/", "`projects/common/src/shared/"],
 	["`world/Workspace/", "`projects/<place>/world/Workspace/"],
