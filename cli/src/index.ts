@@ -90,12 +90,10 @@ async function main() {
 	const waitForInstall = git && !installed && (packagesChanged || toolsChanged);
 	if (waitForInstall) {
 		const stale = [
-			...(packagesChanged ? ["pnpm-lock.yaml doesn't list the add-ons' packages"] : []),
-			...(toolsChanged ? ["mise.lock doesn't record the add-ons' tools"] : []),
+			...(toolsChanged ? ["mise.lock doesn't record the add-ons' tools until `mise lock`"] : []),
+			...(packagesChanged ? ["pnpm-lock.yaml doesn't list the add-ons' packages until `pnpm install`"] : []),
 		];
-		warnings.push(
-			`Nothing is committed yet: ${stale.join(" and ")} until the next steps install them. Commit after that.`,
-		);
+		warnings.push(`Nothing is committed yet: ${stale.join(", and ")}. Run the next steps, then commit.`);
 	} else if (git) {
 		// Once installed, this commit goes through the project's commit hook, which runs its check.
 		const spinner = options.json || !installed ? undefined : p.spinner();

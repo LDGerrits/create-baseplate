@@ -106,7 +106,13 @@ test("leaves the first commit until mise.lock records the tools an add-on brings
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
 	const run = create(cwd, "my-game", "--release", "darklua");
 	assert.equal(run.status, 0, run.stderr);
-	const result = JSON.parse(run.stdout) as { committed: boolean; warnings: string[]; nextSteps: string[] };
+	const result = JSON.parse(run.stdout) as {
+		git: boolean;
+		committed: boolean;
+		warnings: string[];
+		nextSteps: string[];
+	};
+	assert.equal(result.git, true, result.warnings.join("\n"));
 	assert.equal(result.committed, false);
 	assert.match(result.warnings.join("\n"), /mise\.lock doesn't record/);
 	const steps = result.nextSteps;

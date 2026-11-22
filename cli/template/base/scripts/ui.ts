@@ -131,7 +131,7 @@ for (const record of report.records) {
 	// Without Studio, stories render without fonts; only a story that breaks fails then.
 	const missingFonts = check || noStudio ? [] : (record.missingFonts ?? []);
 	if (record.clean && missingFonts.length === 0) {
-		say(`✓ ${name}: ${picture}`);
+		say(`✓ ${name}: ${picture}${noStudio ? " (no text)" : ""}`);
 		continue;
 	}
 	failed++;

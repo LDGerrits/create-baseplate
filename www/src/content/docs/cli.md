@@ -47,6 +47,6 @@ Without a terminal, as when an agent or CI runs it, it asks nothing and takes th
 }
 ```
 
-`git` says whether the game is a git repo of its own, and `committed` whether the first commit is made. With `--no-install` and add-ons that change the packages, the commit waits for the install, which brings their packages into the lockfile: `nextSteps` holds the commit. `warnings` says why git or a step was skipped.
+`git` says whether the game is a git repo of its own, and `committed` whether the first commit is made. With `--no-install` and add-ons that change the packages or bring a tool (Asphalt, Darklua), the commit waits for the next steps, which bring them into `pnpm-lock.yaml` and `mise.lock`: `nextSteps` holds the commit. `warnings` says why git or a step was skipped.
 
 On failure it prints `{ "ok": false, "error": "..." }` and exits with 1, or with 2 when npm kept the flags for itself (put them after `--`).
