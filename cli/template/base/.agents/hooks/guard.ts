@@ -25,6 +25,10 @@ export const GENERATED: [RegExp, string][] = [
 	[/^(projects\/[^/]+\/)?build\//, "builds write it: run `mise run build` or `mise run check`"],
 	[/^node_modules\//, "pnpm writes it: `pnpm add <package>`, or a patch with `pnpm patch`"],
 	[
+		/^\.baseplate\//,
+		"`create-baseplate sync` records in it the agent files as the template wrote them; edit the agent files themselves",
+	],
+	[
 		/^(projects\/[^/]+\/)?default\.project\.json$/,
 		"Rogen writes it from default.rogen.json: change that, or the file layout, and run `mise run check`",
 	],

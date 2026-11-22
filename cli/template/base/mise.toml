@@ -17,7 +17,7 @@ pnpm = "12.18.0"
 # mise.lock records each tool's download and checksum for these platforms; `mise install` refuses a
 # download that doesn't match, and, being locked, a tool the lock doesn't list. After changing a pin
 # above by hand, run `mise lock` and commit mise.lock; on Renovate's updates,
-# .github/workflows/mise-lock.yml does it.
+# .github/workflows/renovate-fixups.yml does it.
 locked = true
 lockfile_platforms = ["linux-x64", "linux-arm64", "macos-arm64", "windows-x64"]
 
@@ -48,8 +48,8 @@ depends = ["generate"]
 run = 'node scripts/each-place.ts "sloptor build -p {tsconfig} --rojo {dir}/default.project.json --includePath {root}/include"'
 
 [tasks.install]
-description = "Install packages, write the generated files, and set up this clone"
-run = ["pnpm install --frozen-lockfile", "mise run generate", "mise run setup"]
+description = "Install packages, write the generated files, set up this clone, and bring the agent files up to the create-baseplate version package.json pins"
+run = ["pnpm install --frozen-lockfile", "mise run generate", "mise run setup", "node scripts/agent-files.ts"]
 
 [tasks.setup]
 description = "Run the check before each commit, restore the .claude/skills link on Windows clones without symbolic links, and give Claude Code the TypeScript language server; safe to rerun"
@@ -62,6 +62,8 @@ run = [
 	"biome check --write --no-errors-on-unmatched .",
 	# Tests named so they never run, and services nothing starts.
 	"node scripts/check-sources.ts",
+	# The agent files at the create-baseplate version package.json pins, and no clash left unmerged.
+	"node scripts/agent-files.ts --check",
 	"tsc -p tsconfig.node.json",
 	# The agent hooks' and scripts' own tests.
 	'node --test --test-reporter=dot ".agents/hooks/*.test.ts" "scripts/*.test.ts"',
@@ -80,6 +82,8 @@ run = [
 	"biome ci .",
 	# Tests named so they never run, and services nothing starts.
 	"node scripts/check-sources.ts",
+	# The agent files at the create-baseplate version package.json pins, and no clash left unmerged.
+	"node scripts/agent-files.ts --check",
 	"tsc -p tsconfig.node.json",
 	# The agent hooks' and scripts' own tests.
 	'node --test --test-reporter=dot ".agents/hooks/*.test.ts" "scripts/*.test.ts"',

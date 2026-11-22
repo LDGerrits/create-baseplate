@@ -4,12 +4,22 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { test } from "node:test";
+import { after, test } from "node:test";
 import { stripVTControlCharacters } from "node:util";
 import { validateAppName } from "../src/utils/appName.ts";
 import { parseNameAndPath } from "../src/utils/parseNameAndPath.ts";
 
 const CLI = path.resolve(import.meta.dirname, "../dist/index.js");
+// Each test's folder, removed when the file's tests end: games add up to thousands of files.
+const temps: string[] = [];
+const tempDir = () => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	temps.push(dir);
+	return dir;
+};
+after(() => {
+	for (const dir of temps) fs.rmSync(dir, { recursive: true, force: true });
+});
 // CI has no git identity configured; a person's machine does.
 const GIT_IDENTITY = {
 	GIT_AUTHOR_NAME: "Test",
@@ -25,7 +35,7 @@ const create = (cwd: string, ...args: string[]) =>
 	});
 
 test("creates a named project an agent can read", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "games/coin-rush", "--no-git");
 	assert.equal(run.status, 0, run.stderr);
 	const result = JSON.parse(run.stdout) as { ok: boolean; name: string; dir: string; nextSteps: string[] };
@@ -50,7 +60,7 @@ test("creates a named project an agent can read", () => {
 });
 
 test("records which CLI and add-ons made the game", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "coin-rush", "--no-git", "--state", "charm");
 	assert.equal(run.status, 0, run.stderr);
 	const pkg = JSON.parse(fs.readFileSync(path.join(cwd, "coin-rush/package.json"), "utf8"));
@@ -62,7 +72,7 @@ test("records which CLI and add-ons made the game", () => {
 });
 
 test("makes a git repo", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "my-game");
 	assert.equal(run.status, 0, run.stderr);
 	const log = spawnSync("git", ["log", "--oneline"], { cwd: path.join(cwd, "my-game"), encoding: "utf8" });
@@ -70,7 +80,7 @@ test("makes a git repo", () => {
 });
 
 test("leaves the first commit until an install brings the add-ons' packages into the lockfile", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--state", "charm");
 	assert.equal(run.status, 0, run.stderr);
 	const result = JSON.parse(run.stdout) as {
@@ -91,7 +101,7 @@ test("leaves the first commit until an install brings the add-ons' packages into
 });
 
 test("locks the tools an add-on brings before installing them", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const steps = (...args: string[]) => {
 		const run = create(cwd, ...args, "--no-git");
 		assert.equal(run.status, 0, run.stderr);
@@ -103,7 +113,7 @@ test("locks the tools an add-on brings before installing them", () => {
 });
 
 test("leaves the first commit until mise.lock records the tools an add-on brings", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--release", "darklua");
 	assert.equal(run.status, 0, run.stderr);
 	const result = JSON.parse(run.stdout) as {
@@ -124,7 +134,7 @@ test("leaves the first commit until mise.lock records the tools an add-on brings
 });
 
 test("says why the game isn't its own git repo", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	spawnSync("git", ["init", "--quiet"], { cwd });
 	const run = create(cwd, "my-game");
 	assert.equal(run.status, 0, run.stderr);
@@ -134,7 +144,7 @@ test("says why the game isn't its own git repo", () => {
 });
 
 test("refuses flags that npm create kept for itself", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	// What `npm create baseplate my-game --json --no-git --ui vide` passes on: no flags, `vide` as a
 	// second argument, and the flags as npm_config_* variables.
 	const run = spawnSync("node", [CLI, "my-game", "vide"], {
@@ -157,14 +167,14 @@ test("refuses flags that npm create kept for itself", () => {
 });
 
 test("quotes the folder in the next steps", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "My Games/coin-rush", "--no-git");
 	assert.equal(run.status, 0, run.stderr);
 	assert.equal(JSON.parse(run.stdout).nextSteps[0], "cd 'My Games/coin-rush'");
 });
 
 test("creates into a freshly cloned repo, and commits there", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const dir = path.join(cwd, "coin-rush");
 	const git = (...args: string[]) => spawnSync("git", args, { cwd: dir, encoding: "utf8" });
 	// What GitHub's "Create repository" with a README and a license, then a clone, leaves.
@@ -188,7 +198,7 @@ test("creates into a freshly cloned repo, and commits there", () => {
 });
 
 test("names the game apart from its folder with --name", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "Coin Rush", "--name", "coin-rush", "--no-git");
 	assert.equal(run.status, 0, run.stderr);
 	const result = JSON.parse(run.stdout) as { name: string; dir: string };
@@ -200,7 +210,7 @@ test("names the game apart from its folder with --name", () => {
 // A person at a terminal: `script` gives the CLI one, sized so prompts draw. Skipped where `script` isn't there.
 const hasScript = spawnSync("script", ["--version"]).status === 0;
 test("rejects a bad name before asking anything", { skip: !hasScript }, () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = spawnSync("script", ["-qec", `stty cols 120 rows 40; node ${CLI} "Bad Name"`, "/dev/null"], {
 		cwd,
 		encoding: "utf8",
@@ -226,14 +236,14 @@ const typeAnswer = (cwd: string, args: string, input: string) =>
 	);
 
 test("takes a folder typed at the prompt that only --name can name", { skip: !hasScript }, () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const shown = typeAnswer(cwd, "--name coin-rush", "Coin Rush\r");
 	assert.doesNotMatch(shown, /can't name the game/);
 	assert.match(shown, /Which UI library/, "goes on to the next question");
 });
 
 test("refuses a folder with files at the prompt, before the other questions", { skip: !hasScript }, () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	fs.mkdirSync(path.join(cwd, "taken"));
 	fs.writeFileSync(path.join(cwd, "taken/file.txt"), "");
 	// The question stays open for another answer, as it should; Ctrl+C then cancels, as a person would.
@@ -245,7 +255,7 @@ test("refuses a folder with files at the prompt, before the other questions", { 
 });
 
 test("refuses a folder that has files", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	fs.mkdirSync(path.join(cwd, "taken"));
 	fs.writeFileSync(path.join(cwd, "taken/file.txt"), "");
 	const run = create(cwd, "taken", "--no-git");
@@ -254,7 +264,7 @@ test("refuses a folder that has files", () => {
 });
 
 test("refuses a name npm wouldn't accept", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "My Game", "--no-git");
 	assert.equal(run.status, 1);
 	assert.match(JSON.parse(run.stdout).error, /lowercase/);
@@ -267,7 +277,7 @@ test("names and paths", () => {
 });
 
 test("applies the chosen add-ons", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--state", "charm", "--data", "lapis", "--entities", "jecs");
 	assert.equal(run.status, 0, run.stderr);
 	assert.deepEqual(JSON.parse(run.stdout).addOns, {
@@ -304,7 +314,7 @@ test("applies the chosen add-ons", () => {
 });
 
 test("takes no add-ons by default", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git");
 	assert.deepEqual(JSON.parse(run.stdout).addOns, {
 		ui: "react",
@@ -321,14 +331,14 @@ test("takes no add-ons by default", () => {
 });
 
 test("refuses an add-on choice that doesn't exist", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--state", "redux");
 	assert.equal(run.status, 1);
 	assert.match(JSON.parse(run.stdout).error, /charm, reflex, none/);
 });
 
 test("swaps React for Vide", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--ui", "vide");
 	assert.equal(run.status, 0, run.stderr);
 
@@ -353,7 +363,7 @@ test("swaps React for Vide", () => {
 });
 
 test("uses Charm's Vide binding with Vide", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--ui", "vide", "--state", "charm");
 	assert.equal(run.status, 0, run.stderr);
 	const dir = path.join(cwd, "my-game");
@@ -365,7 +375,7 @@ test("uses Charm's Vide binding with Vide", () => {
 });
 
 test("refuses Reflex with Vide", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--ui", "vide", "--state", "reflex");
 	assert.equal(run.status, 1);
 	assert.match(JSON.parse(run.stdout).error, /Reflex.*Vide.*charm/);
@@ -373,7 +383,7 @@ test("refuses Reflex with Vide", () => {
 });
 
 test("lays out a multi-place game as Rogen prescribes", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--places", "multi", "--data", "lapis");
 	assert.equal(run.status, 0, run.stderr);
 	const dir = path.join(cwd, "my-game");
@@ -426,7 +436,7 @@ test("lays out a multi-place game as Rogen prescribes", () => {
 });
 
 test("uploads assets with Asphalt", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--assets", "asphalt");
 	assert.equal(run.status, 0, run.stderr);
 	const dir = path.join(cwd, "my-game");
@@ -449,7 +459,7 @@ test("uploads assets with Asphalt", () => {
 });
 
 test("builds a release with Darklua", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--release", "darklua");
 	assert.equal(run.status, 0, run.stderr);
 	const dir = path.join(cwd, "my-game");
@@ -467,7 +477,7 @@ test("builds a release with Darklua", () => {
 });
 
 test("Asphalt writes its code into the shared code of a multi-place game", () => {
-	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--places", "multi", "--assets", "asphalt", "--release", "darklua");
 	assert.equal(run.status, 0, run.stderr);
 	const read = (file: string) => fs.readFileSync(path.join(cwd, "my-game", file), "utf8");

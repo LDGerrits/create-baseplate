@@ -57,6 +57,17 @@ In Claude Code, `mise run install` adds the project's TypeScript language server
 
 None of them has Roblox Studio, so story pictures there have no text.
 
+## Keeping the agent files current
+
+The agent files are `AGENTS.md`, the skills, the hooks and the agent tools' settings. They improve with each create-baseplate release, and a game keeps up with them. `package.json`'s `baseplate.version` pins the create-baseplate they come from, and Renovate updates it like a package, two weeks after a release. On Renovate's branch, `.github/workflows/renovate-fixups.yml` runs `create-baseplate sync`, which writes that version's agent files for the game's add-ons and merges them with the game's own edits the way git merges a branch:
+
+- A file the game didn't touch takes the new version, and a file the template dropped goes, unless the game changed it.
+- An edit the template didn't touch stays, and edits to different lines of the same file merge.
+- A file the game deleted stays deleted.
+- Where both changed the same lines, the game's file stays and the template's version goes beside it as `<file>.baseplate-new`. The check fails until someone merges it by hand and deletes that file.
+
+`.baseplate/agent-files.json` records the files as the template last wrote them, the base of the next merge; the guard keeps agents from editing it. The check fails while the agent files lag behind the pin, and `mise run install` runs the sync when the pin moved. Run `pnpm dlx create-baseplate@<version> sync` to move by hand, or add `--check` to only see whether anything would change.
+
 ## Windows
 
 `.claude/skills` links to `.agents/skills`. A clone where git doesn't make symbolic links checks it out as a small text file; `mise run install` turns it back into a link (a junction) and tells git to leave it alone.

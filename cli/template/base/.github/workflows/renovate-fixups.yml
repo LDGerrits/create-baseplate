@@ -1,8 +1,13 @@
-name: Lock mise tools
+name: Finish Renovate's updates
 
-# mise.toml is locked: `mise install` refuses a tool that mise.lock doesn't list with its checksums.
-# Renovate updates a tool's pin in mise.toml but not mise.lock (the hosted Renovate app runs no
-# post-upgrade commands), so this regenerates mise.lock on Renovate's branches and pushes it.
+# The hosted Renovate app runs no post-upgrade commands, so this finishes two kinds of update on
+# Renovate's branches and pushes the result:
+# - mise.toml is locked: `mise install` refuses a tool that mise.lock doesn't list with its
+#   checksums. Renovate updates a tool's pin in mise.toml but not mise.lock, so this runs `mise lock`.
+# - package.json's `baseplate.version` pins the create-baseplate whose agent files (AGENTS.md,
+#   skills, hooks) the game keeps. When Renovate moves it, `create-baseplate sync` brings them up to
+#   that version, keeping the game's own edits; a clash it can't merge fails the check until a
+#   person merges it.
 #
 # A push with the default GITHUB_TOKEN doesn't start CI again, so the update would stay red. Give
 # this workflow a GitHub App with Contents: read and write on this repository, installed on it, as
@@ -11,18 +16,18 @@ name: Lock mise tools
 on:
   push:
     branches: ["renovate/**"]
-    paths: ["**/mise.toml", "**/mise.lock"]
+    paths: ["**/mise.toml", "**/mise.lock", "package.json"]
 
 permissions:
   contents: write
 
 concurrency:
-  group: mise-lock-${{ github.ref }}
+  group: renovate-fixups-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   lock:
-    name: Regenerate mise.lock
+    name: Lock tools and sync agent files
     # Only Renovate's own pushes: a person's push to its branch is left alone.
     if: github.actor == 'renovate[bot]'
     runs-on: ubuntu-latest
@@ -43,7 +48,7 @@ jobs:
         with:
           version: 2026.11.8
           install: false
-      - name: Lock and push
+      - name: Lock, sync and push
         env:
           # Safe mode: mise reads the configs without running their hooks or env scripts, since the
           # branch's mise.toml is what changed.
@@ -53,8 +58,16 @@ jobs:
           for lock in $(git ls-files -- '*mise.lock'); do
             (cd "$(dirname "$lock")" && mise trust --quiet . && mise lock)
           done
-          if git diff --quiet; then exit 0; fi
+          if [ -f .baseplate/agent-files.json ]; then
+            mise install --quiet node pnpm
+            pin=$(mise exec -- node -p 'require("./package.json").baseplate?.version ?? ""')
+            # The version Renovate proposes, released at least two weeks ago (renovate.json). A clash
+            # leaves a .baseplate-new file beside the game's, which the check then fails on.
+            if [ -n "$pin" ]; then mise exec -- pnpm dlx "create-baseplate@$pin" sync || true; fi
+          fi
+          if [ -z "$(git status --porcelain)" ]; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit --all --quiet --message "Lock the updated mise tools"
+          git add --all
+          git commit --quiet --message "Lock the updated tools and sync the agent files"
           git push

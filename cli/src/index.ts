@@ -12,6 +12,7 @@ import { makeMultiPlace, PLACES } from "./helpers/makeMultiPlace.ts";
 import { scaffoldProject } from "./helpers/scaffoldProject.ts";
 import { recordOrigin, setProjectName } from "./helpers/setProjectName.ts";
 import { findConflict, installAddOns } from "./installers/index.ts";
+import { recordAgentFiles, runSync } from "./sync/command.ts";
 import { nameProblem } from "./utils/appName.ts";
 import { logger, logToStderr } from "./utils/logger.ts";
 
@@ -20,6 +21,8 @@ const { version } = createRequire(import.meta.url)("../package.json") as { versi
 let json = false;
 
 async function main() {
+	// `create-baseplate sync [--check]`, in a game: update its agent files to this version's template.
+	if (process.argv[2] === "sync") process.exit(runSync(process.cwd(), version, process.argv.includes("--check")));
 	const options = await runCli(version);
 	if (options === undefined) return;
 	json = options.json;
@@ -55,6 +58,7 @@ async function main() {
 	installAddOns(options.dir, options.addOns);
 	if (options.addOns.places === "multi") makeMultiPlace(options.dir, options.name);
 	recordOrigin(options.dir, version, options.addOns);
+	recordAgentFiles(options.dir, version);
 	// The template's lockfile lists the base's packages only, until an install adds the add-ons'.
 	const packagesChanged = packages() !== basePackages;
 	const toolsChanged = tools() !== baseTools;
