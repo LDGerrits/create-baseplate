@@ -12,27 +12,29 @@ const newService = () => PlayerDataService.withCollection(`Test_${++collections}
 // Lapis and its mock DataStore move only on RunService.PostSimulation, which fires only while physics
 // runs. It does in ree, Studio's play mode and a live server, but not in an Open Cloud execution
 // session (`mise run test:engine` in CI), where a load would wait forever; there these skip.
-const whileSimulating = RunService.IsRunning() ? it : it.skip;
+const whileSimulating = RunService.IsRunning() ? describe : describe.skip;
 
 describe("PlayerDataService", () => {
 	beforeAll(() => {
 		setConfig({ dataStoreService: new DataStoreServiceMock() });
 	});
 
-	whileSimulating("starts a new player with the defaults", async () => {
-		const service = newService();
-		expect(await service.load(1)).toBe(true);
-		expect(service.get(1)).toEqual(DEFAULT_PLAYER_DATA);
-	});
+	whileSimulating("with data loaded", () => {
+		it("starts a new player with the defaults", async () => {
+			const service = newService();
+			expect(await service.load(1)).toBe(true);
+			expect(service.get(1)).toEqual(DEFAULT_PLAYER_DATA);
+		});
 
-	whileSimulating("keeps an update after the player leaves and rejoins", async () => {
-		const service = newService();
-		await service.load(1);
-		service.update(1, (data) => ({ ...data, coins: data.coins + 5 }));
-		service.release(1);
-		expect(service.get(1)).toBeUndefined();
-		await service.load(1);
-		expect(service.get(1)?.coins).toBe(5);
+		it("keeps an update after the player leaves and rejoins", async () => {
+			const service = newService();
+			await service.load(1);
+			service.update(1, (data) => ({ ...data, coins: data.coins + 5 }));
+			service.release(1);
+			expect(service.get(1)).toBeUndefined();
+			await service.load(1);
+			expect(service.get(1)?.coins).toBe(5);
+		});
 	});
 
 	it("changes nothing for a player who isn't loaded", () => {
