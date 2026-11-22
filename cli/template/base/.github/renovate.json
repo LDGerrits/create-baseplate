@@ -26,5 +26,15 @@
 		}
 	],
 	"description": "Updates for this game. Its CI runs the full check on each update, so an update merges only when the game still builds and passes its tests.",
-	"internalChecksFilter": "strict"
+	"internalChecksFilter": "strict",
+	"customManagers": [
+		{
+			"description": "The create-baseplate whose agent files (AGENTS.md, skills, hooks) the game keeps: .github/workflows/renovate-fixups.yml syncs them on the update's branch",
+			"customType": "regex",
+			"managerFilePatterns": ["/^package\\.json$/"],
+			"matchStrings": ["\"baseplate\":\\s*\\{\\s*\"version\":\\s*\"(?<currentValue>[^\"]+)\""],
+			"depNameTemplate": "create-baseplate",
+			"datasourceTemplate": "npm"
+		}
+	]
 }

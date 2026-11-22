@@ -25,4 +25,4 @@ Under **Settings > Secrets and variables > Actions** of the game's repository:
 | --- | --- | --- |
 | `ROBLOX_OPEN_CLOUD_API_KEY` | secret | Runs every spec, engine specs included, in a real Roblox server. Without it and the two variables, that job shows as skipped. |
 | `ROBLOX_UNIVERSE_ID`, `ROBLOX_PLACE_ID` | variables | The test experience and place, as above. |
-| `BOT_APP_CLIENT_ID`, `BOT_APP_PRIVATE_KEY` | secrets | A GitHub App with Contents read and write on the repository. When Renovate updates a tool, the lock workflow pushes the new `mise.lock` as this app, so CI runs again and the update can merge. |
+| `BOT_APP_CLIENT_ID`, `BOT_APP_PRIVATE_KEY` | secrets | A GitHub App with Contents read and write on the repository. When Renovate updates a tool or create-baseplate, `.github/workflows/renovate-fixups.yml` pushes the new `mise.lock` or the synced agent files as this app, so CI runs again and the update can merge. |

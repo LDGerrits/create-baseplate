@@ -6,7 +6,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["**", "!*.project.json", "!pnpm-lock.yaml", "!**/*.md"]
+		"includes": ["**", "!*.project.json", "!pnpm-lock.yaml", "!.baseplate", "!**/*.md"]
 	},
 	"formatter": {
 		"enabled": true,
