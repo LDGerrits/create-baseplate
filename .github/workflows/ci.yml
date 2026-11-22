@@ -72,7 +72,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          # changeset compares with the base branch, so it needs the history back to it.
+          # changeset compares with the base branch: the full history brings origin/<base> along,
+          # since persist-credentials: false leaves no token for a later git fetch.
           fetch-depth: 0
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
@@ -80,7 +81,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Check for a changeset
         run: |
-          git fetch --no-tags origin "$BASE_REF"
           pnpm changeset status --since "origin/$BASE_REF" || {
             echo "::error::This pull request changes cli/src or cli/template without a changeset. Run \`pnpm changeset\`, pick the bump and say what changed for someone creating a game."
             exit 1
