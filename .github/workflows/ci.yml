@@ -59,33 +59,66 @@ jobs:
       - run: node .github/scripts/check-mise-pins.ts
       - run: mise run ci
 
+  changeset:
+    # A change to what create-baseplate ships (cli/src, cli/template) needs a changeset, so the next
+    # release says what changed for someone creating a game. .changeset/config.json's
+    # changedFilePatterns limits it to those folders. Renovate's updates and the release pull request
+    # carry none, by design.
+    name: Changeset
+    if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'renovate[bot]' && !startsWith(github.head_ref, 'renovate/') && !startsWith(github.head_ref, 'changeset-release/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # changeset compares with the base branch, so it needs the history back to it.
+          fetch-depth: 0
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        with:
+          version: 2026.11.8
+      - run: pnpm install --frozen-lockfile
+      - name: Check for a changeset
+        run: |
+          git fetch --no-tags origin "$BASE_REF"
+          pnpm changeset status --since "origin/$BASE_REF" || {
+            echo "::error::This pull request changes cli/src or cli/template without a changeset. Run \`pnpm changeset\`, pick the bump and say what changed for someone creating a game."
+            exit 1
+          }
+        env:
+          BASE_REF: ${{ github.base_ref }}
+
+  matrix:
+    # The sets of add-ons the jobs below create games with, generated from the CLI's questions and
+    # the add-ons' conflicts (.github/scripts/generate-matrix.ts, which says what each set covers).
+    name: Add-on sets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      create: ${{ steps.generate.outputs.create }}
+      windows: ${{ steps.generate.outputs.windows }}
+      engine: ${{ steps.generate.outputs.engine }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        with:
+          version: 2026.11.8
+      - id: generate
+        run: node .github/scripts/generate-matrix.ts
+
   create:
     # What a user gets: create a game with the CLI, then run that game's own checks: with no
-    # add-ons, each add-on alone, and two sets that use every question together.
+    # add-ons, each add-on alone, every question answered together, and enough more that every two
+    # choices meet in some game.
     name: Created game (${{ matrix.addOns }})
+    needs: matrix
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
-      matrix:
-        addOns:
-          - ""
-          - --state charm
-          - --state reflex
-          - --data profilestore
-          - --data lapis
-          - --entities components
-          - --entities jecs
-          - --ui vide
-          - --assets asphalt
-          - --release darklua
-          - --places multi
-          - --places multi --ui vide --state charm --data profilestore --entities jecs --assets asphalt --release darklua
-          - --places multi --state reflex --data lapis --entities components
-          - --state charm --data profilestore --entities components --release darklua
-          - --state reflex --data lapis --entities jecs --assets asphalt
-          - --ui vide --data profilestore --entities jecs --assets asphalt --release darklua
-          - --ui vide --state charm --data lapis --entities components
+      matrix: ${{ fromJSON(needs.matrix.outputs.create) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -114,14 +147,12 @@ jobs:
     # A created game on native Windows, where mise runs the tasks with cmd: the defaults, and every
     # option together. The tasks run their steps without a shell (scripts/each-place.ts).
     name: Created game on Windows (${{ matrix.addOns }})
+    needs: matrix
     runs-on: windows-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
-      matrix:
-        addOns:
-          - ""
-          - --places multi --ui vide --state charm --data profilestore --entities jecs --assets asphalt --release darklua
+      matrix: ${{ fromJSON(needs.matrix.outputs.windows) }}
     defaults:
       run:
         shell: bash
@@ -151,7 +182,7 @@ jobs:
     # (in an experience made only for tests: each run uploads to the place, and the key can write
     # every place of its experience); without the variables the job is skipped.
     name: Created game in Roblox (${{ matrix.addOns }})
-    needs: create
+    needs: [matrix, create]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -159,13 +190,8 @@ jobs:
       # The runs share the test place, so one at a time within a workflow run; the concurrency
       # group below keeps the same option set of two runs from overlapping.
       max-parallel: 1
-      matrix:
-        addOns:
-          - ""
-          - --state charm --data profilestore --entities components
-          - --ui vide --state charm --data lapis --entities jecs
-          - --state reflex --data lapis --entities jecs
-          - --places multi --data profilestore --entities components
+      # No add-ons, and as few games as it takes for each choice to run once.
+      matrix: ${{ fromJSON(needs.matrix.outputs.engine) }}
     concurrency:
       group: roblox-open-cloud-${{ strategy.job-index }}
       cancel-in-progress: false
