@@ -6,7 +6,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "d=\"$PWD\"; while [ ! -f \"$d/.codex/hooks.json\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; cd \"$d\" && mise exec -- node .agents/hooks/guard.ts"
+						"command": "d=\"$PWD\"; while [ ! -f \"$d/.agents/hooks/run\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; sh \"$d/.agents/hooks/run\" guard.ts claude"
 					}
 				]
 			}
@@ -20,7 +20,7 @@
 					},
 					{
 						"type": "command",
-						"command": "d=\"$PWD\"; while [ ! -f \"$d/.codex/hooks.json\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; cd \"$d\" && mise exec -- node .agents/hooks/check.ts",
+						"command": "d=\"$PWD\"; while [ ! -f \"$d/.agents/hooks/run\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; sh \"$d/.agents/hooks/run\" check.ts claude",
 						"timeout": 180
 					}
 				]

@@ -4,7 +4,7 @@ A Roblox game in TypeScript: roblox-ts compiled by Sloptor, placed in the game b
 
 ## Checking your work
 
-`mise run check` is the check: it formats, compiles, lints, builds the place, runs the tests and renders the UI stories, in about ten seconds. Run it after each change and fix what it reports until it passes. When you stop, a hook runs it again and hands back any failure; the commit hook runs it on what you commit.
+`mise run check` is the check: it formats, compiles, lints, builds the place, runs the tests and renders the UI stories, in about ten seconds. Run it after each change and fix what it reports until it passes. In Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI, a hook runs it again when you stop and hands back any failure; in any tool, the commit hook runs it on what you commit.
 
 - While iterating, narrower loops are faster: `mise run compile` for type errors, `mise run test` for the tests, `mise run ui --filter <name>` for one story's picture.
 - When a lint rule is wrong for one line, disable it on that line with a comment saying why.
