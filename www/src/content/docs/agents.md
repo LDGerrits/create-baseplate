@@ -7,6 +7,8 @@ description: AGENTS.md, the check, the hooks, the skills and the language server
 
 Every game has an `AGENTS.md`, which Claude Code (through `CLAUDE.md`), Codex, Cursor, Copilot and Gemini CLI (through `.gemini/settings.json`) read. It holds what the code can't show: where code goes and why, the rules the code follows, which test fits what, and what roblox-ts does differently from JavaScript.
 
+Models know roblox-ts, Flamework and Rogen poorly, and the Roblox API changes faster than their training. So `AGENTS.md` opens by telling the agent to look things up rather than recall them, and where: the doc comments in `@rbxts/types` (each with a link to Roblox's docs, which serve Markdown), the `.d.ts` files and READMEs of the installed packages, and `rogen doc`. All of these match the versions the game has installed. Each add-on adds its own line, such as Charm's README, which is its full API. Agents follow docs that sit in `AGENTS.md` far more reliably than ones they'd have to decide to look for.
+
 ## The check
 
 `mise run check` formats, compiles, lints, builds the place, verifies every import in it resolves, runs the tests and renders the UI stories, in about ten seconds. The agent runs it after each change.

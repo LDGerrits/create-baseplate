@@ -82,6 +82,11 @@
 			"file": "eslint.config.ts",
 			"from": "\t\t\t\"react-x\": { importSource: \"@rbxts/react\", version: \"17.0.2\" },\n",
 			"to": ""
+		},
+		{
+			"file": "AGENTS.md",
+			"from": "- React: `node_modules/@rbxts/react/README.md` (how React Lua differs) and `src/index.d.ts`; its hooks in `node_modules/@rbxts/pretty-react-hooks/README.md`.\n",
+			"to": "- Vide: `node_modules/@rbxts/vide/README.md` and `src/index.d.ts`; the guide is at https://centau.github.io/vide/.\n"
 		}
 	]
 }

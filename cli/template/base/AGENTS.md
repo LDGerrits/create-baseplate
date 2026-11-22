@@ -2,6 +2,17 @@
 
 A Roblox game in TypeScript: roblox-ts compiled by Sloptor, placed in the game by Rogen, with Flamework for services and controllers and React for the UI. The code runs as Luau, not JavaScript (see the last section).
 
+## Look it up, don't recall it
+
+What you remember of roblox-ts, Flamework, Rogen and the Roblox API is likely out of date or wrong. Before you use an API you aren't sure of, read the docs that match the installed versions:
+
+- Roblox API: search `node_modules/@rbxts/types/include/generated/None.d.ts` for the class or member. Each has a doc comment and a `create.roblox.com` link; add `.md` to that link for the page as Markdown. Start from https://create.roblox.com/docs/llms.txt rather than guessing a URL.
+- roblox-ts's own types (`Promise`, arrays, maps): `node_modules/@rbxts/compiler-types/types/`.
+- Flamework: the `.d.ts` files in `node_modules/@flamework/core/out/` and `node_modules/@flamework/networking/out/` (events, functions, middleware).
+- React: `node_modules/@rbxts/react/README.md` (how React Lua differs) and `src/index.d.ts`; its hooks in `node_modules/@rbxts/pretty-react-hooks/README.md`.
+- Any other package: its `README.md` and `.d.ts` files in `node_modules/<name>/`.
+- Rogen: `rogen doc <topic>` and `rogen help <command> --json`. Other tools: `<tool> --help`, and the skills below for how this game uses them.
+
 ## Checking your work
 
 `mise run check` is the check: it formats, compiles, lints, builds the place, runs the tests and renders the UI stories, in about ten seconds. Run it after each change and fix what it reports until it passes. In Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI, a hook runs it again when you stop and hands back any failure; in any tool, the commit hook runs it on what you commit.
