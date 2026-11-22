@@ -14,8 +14,8 @@ Turn agent-baseplate into **Baseplate**: a CLI that creates a roblox-ts game set
 
 ```
 cli/                 create-baseplate: prompts, flags, copy base, apply extras, install
-  template/base/     a complete game that passes `mise run check` on its own
-  template/extras/   one folder per add-on choice: files, a manifest, its AGENTS.md section and tests
+  template/<language>/base/     a complete game that passes `mise run check` on its own (typescript, luau)
+  template/<language>/extras/   one folder per add-on choice: files, a manifest, its AGENTS.md section and tests
 www/                 the docs site: Astro + Starlight, llms.txt, a Markdown copy of each page
 AGENTS.md            how to work on this repo (not the template's AGENTS.md)
 ```

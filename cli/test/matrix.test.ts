@@ -1,56 +1,64 @@
-// CI's sets of created games (.github/scripts/generate-matrix.ts) cover what they promise.
+// CI's sets of created games (.github/scripts/generate-matrix.ts) cover what they promise, in each language.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import {
-	type Answers,
-	allowed,
-	allPairs,
-	flagsOf,
-	matrices,
-	pairsOf,
-	questions,
-} from "../../.github/scripts/generate-matrix.ts";
-import { addOns } from "../src/installers/index.ts";
+import { type Answers, allMatrices, generators } from "../../.github/scripts/generate-matrix.ts";
+import { addOnsByLanguage, DEFAULT_LANGUAGE, type Language } from "../src/installers/index.ts";
 
-const flags = (games: Answers[]) => games.map(flagsOf);
+for (const [language, generator] of Object.entries(generators) as [Language, (typeof generators)[Language]][]) {
+	const { allowed, allPairs, flagsOf, matrices, pairsOf, questions } = generator;
+	const flags = (games: Answers[]) => games.map(flagsOf);
+	const prefix = language === DEFAULT_LANGUAGE ? "" : `--language ${language}`;
+	const withPrefix = (rest: string) => [prefix, rest].filter((part) => part !== "").join(" ");
 
-test("creates a game with no add-ons, and with each choice alone", () => {
-	const created = flags(matrices.create);
-	assert.equal(created[0], "");
-	for (const addOn of addOns) {
-		for (const choice of addOn.choices) {
-			if (choice.value !== addOn.defaultValue) assert.ok(created.includes(`--${addOn.name} ${choice.value}`));
+	test(`${language}: creates a game with no add-ons, and with each choice alone`, () => {
+		const created = flags(matrices.create);
+		assert.equal(created[0], prefix);
+		for (const addOn of addOnsByLanguage[language]) {
+			for (const choice of addOn.choices) {
+				if (choice.value !== addOn.defaultValue) {
+					assert.ok(created.includes(withPrefix(`--${addOn.name} ${choice.value}`)), `--${addOn.name} ${choice.value}`);
+				}
+			}
 		}
-	}
+	});
+
+	test(`${language}: creates a game with every question answered, once per UI`, () => {
+		const uis = questions.find((question) => question.name === "ui")?.values ?? [];
+		for (const ui of uis) {
+			const all = matrices.create.find(
+				(game) => game.ui === ui && questions.every((q) => q.name === "ui" || game[q.name] !== q.defaultValue),
+			);
+			assert.ok(all, `every question with ${ui}`);
+		}
+	});
+
+	test(`${language}: every two choices of different questions meet in some created game`, () => {
+		const covered = new Set(matrices.create.flatMap(pairsOf));
+		const missing = allPairs().filter((pair) => !covered.has(pair));
+		assert.deepEqual(missing, []);
+	});
+
+	test(`${language}: creates no game the CLI would refuse, and stays small`, () => {
+		for (const games of Object.values(matrices)) {
+			for (const game of games) assert.ok(allowed(game), flagsOf(game));
+		}
+		assert.ok(matrices.create.length <= 20, `${matrices.create.length} games`);
+	});
+
+	test(`${language}: runs each choice once in the real engine`, () => {
+		const run = new Set(matrices.engine.flatMap((game) => Object.entries(game).map((entry) => entry.join("="))));
+		for (const question of questions) {
+			for (const value of question.values) assert.ok(run.has(`${question.name}=${value}`), `${question.name}=${value}`);
+		}
+	});
+}
+
+test("reads the manifests' conflicts, such as Reflex with Vide", () => {
+	assert.equal(generators.typescript.allowed({ ui: "vide", state: "reflex" }), false);
 });
 
-test("creates a game with every question answered, once per UI", () => {
-	for (const ui of ["react", "vide"]) {
-		const all = matrices.create.find(
-			(game) => game.ui === ui && questions.every((q) => q.name === "ui" || game[q.name] !== q.defaultValue),
-		);
-		assert.ok(all, `every question with ${ui}`);
-	}
-});
-
-test("every two choices of different questions meet in some created game", () => {
-	const covered = new Set(matrices.create.flatMap(pairsOf));
-	const missing = allPairs().filter((pair) => !covered.has(pair));
-	assert.deepEqual(missing, []);
-});
-
-test("creates no game the CLI would refuse, and stays small", () => {
-	for (const games of Object.values(matrices)) {
-		for (const game of games) assert.ok(allowed(game), flagsOf(game));
-	}
-	// It reads the manifests' conflicts, such as Reflex with Vide.
-	assert.equal(allowed({ ui: "vide", state: "reflex" }), false);
-	assert.ok(matrices.create.length <= 20, `${matrices.create.length} games`);
-});
-
-test("runs each choice once in the real engine", () => {
-	const run = new Set(matrices.engine.flatMap((game) => Object.entries(game).map((entry) => entry.join("="))));
-	for (const question of questions) {
-		for (const value of question.values) assert.ok(run.has(`${question.name}=${value}`), `${question.name}=${value}`);
-	}
+test("CI creates games of every language", () => {
+	assert.ok(allMatrices.create.includes(""));
+	assert.ok(allMatrices.create.includes("--language luau"));
+	assert.ok(allMatrices.windows.includes("--language luau"));
 });

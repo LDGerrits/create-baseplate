@@ -1,0 +1,42 @@
+{
+	"hooks": {
+		"PreToolUse": [
+			{
+				"matcher": "Bash|apply_patch",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "d=\"$PWD\"; while [ ! -f \"$d/.agents/hooks/run\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; sh \"$d/.agents/hooks/run\" guard.ts claude"
+					}
+				]
+			}
+		],
+		"PostToolUse": [
+			{
+				"matcher": "^apply_patch$",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "d=\"$PWD\"; while [ ! -f \"$d/.agents/hooks/run\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; sh \"$d/.agents/hooks/run\" edited.ts claude",
+						"timeout": 30
+					}
+				]
+			}
+		],
+		"Stop": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "d=\"$PWD\"; while [ ! -f \"$d/.codex/hooks.json\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; cd \"$d\" && mise exec -- node .agents/hooks/rogen-check.mjs"
+					},
+					{
+						"type": "command",
+						"command": "d=\"$PWD\"; while [ ! -f \"$d/.agents/hooks/run\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; sh \"$d/.agents/hooks/run\" check.ts claude",
+						"timeout": 180
+					}
+				]
+			}
+		]
+	}
+}

@@ -1,4 +1,4 @@
-# Tools for the CLI and the docs site. The template (cli/template/base) pins its own.
+# Tools for the CLI and the docs site. Each template (cli/template/<language>/base) pins its own.
 [tools]
 node = "24.22.1"
 pnpm = "12.18.0"

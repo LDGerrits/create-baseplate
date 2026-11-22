@@ -7,11 +7,12 @@ The base game brings Flamework and React with a few small helpers they work well
 
 | Question | Flag | Choices |
 | --- | --- | --- |
+| Language | `--language` | `typescript` (default, roblox-ts), `luau` |
 | UI | `--ui` | `react` (default, [React](https://react.dev) for Roblox), `vide` ([Vide](https://github.com/centau/vide)) |
 | Places | `--places` | `single` (default), `multi` |
-| Client state | `--state` | `charm` ([Charm](https://github.com/littensy/charm)), `reflex` ([Reflex](https://github.com/littensy/reflex), no longer updated), `none` |
+| Client state | `--state` | `charm` ([Charm](https://github.com/littensy/charm)), `reflex` ([Reflex](https://github.com/littensy/reflex), no longer updated; TypeScript only), `none` |
 | Player data | `--data` | `profilestore` ([ProfileStore](https://github.com/MadStudioRoblox/ProfileStore)), `lapis` ([Lapis](https://github.com/nezuo/lapis)), `none` |
-| Entities | `--entities` | `components` ([Flamework Components](https://flamework.fireboltofdeath.dev/docs/additional-modules/components)), `jecs` ([Jecs](https://github.com/Ukendio/jecs)), `none` |
+| Entities | `--entities` | `components` ([Flamework Components](https://flamework.fireboltofdeath.dev/docs/additional-modules/components); TypeScript only), `jecs` ([Jecs](https://github.com/Ukendio/jecs)), `none` |
 | Assets | `--assets` | `asphalt` ([Asphalt](https://github.com/jackTabsCode/asphalt)), `none` |
 | Release builds | `--release` | `darklua` ([Darklua](https://darklua.com)), `none` |
 

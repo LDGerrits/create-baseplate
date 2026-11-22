@@ -2,7 +2,7 @@
 // and the docs site) and hand a failure back to the agent before it ends its turn, as a created
 // game's hook does. If the agent already had its chance in this stop, it may stop, so the hook can't
 // loop, and the user is told the check fails. A change to the template needs its own check too:
-// run `mise run check` in cli/template/base, as AGENTS.md says.
+// run `mise run check` in cli/template/<language>/base, as AGENTS.md says.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 

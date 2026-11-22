@@ -39,28 +39,34 @@ async function main() {
 	const problem = nameProblem(options.name);
 	if (problem !== undefined) fail(problem);
 
-	const conflict = findConflict(options.addOns);
+	const conflict = findConflict(options.language, options.addOns);
 	if (conflict !== undefined) fail(conflict);
 
 	let replaced: string[] = [];
 	try {
-		replaced = scaffoldProject(options.dir);
+		replaced = scaffoldProject(options.dir, options.language);
 	} catch (error) {
 		fail(error instanceof Error ? error.message : String(error));
 	}
 	setProjectName(options.dir, options.name);
+	// The packages: package.json's, and a Luau game's Roblox packages in wally.toml.
 	const packages = () => {
 		const pkg = JSON.parse(fs.readFileSync(path.join(options.dir, "package.json"), "utf8")) as Record<string, unknown>;
-		return JSON.stringify([pkg.dependencies, pkg.devDependencies]);
+		const wally = path.join(options.dir, "wally.toml");
+		return JSON.stringify([
+			pkg.dependencies,
+			pkg.devDependencies,
+			fs.existsSync(wally) ? fs.readFileSync(wally, "utf8") : undefined,
+		]);
 	};
 	const basePackages = packages();
 	// The [tools] of mise.toml, which the template's mise.lock covers until an add-on brings a tool.
 	const tools = () =>
 		/^\[tools\]\n([\s\S]*?)(?=^\[)/m.exec(fs.readFileSync(path.join(options.dir, "mise.toml"), "utf8"))?.[1];
 	const baseTools = tools();
-	installAddOns(options.dir, options.addOns);
-	if (options.addOns.places === "multi") makeMultiPlace(options.dir, options.name);
-	recordOrigin(options.dir, version, options.addOns);
+	installAddOns(options.dir, options.language, options.addOns);
+	if (options.addOns.places === "multi") makeMultiPlace(options.dir, options.name, options.language);
+	recordOrigin(options.dir, version, options.language, options.addOns);
 	recordAgentFiles(options.dir, version);
 	// The template's lockfile lists the base's packages only, until an install adds the add-ons'.
 	const packagesChanged = packages() !== basePackages;
@@ -122,6 +128,7 @@ async function main() {
 				git,
 				committed,
 				installed,
+				language: options.language,
 				addOns: options.addOns,
 				warnings,
 				nextSteps: nextSteps(options.dir, steps),

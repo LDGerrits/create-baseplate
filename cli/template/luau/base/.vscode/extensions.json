@@ -1,0 +1,10 @@
+{
+	"recommendations": [
+		"hverlin.mise-vscode",
+		"johnnymorganz.luau-lsp",
+		"johnnymorganz.stylua",
+		"kampfkarren.selene-vscode",
+		"biomejs.biome",
+		"evaera.vscode-rojo"
+	]
+}

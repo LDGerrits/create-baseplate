@@ -66,6 +66,7 @@ test("records which CLI and add-ons made the game", () => {
 	const pkg = JSON.parse(fs.readFileSync(path.join(cwd, "coin-rush/package.json"), "utf8"));
 	const cli = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, "../package.json"), "utf8"));
 	assert.equal(pkg.baseplate.version, cli.version);
+	assert.equal(pkg.baseplate.language, "typescript");
 	assert.equal(pkg.baseplate.addOns.state, "charm");
 	assert.equal(pkg.baseplate.addOns.ui, "react");
 	assert.doesNotMatch(pkg.description ?? "", /template/i, "a game, not the template");
@@ -239,7 +240,7 @@ test("takes a folder typed at the prompt that only --name can name", { skip: !ha
 	const cwd = tempDir();
 	const shown = typeAnswer(cwd, "--name coin-rush", "Coin Rush\r");
 	assert.doesNotMatch(shown, /can't name the game/);
-	assert.match(shown, /Which UI library/, "goes on to the next question");
+	assert.match(shown, /Which language/, "goes on to the next question");
 });
 
 test("refuses a folder with files at the prompt, before the other questions", { skip: !hasScript }, () => {
@@ -251,7 +252,7 @@ test("refuses a folder with files at the prompt, before the other questions", { 
 	const shown = typeAnswer(cwd, "", "taken\r\u0003");
 	assert.ok(performance.now() - started < 4_000, "ends when cancelled, not at the time limit");
 	assert.match(shown, /already has files in it/);
-	assert.doesNotMatch(shown, /Which UI library/);
+	assert.doesNotMatch(shown, /Which language/);
 });
 
 test("refuses a folder that has files", () => {
@@ -328,6 +329,23 @@ test("takes no add-ons by default", () => {
 	const mise = fs.readFileSync(path.join(cwd, "my-game/mise.toml"), "utf8");
 	assert.doesNotMatch(mise, /asphalt|darklua/);
 	assert.ok(!fs.existsSync(path.join(cwd, "my-game/src/features/player-data")));
+});
+
+test("refuses a choice the language doesn't have", () => {
+	const cwd = tempDir();
+	const run = create(cwd, "my-game", "--no-git", "--language", "luau", "--entities", "components");
+	assert.equal(run.status, 1);
+	const error = JSON.parse(run.stdout).error as string;
+	assert.match(error, /--entities components isn't a Luau choice/);
+	assert.match(error, /jecs, none/);
+	assert.ok(!fs.existsSync(path.join(cwd, "my-game")), "creates nothing");
+});
+
+test("refuses a language that doesn't exist", () => {
+	const cwd = tempDir();
+	const run = create(cwd, "my-game", "--no-git", "--language", "python");
+	assert.equal(run.status, 1);
+	assert.match(JSON.parse(run.stdout).error, /typescript, luau/);
 });
 
 test("refuses an add-on choice that doesn't exist", () => {
