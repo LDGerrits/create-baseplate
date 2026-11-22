@@ -35,7 +35,7 @@
 		"node": ">=22.12"
 	},
 	"scripts": {
-		"build": "tsup && node scripts/copyTemplate.ts",
+		"build": "tsup && node scripts/copyTemplate.ts && node scripts/copyDocs.ts",
 		"prepack": "pnpm run build",
 		"dev": "tsup --watch",
 		"typecheck": "tsc",

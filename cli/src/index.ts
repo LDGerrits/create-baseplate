@@ -5,6 +5,8 @@ import path from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { runCli } from "./cli/index.ts";
+import { DOCS_DIR } from "./consts.ts";
+import { runDoc } from "./doc/command.ts";
 import { commitAll, initGit } from "./helpers/git.ts";
 import { installDependencies, isMiseInstalled } from "./helpers/installDependencies.ts";
 import { logNextSteps, nextSteps } from "./helpers/logNextSteps.ts";
@@ -26,6 +28,8 @@ async function main() {
 	if (process.argv[2] === "sync" && isGame(process.cwd())) {
 		process.exit(runSync(process.cwd(), version, process.argv.includes("--check")));
 	}
+	// `create-baseplate doc [topic]`: this version's docs, offline. A game named doc is `./doc`.
+	if (process.argv[2] === "doc") process.exit(runDoc(DOCS_DIR, process.argv.slice(3)));
 	const options = await runCli(version);
 	if (options === undefined) return;
 	json = options.json;

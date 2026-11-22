@@ -12,6 +12,7 @@ What you remember of roblox-ts, Flamework, Rogen and the Roblox API is likely ou
 - React: `node_modules/@rbxts/react/README.md` (how React Lua differs) and `src/index.d.ts`; its hooks in `node_modules/@rbxts/pretty-react-hooks/README.md`.
 - Any other package: its `README.md` and `.d.ts` files in `node_modules/<name>/`.
 - Rogen: `rogen doc <topic>` and `rogen help <command> --json`. Other tools: `<tool> --help`, and the skills below for how this game uses them.
+- How this game is set up (the check, tests, UI, the world, publishing, its keys): `mise run doc <topic>`, Baseplate's docs for the version this game came from; `mise run doc` lists the topics.
 
 ## Checking your work
 

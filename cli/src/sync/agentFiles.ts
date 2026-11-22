@@ -8,9 +8,9 @@ export type Files = Record<string, string>;
 
 /**
  * What the template ships for agents, and keeps current in a game: its instructions, skills,
- * hooks, the agent tools' settings, and the script that runs this update. Everything else in a game
- * is the game's own once created. Workflows stay out: pushing one needs a GitHub App with the
- * Workflows permission, which the update's workflow doesn't ask for.
+ * hooks, the agent tools' settings, and the scripts that run this update and print the docs.
+ * Everything else in a game is the game's own once created. Workflows stay out: pushing one needs a
+ * GitHub App with the Workflows permission, which the update's workflow doesn't ask for.
  */
 const AGENT_FILES = [
 	/^AGENTS\.md$/,
@@ -24,6 +24,7 @@ const AGENT_FILES = [
 	/^\.github\/hooks\//,
 	/^\.devcontainer\//,
 	/^scripts\/agent-files\.ts$/,
+	/^scripts\/doc\.ts$/,
 ];
 /** The folders that hold them, besides the root's own files. */
 const AGENT_FOLDERS = [
