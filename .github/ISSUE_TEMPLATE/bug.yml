@@ -1,0 +1,39 @@
+name: Bug
+description: Something in create-baseplate or a game it created doesn't work.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, and what happened instead. Paste the error output.
+    validations:
+      required: true
+  - type: textarea
+    id: baseplate
+    attributes:
+      label: The game's `baseplate` block
+      description: From the game's `package.json`; it says which version of create-baseplate made the game, with which add-ons. If creating the game failed, the command you ran.
+      render: json
+      placeholder: |
+        "baseplate": { "version": "…", "addOns": { … } }
+    validations:
+      required: true
+  - type: input
+    id: mise
+    attributes:
+      label: "`mise --version`"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: Windows 11, WSL (Ubuntu 24.04), macOS 15, …
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent tool, if one was involved
+      placeholder: Claude Code 2.x, Codex, Cursor, Copilot, none
