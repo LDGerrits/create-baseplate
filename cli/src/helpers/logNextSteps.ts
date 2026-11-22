@@ -9,7 +9,7 @@ export interface NextStepsState {
 	packagesChanged: boolean;
 	/** The add-ons brought tools, which the template's mise.lock doesn't record yet. */
 	toolsChanged: boolean;
-	/** The first commit waits for the install, so the lockfile it holds matches package.json. */
+	/** The first commit waits for the install, so the lockfiles it holds match package.json and mise.toml. */
 	commit: boolean;
 	/** In a multi-place game, the place Studio commands name. */
 	place: string;

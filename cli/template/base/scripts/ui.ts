@@ -1,8 +1,8 @@
 // Renders every UI story (`*.story.tsx`) offline with rur and lists each picture, so you can look
 // at it. Run it through `mise run ui`, which compiles first. Extra arguments go to `rur-native sweep`,
 // such as `--filter clicker-button`. Fails when a story doesn't render cleanly.
-// With --check, as `mise run check` runs it: prints only the stories that fail, and renders without
-// Studio's fonts when it can't find them, so a story that crashes fails the check even in CI.
+// With --check, as `mise run check` runs it: prints only the stories that fail. Without Studio's
+// fonts it renders without text, so a story that crashes still fails, even in CI.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -28,12 +28,13 @@ const args = process.argv.slice(2).filter((arg) => arg !== "--check");
 /** What a person reads at `mise run ui`; the check prints only what fails. */
 const say = check ? () => {} : (line: string) => console.log(line);
 
-// Without Studio's fonts rur draws no text; `rur-native doctor` says when it can't find them.
+// Without Studio's fonts rur draws no text; `rur-native doctor` says when it can't find them. The
+// pictures still show layout, size and overlap, so render them anyway, as in a cloud session.
 const doctor = spawnSync("rur-native", ["doctor"], { encoding: "utf8" });
 const noStudio = `${doctor.stdout}${doctor.stderr}`.split("\n").find((line) => /^!\s*studio/.test(line));
 if (noStudio && !check) {
-	console.log(`rur can't draw text: ${noStudio.replace(/^!\s*studio\s*/, "")}`);
-	process.exit(1);
+	console.log(`! rur can't draw text, so the pictures have none: ${noStudio.replace(/^!\s*studio\s*/, "")}`);
+	console.log("  Judge layout, size and overlap from them.");
 }
 
 // `mise run ui -- --story <story> --actions '<json>'`: render one story after clicks or key presses,
@@ -127,8 +128,8 @@ for (const record of report.records) {
 		.replace(/^(.*\/)?out\//, "")
 		.replace(/\.story\.luau$/, "");
 	const picture = path.join(OUT, record.out, "render.png");
-	// The check renders without fonts when Studio isn't there; only a story that breaks fails it.
-	const missingFonts = check ? [] : (record.missingFonts ?? []);
+	// Without Studio, stories render without fonts; only a story that breaks fails then.
+	const missingFonts = check || noStudio ? [] : (record.missingFonts ?? []);
 	if (record.clean && missingFonts.length === 0) {
 		say(`✓ ${name}: ${picture}`);
 		continue;

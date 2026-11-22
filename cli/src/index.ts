@@ -85,10 +85,16 @@ async function main() {
 	}
 
 	let committed = false;
-	if (git && !installed && packagesChanged) {
-		// Committed now, the lockfile wouldn't match package.json, and the game's install fails on that.
+	// Committed now, pnpm-lock.yaml wouldn't match package.json, or mise.lock wouldn't record the
+	// add-ons' tools, and the game's install (locked, frozen) fails on that.
+	const waitForInstall = git && !installed && (packagesChanged || toolsChanged);
+	if (waitForInstall) {
+		const stale = [
+			...(packagesChanged ? ["pnpm-lock.yaml doesn't list the add-ons' packages"] : []),
+			...(toolsChanged ? ["mise.lock doesn't record the add-ons' tools"] : []),
+		];
 		warnings.push(
-			"Nothing is committed yet: pnpm-lock.yaml doesn't list the add-ons' packages until the next steps install them. Commit after that.",
+			`Nothing is committed yet: ${stale.join(" and ")} until the next steps install them. Commit after that.`,
 		);
 	} else if (git) {
 		// Once installed, this commit goes through the project's commit hook, which runs its check.
@@ -101,7 +107,7 @@ async function main() {
 	}
 
 	for (const warning of warnings) logger.warn(warning);
-	const steps = { installed, packagesChanged, toolsChanged, commit: git && !committed && packagesChanged, place };
+	const steps = { installed, packagesChanged, toolsChanged, commit: waitForInstall, place };
 	if (options.json) {
 		console.log(
 			JSON.stringify({

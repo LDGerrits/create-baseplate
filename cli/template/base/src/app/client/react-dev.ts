@@ -6,7 +6,7 @@ import { RunService, Workspace } from "@rbxts/services";
 // In Studio, React checks hooks and keys and gives readable errors; live servers skip that cost.
 ReactGlobals.__DEV__ = RunService.IsStudio();
 
-// To inspect the UI's components, props and state, run the React DevTools app (`npx react-devtools`)
+// To inspect the UI's components, props and state, run the React DevTools app (`mise x -- pnpm dlx react-devtools`)
 // and set the attribute `ReactDevTools` to true on Workspace in Studio before you play.
 if (RunService.IsStudio() && Workspace.GetAttribute("ReactDevTools") === true) {
 	ReactGlobals.__PROFILE__ = true;

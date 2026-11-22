@@ -102,6 +102,21 @@ test("locks the tools an add-on brings before installing them", () => {
 	assert.ok(!steps("plain").includes("mise lock"), "the template's mise.lock already covers its own tools");
 });
 
+test("leaves the first commit until mise.lock records the tools an add-on brings", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
+	const run = create(cwd, "my-game", "--release", "darklua");
+	assert.equal(run.status, 0, run.stderr);
+	const result = JSON.parse(run.stdout) as { committed: boolean; warnings: string[]; nextSteps: string[] };
+	assert.equal(result.committed, false);
+	assert.match(result.warnings.join("\n"), /mise\.lock doesn't record/);
+	const steps = result.nextSteps;
+	const lock = steps.indexOf("mise lock");
+	const commit = steps.findIndex((step) => step.startsWith("git add --all && git commit"));
+	assert.ok(lock !== -1 && commit > lock, steps.join("\n"));
+	const log = spawnSync("git", ["log"], { cwd: path.join(cwd, "my-game"), encoding: "utf8" });
+	assert.notEqual(log.status, 0, "no commit yet");
+});
+
 test("says why the game isn't its own git repo", () => {
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));
 	spawnSync("git", ["init", "--quiet"], { cwd });

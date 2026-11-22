@@ -35,7 +35,7 @@
 		},
 		{
 			"file": "README.md",
-			"from": "- **React DevTools:** run `npx react-devtools`, set the attribute `ReactDevTools` to true on Workspace in Studio, and play: the app shows the UI's component tree, props and state. React logs one harmless telemetry error when it connects.\n",
+			"from": "- **React DevTools:** run `mise x -- pnpm dlx react-devtools` in your own terminal, set the attribute `ReactDevTools` to true on Workspace in Studio, and play: the app shows the UI's component tree, props and state. React logs one harmless telemetry error when it connects.\n",
 			"to": ""
 		},
 		{
