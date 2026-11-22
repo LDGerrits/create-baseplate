@@ -63,6 +63,15 @@ test("doesn't bring back a file the game deleted", () => {
 	assert.deepEqual(result.base, { a: "new\n" }, "remembered, so the next update doesn't add it either");
 });
 
+test("refreshes an earlier clash no one merged, and drops it once the files agree", () => {
+	const stale = planSync({ a: "t1\n" }, { a: "mine\n" }, { a: "t2\n" }, () => undefined, ["a"]);
+	assert.equal(stale.write["a.baseplate-new"], "t2\n");
+	assert.deepEqual(stale.conflicts, ["a"]);
+	const settled = planSync({ a: "t1\n" }, { a: "t2\n" }, { a: "t2\n" }, mergeText, ["a"]);
+	assert.deepEqual(settled.remove, ["a.baseplate-new"]);
+	assert.deepEqual(settled.conflicts, []);
+});
+
 // Through the built CLI (`pnpm build` first; turbo's test task does).
 const CLI = path.resolve(import.meta.dirname, "../dist/index.js");
 const BASE = ".baseplate/agent-files.json";
@@ -126,6 +135,34 @@ test("updates a game's agent files from an older template, keeping its own edits
 	assert.match(run.stdout, /write-tests\/SKILL\.md/);
 	assert.notEqual(readBase(dir).version, "0.0.1");
 	assert.equal(sync(dir, "--check").status, 0, "up to date now");
+});
+
+test("keeps a new hook executable, and leaves an agent's worktree inside the game alone", () => {
+	const dir = createGame();
+	const base = readBase(dir);
+	const hook = ".agents/hooks/run";
+	// As if the hook were new in this version: the game and its base lack it.
+	delete base.files[hook];
+	fs.writeFileSync(path.join(dir, BASE), JSON.stringify(base));
+	fs.rmSync(path.join(dir, hook));
+	const worktree = path.join(dir, ".claude/worktrees/feature");
+	fs.mkdirSync(worktree, { recursive: true });
+	fs.writeFileSync(path.join(worktree, ".git"), "gitdir: elsewhere\n");
+	fs.mkdirSync(path.join(worktree, ".agents"));
+	fs.writeFileSync(path.join(worktree, "AGENTS.md.baseplate-new"), "theirs\n");
+
+	const run = sync(dir);
+	assert.equal(run.status, 0, run.stdout + run.stderr);
+	assert.ok((fs.statSync(path.join(dir, hook)).mode & 0o111) !== 0, "still executable");
+	assert.ok(!(".claude/worktrees/feature/AGENTS.md" in readBase(dir).files));
+});
+
+test("takes `sync` as a new game's folder outside a game", () => {
+	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "baseplate-sync-"));
+	temps.push(cwd);
+	const run = spawnSync("node", [CLI, "sync", "--json", "--no-install", "--no-git"], { cwd, encoding: "utf8" });
+	assert.equal(run.status, 0, run.stdout + run.stderr);
+	assert.ok(fs.existsSync(path.join(cwd, "sync", "AGENTS.md")));
 });
 
 test("stops on a clash, leaving the template's version beside the game's", () => {

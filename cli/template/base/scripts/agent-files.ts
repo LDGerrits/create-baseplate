@@ -17,15 +17,39 @@ const pin = (JSON.parse(fs.readFileSync("package.json", "utf8")) as { baseplate?
 	?.version;
 const { version } = JSON.parse(fs.readFileSync(BASE, "utf8")) as { version: string };
 
+// Clashes sit beside agent files: in the root and the agent tools' folders, not in an agent's
+// worktree under .claude/worktrees, which is a checkout of its own.
+const FOLDERS = [
+	".",
+	".agents",
+	".claude",
+	".codex",
+	".cursor",
+	".gemini",
+	path.join(".github", "hooks"),
+	".devcontainer",
+	"scripts",
+];
 const clashes: string[] = [];
-const walk = (folder: string) => {
+const walk = (folder: string, deep: boolean) => {
+	if (!fs.existsSync(folder)) return;
 	for (const entry of fs.readdirSync(folder, { withFileTypes: true })) {
 		const at = path.join(folder, entry.name);
-		if (entry.isDirectory() && !["node_modules", ".git", "out", "build"].includes(entry.name)) walk(at);
-		else if (entry.isFile() && entry.name.endsWith(".baseplate-new")) clashes.push(at);
+		if (entry.isFile() && entry.name.endsWith(".baseplate-new")) clashes.push(at);
+		else if (
+			deep &&
+			entry.isDirectory() &&
+			!fs.existsSync(path.join(at, ".git")) &&
+			at !== path.join(".claude", "worktrees")
+		)
+			walk(at, true);
 	}
 };
-walk(".");
+const findClashes = () => {
+	clashes.length = 0;
+	for (const folder of FOLDERS) walk(folder, folder !== ".");
+};
+findClashes();
 
 let failed = false;
 if (pin !== undefined && pin !== version) {
@@ -40,8 +64,7 @@ if (pin !== undefined && pin !== version) {
 			stdio: "inherit",
 			shell: process.platform === "win32",
 		});
-		clashes.length = 0;
-		walk(".");
+		findClashes();
 		// A clash fails below, from the files it left; any other failure here.
 		if (sync.error !== undefined || (sync.status !== 0 && clashes.length === 0)) failed = true;
 	}

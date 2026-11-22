@@ -12,7 +12,7 @@ import { makeMultiPlace, PLACES } from "./helpers/makeMultiPlace.ts";
 import { scaffoldProject } from "./helpers/scaffoldProject.ts";
 import { recordOrigin, setProjectName } from "./helpers/setProjectName.ts";
 import { findConflict, installAddOns } from "./installers/index.ts";
-import { recordAgentFiles, runSync } from "./sync/command.ts";
+import { isGame, recordAgentFiles, runSync } from "./sync/command.ts";
 import { nameProblem } from "./utils/appName.ts";
 import { logger, logToStderr } from "./utils/logger.ts";
 
@@ -22,7 +22,10 @@ let json = false;
 
 async function main() {
 	// `create-baseplate sync [--check]`, in a game: update its agent files to this version's template.
-	if (process.argv[2] === "sync") process.exit(runSync(process.cwd(), version, process.argv.includes("--check")));
+	// Elsewhere, `sync` is the folder of a new game.
+	if (process.argv[2] === "sync" && isGame(process.cwd())) {
+		process.exit(runSync(process.cwd(), version, process.argv.includes("--check")));
+	}
 	const options = await runCli(version);
 	if (options === undefined) return;
 	json = options.json;

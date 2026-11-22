@@ -59,11 +59,16 @@ jobs:
             (cd "$(dirname "$lock")" && mise trust --quiet . && mise lock)
           done
           if [ -f .baseplate/agent-files.json ]; then
-            mise install --quiet node pnpm
-            pin=$(mise exec -- node -p 'require("./package.json").baseplate?.version ?? ""')
-            # The version Renovate proposes, released at least two weeks ago (renovate.json). A clash
-            # leaves a .baseplate-new file beside the game's, which the check then fails on.
-            if [ -n "$pin" ]; then mise exec -- pnpm dlx "create-baseplate@$pin" sync || true; fi
+            pin=$(grep -A1 '"baseplate"' package.json | sed -n 's/.*"version": *"\([^"]*\)".*/\1/p')
+            synced=$(sed -n 's/^\t"version": *"\([^"]*\)".*/\1/p' .baseplate/agent-files.json)
+            # Only when Renovate moved the pin: the version it proposes, released at least two weeks
+            # ago (renovate.json).
+            if [ -n "$pin" ] && [ "$pin" != "$synced" ]; then
+              mise install --quiet node pnpm
+              # A clash exits 1 and leaves a .baseplate-new file beside the game's, which the check
+              # fails on until a person merges it; any other failure stops here.
+              mise exec -- pnpm dlx "create-baseplate@$pin" sync || git status --porcelain | grep -q '\.baseplate-new' || exit 1
+            fi
           fi
           if [ -z "$(git status --porcelain)" ]; then exit 0; fi
           git config user.name "github-actions[bot]"

@@ -8,7 +8,9 @@ export type Files = Record<string, string>;
 
 /**
  * What the template ships for agents, and keeps current in a game: its instructions, skills,
- * hooks and the agent tools' settings. Everything else in a game is the game's own once created.
+ * hooks, the agent tools' settings, and the script that runs this update. Everything else in a game
+ * is the game's own once created. Workflows stay out: pushing one needs a GitHub App with the
+ * Workflows permission, which the update's workflow doesn't ask for.
  */
 const AGENT_FILES = [
 	/^AGENTS\.md$/,
@@ -20,8 +22,19 @@ const AGENT_FILES = [
 	/^\.cursor\//,
 	/^\.gemini\//,
 	/^\.github\/hooks\//,
-	/^\.github\/workflows\/copilot-setup-steps\.yml$/,
 	/^\.devcontainer\//,
+	/^scripts\/agent-files\.ts$/,
+];
+/** The folders that hold them, besides the root's own files. */
+const AGENT_FOLDERS = [
+	".agents",
+	".claude",
+	".codex",
+	".cursor",
+	".gemini",
+	".github/hooks",
+	".devcontainer",
+	"scripts",
 ];
 
 /** Where a game records its agent files as the template last wrote them, the base of a three-way update. */
@@ -35,21 +48,49 @@ export interface Base {
 	files: Files;
 }
 
-/** The agent files in a folder; symbolic links (such as `.claude/skills`) aren't files of their own. */
-export function readAgentFiles(dir: string): Files {
-	const files: Files = {};
-	const walk = (folder: string) => {
-		for (const entry of fs.readdirSync(path.join(dir, folder), { withFileTypes: true })) {
-			const relative = folder === "" ? entry.name : `${folder}/${entry.name}`;
-			if (entry.isDirectory()) {
-				if (entry.name !== "node_modules" && entry.name !== ".git") walk(relative);
-			} else if (entry.isFile() && !relative.endsWith(CLASH_SUFFIX) && AGENT_FILES.some((re) => re.test(relative))) {
-				files[relative] = fs.readFileSync(path.join(dir, relative), "utf8");
+export interface AgentFiles {
+	files: Files;
+	/** Agent files with a clash left beside them (`<file>.baseplate-new`) that no one has merged yet. */
+	clashes: string[];
+	/** The files that are executable, such as hook scripts. */
+	executable: Set<string>;
+}
+
+const isAgentFile = (relative: string) => AGENT_FILES.some((re) => re.test(relative));
+
+/**
+ * The agent files in a game or a rendered template. Symbolic links (such as `.claude/skills`)
+ * aren't files of their own, and nested checkouts (an agent's worktree under `.claude/worktrees`)
+ * are their own games.
+ */
+export function readAgentFiles(dir: string): AgentFiles {
+	const found: AgentFiles = { files: {}, clashes: [], executable: new Set() };
+	const visit = (relative: string, entry: fs.Dirent) => {
+		if (entry.isDirectory()) {
+			if (!fs.existsSync(path.join(dir, relative, ".git")) && relative !== ".claude/worktrees") walk(relative);
+		} else if (entry.isFile()) {
+			const clashed = relative.endsWith(CLASH_SUFFIX) ? relative.slice(0, -CLASH_SUFFIX.length) : undefined;
+			if (clashed !== undefined) {
+				if (isAgentFile(clashed)) found.clashes.push(clashed);
+			} else if (isAgentFile(relative)) {
+				const at = path.join(dir, relative);
+				found.files[relative] = fs.readFileSync(at, "utf8");
+				if ((fs.statSync(at).mode & 0o111) !== 0) found.executable.add(relative);
 			}
 		}
 	};
-	walk("");
-	return files;
+	const walk = (folder: string) => {
+		for (const entry of fs.readdirSync(path.join(dir, folder), { withFileTypes: true })) {
+			visit(`${folder}/${entry.name}`, entry);
+		}
+	};
+	for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+		if (entry.isFile()) visit(entry.name, entry);
+	}
+	for (const folder of AGENT_FOLDERS) {
+		if (fs.existsSync(path.join(dir, folder)) && fs.statSync(path.join(dir, folder)).isDirectory()) walk(folder);
+	}
+	return found;
 }
 
 export function readBase(dir: string): Base | undefined {
@@ -106,6 +147,8 @@ export function planSync(
 	ours: Files,
 	theirs: Files,
 	merge: (ours: string, base: string, theirs: string) => string | undefined,
+	/** Files with an earlier clash beside them that no one has merged yet. */
+	unmerged: string[] = [],
 ): SyncPlan {
 	const plan: SyncPlan = { write: {}, remove: [], conflicts: [], base: {} };
 	// The base moves on to the template's version, so once a person merges the two by hand and deletes
@@ -149,6 +192,17 @@ export function planSync(
 			plan.base[file] = t;
 		}
 	}
+	// An earlier clash no one merged: show the template's version as it is now, or drop it once the
+	// game's file matches the template's anyway.
+	for (const file of unmerged) {
+		if (plan.conflicts.includes(file)) continue;
+		const t = theirs[file];
+		if (t === undefined || ours[file] === t) plan.remove.push(file + CLASH_SUFFIX);
+		else {
+			plan.write[file + CLASH_SUFFIX] = t;
+			plan.conflicts.push(file);
+		}
+	}
 	return plan;
 }
 
@@ -158,10 +212,12 @@ export const planChanges = (plan: SyncPlan, before: Files) =>
 	plan.remove.length > 0 ||
 	JSON.stringify(Object.entries(plan.base).sort()) !== JSON.stringify(Object.entries(before).sort());
 
-export function applyPlan(dir: string, plan: SyncPlan) {
+/** Writes the plan into the game; `executable` are the template's executable files, which stay so. */
+export function applyPlan(dir: string, plan: SyncPlan, executable: Set<string>) {
 	for (const [file, text] of Object.entries(plan.write)) {
 		fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
 		fs.writeFileSync(path.join(dir, file), text);
+		if (executable.has(file)) fs.chmodSync(path.join(dir, file), 0o755);
 	}
 	for (const file of plan.remove) {
 		fs.rmSync(path.join(dir, file));

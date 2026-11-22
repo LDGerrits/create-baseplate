@@ -6,10 +6,10 @@ import { scaffoldProject } from "../helpers/scaffoldProject.ts";
 import { recordOrigin, setProjectName } from "../helpers/setProjectName.ts";
 import { type AddOnChoices, addOns, installAddOns } from "../installers/index.ts";
 import {
+	type AgentFiles,
 	applyPlan,
 	BASE_FILE,
 	CLASH_SUFFIX,
-	type Files,
 	mergeText,
 	planChanges,
 	planSync,
@@ -20,11 +20,17 @@ import {
 
 /** Records the agent files a new game starts with, the base its later updates merge against. */
 export function recordAgentFiles(dir: string, version: string) {
-	writeBase(dir, { version, files: readAgentFiles(dir) });
+	writeBase(dir, { version, files: readAgentFiles(dir).files });
+}
+
+/** Whether `dir` is a game create-baseplate made, where `create-baseplate sync` applies. */
+export function isGame(dir: string) {
+	const file = path.join(dir, "package.json");
+	return fs.existsSync(file) && "baseplate" in (JSON.parse(fs.readFileSync(file, "utf8")) as object);
 }
 
 /** The agent files this version's template writes for a game with this name and these add-ons. */
-function templateAgentFiles(name: string, chosen: AddOnChoices, version: string): Files {
+function templateAgentFiles(name: string, chosen: AddOnChoices, version: string): AgentFiles {
 	const temp = fs.mkdtempSync(path.join(os.tmpdir(), "baseplate-sync-"));
 	try {
 		const dir = path.join(temp, "game");
@@ -37,20 +43,6 @@ function templateAgentFiles(name: string, chosen: AddOnChoices, version: string)
 	} finally {
 		fs.rmSync(temp, { recursive: true, force: true });
 	}
-}
-
-/** The files a clash left beside the game's, which a person hasn't merged yet. */
-function unmergedClashes(dir: string): string[] {
-	const found: string[] = [];
-	const walk = (folder: string) => {
-		for (const entry of fs.readdirSync(path.join(dir, folder), { withFileTypes: true })) {
-			const relative = folder === "" ? entry.name : `${folder}/${entry.name}`;
-			if (entry.isDirectory() && entry.name !== "node_modules" && entry.name !== ".git") walk(relative);
-			else if (entry.isFile() && entry.name.endsWith(CLASH_SUFFIX)) found.push(relative);
-		}
-	};
-	walk("");
-	return found;
 }
 
 /**
@@ -71,9 +63,11 @@ export function runSync(dir: string, version: string, check: boolean): number {
 		addOns.map((addOn) => [addOn.name, origin.addOns?.[addOn.name] ?? addOn.defaultValue]),
 	) as AddOnChoices;
 	const base = readBase(dir) ?? { version: origin.version ?? "", files: {} };
-	const plan = planSync(base.files, readAgentFiles(dir), templateAgentFiles(pkg.name, chosen, version), mergeText);
+	const ours = readAgentFiles(dir);
+	const theirs = templateAgentFiles(pkg.name, chosen, version);
+	const plan = planSync(base.files, ours.files, theirs.files, mergeText, ours.clashes);
 	const changed = planChanges(plan, base.files) || base.version !== version || origin.version !== version;
-	const clashes = [...new Set([...plan.conflicts.map((file) => file + CLASH_SUFFIX), ...unmergedClashes(dir)])];
+	const clashes = plan.conflicts.map((file) => file + CLASH_SUFFIX);
 
 	if (check) {
 		if (changed) console.log(`✗ The agent files aren't create-baseplate ${version}'s yet: run create-baseplate sync.`);
@@ -81,13 +75,17 @@ export function runSync(dir: string, version: string, check: boolean): number {
 		return changed || clashes.length > 0 ? 1 : 0;
 	}
 
-	applyPlan(dir, plan);
+	applyPlan(dir, plan, theirs.executable);
 	writeBase(dir, { version, files: plan.base });
-	pkg.baseplate = { ...origin, version };
-	fs.writeFileSync(pkgFile, `${JSON.stringify(pkg, undefined, "\t")}\n`);
+	if (origin.version !== version) {
+		// Only the version, where Renovate's rule finds it, so the rest of package.json keeps its layout.
+		const text = fs.readFileSync(pkgFile, "utf8");
+		const pinned = /("baseplate":\s*\{\s*"version":\s*")[^"]*(")/;
+		fs.writeFileSync(pkgFile, pinned.test(text) ? text.replace(pinned, `$1${version}$2`) : text);
+	}
 	const written = Object.keys(plan.write).filter((file) => !file.endsWith(CLASH_SUFFIX));
 	for (const file of written) console.log(`updated ${file}`);
-	for (const file of plan.remove) console.log(`removed ${file}`);
+	for (const file of plan.remove.filter((file) => !file.endsWith(CLASH_SUFFIX))) console.log(`removed ${file}`);
 	for (const clash of clashes) {
 		const file = clash.slice(0, -CLASH_SUFFIX.length);
 		console.log(`✗ ${file}: your edits and the template's change touch the same lines.`);
