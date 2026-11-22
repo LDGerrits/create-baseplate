@@ -78,6 +78,22 @@ To remove it, delete those files and the generated ones, the Asphalt lines in `m
 
 To remove it, delete those files, the Darklua lines in `mise.toml` (then `mise lock`), `/dist` in `.gitignore`, and the `mise run release` step in `.github/workflows/ci.yml`.
 
+## In a Luau game
+
+A [Luau game](/luau/) asks the same questions, with what Luau games use, and each choice does what its section above says, in Luau's files:
+
+| Add-on | Packages (Wally) | Files |
+| --- | --- | --- |
+| `--ui vide` | `centau/vide`, `littensy/vide-ripple`, in place of react-lua | Vide versions of `src/App/Client/App.luau` and `Start.luau`, and of the clicker button and its story (`CreateVideStory`) |
+| `--state charm` | `littensy/charm`, with `littensy/react-charm` or `littensy/vide-charm` | `ClickerController.luau` keeps the count in a Charm signal, and `App.luau` reads it |
+| `--data profilestore` | `lm-loleris/profilestore`, a server package | `src/Features/PlayerData/Server/`: `PlayerData.luau`, `PlayerDataService.luau` and its spec |
+| `--data lapis` | `nezuo/lapis`, `nezuo/data-store-service-mock`, server packages | the same three files, on Lapis |
+| `--entities jecs` | `ukendio/jecs` | `src/Features/Spinner/Server/`: `SpinnerSystem.luau` and its spec, `SpinnerService.luau`; the world part and `tests/e2e/spinner.luau` |
+| `--assets asphalt` | | `assets/`, `asphalt.toml`, `scripts/assets.ts`; uploads write `src/Shared/Assets.luau`, which luau-lsp types from its table |
+| `--release darklua` | | `.darklua.json`, `scripts/darklua.ts`, `scripts/release-project.ts`; `mise run release` processes `src/` and the packages into `dist/` |
+
+A Luau add-on's packages are in `wally.toml`; to remove one, delete its lines there and run `mise run install`. Services an add-on starts are listed in `src/App/Server/Main.server.luau`. Reflex and Flamework Components are roblox-ts choices.
+
 ## Removing an add-on
 
 There's no command to remove one; the sections above list what each touches. Two things help:

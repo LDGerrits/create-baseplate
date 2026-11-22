@@ -371,6 +371,82 @@ test("creates a Luau game from the Luau template", () => {
 	}
 });
 
+test("applies Luau add-ons: Wally packages, files and the services they start", () => {
+	const cwd = tempDir();
+	const run = create(
+		cwd,
+		"my-game",
+		"--no-git",
+		"--language",
+		"luau",
+		"--state",
+		"charm",
+		"--data",
+		"profilestore",
+		"--entities",
+		"jecs",
+	);
+	assert.equal(run.status, 0, run.stderr);
+	const dir = path.join(cwd, "my-game");
+	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+
+	const wally = read("wally.toml");
+	assert.match(wally, /\[dependencies\][^[]*Charm = "littensy\/charm@=/);
+	assert.match(wally, /\[dependencies\][^[]*Jecs = "ukendio\/jecs@=/);
+	assert.match(wally, /\[server-dependencies\]\nProfileStore = "lm-loleris\/profilestore@=/);
+	assert.equal(JSON.parse(read("package.json")).dependencies, undefined, "no npm packages for the game");
+
+	const main = read("src/App/Server/Main.server.luau");
+	assert.match(
+		main,
+		/require\(ServerScriptService\.Features\.Clicker\.ClickerService\),\n\trequire\(ServerScriptService\.Features\.PlayerData\.PlayerDataService\),\n\trequire\(ServerScriptService\.Features\.Spinner\.SpinnerService\),\n\}/,
+	);
+	assert.ok(fs.existsSync(path.join(dir, "src/Features/PlayerData/Server/PlayerDataService.spec.luau")));
+	assert.ok(fs.existsSync(path.join(dir, "tests/e2e/spinner.luau")));
+	assert.match(read("src/Features/Clicker/Client/ClickerController.luau"), /Charm\.signal/);
+
+	const agents = read("AGENTS.md");
+	assert.ok(agents.indexOf("## Player data") < agents.indexOf("<!-- rogen -->"), "add-on notes come before Rogen's");
+	assert.match(agents, /## State/);
+	assert.match(agents, /## Entities/);
+});
+
+test("swaps react-lua for Vide in a Luau game, with Charm's Vide binding", () => {
+	const cwd = tempDir();
+	const run = create(cwd, "my-game", "--no-git", "--language", "luau", "--ui", "vide", "--state", "charm");
+	assert.equal(run.status, 0, run.stderr);
+	const dir = path.join(cwd, "my-game");
+	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+	const wally = read("wally.toml");
+	assert.match(wally, /Vide = "centau\/vide@=/);
+	assert.match(wally, /VideCharm = "littensy\/vide-charm@=/);
+	for (const react of ["React =", "ReactRoblox =", "ReactRipple =", "ReactCharm ="]) {
+		assert.doesNotMatch(wally, new RegExp(`^${react}`, "m"), `${react} is gone`);
+	}
+	assert.match(read("src/Features/Clicker/Client/ClickerButton.story.luau"), /CreateVideStory/);
+	assert.match(read("src/App/Client/App.luau"), /VideCharm/);
+	const agents = read("AGENTS.md");
+	assert.match(agents, /## UI\n\nVide/);
+	assert.doesNotMatch(agents, /react-lua|ReactRipple/, "AGENTS.md names no React package");
+});
+
+test("adds the Luau tools: Asphalt's Luau module and Darklua's release", () => {
+	const cwd = tempDir();
+	const run = create(cwd, "my-game", "--no-git", "--language", "luau", "--assets", "asphalt", "--release", "darklua");
+	assert.equal(run.status, 0, run.stderr);
+	const dir = path.join(cwd, "my-game");
+	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+	const mise = read("mise.toml");
+	assert.match(mise, /asphalt/);
+	assert.match(mise, /darklua/);
+	assert.match(mise, /\[tasks\.release\]/);
+	assert.match(mise, /\[tasks\.assets\]/);
+	assert.match(read("asphalt.toml"), /src\/Shared/);
+	assert.ok(fs.existsSync(path.join(dir, ".darklua.json")));
+	assert.match(read(".gitignore"), /^\/dist$/m);
+	assert.match(read(".github/workflows/ci.yml"), /mise run release/);
+});
+
 test("refuses a choice the language doesn't have", () => {
 	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--language", "luau", "--entities", "components");

@@ -58,6 +58,8 @@ Below, `src/features/` is `projects/common/src/features/` and `src/network/` is 
 
 ## What each add-on adds
 
+In a TypeScript game; a Luau game's are listed in [add-ons](/add-ons/#in-a-luau-game).
+
 | Add-on | Files |
 | --- | --- |
 | `--ui vide` | Vide versions of `src/app/client/app.tsx` and `start.tsx`, and of the clicker button and its story; React's packages go. |
