@@ -33,9 +33,9 @@ interface ReeSummary {
 // Wally's package folders, which carry specs of their own.
 const PACKAGES = /(^|\/)(Packages|ServerPackages|DevPackages|node_modules)(\/|$)/;
 
-// Whether the game holds any spec ree runs: a *.spec.luau in a folder its project mounts.
-// A place of a multi-place game may hold none (shared specs run in one place), and then the Jest
-// run is skipped rather than started for nothing.
+// Whether the game holds any spec ree runs: a *.spec.luau in a folder its project mounts, and that
+// its globIgnorePaths don't leave out. A place of a multi-place game may hold none (the shared
+// code's specs run in one place), and then the Jest run is skipped rather than started for nothing.
 const mounts: string[] = [];
 const collectMounts = (node: unknown) => {
 	if (typeof node !== "object" || node === null) return;
@@ -45,7 +45,9 @@ const collectMounts = (node: unknown) => {
 	}
 };
 const project = process.argv[2] ?? "game.project.json";
-collectMounts(JSON.parse(fs.readFileSync(project, "utf8")));
+const projectFile = JSON.parse(fs.readFileSync(project, "utf8")) as { globIgnorePaths?: string[] };
+collectMounts(projectFile);
+const ignored = (file: string) => (projectFile.globIgnorePaths ?? []).some((glob) => path.matchesGlob(file, glob));
 const hasSpecs = mounts.some(
 	(mount) =>
 		!PACKAGES.test(mount) &&
@@ -53,7 +55,12 @@ const hasSpecs = mounts.some(
 		fs.statSync(mount).isDirectory() &&
 		fs
 			.readdirSync(mount, { recursive: true, encoding: "utf8" })
-			.some((file) => file.endsWith(".spec.luau") && !file.endsWith(".engine.spec.luau")),
+			.some(
+				(file) =>
+					file.endsWith(".spec.luau") &&
+					!file.endsWith(".engine.spec.luau") &&
+					!ignored(path.posix.join(mount, file.split(path.sep).join("/"))),
+			),
 );
 
 const runs: Run[] = [

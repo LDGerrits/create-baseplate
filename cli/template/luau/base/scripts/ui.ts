@@ -8,6 +8,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 const OUT = "build/ui";
+// Paths are printed from the repo root, so a place's pictures read projects/<place>/build/....
+const shown = (file: string) => path.relative(process.env.ROOT ?? process.cwd(), path.resolve(file));
 
 // rur draws text with Roblox Studio's fonts. From WSL it can't find Studio, so point it at the newest
 // Windows install's content folder.
@@ -65,7 +67,7 @@ if (story !== -1) {
 	});
 	if (diff) {
 		console.log(`${run.stdout}${run.stderr}`.trim());
-		console.log(`Pictures: ${dir}/before, ${dir}/after, ${dir}/diff.png`);
+		console.log(`Pictures: ${shown(dir)}/before, ${shown(dir)}/after, ${shown(dir)}/diff.png`);
 		process.exit(run.status ?? 1);
 	}
 	if (run.status !== 0) {
@@ -73,12 +75,14 @@ if (story !== -1) {
 		process.exit(1);
 	}
 	const scene = JSON.parse(fs.readFileSync(path.join(dir, "scene.json"), "utf8")) as {
-		diagnostics: { output?: { kind: string; message: string; time: number }[] };
+		diagnostics: { output?: { kind: string; message: string; time: number }[] | Record<string, never> };
 	};
-	for (const line of scene.diagnostics.output ?? []) {
+	// rur writes an empty object, not an empty list, when the story printed nothing.
+	const output = scene.diagnostics.output;
+	for (const line of Array.isArray(output) ? output : []) {
 		console.log(`[${line.time.toFixed(2)}s] ${line.kind === "print" ? "" : `${line.kind}: `}${line.message}`);
 	}
-	console.log(`Picture: ${path.join(dir, "render.png")}`);
+	console.log(`Picture: ${shown(path.join(dir, "render.png"))}`);
 	process.exit(0);
 }
 
@@ -127,7 +131,7 @@ for (const record of report.records) {
 	// Without Studio, stories render without fonts; only a story that breaks fails then.
 	const missingFonts = check || noStudio ? [] : (record.missingFonts ?? []);
 	if (record.clean && missingFonts.length === 0) {
-		say(`✓ ${name}: ${picture}${noStudio ? " (no text)" : ""}`);
+		say(`✓ ${name}: ${shown(picture)}${noStudio ? " (no text)" : ""}`);
 		continue;
 	}
 	failed++;
@@ -137,8 +141,8 @@ for (const record of report.records) {
 	// scheduler's trace around it.
 	for (const message of record.warningMessages ?? []) console.log(`  ${String(message).replaceAll("\n", "\n  ")}`);
 	for (const error of record.errors ?? []) console.log(`  ${String(error).replaceAll("\n", "\n  ")}`);
-	if (fs.existsSync(picture)) console.log(`  picture: ${picture}`);
+	if (fs.existsSync(picture)) console.log(`  picture: ${shown(picture)}`);
 }
 if (check && failed > 0) console.log("Render one story to see it: mise run ui -- --story <path>.story.luau");
-if (!check || failed > 0) console.log(`Full report: ${path.join(OUT, "summary.md")}`);
+if (!check || failed > 0) console.log(`Full report: ${shown(path.join(OUT, "summary.md"))}`);
 process.exit(failed > 0 ? 1 : 0);

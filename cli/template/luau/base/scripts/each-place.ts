@@ -1,6 +1,7 @@
 // Runs steps in each place of the game: the root, for a single-place game, or each projects/<place>/
-// (except projects/common) for a multi-place one. The mise tasks run their per-place steps through
-// it, so they work the same on Windows, macOS and Linux: no shell runs the steps.
+// for a multi-place one, where a place is a folder of projects/ with a <place>.rogen.json at the root
+// (projects/common, the shared code, has none). The mise tasks run their per-place steps through it,
+// so they work the same on Windows, macOS and Linux: no shell runs the steps.
 //
 //   node scripts/each-place.ts "<step>" ["<step>"...] [-- <extra args for the last step>]
 //   node scripts/each-place.ts --one <place> "<step>"...   only that place; a multi-place game needs it
@@ -19,7 +20,11 @@ const multi = fs.existsSync(path.join(ROOT, "projects"));
 const places = multi
 	? fs
 			.readdirSync(path.join(ROOT, "projects"))
-			.filter((name) => fs.existsSync(path.join(ROOT, "projects", name, "default.rogen.json")))
+			.filter(
+				(name) =>
+					fs.statSync(path.join(ROOT, "projects", name)).isDirectory() &&
+					fs.existsSync(path.join(ROOT, `${name}.rogen.json`)),
+			)
 			.sort()
 	: [];
 

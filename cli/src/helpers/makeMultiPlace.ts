@@ -204,7 +204,7 @@ const SKILL_NOTE =
 	"> This game has several places (see `AGENTS.md`). Below, `world/`, `src/app/`, `src/world.d.ts`, `tests/e2e/`, `build/` and `game.project.json` are each place's, under `projects/<place>/`, and shared features are in `projects/common/src/features/`. Run forge, ror and rojo from the place's folder, and name the place: `mise run dev <place>`, `mise run sync <place>`.";
 
 /** Replaces the section under `## <heading>` with `section`, up to the next `## ` heading. */
-function replaceSection(text: string, heading: string, section: string) {
+export function replaceSection(text: string, heading: string, section: string) {
 	const start = text.indexOf(`\n## ${heading}\n`) + 1;
 	if (start === 0) throw new Error(`places: no "## ${heading}" section to replace`);
 	const next = text.indexOf("\n## ", start);

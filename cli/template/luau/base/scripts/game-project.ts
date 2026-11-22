@@ -4,43 +4,54 @@
 //
 // Also writes test.project.json, the same game with loadstring() on, for jest-roblox: Jest needs
 // it, and a live game shouldn't have it, so only the place the engine tests upload gets it.
+//
+// In a multi-place game this runs in projects/<place>/, and the place's code is <place>.project.json
+// at the repo root, which Rogen writes from <place>.rogen.json.
 import fs from "node:fs";
 import path from "node:path";
 
-const code = JSON.parse(fs.readFileSync("default.project.json", "utf8"));
-const world = JSON.parse(fs.readFileSync("world/default.project.json", "utf8"));
-
-// Re-root every `$path` in a world node, since game.project.json sits one folder up.
 type ProjectNode = Record<string, unknown>;
-const reroot = (node: ProjectNode): ProjectNode =>
-	Object.fromEntries(
+
+/** The project with every `$path` and `globIgnorePaths` entry passed through `move`. */
+const movePaths = (node: unknown, move: (p: string) => string): unknown => {
+	if (Array.isArray(node) || node === null || typeof node !== "object") return node;
+	return Object.fromEntries(
 		Object.entries(node).map(([key, value]) => {
-			if (key === "$path") {
-				return typeof value === "string"
-					? [key, path.posix.join("world", value)]
-					: [
-							key,
-							{
-								...(value as { optional: string }),
-								optional: path.posix.join("world", (value as { optional: string }).optional),
-							},
-						];
-			}
+			if (key === "globIgnorePaths" && Array.isArray(value)) return [key, value.map((glob: string) => move(glob))];
+			if (key !== "$path") return [key, movePaths(value, move)];
 			return [
 				key,
-				value !== null && typeof value === "object" && !key.startsWith("$") ? reroot(value as ProjectNode) : value,
+				typeof value === "string"
+					? move(value)
+					: { ...(value as ProjectNode), optional: move((value as { optional: string }).optional) },
 			];
 		}),
 	);
+};
 
-const tree: ProjectNode = { ...code.tree };
+const placesDir = path.dirname(process.cwd());
+const multi = path.basename(placesDir) === "projects";
+const place = path.basename(process.cwd());
+const root = path.dirname(placesDir);
+
+// The place's code project sits at the root, so its paths are from there; make them from here.
+const code = multi
+	? (movePaths(
+			JSON.parse(fs.readFileSync(path.join(root, `${place}.project.json`), "utf8")),
+			(p) => path.posix.relative(path.posix.join("projects", place), p) || ".",
+		) as ProjectNode)
+	: JSON.parse(fs.readFileSync("default.project.json", "utf8"));
+const world = JSON.parse(fs.readFileSync("world/default.project.json", "utf8"));
+
+// Every world `$path` is from world/, one folder down from game.project.json.
+const tree: ProjectNode = { ...(code.tree as ProjectNode) };
 for (const [service, node] of Object.entries(world.tree as Record<string, ProjectNode>)) {
 	if (service.startsWith("$")) continue;
 	if (service in tree) {
-		console.error(`game-project: ${service} is in both default.project.json and world/; keep each service in one`);
+		console.error(`game-project: ${service} is in both the code's project file and world/; keep each service in one`);
 		process.exit(1);
 	}
-	tree[service] = reroot(node);
+	tree[service] = movePaths(node, (p) => path.posix.join("world", p)) as ProjectNode;
 }
 
 const game = { ...code, name: "game", tree };
@@ -60,29 +71,16 @@ const test = {
 };
 fs.writeFileSync("test.project.json", `${JSON.stringify(test, undefined, "\t")}\n`);
 
-// In a multi-place game this runs in projects/<place>/. jest-roblox matches its compiled folders
-// against the project's $path strings as written, which here start with ../../, so it also gets a
-// copy at the repo root with paths from there: test.<place>.project.json.
-const placesDir = path.dirname(process.cwd());
-if (path.basename(placesDir) === "projects") {
-	const place = path.basename(process.cwd());
-	const fromRoot = (node: unknown): unknown => {
-		if (Array.isArray(node) || node === null || typeof node !== "object") return node;
-		return Object.fromEntries(
-			Object.entries(node).map(([key, value]) => {
-				if (key !== "$path") return [key, fromRoot(value)];
-				const rebase = (p: string) => path.posix.normalize(path.posix.join("projects", place, p));
-				return [
-					key,
-					typeof value === "string"
-						? rebase(value)
-						: { ...value, optional: rebase((value as { optional: string }).optional) },
-				];
-			}),
-		);
-	};
+// jest-roblox matches its folders against the project's $path strings as written, which here start
+// with ../, so a place of a multi-place game also gets a copy at the repo root with paths from
+// there: test.<place>.project.json.
+if (multi) {
 	fs.writeFileSync(
-		path.join(placesDir, "..", `test.${place}.project.json`),
-		`${JSON.stringify(fromRoot(test), undefined, "\t")}\n`,
+		path.join(root, `test.${place}.project.json`),
+		`${JSON.stringify(
+			movePaths(test, (p) => path.posix.normalize(path.posix.join("projects", place, p))),
+			undefined,
+			"\t",
+		)}\n`,
 	);
 }

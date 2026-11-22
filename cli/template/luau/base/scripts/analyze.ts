@@ -17,6 +17,11 @@ if (!fs.existsSync(definitions)) {
 }
 // The place's code; in a multi-place game, the shared code too, as this place sees it.
 const sources = ["src", path.join(ROOT, "projects", "common", "src")].filter((dir) => fs.existsSync(dir));
+// What the place's project file leaves out (its `globIgnorePaths`, such as the shared code's specs in
+// the places that don't run them) isn't in its sourcemap, so it's type-checked in another place.
+const project = JSON.parse(fs.readFileSync("game.project.json", "utf8")) as { globIgnorePaths?: string[] };
+// luau-lsp matches its globs against paths from here, as the project file's are.
+const ignored = (project.globIgnorePaths ?? []).map((glob) => `--ignore=${glob}`);
 
 const run = spawnSync(
 	"luau-lsp",
@@ -31,6 +36,7 @@ const run = spawnSync(
 		"--ignore=**/ServerPackages/**",
 		"--ignore=**/DevPackages/**",
 		"--ignore=**/node_modules/**",
+		...ignored,
 		...sources,
 	],
 	{ encoding: "utf8", maxBuffer: 64 * 1024 * 1024, shell: process.platform === "win32" },
@@ -45,6 +51,10 @@ const problems = [
 		`${run.stdout}${run.stderr}`
 			.split(/\r?\n/)
 			.filter((line) => line.trim() !== "" && !/^\[(INFO|WARN)\]/.test(line))
+			// luau-lsp prints a file as it was given, absolute or from here (in a place's folder, src/...).
+			.map((line) =>
+				line.replace(/^(?![A-Za-z]:|[\\/])\S+?\.luau?(?=[\s(])/, (file) => path.relative(ROOT, path.resolve(file))),
+			)
 			.map((line) => line.replace(`${path.resolve(ROOT)}${path.sep}`, "")),
 	),
 ];

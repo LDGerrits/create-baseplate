@@ -2,7 +2,8 @@
 //
 //   node scripts/packages.ts           Install the Wally packages, when wally.toml or wally.lock
 //                                      changed since the last install; instant otherwise.
-//   node scripts/packages.ts --types   Once sourcemap.json is written: give newly installed packages
+//   node scripts/packages.ts --types   Once sourcemap.json is written (in a multi-place game, it
+//                                      writes the editor's first): give newly installed packages
 //                                      their types (wally-package-types), and fetch Roblox's type
 //                                      definitions for the pinned luau-lsp into .luau-lsp/.
 //
@@ -68,6 +69,22 @@ if (!process.argv.includes("--types")) {
 	}
 	fixJestSuccess();
 } else {
+	// A multi-place game has a sourcemap per place, in projects/<place>/. Editors type one place at a
+	// time, from sourcemap.json at the root, which luau-lsp's VS Code extension writes with the
+	// generatorCommand in .vscode/settings.json; write it here the same way, once, for the other
+	// editors, Claude Code's luau-lsp and wally-package-types.
+	if (fs.existsSync("projects")) {
+		const settings = JSON.parse(read(path.join(".vscode", "settings.json")) || "{}");
+		const command = settings["luau-lsp.sourcemap.generatorCommand"];
+		if (typeof command === "string") {
+			const [tool = "", ...args] = command.split(/\s+/).filter((arg) => arg !== "--watch");
+			const result = spawnSync(tool, args, { encoding: "utf8", shell: process.platform === "win32" });
+			if (result.status !== 0) {
+				console.error(`${command}: ${result.error?.message ?? `${result.stdout}${result.stderr}`.trim()}`);
+				process.exit(1);
+			}
+		}
+	}
 	// Wally's package files only point at the package; this copies the package's types into them, so
 	// `require(ReplicatedStorage.Packages.React)` is typed. It reads the instance paths from the sourcemap.
 	if (fs.existsSync(UNTYPED)) {

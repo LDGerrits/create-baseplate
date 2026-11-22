@@ -19,7 +19,8 @@ export interface Payload {
 }
 
 // Files that only their generator writes, and what to run instead. In a multi-place game each
-// place has its own project files, world types and builds under projects/<place>/.
+// place has its own project files, world types and builds under projects/<place>/, and Rogen writes
+// its code's project file, <place>.project.json, at the root.
 export const GENERATED: [RegExp, string][] = [
 	[/^(projects\/[^/]+\/)?build\//, "builds write it: run `mise run build` or `mise run check`"],
 	[/^node_modules\//, "pnpm writes it: `pnpm add -D <package>`, for the game's Node tools"],
@@ -39,11 +40,15 @@ export const GENERATED: [RegExp, string][] = [
 	],
 	[
 		/^((projects\/[^/]+\/)?(game|test)|test\.[^/]+)\.project\.json$/,
-		"scripts/game-project.ts writes it from default.project.json and world/: run `mise run check`",
+		"scripts/game-project.ts writes it from the code's project file and world/ (Rogen writes a place's code as `<place>.project.json`): run `mise run check`",
 	],
 	[
 		/^(projects\/[^/]+\/)?sourcemap\.json$/,
 		"Rojo writes it from game.project.json for luau-lsp: change the code or world/ and run `mise run generate`",
+	],
+	[
+		/^[^/]+\.project\.json$/,
+		"Rogen writes it from the .rogen.json of the same name, a place's: change that, or the file layout, and run `mise run check`",
 	],
 ];
 
