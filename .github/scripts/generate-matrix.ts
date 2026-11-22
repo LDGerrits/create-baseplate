@@ -7,8 +7,8 @@
 // - windows: no add-ons, and every question answered together.
 // - engine: no add-ons, and as few games as it takes for each choice to run once in a real Roblox
 //   server; the runs share one test place and go one at a time.
-// `node .github/scripts/generate-matrix.ts` prints them as JSON; in CI, with GITHUB_OUTPUT set, it
-// writes them as the step's outputs `create`, `windows` and `engine`.
+// `node .github/scripts/generate-matrix.ts` prints them; given a file, as CI gives "$GITHUB_OUTPUT", it
+// also writes them there as JSON, the step's outputs `create`, `windows` and `engine`.
 import fs from "node:fs";
 import path from "node:path";
 import { addOns, valuesOf } from "../../cli/src/installers/index.ts";
@@ -167,9 +167,10 @@ if (import.meta.main) {
 	const output = Object.fromEntries(
 		Object.entries(matrices).map(([job, games]) => [job, JSON.stringify({ addOns: games.map(flagsOf) })]),
 	);
-	if (process.env.GITHUB_OUTPUT !== undefined) {
+	const outputFile = process.argv[2];
+	if (outputFile !== undefined) {
 		fs.appendFileSync(
-			process.env.GITHUB_OUTPUT,
+			outputFile,
 			Object.entries(output)
 				.map(([job, json]) => `${job}=${json}\n`)
 				.join(""),
