@@ -39,6 +39,8 @@ Require by instance path, the way `rogen where <file>` prints it: `require(Repli
 
 ## Adding a feature
 
+Run `mise run feature <name>` to start one, and read `.agents/skills/add-feature/SKILL.md`: it writes steps 1 and 2 below and the service's spec. By hand:
+
 1. Remotes in `shared/<Feature>Network.luau`, declared with `Remote.clientEvent`, `Remote.clientRequest` or `Remote.serverEvent` and their argument types, as `ClickerNetwork.luau` does. What a client sends gets a `t` check (`t.tuple(t.integer, t.string)`).
 2. A service in `server/<Feature>Service.luau` and, if the client takes part, a controller in `client/<Feature>Controller.luau`: a module with a `start()` that connects its remotes and events. Add each to the list in `src/app/server/Main.server.luau` or `src/app/client/Start.luau`, or it never starts; the check fails on one that isn't.
 3. UI as a component in `client/` with a story, rendered from `App.luau`.
@@ -90,6 +92,10 @@ luau-lsp and Selene catch most mistakes. These they don't explain:
 ## Packages
 
 The game's Roblox packages come from Wally: add one to `wally.toml` under `[dependencies]` (shared), `[server-dependencies]` (server only, in `ServerScriptService.ServerPackages`) or `[dev-dependencies]` (tests and stories, in `ReplicatedStorage.DevPackages`), pinned exactly (`Name = "scope/name@=1.2.3"`), then run `mise run install`; its types come with it. Find a package and its versions at https://wally.run. The tools written for Node (Rogen, rbx-forge, jest-roblox, Biome) are in `package.json`, added with `pnpm add -D`; pnpm installs only versions published at least two weeks ago.
+
+## Releases and updates
+
+You make a release ready and the user ships it: a hook stops `mise run publish`. Read `.agents/skills/release/SKILL.md` to prepare one. For a Renovate update, a `*.baseplate-new` file or a failing `agent-files` check, read `.agents/skills/upgrade/SKILL.md`.
 
 ## Writing for people
 

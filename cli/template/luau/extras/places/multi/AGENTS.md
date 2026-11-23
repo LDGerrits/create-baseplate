@@ -2,7 +2,7 @@
 
 This game has several places, laid out as Rogen does for Luau: each place is a `<place>.rogen.json` at the root (`lobby.rogen.json`, `game.rogen.json`) with a folder in `projects/`, and the code they share is `projects/common/src`.
 
-- `projects/common/src/features/<feature>/`: one folder per feature that several places use; `features/clicker` is the example to copy. `projects/common/src/network/` holds the remotes (`shared/Remote.luau`) and how the server takes them (`server/Serve.luau`, `server/RateLimit.luau`).
+- `projects/common/src/features/<feature>/`: one folder per feature that several places use; `mise run feature <name>` starts one, and `features/clicker` is the example to copy. `projects/common/src/network/` holds the remotes (`shared/Remote.luau`) and how the server takes them (`server/Serve.luau`, `server/RateLimit.luau`).
 - `projects/<place>/src/`: what only that place has. Its `app/` holds the entry scripts: `app/server/Main.server.luau` lists every service the place starts, shared ones included, and starts each; `app/client/Start.luau` (which `Main.client.luau` runs) does the same for controllers and mounts the UI; `app/client/App.luau` is the root of its UI. A feature only one place uses goes in `projects/<place>/src/features/`.
 - Each `<place>.rogen.json` reads both: `sourcePaths` `["projects/common/src", "projects/<place>/src"]`, so a shared feature and a place's own land in the same folders of the game, and are required the same way. Rogen writes the place's code as `<place>.project.json` at the root.
 - Each place's folder holds the rest of it: `world/` (its map), `tests/e2e/`, its forge and jest-roblox configs, and what the tasks write for the place (`game.project.json`, `sourcemap.json`, `build/`).
