@@ -6,7 +6,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["**", "!*.project.json", "!pnpm-lock.yaml", "!.baseplate", "!**/*.md"]
+		"includes": ["**", "!*.project.json", "!pnpm-lock.yaml", "!.baseplate", "!.agents/hooks/rogen-check.mjs", "!**/*.md"]
 	},
 	"formatter": {
 		"enabled": true,

@@ -71,8 +71,8 @@ const entries = places.map((place) => {
 	return { root, server: code(`${root}/${SERVER_ENTRY}`), client: code(`${root}/${CLIENT_ENTRY}`) };
 });
 
-const ROUTE = /^[Ss](erver|hared)$|^[Cc]lient$/;
-const SUFFIX = /@([Ss]erver|[Cc]lient|[Ss]hared)$/;
+const ROUTE = /^(Server|Shared|Client)$/;
+const SUFFIX = /@(Server|Client|Shared)$/;
 
 /**
  * Where Rogen routes a source file, and its instance names below the route's target: the governing

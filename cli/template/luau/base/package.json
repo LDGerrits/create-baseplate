@@ -8,7 +8,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "2.6.6",
 		"@isentinel/jest-roblox": "0.4.12",
-		"@ldgerrits/rogen": "2.0.0-beta.4",
+		"@ldgerrits/rogen": "2.0.0-rc.1",
 		"@types/cross-spawn": "6.0.6",
 		"@types/node": "^24.19.2",
 		"cross-spawn": "7.0.6",
