@@ -37,6 +37,8 @@ A file outside these three folders isn't placed in the game, and the check fails
 
 ## Adding a feature
 
+Run `mise run feature <name>` to start one, and read `.agents/skills/add-feature/SKILL.md`: it writes steps 1 and 2 below and the service's spec. By hand:
+
 1. Network events in `shared/<feature>-network.ts`, with `Networking.createEvent<ClientToServer, ServerToClient>()`.
 2. A service in `server/` and, if the client takes part, a controller in `client/`. Import each in `src/app/server/main.server.ts` or `src/app/client/start.tsx`, or Flamework never starts it; the check fails on one that isn't.
 3. UI as a component in `client/` with a story, rendered from `app.tsx`.
@@ -87,6 +89,10 @@ The compiler and ESLint catch most differences (`null`, `.length`, truthiness, `
 
 Add one with `pnpm add <name>` (`-D` for build tools). pnpm installs only versions published at least two weeks ago; when it refuses one, pick an older version. If the package's scope is new, such as `@rbxts-js`, mount it under `ReplicatedStorage.rbxts_include.node_modules` in `default.rogen.json`, like the existing scopes. Keep `@rbxts/ripple` on 0.9: `@rbxts/pretty-react-hooks` is built for it, and the game loads one copy.
 
+## Releases and updates
+
+You make a release ready and the user ships it: a hook stops `mise run publish`. Read `.agents/skills/release/SKILL.md` to prepare one. For a Renovate update, a `*.baseplate-new` file or a failing `agent-files` check, read `.agents/skills/upgrade/SKILL.md`.
+
 ## Writing for people
 
 Comments, commit messages and pull requests are read by someone who never saw this conversation. Say what the code does and why, not how you got there. When you report back, say how you checked the work: the check passed, which pictures you looked at, what you played in Studio.
@@ -97,7 +103,7 @@ Comments, commit messages and pull requests are read by someone who never saw th
 This repo uses Rogen: each `*.rogen.json` generates the `*.project.json` beside it from folder and file names.
 
 - A file's path on disk is not its path in the game. Run `rogen where <path>` to see where it lands and how to require it.
-- The outermost route wins, so `Shared/Server/Save.luau` ships to clients. Keep server-only code under a server route.
+- The outermost route wins, so `shared/server/Save.luau` ships to clients. Keep server-only code under a server route.
 - After you add, move or delete files, run `rogen check <paths>` and fix what it prints.
 - Edit the `*.rogen.json`, never the `*.project.json`. Packages go in its `tree`, and a change to `routes` goes in every `*.rogen.json` it concerns.
 - To sync to Studio, use the repo's serve script, or run `rogen serve --json` in the background.

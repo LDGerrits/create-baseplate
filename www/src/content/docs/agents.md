@@ -18,7 +18,7 @@ Models know roblox-ts, Flamework and Rogen poorly, and the Roblox API changes fa
 The same hooks are set up for Claude Code, Codex, Cursor, GitHub Copilot (its cloud agent and CLI) and Gemini CLI:
 
 - **Before the agent ends its turn**, the check runs; a failure goes back to the agent to fix, once. When nothing changed since the last pass, the check is skipped. In Cursor it runs only when the turn finished, not when you pressed Stop.
-- **Before a command or an edit**, a guard blocks what agents get wrong in this project, and says what to do instead: editing generated files (and, in a Luau game, Wally's package folders), skipping the commit hook, npm, yarn or npx in place of pnpm (or, in a Luau game, Wally), and printing `.env`.
+- **Before a command or an edit**, a guard blocks what agents get wrong in this project, and says what to do instead: editing generated files (and, in a Luau game, Wally's package folders), skipping the commit hook, npm, yarn or npx in place of pnpm (or, in a Luau game, Wally), printing `.env`, and publishing.
 - **After each file edit**, Biome formats the file and ESLint applies its fixes to it, then the lint problems left go back to the agent at once, in a few seconds, instead of at the end of the turn. Fixes that would undo what the agent is still writing are reported but not applied: removing an import not used yet, `let` to `const`, an import made type-only. Only the edited file is linted and the compiler doesn't run; the check at the end of the turn covers the rest. Cursor doesn't show the agent what this hook says, so there it only applies the fixes. In a Luau game, StyLua formats the file and Selene lints it.
 - **Each commit** runs `mise run ci`, the check without its fixes, on exactly what is being committed, whoever commits.
 
@@ -38,7 +38,16 @@ In Claude Code, the commands the skills use (`forge`, `ror`, `rogen`, `mise run`
 
 ## Skills
 
-Skills in `.agents/skills/` cover what only some tasks need: writing tests, editing the world, and driving Roblox Studio through its MCP server. `AGENTS.md` says when to read each.
+Skills in `.agents/skills/` cover what only some tasks need. `AGENTS.md` says when to read each:
+
+| Skill | For |
+| --- | --- |
+| `add-feature` | A new mechanic or screen: `mise run feature <name>` starts it, the skill walks through the rules, the network, the UI and the tests. |
+| `write-tests` | A spec, an end-to-end test or an engine spec, and choosing between ree and real Studio. |
+| `edit-world` | The map and lighting in `world/`: looking at it, changing it in Studio or in files, syncing back. |
+| `drive-studio` | Playtesting in real Studio through its MCP server. |
+| `release` | Making a commit ready to publish. Agents don't publish: a hook stops it, and the skill says what to tell you. |
+| `upgrade` | A Renovate update, a `.baseplate-new` file to merge, and the pins that need care (Rojo, Rogen, rbx-forge). |
 
 ## Type errors as it edits
 

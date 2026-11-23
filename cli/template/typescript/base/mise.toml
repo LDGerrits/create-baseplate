@@ -139,3 +139,11 @@ description = "Build the game and publish it to Roblox through Open Cloud, to th
 depends = ["build"]
 env = { _.file = ".env" }
 run = 'node scripts/each-place.ts "node {root}/scripts/publish.ts build/game.rbxl"'
+
+[tasks.feature]
+description = "Start a feature: its network file, service with a spec, controller and the entry-script imports. In a multi-place game it goes in the shared code, or in one place when you name it: mise run feature shop lobby"
+usage = '''
+arg "<name>" help="The feature's name in kebab-case, such as daily-reward"
+arg "[place]" help="Keep the feature to this place (a multi-place game)"
+'''
+run = 'node scripts/feature.ts "{{usage.name}}" "{{usage.place}}"'

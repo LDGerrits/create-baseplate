@@ -1,6 +1,6 @@
 # Baseplate
 
-Baseplate creates Roblox games, in roblox-ts or Luau, set up for coding agents, the way create-t3-app creates web apps. The repo follows create-t3-app's layout. `PLAN.md` holds the plan and its phases.
+Baseplate creates Roblox games, in roblox-ts or Luau, set up for coding agents, the way create-t3-app creates web apps. The repo follows create-t3-app's layout.
 
 ## Parts
 
@@ -31,4 +31,4 @@ Renovate (`.github/renovate.json`) opens updates for every package, mise tool, G
 
 ## Writing
 
-Write the template's files for the game's developers and agents, not for this repo: a created game has no `cli/` or `PLAN.md`, and its name replaces `my-game`. Comments, commit messages and pull requests are read by someone who never saw the conversation.
+Write the template's files for the game's developers and agents, not for this repo: a created game has no `cli/`, and its name replaces `my-game`. Comments, commit messages and pull requests are read by someone who never saw the conversation.
