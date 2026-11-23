@@ -3,7 +3,7 @@
 
 -- A harness replaces the place's own boot, so start the server's entry script ourselves.
 local function bootServer()
-	local main = game:GetService("ServerScriptService").App.Main
+	local main = game:GetService("ServerScriptService").app.Main
 	local run = assert(loadstring(main.Source, "=" .. main:GetFullName()))
 	setfenv(run, setmetatable({ script = main }, { __index = getfenv(0) }))
 	task.spawn(run)

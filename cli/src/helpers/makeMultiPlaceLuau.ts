@@ -22,7 +22,7 @@ const GITIGNORE = `
  * configs and generated files) in projects/<place>/, where the template's mise tasks run each
  * place's steps (scripts/each-place.ts). Wally's packages stay at the root, shared.
  *
- * Runs after the add-ons, so everything they put in src/ but App/ becomes shared code.
+ * Runs after the add-ons, so everything they put in src/ but app/ becomes shared code.
  */
 export function makeMultiPlaceLuau(dir: string, name: string) {
 	const at = (...parts: string[]) => path.join(dir, ...parts);
@@ -38,7 +38,7 @@ export function makeMultiPlaceLuau(dir: string, name: string) {
 	const common = at("projects", "common", "src");
 	fs.mkdirSync(common, { recursive: true });
 	for (const entry of fs.readdirSync(at("src"))) {
-		if (entry !== "App") fs.renameSync(at("src", entry), path.join(common, entry));
+		if (entry !== "app") fs.renameSync(at("src", entry), path.join(common, entry));
 	}
 
 	const {
@@ -49,7 +49,7 @@ export function makeMultiPlaceLuau(dir: string, name: string) {
 	} = JSON.parse(read("default.rogen.json")) as Record<string, unknown>;
 	for (const place of PLACES) {
 		const placeDir = at("projects", place);
-		fs.cpSync(at("src", "App"), path.join(placeDir, "src", "App"), { recursive: true });
+		fs.cpSync(at("src", "app"), path.join(placeDir, "src", "app"), { recursive: true });
 		fs.cpSync(at("world"), path.join(placeDir, "world"), { recursive: true });
 		// The template's end-to-end tests are the shared features'; the other places start with none.
 		if (place === SHARED_TESTS_PLACE) fs.cpSync(at("tests"), path.join(placeDir, "tests"), { recursive: true });
@@ -103,13 +103,13 @@ export function makeMultiPlaceLuau(dir: string, name: string) {
 			at("asphalt.toml"),
 			replaceIn(
 				read("asphalt.toml"),
-				'output_path = "src/Shared"',
-				'output_path = "projects/common/src/Shared"',
-			).replaceAll("src/Shared/Assets.luau", "projects/common/src/Shared/Assets.luau"),
+				'output_path = "src/shared"',
+				'output_path = "projects/common/src/shared"',
+			).replaceAll("src/shared/Assets.luau", "projects/common/src/shared/Assets.luau"),
 		);
 		fs.writeFileSync(
 			at("mise.toml"),
-			read("mise.toml").replaceAll("src/Shared/Assets.luau", "projects/common/src/Shared/Assets.luau"),
+			read("mise.toml").replaceAll("src/shared/Assets.luau", "projects/common/src/shared/Assets.luau"),
 		);
 	}
 
@@ -151,8 +151,8 @@ export function makeMultiPlaceLuau(dir: string, name: string) {
 	);
 	agents = replaceIn(
 		agents,
-		"Add each to the list in `src/App/Server/Main.server.luau` or `src/App/Client/Start.luau`, or it never starts;",
-		"Add each to the list in `src/App/Server/Main.server.luau` or `src/App/Client/Start.luau` of every place that uses it, or it never starts there;",
+		"Add each to the list in `src/app/server/Main.server.luau` or `src/app/client/Start.luau`, or it never starts;",
+		"Add each to the list in `src/app/server/Main.server.luau` or `src/app/client/Start.luau` of every place that uses it, or it never starts there;",
 	);
 	agents = replaceIn(
 		agents,
@@ -163,7 +163,7 @@ export function makeMultiPlaceLuau(dir: string, name: string) {
 	// Single-place paths, in the template's sections and the add-ons': a place's entry scripts,
 	// world and tests are in its folder, and everything else in src/ is shared.
 	agents = agents
-		.replaceAll("`src/App/", "`projects/<place>/src/App/")
+		.replaceAll("`src/app/", "`projects/<place>/src/app/")
 		.replaceAll("`src/", "`projects/common/src/")
 		.replaceAll("→ src/", "→ projects/common/src/")
 		.replaceAll("`tests/e2e/", "`projects/<place>/tests/e2e/")
@@ -187,4 +187,4 @@ export function makeMultiPlaceLuau(dir: string, name: string) {
 }
 
 const SKILL_NOTE =
-	"> This game has several places (see `AGENTS.md`). Below, `world/`, `src/App/`, `tests/e2e/`, `build/`, `game.project.json` and `sourcemap.json` are each place's, under `projects/<place>/`, and the rest of `src/` is shared, in `projects/common/src/`. Run forge, ror and rojo from the place's folder, and name the place: `mise run dev <place>`, `mise run sync <place>`.";
+	"> This game has several places (see `AGENTS.md`). Below, `world/`, `src/app/`, `tests/e2e/`, `build/`, `game.project.json` and `sourcemap.json` are each place's, under `projects/<place>/`, and the rest of `src/` is shared, in `projects/common/src/`. Run forge, ror and rojo from the place's folder, and name the place: `mise run dev <place>`, `mise run sync <place>`.";

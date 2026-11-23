@@ -16,7 +16,7 @@ AGENTS.md says which kind of test fits what you test. How to write each:
 
 ## Specs
 
-Jest tests, `<Name>.spec.luau` beside the code, with `describe`, `it`, `expect` and `jest` from `ReplicatedStorage.DevPackages.JestGlobals`. Copy `src/Features/Clicker/Server/ClickerService.spec.luau`: it requires a fresh copy of the service before each test (`jest.resetModules()`, then `require(script.Parent.ClickerService)`), so state doesn't carry from one test to the next, and calls its functions.
+Jest tests, `<Name>.spec.luau` beside the code, with `describe`, `it`, `expect` and `jest` from `ReplicatedStorage.DevPackages.JestGlobals`. Copy `src/features/clicker/server/ClickerService.spec.luau`: it requires a fresh copy of the service before each test (`jest.resetModules()`, then `require(script.Parent.ClickerService)`), so state doesn't carry from one test to the next, and calls its functions.
 
 When a decision depends on the time, take `now: number?` as a parameter that falls back to `os.clock()`, as `ClickerService.click` does, so a spec passes its own times instead of waiting.
 
@@ -29,7 +29,7 @@ A ree harness in `tests/e2e/<feature>.luau`, run with the server and one player'
 - `Server` boots the game's own server script; keep its `bootServer` as it is.
 - `Client` talks to the server through the game's remotes, the way the real client would, and `assert`s on what comes back. Wait for what you expect with `waitFor`, not a fixed `task.wait`.
 - The test passes when the client prints `@done`. A failed `assert`, or any script error on either side, fails it.
-- To test what the player sees, start the client's own UI, as `tests/e2e/clicker-ui.luau` does: the client can't run a script's source in ree, so it calls `start()` from `src/App/Client/Start.luau`, which `Main.client.luau` runs in the game, and reads the instances it mounts.
+- To test what the player sees, start the client's own UI, as `tests/e2e/clicker-ui.luau` does: the client can't run a script's source in ree, so it calls `start()` from `src/app/client/Start.luau`, which `Main.client.luau` runs in the game, and reads the instances it mounts.
 
 ## Engine specs
 
@@ -39,4 +39,4 @@ jest-roblox uses Roblox Studio when it finds it, and Open Cloud otherwise. From 
 
 ## When a test fails
 
-`mise run test` prints each failing run's output, with the spec and line: each frame of a trace in the game's code is followed by its file, `→ src/Features/Clicker/Server/ClickerService.spec.luau:22`. Fix the code or the test until it passes, or tell the user why it stays failing. A test that fails only in ree while it passes in `mise run test:engine` is an emulation gap: make it an engine spec and tell the user.
+`mise run test` prints each failing run's output, with the spec and line: each frame of a trace in the game's code is followed by its file, `→ src/features/clicker/server/ClickerService.spec.luau:22`. Fix the code or the test until it passes, or tell the user why it stays failing. A test that fails only in ree while it passes in `mise run test:engine` is an emulation gap: make it an engine spec and tell the user.

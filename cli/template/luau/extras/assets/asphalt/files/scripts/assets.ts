@@ -6,7 +6,7 @@ import fs from "node:fs";
 import spawn from "cross-spawn";
 
 const config = fs.readFileSync("asphalt.toml", "utf8");
-const MODULE = `${/^output_path = "([^"]+)"/m.exec(config)?.[1] ?? "src/Shared"}/Assets.luau`;
+const MODULE = `${/^output_path = "([^"]+)"/m.exec(config)?.[1] ?? "src/shared"}/Assets.luau`;
 
 if (/^id = 0$/m.test(config)) {
 	console.error('Set [creator] in asphalt.toml first: your Roblox user ID, or type = "group" and the group ID.');
