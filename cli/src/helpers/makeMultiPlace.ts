@@ -22,14 +22,13 @@ const GITIGNORE = `
 `;
 
 /**
- * Turns the single-place game in `dir` into places laid out as Rogen prescribes. For roblox-ts:
- * the shared code in projects/common/src, and each place a folder in projects/ with its own
- * default.rogen.json (`sourcePaths` `["../common/src", "src"]`), tsconfig, entry scripts, world,
- * tests and forge config. Runs after the add-ons, so they land in the shared code.
+ * Turns the single-place game in `dir` into several places. For roblox-ts: the shared code in
+ * projects/common/src, and each place a folder in projects/ with its own default.rogen.json
+ * (`sourcePaths` `["../common/src", "src"]`), tsconfig, entry scripts, world, tests and forge
+ * config. Runs after the add-ons, so they land in the shared code.
  *
  * TypeScript 6 and later (Sloptor follows TypeScript 7) no longer infer rootDir: it must hold
- * every source, so a place that also compiles projects/common/src needs rootDir projects/.
- * Rogen's own example leaves rootDir unset, which only TypeScript 5 (rbxtsc) accepts. With
+ * every source, so a place that also compiles projects/common/src needs rootDir projects/. With
  * rootDir projects/, out/ can't sit in the place's folder (the compiler rejects project paths
  * into a folder inside rootDir), and Sloptor writes only inside its tsconfig's folder. So each
  * place compiles from tsconfig.<place>.json at the root to out/<place>, with the root's include/.
