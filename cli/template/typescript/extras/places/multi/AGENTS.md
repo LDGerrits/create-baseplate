@@ -1,6 +1,6 @@
 ## Where code goes
 
-This game has several places, laid out as Rogen does for roblox-ts: each place is a folder in `projects/`, and the code they share is `projects/common/src`.
+This game has several places: each place is a folder in `projects/`, and the code they share is `projects/common/src`.
 
 - `projects/common/src/features/<feature>/`: one folder per feature that several places use; `features/clicker` is the example to copy. `projects/common/src/network/` holds the networking helpers, such as `rateLimit`.
 - `projects/<place>/src/`: what only that place has. Its `app/` holds the entry scripts: `app/server/main.server.ts` and `app/client/start.tsx` (which `main.client.tsx` runs) import every service and controller the place uses, shared ones included, and start Flamework; `app/client/app.tsx` is the root of its UI. A feature only one place uses goes in `projects/<place>/src/features/`.

@@ -567,7 +567,7 @@ test("refuses Reflex with Vide", () => {
 	assert.ok(!fs.existsSync(path.join(cwd, "my-game")), "nothing is created");
 });
 
-test("lays out a multi-place game as Rogen prescribes", () => {
+test("lays out a multi-place game in projects/", () => {
 	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--places", "multi", "--data", "lapis");
 	assert.equal(run.status, 0, run.stderr);
