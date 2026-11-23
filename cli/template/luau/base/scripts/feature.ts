@@ -121,7 +121,9 @@ export function addEntry(source: string, line: string, list: RegExp): string {
 /** Creates the feature under `cwd`, and returns the files it wrote or changed. */
 export function createFeature(cwd: string, name: string, place?: string): string[] {
 	if (!/^[a-z][a-z0-9]*$/.test(name)) {
-		throw new Error(`Name the feature in lowercase letters and digits, such as "shop" or "dailyreward": not "${name}".`);
+		throw new Error(
+			`Name the feature in lowercase letters and digits, such as "shop" or "dailyreward": not "${name}".`,
+		);
 	}
 	const Name = pascal(name);
 	const at = (...parts: string[]) => path.posix.join(...parts);
@@ -190,5 +192,7 @@ if (import.meta.main) {
 		console.error(error instanceof Error ? error.message : error);
 		process.exit(1);
 	}
-	console.log("\nRun `mise run check`. Next: the feature's rules in the service, its tests, and a component with a story.");
+	console.log(
+		"\nRun `mise run check`. Next: the feature's rules in the service, its tests, and a component with a story.",
+	);
 }

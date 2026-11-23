@@ -55,8 +55,14 @@ test("starts a feature in a single-place game and imports it in the entry script
 	const service = read(dir, "src/features/daily-reward/server/daily-reward-service.ts");
 	assert.match(service, /export class DailyRewardService/);
 	assert.match(service, /from "\.\.\/\.\.\/\.\.\/network\/server\/rate-limit"/);
-	assert.match(read(dir, "src/app/server/main.server.ts"), /import "\.\.\/\.\.\/features\/daily-reward\/server\/daily-reward-service";/);
-	assert.match(read(dir, "src/app/client/start.tsx"), /import "\.\.\/\.\.\/features\/daily-reward\/client\/daily-reward-controller";/);
+	assert.match(
+		read(dir, "src/app/server/main.server.ts"),
+		/import "\.\.\/\.\.\/features\/daily-reward\/server\/daily-reward-service";/,
+	);
+	assert.match(
+		read(dir, "src/app/client/start.tsx"),
+		/import "\.\.\/\.\.\/features\/daily-reward\/client\/daily-reward-controller";/,
+	);
 });
 
 test("puts a multi-place feature in the shared code and imports it in every place", () => {

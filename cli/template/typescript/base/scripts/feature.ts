@@ -167,5 +167,7 @@ if (import.meta.main) {
 		console.error(error instanceof Error ? error.message : error);
 		process.exit(1);
 	}
-	console.log("\nRun `mise run check`. Next: the feature's rules in the service, its tests, and a component with a story.");
+	console.log(
+		"\nRun `mise run check`. Next: the feature's rules in the service, its tests, and a component with a story.",
+	);
 }
