@@ -384,14 +384,19 @@ test("creates a Luau game from the Luau template", () => {
 	assert.match(read("wally.toml"), /React = "jsdotlua\/react@=/);
 	assert.ok(fs.existsSync(path.join(dir, "wally.lock")));
 	assert.equal(JSON.parse(read("default.rogen.json")).name, "coin-rush");
-	assert.match(read("src/App/Client/Game.storybook.luau"), /name = "coin-rush"/);
+	assert.match(read("src/app/client/Game.storybook.luau"), /name = "coin-rush"/);
 	assert.match(read("AGENTS.md"), /^# coin-rush\n\nA Roblox game in Luau/);
-	assert.ok(fs.existsSync(path.join(dir, "src/Features/Clicker/Server/ClickerService.luau")));
+	assert.ok(fs.existsSync(path.join(dir, "src/features/clicker/server/ClickerService.luau")));
 	assert.ok(fs.existsSync(path.join(dir, ".claude/plugins/luau/.claude-plugin/plugin.json")));
 	assert.ok(fs.lstatSync(path.join(dir, ".claude/skills")).isSymbolicLink());
 	assert.ok(fs.existsSync(path.join(dir, ".gitignore")), ".gitignore restored from _gitignore");
 	assert.ok(!fs.existsSync(path.join(dir, "_symlinks.json")));
-	for (const typescript of ["tsconfig.json", "eslint.config.ts", "src/app", "src/features"]) {
+	for (const typescript of [
+		"tsconfig.json",
+		"eslint.config.ts",
+		"src/app/server/main.server.ts",
+		"src/features/clicker/server/clicker-service.ts",
+	]) {
 		assert.ok(!fs.existsSync(path.join(dir, typescript)), `${typescript} is the TypeScript template's`);
 	}
 	for (const generated of ["node_modules", "Packages", "DevPackages", ".luau-lsp", "sourcemap.json"]) {
@@ -424,14 +429,14 @@ test("applies Luau add-ons: Wally packages, files and the services they start", 
 	assert.match(wally, /\[server-dependencies\]\nProfileStore = "lm-loleris\/profilestore@=/);
 	assert.equal(JSON.parse(read("package.json")).dependencies, undefined, "no npm packages for the game");
 
-	const main = read("src/App/Server/Main.server.luau");
+	const main = read("src/app/server/Main.server.luau");
 	assert.match(
 		main,
-		/require\(ServerScriptService\.Features\.Clicker\.ClickerService\),\n\trequire\(ServerScriptService\.Features\.PlayerData\.PlayerDataService\),\n\trequire\(ServerScriptService\.Features\.Spinner\.SpinnerService\),\n\}/,
+		/require\(ServerScriptService\.features\.clicker\.ClickerService\),\n\trequire\(ServerScriptService\.features\.playerdata\.PlayerDataService\),\n\trequire\(ServerScriptService\.features\.spinner\.SpinnerService\),\n\}/,
 	);
-	assert.ok(fs.existsSync(path.join(dir, "src/Features/PlayerData/Server/PlayerDataService.spec.luau")));
+	assert.ok(fs.existsSync(path.join(dir, "src/features/playerdata/server/PlayerDataService.spec.luau")));
 	assert.ok(fs.existsSync(path.join(dir, "tests/e2e/spinner.luau")));
-	assert.match(read("src/Features/Clicker/Client/ClickerController.luau"), /Charm\.signal/);
+	assert.match(read("src/features/clicker/client/ClickerController.luau"), /Charm\.signal/);
 
 	const agents = read("AGENTS.md");
 	assert.ok(agents.indexOf("## Player data") < agents.indexOf("<!-- rogen -->"), "add-on notes come before Rogen's");
@@ -451,8 +456,8 @@ test("swaps react-lua for Vide in a Luau game, with Charm's Vide binding", () =>
 	for (const react of ["React =", "ReactRoblox =", "ReactRipple =", "ReactCharm ="]) {
 		assert.doesNotMatch(wally, new RegExp(`^${react}`, "m"), `${react} is gone`);
 	}
-	assert.match(read("src/Features/Clicker/Client/ClickerButton.story.luau"), /CreateVideStory/);
-	assert.match(read("src/App/Client/App.luau"), /VideCharm/);
+	assert.match(read("src/features/clicker/client/ClickerButton.story.luau"), /CreateVideStory/);
+	assert.match(read("src/app/client/App.luau"), /VideCharm/);
 	const agents = read("AGENTS.md");
 	assert.match(agents, /## UI\n\nVide/);
 	assert.doesNotMatch(agents, /react-lua|ReactRipple/, "AGENTS.md names no React package");
@@ -469,7 +474,7 @@ test("adds the Luau tools: Asphalt's Luau module and Darklua's release", () => {
 	assert.match(mise, /darklua/);
 	assert.match(mise, /\[tasks\.release\]/);
 	assert.match(mise, /\[tasks\.assets\]/);
-	assert.match(read("asphalt.toml"), /src\/Shared/);
+	assert.match(read("asphalt.toml"), /src\/shared/);
 	assert.ok(fs.existsSync(path.join(dir, ".darklua.json")));
 	assert.match(read(".gitignore"), /^\/dist$/m);
 	assert.match(read(".github/workflows/ci.yml"), /mise run release/);
@@ -486,15 +491,15 @@ test("lays out a multi-place Luau game as Rogen prescribes for Luau", () => {
 	for (const place of ["lobby", "game"]) {
 		const config = JSON.parse(read(`${place}.rogen.json`));
 		assert.deepEqual(config.sourcePaths, ["projects/common/src", `projects/${place}/src`]);
-		assert.ok(exists(`projects/${place}/src/App/Server/Main.server.luau`));
+		assert.ok(exists(`projects/${place}/src/app/server/Main.server.luau`));
 		assert.ok(exists(`projects/${place}/world/default.project.json`));
 	}
-	assert.ok(exists("projects/common/src/Features/Clicker/Server/ClickerService.luau"));
+	assert.ok(exists("projects/common/src/features/clicker/server/ClickerService.luau"));
 	assert.ok(exists("projects/game/tests/e2e/clicker.luau"), "the shared code's end-to-end tests run in one place");
 	assert.ok(!exists("projects/lobby/tests/e2e/clicker.luau"));
 	for (const gone of ["src", "world", "tests", "default.rogen.json"]) assert.ok(!exists(gone), `${gone} moved`);
 	assert.ok(exists("wally.toml"), "the packages stay shared at the root");
-	assert.match(read("asphalt.toml"), /output_path = "projects\/common\/src\/Shared"/);
+	assert.match(read("asphalt.toml"), /output_path = "projects\/common\/src\/shared"/);
 	assert.match(read("AGENTS.md"), /projects\/common\/src/);
 });
 

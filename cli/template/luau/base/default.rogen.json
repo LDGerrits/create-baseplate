@@ -2,9 +2,9 @@
 	"name": "my-game",
 	"sourcePaths": ["src"],
 	"routes": {
-		"Server": "ServerScriptService",
-		"Client": "StarterPlayer/StarterPlayerScripts",
-		"Shared": "ReplicatedStorage/Shared"
+		"server": "ServerScriptService",
+		"client": "StarterPlayer/StarterPlayerScripts",
+		"shared": "ReplicatedStorage/Shared"
 	},
 	"tree": {
 		"$className": "DataModel",

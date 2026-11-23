@@ -5,12 +5,12 @@ A Roblox game in Luau, set up for coding agents: one command checks everything, 
 ## What it gives an agent
 
 - **One command checks everything.** `mise run check` formats, type-checks, lints, builds the place, checks that client code never reaches for the server's, runs the tests and renders the UI stories, in about ten seconds.
-- **Strict types for the whole game.** Every file is `--!strict`, and [luau-lsp](https://github.com/JohnnyMorganz/luau-lsp) type-checks it against every instance in the game, world included, and the packages' own types: `require(ReplicatedStorage.Shared.Features.Clicker.ClickerNetwork)` and `workspace.SpawnLocation` are typed, and a wrong name fails the check.
+- **Strict types for the whole game.** Every file is `--!strict`, and [luau-lsp](https://github.com/JohnnyMorganz/luau-lsp) type-checks it against every instance in the game, world included, and the packages' own types: `require(ReplicatedStorage.Shared.features.clicker.ClickerNetwork)` and `workspace.SpawnLocation` are typed, and a wrong name fails the check.
 - **Tests run without Studio.** Jest specs and end-to-end tests, with the real server and a client talking through remotes, run in [ree](https://github.com/Anime-Vanguards/roblox-engine-emulator), an emulated Roblox engine, in a few seconds; a failure points at the file and line. The same specs run in real Studio or Open Cloud through [jest-roblox](https://github.com/christopher-buss/jest-roblox-cli) (`mise run test:engine`).
 - **It can see the UI.** `mise run ui` renders every story offline with [rur](https://github.com/Anime-Vanguards/roblox-ui-renderer) and prints where each picture is.
 - **Remotes can't be taken unguarded.** Each remote declares its arguments' types and a [`t`](https://github.com/osyrisrblx/t) check; the server takes them only through `Serve`, which rate-limits each player and drops calls that fail the check. The check fails on `OnServerEvent` anywhere else.
 - **The world is files, apart from the code.** Studio edits the map and [rbx-forge](https://github.com/christopher-buss/rbx-forge) syncs it back into `world/` as readable JSON, while Rojo serves only code.
-- **Each feature is one folder.** [Rogen](https://github.com/LDGerrits/rogen) routes its `Server/`, `Client/` and `Shared/` folders to the right place in the game.
+- **Each feature is one folder.** [Rogen](https://github.com/LDGerrits/rogen) routes its `server/`, `client/` and `shared/` folders to the right place in the game.
 - **Instructions where agents look.** `AGENTS.md` covers the layout, adding a feature and the rules; `.agents/skills/` (linked as `.claude/skills/`) covers tests, the world and Studio.
 - **Hooks hold the rules, in Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI.** Before the agent ends its turn, a stop hook runs `mise run check` and hands back any failure; it skips the check when nothing changed since the last pass. After each edit, a hook formats the file (StyLua, or Biome for JSON) and hands Selene's lint problems to the agent right away (in Claude Code, Codex, Copilot and Gemini CLI; in Cursor it only formats). A guard blocks what agents get wrong here, and says what to do instead: editing generated files and installed packages, skipping the commit hook, other toolchain managers, and printing `.env`. Each tool's config (`.claude/settings.json`, `.codex/hooks.json`, `.cursor/hooks.json`, `.github/hooks/checks.json`, `.gemini/settings.json`) runs the same scripts in `.agents/hooks/`, and a hook that can't find mise lets the agent carry on. Codex runs project hooks once you trust them with `/hooks`, Gemini CLI once you trust the folder.
 - **Type errors as it edits.** In Claude Code, the project's own luau-lsp reports errors after every edit and answers go-to-definition and hover.
@@ -65,13 +65,13 @@ Keys and local paths go in `.env`: copy `.env.example`, which lists each one.
 
 ```
 src/
-  App/                 entry scripts: start the services and controllers, mount the UI
-  Features/
-    Clicker/           an example feature
-      Server/          ClickerService.luau: owns the counts, checks the cooldown; its spec
-      Client/          ClickerController.luau, ClickerButton.luau and its story
-      Shared/          ClickerNetwork.luau: the remotes
-  Network/             remotes, and how the server takes them: Serve, RateLimit
+  app/                 entry scripts: start the services and controllers, mount the UI
+  features/
+    clicker/           an example feature
+      server/          ClickerService.luau: owns the counts, checks the cooldown; its spec
+      client/          ClickerController.luau, ClickerButton.luau and its story
+      shared/          ClickerNetwork.luau: the remotes
+  network/             remotes, and how the server takes them: Serve, RateLimit
 tests/e2e/             end-to-end tests: clicker.luau
 world/                 the map and lighting, edited in Studio and synced back
 wally.toml             the Roblox packages

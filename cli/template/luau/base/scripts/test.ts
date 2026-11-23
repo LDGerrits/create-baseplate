@@ -80,7 +80,7 @@ const runs: Run[] = [
 		})),
 ];
 
-// Traces name the game's instances (`ServerScriptService.Features.Clicker.ClickerService:17`). Each
+// Traces name the game's instances (`ServerScriptService.features.clicker.ClickerService:17`). Each
 // such frame gets the file it comes from, through the project file; Luau runs as written, so the
 // line is the same.
 const sourceFiles = new Map<string, string>();

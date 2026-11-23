@@ -24,17 +24,17 @@ mise pins every tool and locks its checksums. The scripts, hooks and Rogen, rbx-
 
 ## Types for the whole game
 
-`mise run generate` writes `sourcemap.json` from the game's code and its world, and luau-lsp reads it with `strictDatamodelTypes` on (`.vscode/settings.json`, which the check and the editor share). So `require(ReplicatedStorage.Shared.Features.Clicker.ClickerNetwork)` is typed by what that module returns, `workspace.SpawnLocation` is a `SpawnLocation`, and a module or part that isn't there fails the check. Roblox's API types come from the pinned luau-lsp's release, into `.luau-lsp/`, where an agent can search them.
+`mise run generate` writes `sourcemap.json` from the game's code and its world, and luau-lsp reads it with `strictDatamodelTypes` on (`.vscode/settings.json`, which the check and the editor share). So `require(ReplicatedStorage.Shared.features.clicker.ClickerNetwork)` is typed by what that module returns, `workspace.SpawnLocation` is a `SpawnLocation`, and a module or part that isn't there fails the check. Roblox's API types come from the pinned luau-lsp's release, into `.luau-lsp/`, where an agent can search them.
 
 ## Where code goes
 
-The same shape as a roblox-ts game, in Luau's naming: `src/Features/<Feature>/` with `Server/`, `Client/` and `Shared/` folders that Rogen routes, and PascalCase files. Modules are required by instance path, as `rogen where <file>` prints it; client code reaches other client code from `script`, since each player gets a copy of it.
+The same shape as a roblox-ts game, in Luau's naming: `src/features/<feature>/` with lowercase `server/`, `client/` and `shared/` folders that Rogen routes, and PascalCase files. Modules are required by instance path, as `rogen where <file>` prints it; client code reaches other client code from `script`, since each player gets a copy of it.
 
-Services and controllers are plain modules with a `start()` function. `src/App/Server/Main.server.luau` lists every service and starts each; `src/App/Client/Start.luau` does the same for controllers, then mounts the UI. The check fails on a `*Service.luau` or `*Controller.luau` neither lists.
+Services and controllers are plain modules with a `start()` function. `src/app/server/Main.server.luau` lists every service and starts each; `src/app/client/Start.luau` does the same for controllers, then mounts the UI. The check fails on a `*Service.luau` or `*Controller.luau` neither lists.
 
 ## Remotes
 
-A feature declares its remotes once, in `Shared/<Feature>Network.luau`:
+A feature declares its remotes once, in `shared/<Feature>Network.luau`:
 
 ```luau
 return {
@@ -47,7 +47,7 @@ The type gives both sides the arguments; the [`t`](https://github.com/osyrisrblx
 
 ## Tests and UI
 
-Specs are `<Name>.spec.luau` beside the code, with Jest from `ReplicatedStorage.DevPackages.JestGlobals`; end-to-end tests are the same `tests/e2e/*.luau` harnesses as in a roblox-ts game. A failing frame names its file and line: `ServerScriptService.Features.Clicker.ClickerService.spec:22 → src/Features/Clicker/Server/ClickerService.spec.luau:22`. Stories are `<Component>.story.luau`, made with UI Labs' `CreateReactStory`, and `mise run ui` renders them as in a roblox-ts game.
+Specs are `<Name>.spec.luau` beside the code, with Jest from `ReplicatedStorage.DevPackages.JestGlobals`; end-to-end tests are the same `tests/e2e/*.luau` harnesses as in a roblox-ts game. A failing frame names its file and line: `ServerScriptService.features.clicker.ClickerService.spec:22 → src/Features/Clicker/Server/ClickerService.spec.luau:22`. Stories are `<Component>.story.luau`, made with UI Labs' `CreateReactStory`, and `mise run ui` renders them as in a roblox-ts game.
 
 ## Several places
 
