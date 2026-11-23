@@ -54,6 +54,9 @@ function checkCommand(command: string): string | undefined {
 	if (/\bgit\b[^|;&]*\bcommit\b[^|;&]*(\s--no-v[a-z-]*|\s-[A-Za-z]*n[A-Za-z]*)(?=\s|$)/.test(bare)) {
 		return "The commit hook runs the check on what you commit; commit without --no-verify, and fix what it reports.";
 	}
+	if (/\bmise\s+run\s+publish\b|\bnode\b[^|;&]*scripts\/publish\.ts|\brojo\s+upload\b/.test(bare)) {
+		return "Publishing replaces the game players join. Only a person publishes, with `mise run publish` or a tag (see `mise run doc publishing`): tell the user it's ready.";
+	}
 	if (/core\.hooksPath|HUSKY=0|LINT_STAGED/.test(command)) {
 		return "Leave the commit hook on; commit normally and fix what it reports.";
 	}

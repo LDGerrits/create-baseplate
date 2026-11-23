@@ -133,3 +133,9 @@ run = 'node scripts/each-place.ts --one "{{usage.place}}" "forge save" "forge sy
 description = "Compile and build the whole game, code and world, to build/game.rbxl (in each place's folder, in a multi-place game)"
 depends = ["compile"]
 run = 'node scripts/each-place.ts "mkdir build" "rojo build game.project.json --output build/game.rbxl"'
+
+[tasks.publish]
+description = "Build the game and publish it to Roblox through Open Cloud, to the place in ROBLOX_PUBLISH_PLACE_ID (see .env.example); .github/workflows/publish.yml runs it for dev, stable and prod"
+depends = ["build"]
+env = { _.file = ".env" }
+run = 'node scripts/each-place.ts "node {root}/scripts/publish.ts build/game.rbxl"'

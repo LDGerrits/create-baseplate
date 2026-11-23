@@ -35,10 +35,13 @@ test("blocks commands that skip the rules, from each tool's shell", () => {
 		{ toolName: "bash", toolArgs: '{"command":"npx eslint src"}' },
 		{ tool_name: "run_shell_command", tool_input: { command: "cat .env", dir_path: "." } },
 		{ command: "git config core.hooksPath /dev/null" }, // Cursor's beforeShellExecution
+		{ tool_name: "Bash", tool_input: { command: "mise run publish" } },
+		{ tool_name: "Bash", tool_input: { command: "mise x -- node scripts/publish.ts build/game.rbxl" } },
 	];
 	for (const payload of commands) assert.notEqual(reason(payload), undefined, JSON.stringify(payload));
 	assert.equal(reason({ tool_name: "Bash", tool_input: { command: 'git commit -m "no -n here"' } }), undefined);
 	assert.equal(reason({ tool_name: "run_shell_command", tool_input: { command: "mise run check" } }), undefined);
+	assert.equal(reason({ tool_name: "Bash", tool_input: { command: "git diff scripts/publish.ts" } }), undefined);
 });
 
 test("blocks reading .env, but not reading generated files", () => {

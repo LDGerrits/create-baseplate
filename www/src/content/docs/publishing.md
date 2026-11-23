@@ -25,12 +25,35 @@ Open the place file in Studio and use **File > Publish to Roblox**. That's the s
 
 ## Publish from the command line
 
-Rojo uploads a place through Open Cloud. Create an API key at [create.roblox.com/dashboard/credentials](https://create.roblox.com/dashboard/credentials) with the `universe-places:write` scope on the experience you publish to, then:
+`mise run publish` builds the place and publishes it through Open Cloud. Create a key at [create.roblox.com/dashboard/credentials](https://create.roblox.com/dashboard/credentials) with `universe-places:write` on the experience you publish to, and set it in `.env` with the experience and the place:
 
 ```sh
-mise x -- rojo upload game.project.json --api_key "$KEY" --universe_id <experience ID> --asset_id <place ID>
+ROBLOX_PUBLISH_API_KEY=...
+ROBLOX_PUBLISH_UNIVERSE_ID=<experience ID>
+ROBLOX_PUBLISH_PLACE_ID=<place ID>
 ```
 
-In a multi-place game, run it in each place's folder, `projects/<place>/`. For a release build, upload `release.project.json` instead.
+In a multi-place game, `ROBLOX_PUBLISH_PLACE_ID` names each place's ID: `lobby=123,game=456`. With the release add-on, `mise run publish` builds and publishes the release build.
 
 Keep this key apart from the test key the CI uses (`ROBLOX_OPEN_CLOUD_API_KEY`, see [environment variables](/environment/)): a key reaches every place of its experience, and the test key should only reach an experience made for tests.
+
+Agents don't publish: a hook stops them running `mise run publish`, and they tell you when a change is ready.
+
+## Publish from CI
+
+Every published version should come from a commit, so you can publish any of them again. `.github/workflows/publish.yml` publishes to three places, each in its own experience:
+
+| Target | When | For |
+| --- | --- | --- |
+| dev | each push to main, once CI passes on it | the latest code, to try together |
+| stable | a version tag, `git tag v1.2.0 && git push origin v1.2.0` | playtests |
+| prod | the same tag, after stable, once someone approves it | the game players join |
+
+Set up each target you use:
+
+1. Create the experience and its places, and publish them once from Studio.
+2. Under **Settings > Environments**, add an environment named after the target (`dev`, `stable`, `prod`) with the secret `ROBLOX_PUBLISH_API_KEY`: a key with `universe-places:write` on that experience only.
+3. Under **Settings > Secrets and variables > Actions > Variables**, add `ROBLOX_<TARGET>_UNIVERSE_ID` and `ROBLOX_<TARGET>_PLACE_ID`, such as `ROBLOX_DEV_PLACE_ID`.
+4. For prod, give the environment **required reviewers**, so a tag waits for someone to approve it; without them, every tag goes live. Limit its deployments to tags matching `v*`.
+
+A target without its place variable shows as skipped. Never edit dev, stable or prod in Studio: the next publish replaces the place with what's in git, and the edit is lost. Edit the world in your own place and sync it back to `world/` (see [World and Studio](/world-and-studio/)).

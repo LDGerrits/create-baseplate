@@ -8,3 +8,11 @@
 *.mp3 binary
 *.ttf binary
 *.otf binary
+
+# Source art is large and can't be merged: Git LFS keeps it out of the history. Set it up once per
+# machine with `git lfs install`; without it, git stores these files as usual.
+*.fbx filter=lfs diff=lfs merge=lfs -text
+*.obj filter=lfs diff=lfs merge=lfs -text
+*.glb filter=lfs diff=lfs merge=lfs -text
+*.blend filter=lfs diff=lfs merge=lfs -text
+*.psd filter=lfs diff=lfs merge=lfs -text

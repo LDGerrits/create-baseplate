@@ -473,6 +473,7 @@ test("adds the Luau tools: Asphalt's Luau module and Darklua's release", () => {
 	assert.ok(fs.existsSync(path.join(dir, ".darklua.json")));
 	assert.match(read(".gitignore"), /^\/dist$/m);
 	assert.match(read(".github/workflows/ci.yml"), /mise run release/);
+	assert.match(mise, /\[tasks\.publish\][^[]*depends = \["release"\][^[]*publish\.ts build\/release\.rbxl/);
 });
 
 test("lays out a multi-place Luau game as Rogen prescribes for Luau", () => {
@@ -657,6 +658,7 @@ test("builds a release with Darklua", () => {
 	assert.match(mise, /\n\[tasks\.release\]\n/);
 	assert.match(read(".gitignore"), /^\/dist$/m);
 	assert.match(read(".github/workflows/ci.yml"), /- run: mise run ci\n\s+- run: mise run release\n/);
+	assert.match(mise, /\[tasks\.publish\][^[]*depends = \["release"\][^[]*publish\.ts build\/release\.rbxl/);
 	assert.match(read("AGENTS.md"), /## Release builds/);
 });
 

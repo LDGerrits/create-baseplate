@@ -32,9 +32,28 @@ The world lives in `world/` as files, apart from the code:
 
 Edit or add a `.model.json` under `world/<Service>/`, then run `mise run check`. If a forge session is running, `forge restart` rebuilds Studio's place from `world/`.
 
+## Art and large models
+
+- Models from Studio's 3D Importer point to their meshes and textures by asset ID, so they stay small as `.model.json`. Unions, and anything that holds its mesh or physics data itself, are binary blobs that make large, unreadable JSON: save such a model as an `.rbxm` over its path under `world/` (in Studio, **Save to File**), and syncback keeps it binary from then on.
+- Source art (`.fbx`, `.blend`, `.psd`) goes outside `world/`, such as in `art/`. `.gitattributes` stores it in Git LFS, which each machine sets up once with `git lfs install`; it can't be merged, so lock a file (`git lfs lock <path>`) while you change it.
+- Uploading a mesh or texture again gives it a new asset ID: update the instances that use it.
+
+## Many copies of one asset
+
+A copy placed by hand is a separate instance: changing the original leaves it as it was. To place an asset many times, keep it once and place markers:
+
+1. Keep the asset in `world/ServerStorage/Props/`, as a model named after it (add `ServerStorage` to the world as the last gotcha says).
+2. Where it stands, place a marker: an anchored, invisible, non-colliding Part named after the asset, tagged `Prop`, its pivot where the asset's goes.
+3. A server service swaps each marker for the asset when the game starts: for each part `CollectionService` tags `Prop`, clone the model of its name, `PivotTo` the marker's pivot, parent it where the marker was, and destroy the marker. Give it a spec, and fail loudly on a marker whose asset is missing.
+
+Changing the asset then changes every place it stands, and the world's files stay small.
+
 ## Gotchas
 
 - Sync with `mise run sync`, which saves before it syncs: without a save, syncback reads the last saved place.
 - Syncback writes each new instance as a `.model.json`, because `mise.toml` sets `ROJO_SYNCBACK_DEBUG=2`. A link to another instance, such as a weld's `Part0`, is a `Rojo_Target_<Property>` attribute holding that instance's `Rojo_Id`. An instance keeps the file type it already has: read an `.rbxm` with Lune, `roblox.deserializeModel(fs.readFile(path))`.
 - Studio joins touching parts with a `Snap` when it opens the place; syncback keeps the joint, with `Rojo_Id` attributes to link it.
+- `forge restart` rebuilds Studio's place from `world/` and drops the edits you haven't synced: run `mise run sync` first.
+- An edit to `world/`'s files reaches Studio only through `forge restart`. Rojo serves just the code, and its live sync couldn't set a MeshId, Terrain or a union anyway.
+- Terrain is one binary file that git can't merge, so one person changes it at a time. When two branches both changed it, keep one side and redo the other's edit in Studio.
 - A service lives in the code or the world, never both. To add one, such as `SoundService`, give it a project file and a folder like `Workspace`, and map it in `world/default.project.json`.

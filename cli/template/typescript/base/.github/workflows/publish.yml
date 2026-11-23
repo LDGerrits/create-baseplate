@@ -1,0 +1,109 @@
+name: Publish
+
+# Builds the game from a commit and publishes it to Roblox through Open Cloud (`mise run publish`),
+# so every published version comes from a commit and can be published again from it:
+# - dev: main, each time CI passes on it.
+# - stable: a version tag (`git tag v1.2.0 && git push origin v1.2.0`), for playtests.
+# - prod: the same tag, after stable, once someone approves it.
+#
+# Each target is a GitHub environment (Settings > Environments) holding the secret
+# ROBLOX_PUBLISH_API_KEY, a key with universe-places:write on that target's experience only. Its
+# places are repository variables (Settings > Secrets and variables > Actions):
+# ROBLOX_<TARGET>_UNIVERSE_ID and ROBLOX_<TARGET>_PLACE_ID, such as ROBLOX_DEV_PLACE_ID. In a
+# multi-place game the place ID names each place: lobby=123,game=456. A target without its place
+# variable shows as skipped. Give the prod environment required reviewers, or every tag goes live
+# without anyone approving it.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  dev:
+    name: Publish main to dev
+    if: >-
+      github.event_name == 'workflow_run' && github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.conclusion == 'success' && vars.ROBLOX_DEV_PLACE_ID != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: dev
+    # A newer commit replaces one still waiting to publish.
+    concurrency:
+      group: publish-dev
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        with:
+          version: 2026.11.8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: mise run install
+      - run: mise run publish
+        env:
+          # The key only here: the steps before run installs and tools, which never see it.
+          ROBLOX_PUBLISH_API_KEY: ${{ secrets.ROBLOX_PUBLISH_API_KEY }}
+          ROBLOX_PUBLISH_UNIVERSE_ID: ${{ vars.ROBLOX_DEV_UNIVERSE_ID }}
+          ROBLOX_PUBLISH_PLACE_ID: ${{ vars.ROBLOX_DEV_PLACE_ID }}
+
+  stable:
+    name: Publish the tag to stable
+    if: github.event_name == 'push' && vars.ROBLOX_STABLE_PLACE_ID != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: stable
+    concurrency:
+      group: publish-stable
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        with:
+          version: 2026.11.8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: mise run install
+      - run: mise run publish
+        env:
+          ROBLOX_PUBLISH_API_KEY: ${{ secrets.ROBLOX_PUBLISH_API_KEY }}
+          ROBLOX_PUBLISH_UNIVERSE_ID: ${{ vars.ROBLOX_STABLE_UNIVERSE_ID }}
+          ROBLOX_PUBLISH_PLACE_ID: ${{ vars.ROBLOX_STABLE_PLACE_ID }}
+
+  prod:
+    name: Publish the tag to prod
+    needs: stable
+    if: vars.ROBLOX_PROD_PLACE_ID != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Waits here for the environment's required reviewers.
+    environment: prod
+    concurrency:
+      group: publish-prod
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        with:
+          version: 2026.11.8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: mise run install
+      - run: mise run publish
+        env:
+          ROBLOX_PUBLISH_API_KEY: ${{ secrets.ROBLOX_PUBLISH_API_KEY }}
+          ROBLOX_PUBLISH_UNIVERSE_ID: ${{ vars.ROBLOX_PROD_UNIVERSE_ID }}
+          ROBLOX_PUBLISH_PLACE_ID: ${{ vars.ROBLOX_PROD_PLACE_ID }}
