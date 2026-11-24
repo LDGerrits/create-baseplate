@@ -3,6 +3,11 @@
 registry = "test"
 
 [[package]]
+name = "evaera/promise"
+version = "4.0.0"
+dependencies = []
+
+[[package]]
 name = "jsdotlua/boolean"
 version = "1.2.7"
 dependencies = [["number", "jsdotlua/number@1.2.7"]]
@@ -268,6 +273,11 @@ version = "3.0.1"
 dependencies = [["React", "jsdotlua/react@17.2.1"], ["Ripple", "littensy/ripple@0.10.2"]]
 
 [[package]]
+name = "littensy/remo"
+version = "1.5.3"
+dependencies = [["Promise", "evaera/promise@4.0.0"]]
+
+[[package]]
 name = "littensy/ripple"
 version = "0.10.2"
 dependencies = []
@@ -275,7 +285,7 @@ dependencies = []
 [[package]]
 name = "local/game"
 version = "0.1.0"
-dependencies = [["React", "jsdotlua/react@17.2.1"], ["ReactRipple", "littensy/react-ripple@3.0.1"], ["ReactRoblox", "jsdotlua/react-roblox@17.2.1"], ["t", "osyrisrblx/t@3.1.1"], ["Jest", "jsdotlua/jest@3.10.0"], ["JestGlobals", "jsdotlua/jest-globals@3.10.0"], ["UILabs", "pepeeltoro41/ui-labs@2.4.2"]]
+dependencies = [["React", "jsdotlua/react@17.2.1"], ["ReactRipple", "littensy/react-ripple@3.0.1"], ["ReactRoblox", "jsdotlua/react-roblox@17.2.1"], ["Remo", "littensy/remo@1.5.3"], ["t", "osyrisrblx/t@3.1.1"], ["Jest", "jsdotlua/jest@3.10.0"], ["JestGlobals", "jsdotlua/jest-globals@3.10.0"], ["UILabs", "pepeeltoro41/ui-labs@2.4.2"]]
 
 [[package]]
 name = "osyrisrblx/t"

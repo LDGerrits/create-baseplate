@@ -1,11 +1,8 @@
 -- Owns every player's click count. Clients ask to click; this service decides.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
 
 local ClickerNetwork = require(ReplicatedStorage.Shared.features.clicker.ClickerNetwork)
-local RateLimit = require(ServerScriptService.network.RateLimit)
-local Serve = require(ServerScriptService.network.Serve)
 
 local ClickerService = {}
 
@@ -41,8 +38,8 @@ end
 
 -- Main.server.luau calls this once, after every service has loaded.
 function ClickerService.start()
-	-- The rate limit drops floods before they reach the service, which still applies its own cooldown.
-	Serve.event(ClickerNetwork.click, { limit = RateLimit.perSecond(20) }, function(player)
+	-- The remote's throttle drops floods before they reach the service, which still applies its own cooldown.
+	ClickerNetwork.click:connect(function(player)
 		local count = ClickerService.click(player.UserId)
 		if count ~= nil then
 			ClickerNetwork.clicksChanged:fire(player, count)

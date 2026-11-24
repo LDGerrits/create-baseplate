@@ -77,7 +77,7 @@ depends = ["generate"]
 run = [
 	"stylua .",
 	"biome check --write --no-errors-on-unmatched .",
-	# Tests named so they never run, services nothing starts, and remotes taken without a rate limit.
+	# Tests named so they never run, services nothing starts, and remotes taken without Remo.
 	"node scripts/check-sources.ts",
 	# The agent files at the create-baseplate version package.json pins, and no clash left unmerged.
 	"node scripts/agent-files.ts --check",
@@ -96,7 +96,7 @@ depends = ["generate"]
 run = [
 	"stylua --check .",
 	"biome ci .",
-	# Tests named so they never run, services nothing starts, and remotes taken without a rate limit.
+	# Tests named so they never run, services nothing starts, and remotes taken without Remo.
 	"node scripts/check-sources.ts",
 	# The agent files at the create-baseplate version package.json pins, and no clash left unmerged.
 	"node scripts/agent-files.ts --check",

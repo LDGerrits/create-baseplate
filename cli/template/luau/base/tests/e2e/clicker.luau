@@ -22,7 +22,7 @@ local function waitFor<T>(what: string, check: () -> T?, seconds: number?): T
 	error(`timed out waiting for {what}`)
 end
 
--- The server creates the remotes as its services load.
+-- The server creates the remotes as its services load. Remo names each after its namespace.
 local function remote(name: string): RemoteEvent
 	return waitFor(`the {name} remote`, function()
 		for _, descendant in game:GetService("ReplicatedStorage"):GetDescendants() do
@@ -43,11 +43,11 @@ return {
 
 	Client = function()
 		local counts = {}
-		remote("clicksChanged").OnClientEvent:Connect(function(count)
+		remote("clicker.clicksChanged").OnClientEvent:Connect(function(count)
 			table.insert(counts, count)
 		end)
 
-		local click = remote("click")
+		local click = remote("clicker.click")
 		click:FireServer()
 		click:FireServer() -- inside the cooldown: the server drops it
 		waitFor("the first count", function()

@@ -47,7 +47,7 @@ test("starts a feature in a single-place game and lists it in the entry scripts"
 	]) {
 		assert.ok(fs.existsSync(path.join(dir, "src/features/shop", file)), file);
 	}
-	assert.match(read(dir, "src/features/shop/server/ShopService.luau"), /Serve\.event\(ShopNetwork\.request/);
+	assert.match(read(dir, "src/features/shop/server/ShopService.luau"), /ShopNetwork\.request:connect\(/);
 	assert.match(
 		read(dir, "src/app/server/Main.server.luau"),
 		/require\(ServerScriptService\.features\.shop\.ShopService\),/,

@@ -6,7 +6,6 @@ The game has several places, laid out as [Rogen](https://github.com/LDGerrits/ro
 projects/
   common/src/          code every place shares
     features/clicker/  an example feature: server/, client/, shared/
-    network/           remotes, and how the server takes them: Serve, RateLimit
   lobby/               a place: src/app (its entry scripts), world/, tests/e2e/
   game/                another place, laid out the same; runs the shared code's tests
 lobby.rogen.json       each place's Rogen config: its source paths, shared and its own

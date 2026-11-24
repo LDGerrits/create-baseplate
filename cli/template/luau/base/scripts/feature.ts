@@ -1,5 +1,5 @@
 // `mise run feature <name>`: starts a feature the way AGENTS.md's "Adding a feature" describes, so
-// its folders, its rate-limited event and its entry-script entries are right from the first line.
+// its folders, its throttled remote and its entry-script entries are right from the first line.
 //
 //   node scripts/feature.ts <name> [<place>]
 //
@@ -19,27 +19,37 @@ const pascal = (name: string) => name.replace(/^./, (letter) => letter.toUpperCa
 export function featureFiles(name: string): Record<string, string> {
 	const Name = pascal(name);
 	return {
-		[`shared/${Name}Network.luau`]: `-- The ${name} feature's remotes. Each declares the arguments it carries: the type for the type checker,
--- and for what clients send, a \`t\` check the server runs before any handler sees the call.
+		[`shared/${Name}Network.luau`]: `-- The ${name} feature's remotes, made with Remo. The type gives both sides each remote's arguments;
+-- Remo runs the \`t\` validators on what arrives before any handler sees it, so every argument a
+-- client sends gets one, and throttleMiddleware drops a player's floods.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Remote = require(ReplicatedStorage.Shared.network.Remote)
+local Remo = require(ReplicatedStorage.Packages.Remo)
 local t = require(ReplicatedStorage.Packages.t)
 
-return {
-	-- Client to server: the player asks for their value. Carries nothing.
-	request = Remote.clientEvent("request", t.tuple()) :: Remote.ClientEvent<()>,
-	-- Server to client: the player's value.
-	changed = Remote.serverEvent("changed") :: Remote.ServerEvent<number>,
+type Remotes = {
+	${name}: {
+		-- Client to server: the player asks for their value. Carries nothing.
+		request: Remo.ClientToServer<()>,
+		-- Server to client: the player's value.
+		changed: Remo.ServerToClient<number>,
+	},
 }
+
+-- The namespace keeps these names apart from other features': "${name}.request", "${name}.changed".
+local remotes: Remotes = Remo.createRemotes({
+	${name} = Remo.namespace({
+		request = Remo.remote().middleware(Remo.throttleMiddleware(0.1)),
+		changed = Remo.remote(t.number),
+	}),
+})
+
+return remotes.${name}
 `,
 		[`server/${Name}Service.luau`]: `-- Owns every player's ${name} state. Clients ask; this service decides.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
 
 local ${Name}Network = require(ReplicatedStorage.Shared.features.${name}.${Name}Network)
-local RateLimit = require(ServerScriptService.network.RateLimit)
-local Serve = require(ServerScriptService.network.Serve)
 
 local ${Name}Service = {}
 
@@ -51,8 +61,8 @@ end
 
 -- Main.server.luau calls this once, after every service has loaded.
 function ${Name}Service.start()
-	-- Every client-to-server event needs a rate limit, or the check fails.
-	Serve.event(${Name}Network.request, { limit = RateLimit.perSecond(10) }, function(player)
+	-- The remote's throttle drops floods; the service still checks each request.
+	${Name}Network.request:connect(function(player)
 		${Name}Network.changed:fire(player, ${Name}Service.getValue(player.UserId))
 	end)
 end

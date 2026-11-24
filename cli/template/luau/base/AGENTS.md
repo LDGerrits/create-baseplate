@@ -33,22 +33,22 @@ Each feature is a folder, `src/features/<feature>/`; `src/features/clicker` is t
 
 A file outside these three folders isn't placed in the game, and the check fails on it: there's no default side, so server code can't reach clients by mistake.
 
-Require by instance path, the way `rogen where <file>` prints it: `require(ReplicatedStorage.Shared.features.clicker.ClickerNetwork)`, `require(ServerScriptService.network.Serve)`. Client code is copied into each player at runtime, so it reaches other client code from `script`, as `src/app/client/Start.luau` does: `script.Parent.Parent.features.clicker.ClickerController`.
+Require by instance path, the way `rogen where <file>` prints it: `require(ReplicatedStorage.Shared.features.clicker.ClickerNetwork)`, `require(ServerScriptService.features.clicker.ClickerService)`. Client code is copied into each player at runtime, so it reaches other client code from `script`, as `src/app/client/Start.luau` does: `script.Parent.Parent.features.clicker.ClickerController`.
 
-`src/app/` holds the entry scripts: `app/server/Main.server.luau` lists every service and starts each, `app/client/Start.luau` (which `Main.client.luau` runs) does the same for controllers and mounts the UI, and `app/client/App.luau` is the root of the UI. `src/network/` holds the remotes (`shared/Remote.luau`) and how the server takes them (`server/Serve.luau`, `server/RateLimit.luau`). Files are PascalCase, named after what they hold: `InventoryService.luau`.
+`src/app/` holds the entry scripts: `app/server/Main.server.luau` lists every service and starts each, `app/client/Start.luau` (which `Main.client.luau` runs) does the same for controllers and mounts the UI, and `app/client/App.luau` is the root of the UI. Files are PascalCase, named after what they hold: `InventoryService.luau`.
 
 ## Adding a feature
 
 Run `mise run feature <name>` to start one, and read `.agents/skills/add-feature/SKILL.md`: it writes steps 1 and 2 below and the service's spec. By hand:
 
-1. Remotes in `shared/<Feature>Network.luau`, declared with `Remote.clientEvent`, `Remote.clientRequest` or `Remote.serverEvent` and their argument types, as `ClickerNetwork.luau` does. What a client sends gets a `t` check (`t.tuple(t.integer, t.string)`).
+1. Remotes in `shared/<Feature>Network.luau`, made with [Remo](https://github.com/littensy/remo) (`ReplicatedStorage.Packages.Remo`) in a namespace named after the feature, with a `Remotes` type that gives their arguments (`Remo.ClientToServer<number>`, `Remo.ServerToClient<number>`, `Remo.ServerAsync<(number), (string)>`), as `ClickerNetwork.luau` does. Each argument a client sends gets a `t` validator (`Remo.remote(t.integer, t.string)`), and each client-to-server remote `.middleware(Remo.throttleMiddleware(<seconds>))`.
 2. A service in `server/<Feature>Service.luau` and, if the client takes part, a controller in `client/<Feature>Controller.luau`: a module with a `start()` that connects its remotes and events. Add each to the list in `src/app/server/Main.server.luau` or `src/app/client/Start.luau`, or it never starts; the check fails on one that isn't.
 3. UI as a component in `client/` with a story, rendered from `App.luau`.
 4. Tests: a spec for the service, and an end-to-end test for each request a client sends.
 
 The rules the code follows:
 
-- **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. The server takes what clients send only through `Serve.event` and `Serve.request`, which drop calls whose arguments fail the remote's `t` check and need a `limit`: `RateLimit.perSecond(20)`, or `RateLimit.trustsClient("<why>")` for a remote that must take every call. The check fails on `OnServerEvent` or `OnServerInvoke` anywhere else.
+- **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. The server takes what clients send only through Remo remotes, whose validators drop calls with the wrong arguments and whose throttle drops floods; the throttle fits the action (a purchase is one a second, not twenty). The check fails on `OnServerEvent` or `OnServerInvoke` in the game's code.
 - **Services own server state.** A service keeps its state in its module and only it changes it; other code calls its functions. Depend on another service by requiring it.
 - **Controllers run the client side.** A controller handles input and the server's events and keeps what the UI shows; `App.luau` subscribes to it, as with `ClickerController`.
 

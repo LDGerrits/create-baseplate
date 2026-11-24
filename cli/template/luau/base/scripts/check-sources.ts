@@ -6,8 +6,8 @@
 //   Services (*Service.luau that Rogen routes to the server: under a server/ folder, at any depth,
 //   or named *Service@server) start from src/app/server/Main.server.luau, controllers
 //   (*Controller.luau routed to the client) from src/app/client/Start.luau;
-// - a remote the server takes outside network/server/Serve.luau, with no rate limit or argument
-//   check (see unguarded-remotes.ts).
+// - a remote the server takes directly instead of through Remo, with no validators or throttle
+//   (see unguarded-remotes.ts).
 // `mise run check` runs it. In a multi-place game, a place's entry scripts start its own code and
 // the shared code; shared code passes when one place lists it.
 import fs from "node:fs";

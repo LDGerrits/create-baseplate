@@ -8,7 +8,7 @@ A Roblox game in Luau, set up for coding agents: one command checks everything, 
 - **Strict types for the whole game.** Every file is `--!strict`, and [luau-lsp](https://github.com/JohnnyMorganz/luau-lsp) type-checks it against every instance in the game, world included, and the packages' own types: `require(ReplicatedStorage.Shared.features.clicker.ClickerNetwork)` and `workspace.SpawnLocation` are typed, and a wrong name fails the check.
 - **Tests run without Studio.** Jest specs and end-to-end tests, with the real server and a client talking through remotes, run in [ree](https://github.com/Anime-Vanguards/roblox-engine-emulator), an emulated Roblox engine, in a few seconds; a failure points at the file and line. The same specs run in real Studio or Open Cloud through [jest-roblox](https://github.com/christopher-buss/jest-roblox-cli) (`mise run test:engine`).
 - **It can see the UI.** `mise run ui` renders every story offline with [rur](https://github.com/Anime-Vanguards/roblox-ui-renderer) and prints where each picture is.
-- **Remotes can't be taken unguarded.** Each remote declares its arguments' types and a [`t`](https://github.com/osyrisrblx/t) check; the server takes them only through `Serve`, which rate-limits each player and drops calls that fail the check. The check fails on `OnServerEvent` anywhere else.
+- **Remotes can't be taken unguarded.** Remotes are made with [Remo](https://github.com/littensy/remo): each declares its arguments' types and a [`t`](https://github.com/osyrisrblx/t) validator, and client-to-server remotes are throttled per player. The check fails on `OnServerEvent` in the game's own code.
 - **The world is files, apart from the code.** Studio edits the map and [rbx-forge](https://github.com/christopher-buss/rbx-forge) syncs it back into `world/` as readable JSON, while Rojo serves only code.
 - **Each feature is one folder.** [Rogen](https://github.com/LDGerrits/rogen) routes its `server/`, `client/` and `shared/` folders to the right place in the game.
 - **Instructions where agents look.** `AGENTS.md` covers the layout, adding a feature and the rules; `.agents/skills/` (linked as `.claude/skills/`) covers tests, the world and Studio.
@@ -24,7 +24,7 @@ A Roblox game in Luau, set up for coding agents: one command checks everything, 
 | Language  | [Luau](https://luau.org), strict, type-checked by [luau-lsp](https://github.com/JohnnyMorganz/luau-lsp)                                                                                                    |
 | Sync      | [Rogen](https://github.com/LDGerrits/rogen) over [Rojo](https://rojo.space); [rbx-forge](https://github.com/christopher-buss/rbx-forge) runs Studio and syncback                                           |
 | Packages  | [Wally](https://wally.run), typed by [wally-package-types](https://github.com/JohnnyMorganz/wally-package-types)                                                                                            |
-| Structure | Services and controllers as plain modules; remotes declared once, checked with [`t`](https://github.com/osyrisrblx/t) and rate-limited                                                                    |
+| Structure | Services and controllers as plain modules; remotes declared once with [Remo](https://github.com/littensy/remo), checked with [`t`](https://github.com/osyrisrblx/t) and throttled                                                                    |
 | UI        | [React](https://github.com/jsdotlua/react-lua) (react-lua), [Ripple](https://github.com/littensy/ripple) for animation, stories in [UI Labs](https://github.com/PepeElToro41/ui-labs) format              |
 | Checks    | [StyLua](https://github.com/JohnnyMorganz/StyLua) for formatting, [Selene](https://github.com/Kampfkarren/selene) for lint, luau-lsp for types; Lune for place checks; Biome for JSON and the tooling scripts |
 | Tests     | [Jest](https://github.com/jsdotlua/jest-lua) run in [ree](https://github.com/Anime-Vanguards/roblox-engine-emulator), and in Studio or Open Cloud through [jest-roblox](https://github.com/christopher-buss/jest-roblox-cli) |
@@ -70,8 +70,7 @@ src/
     clicker/           an example feature
       server/          ClickerService.luau: owns the counts, checks the cooldown; its spec
       client/          ClickerController.luau, ClickerButton.luau and its story
-      shared/          ClickerNetwork.luau: the remotes
-  network/             remotes, and how the server takes them: Serve, RateLimit
+      shared/          ClickerNetwork.luau: the remotes (Remo)
 tests/e2e/             end-to-end tests: clicker.luau
 world/                 the map and lighting, edited in Studio and synced back
 wally.toml             the Roblox packages

@@ -34,16 +34,27 @@ Services and controllers are plain modules with a `start()` function. `src/app/s
 
 ## Remotes
 
-A feature declares its remotes once, in `shared/<Feature>Network.luau`:
+A feature declares its remotes once, in `shared/<Feature>Network.luau`, with [Remo](https://github.com/littensy/remo):
 
 ```luau
-return {
-	click = Remote.clientEvent("click", t.tuple()) :: Remote.ClientEvent<()>,
-	clicksChanged = Remote.serverEvent("clicksChanged") :: Remote.ServerEvent<number>,
+type Remotes = {
+	clicker: {
+		click: Remo.ClientToServer<()>,
+		clicksChanged: Remo.ServerToClient<number>,
+	},
 }
+
+local remotes: Remotes = Remo.createRemotes({
+	clicker = Remo.namespace({
+		click = Remo.remote().middleware(Remo.throttleMiddleware(0.05)),
+		clicksChanged = Remo.remote(t.number),
+	}),
+})
+
+return remotes.clicker
 ```
 
-The type gives both sides the arguments; the [`t`](https://github.com/osyrisrblx/t) check is what the server runs on what a client sends. The server takes client remotes only through `Serve.event` and `Serve.request`, which need a rate limit (`RateLimit.perSecond(20)`, or `RateLimit.trustsClient("<why>")`) and drop calls whose arguments fail the check. The check fails on `OnServerEvent` or `OnServerInvoke` anywhere else, and on client-visible code that reaches for `ServerScriptService` or `ServerStorage`.
+The type gives both sides the arguments. Remo runs the [`t`](https://github.com/osyrisrblx/t) validators on what arrives before any handler sees it, so each argument a client sends gets one, and `throttleMiddleware` drops a player's floods. The namespace keeps a feature's remote names apart from other features'. The check fails on `OnServerEvent` or `OnServerInvoke` in the game's own code, which would take what clients send with neither, and on client-visible code that reaches for `ServerScriptService` or `ServerStorage`.
 
 ## Tests and UI
 
