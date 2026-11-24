@@ -11,4 +11,4 @@ description: Specs, end-to-end tests and engine specs, offline in ree or in real
 | A client's request through the real server and remotes | End-to-end test | `tests/e2e/<feature>.luau`, in either language |
 | Characters, physics, collisions, real DataStore limits | Engine spec | `<name>.engine.spec.ts` (Luau: `<Name>.engine.spec.luau`) |
 
-`mise run test:engine` runs every spec, engine specs included, in real Roblox: in Studio, or through Open Cloud. When a test reaches something ree doesn't emulate, it fails and names it, so that behaviour moves to an engine spec.
+`mise run test:engine` runs every spec, engine specs included, in real Roblox: in Studio, or through Open Cloud. When a test reaches something ree doesn't emulate, it fails and names it, so that behaviour moves to an engine spec. In the game's CI, once the Open Cloud key and test place are set, the engine job runs on main before it publishes to dev, and when you run CI by hand; pull requests get the faster check in ree.

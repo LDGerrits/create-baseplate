@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Run it by hand (Actions > CI > Run workflow) for the engine job on a branch.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -34,7 +36,9 @@ jobs:
       - run: mise run ci
 
   engine:
-    # Every spec, *.engine.spec included, in a real Roblox engine through Open Cloud.
+    # Every spec, *.engine.spec included, in a real Roblox engine through Open Cloud: on main, before
+    # it publishes to dev, and when run by hand. Not on pull requests, which ree already checks: each
+    # run spends the key's Open Cloud quota and the test place's real DataStores.
     # Set the secret ROBLOX_OPEN_CLOUD_API_KEY and the variables ROBLOX_UNIVERSE_ID and ROBLOX_PLACE_ID
     # (Settings > Secrets and variables > Actions); without the variables the job is skipped.
     name: Specs in Roblox (Open Cloud)
@@ -47,7 +51,7 @@ jobs:
       cancel-in-progress: false
     # Without the variables, GitHub shows the job as skipped, not passed. With them but no key, the
     # specs fail. (A job's `if` can't read secrets; only the last step gets the key.)
-    if: vars.ROBLOX_UNIVERSE_ID != '' && vars.ROBLOX_PLACE_ID != ''
+    if: github.event_name != 'pull_request' && vars.ROBLOX_UNIVERSE_ID != '' && vars.ROBLOX_PLACE_ID != ''
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

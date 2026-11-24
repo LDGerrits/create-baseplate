@@ -45,7 +45,7 @@
 		],
 		"PreToolUse": [
 			{
-				"matcher": "Bash|Edit|Write|NotebookEdit|mcp__.*__(open_cloud_invoke|execute_luau)",
+				"matcher": "Bash|Edit|MultiEdit|Write|NotebookEdit|mcp__.*__(open_cloud_invoke|execute_luau)",
 				"hooks": [
 					{
 						"type": "command",
