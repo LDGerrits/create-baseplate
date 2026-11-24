@@ -15,9 +15,9 @@ and adds the service and the controller to the lists in `app/server/Main.server.
 
 1. **Rules first.** Put the rules in the service, as functions a spec can call: ownership, cost, cooldowns, limits. The clients ask; nothing the client sends is true until the service checks it. Write the spec for each rule before the code that uses it (`write-tests` skill).
 2. **Remotes.** Add them to `shared/<Name>Network.luau`. Give each argument a client sends a `t` validator, and each client-to-server remote a `throttleMiddleware` that fits the action (a purchase is one a second, not twenty).
-3. **Controller.** Keep what the UI shows, and let `App.luau` subscribe to it, as `ClickerController` does.
-4. **UI.** A component in `client/` with a story, and look at its picture (`mise run ui --filter <name>`): text cut off, overlap, the empty state.
-5. **End to end.** A request from the client through the real server and remotes in `tests/e2e/<name>.luau`, copied from `tests/e2e/clicker.luau`.
+3. **Controller.** Keep what the UI shows, and let the UI read it from there.
+4. **UI.** A component in `client/` with a story, rendered from the UI's root (`AGENTS.md`, UI, says how to add one), and look at its picture (`mise run ui --filter <name>`): text cut off, overlap, the empty state.
+5. **End to end.** A request from the client through the real server and remotes in `tests/e2e/<name>.luau`, started from the harness in the `write-tests` skill.
 6. **`mise run check`** until it passes.
 
 Where a feature keeps player data or state, follow the section in `AGENTS.md` for the game's data or state library.

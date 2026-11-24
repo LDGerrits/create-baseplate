@@ -295,7 +295,8 @@ export function installAddOns(dir: string, language: Language, chosen: AddOnChoi
 		const variant = manifest.byUi?.[chosen.ui ?? ""];
 
 		for (const file of manifest.removeFiles ?? []) fs.rmSync(path.join(dir, file), { force: true });
-		fs.cpSync(path.join(from, variant?.files ?? "files"), dir, { recursive: true });
+		const files = path.join(from, variant?.files ?? "files");
+		if (fs.existsSync(files)) fs.cpSync(files, dir, { recursive: true });
 		const remove = manifest.removeDependencies ?? [];
 		if (language === "luau") {
 			editWally(dir, "dependencies", variant?.dependencies ?? manifest.dependencies, remove);
@@ -342,9 +343,26 @@ function addImports(file: string, imports: string[]) {
 	const lines = fs.readFileSync(file, "utf8").split("\n");
 	if (file.endsWith(".luau")) {
 		const last = lines.findLastIndex((line) => /^\s+require\(/.test(line));
-		if (last === -1) throw new Error(`${file} has no list of required modules to add to`);
-		const indent = /^\s+/.exec(lines[last] ?? "")?.[0] ?? "\t";
-		lines.splice(last + 1, 0, ...imports.map((module) => `${indent}require(${module}),`));
+		if (last !== -1) {
+			const indent = /^\s+/.exec(lines[last] ?? "")?.[0] ?? "\t";
+			lines.splice(last + 1, 0, ...imports.map((module) => `${indent}require(${module}),`));
+		} else {
+			// An empty list, `= {}`: open it, and get the service the modules' paths start from.
+			const empty = lines.findIndex((line) => /^local \w+: .* = \{\}$/.test(line));
+			if (empty === -1) throw new Error(`${file} has no list of required modules to add to`);
+			const service = "ServerScriptService";
+			const needsService =
+				imports.some((module) => module.startsWith(`${service}.`)) &&
+				!lines.some((line) => line.startsWith(`local ${service} `));
+			lines.splice(
+				empty,
+				1,
+				...(needsService ? [`local ${service} = game:GetService("${service}")`, ""] : []),
+				(lines[empty] ?? "").slice(0, -1),
+				...imports.map((module) => `\trequire(${module}),`),
+				"}",
+			);
+		}
 	} else {
 		const last = lines.findLastIndex((line) => line.startsWith("import "));
 		lines.splice(last + 1, 0, ...imports.map((module) => `import "${module}";`));

@@ -85,8 +85,8 @@ A [Luau game](/luau/) asks the same questions, with what Luau games use, and eac
 | Add-on | Packages (Wally) | Files |
 | --- | --- | --- |
 | `--places multi` | | Rogen's Luau layout: `<place>.rogen.json` at the root, shared code in `projects/common/src`, each place in `projects/<place>/` (see [Luau games](/luau/#several-places)) |
-| `--ui vide` | `centau/vide`, `littensy/vide-ripple`, in place of react-lua | Vide versions of `src/app/client/App.luau` and `Start.luau`, and of the clicker button and its story (`CreateVideStory`) |
-| `--state charm` | `littensy/charm`, with `littensy/react-charm` or `littensy/vide-charm` | `ClickerController.luau` keeps the count in a Charm signal, and `App.luau` reads it |
+| `--ui vide` | `centau/vide`, `littensy/vide-ripple`, in place of react-lua | Vide's section in `AGENTS.md` (mounting a root, `CreateVideStory`); the game starts without a UI |
+| `--state charm` | `littensy/charm`, with `littensy/react-charm` or `littensy/vide-charm` | Charm's section in `AGENTS.md`: a controller keeps a signal, and the UI reads it |
 | `--data profilestore` | `lm-loleris/profilestore`, a server package | `src/features/playerdata/server/`: `PlayerData.luau`, `PlayerDataService.luau` and its spec |
 | `--data lapis` | `nezuo/lapis`, `nezuo/data-store-service-mock`, server packages | the same three files, on Lapis |
 | `--entities jecs` | `ukendio/jecs` | `src/features/spinner/server/`: `SpinnerSystem.luau` and its spec, `SpinnerService.luau`; the world part and `tests/e2e/spinner.luau` |

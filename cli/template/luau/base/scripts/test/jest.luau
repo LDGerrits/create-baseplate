@@ -2,11 +2,15 @@
 -- `scripts/test.ts` runs it; `mise run test:engine` runs all specs in Roblox Studio instead.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local roots = {
-	ReplicatedStorage.Shared,
+-- Shared holds code only once a feature has a shared/ folder.
+local roots: { Instance } = {
 	game:GetService("ServerScriptService"),
 	game:GetService("StarterPlayer").StarterPlayerScripts,
 }
+local shared = ReplicatedStorage:FindFirstChild("Shared")
+if shared then
+	table.insert(roots, 1, shared)
+end
 
 local CONFIG = [[return {
 	testMatch = { "**/*.spec" },

@@ -100,7 +100,7 @@ function routeOf(file: string): { side: string; names: string[] } | undefined {
 	return side === undefined ? undefined : { side, names };
 }
 
-/** Whether an entry script's code requires the module: its parent and name, as `Clicker.ClickerService)`. */
+/** Whether an entry script's code requires the module: its parent and name, as `shop.ShopService)`. */
 function lists(entry: string, names: string[]): boolean {
 	const tail = names.slice(-2).map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
 	return new RegExp(`\\b${tail.join("\\s*\\.\\s*")}\\s*\\)`).test(entry);

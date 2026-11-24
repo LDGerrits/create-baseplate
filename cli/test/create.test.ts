@@ -386,7 +386,11 @@ test("creates a Luau game from the Luau template", () => {
 	assert.equal(JSON.parse(read("default.rogen.json")).name, "coin-rush");
 	assert.match(read("src/app/client/Game.storybook.luau"), /name = "coin-rush"/);
 	assert.match(read("AGENTS.md"), /^# coin-rush\n\nA Roblox game in Luau/);
-	assert.ok(fs.existsSync(path.join(dir, "src/features/clicker/server/ClickerService.luau")));
+	assert.equal(read("src/app/server/Main.server.luau").match(/= \{\}$/m)?.length, 1, "no services start yet");
+	assert.match(read("src/app/client/Start.luau"), /^local controllers: .* = \{\}$/m);
+	for (const example of ["src/features", "src/app/client/App.luau", "tests/e2e/clicker.luau"]) {
+		assert.ok(!fs.existsSync(path.join(dir, example)), `${example} isn't in the starting game`);
+	}
 	assert.ok(fs.existsSync(path.join(dir, ".claude/plugins/luau/.claude-plugin/plugin.json")));
 	assert.ok(fs.lstatSync(path.join(dir, ".claude/skills")).isSymbolicLink());
 	assert.ok(fs.existsSync(path.join(dir, ".gitignore")), ".gitignore restored from _gitignore");
@@ -432,11 +436,10 @@ test("applies Luau add-ons: Wally packages, files and the services they start", 
 	const main = read("src/app/server/Main.server.luau");
 	assert.match(
 		main,
-		/require\(ServerScriptService\.features\.clicker\.ClickerService\),\n\trequire\(ServerScriptService\.features\.playerdata\.PlayerDataService\),\n\trequire\(ServerScriptService\.features\.spinner\.SpinnerService\),\n\}/,
+		/local ServerScriptService = game:GetService\("ServerScriptService"\)\n\nlocal services: .* = \{\n\trequire\(ServerScriptService\.features\.playerdata\.PlayerDataService\),\n\trequire\(ServerScriptService\.features\.spinner\.SpinnerService\),\n\}/,
 	);
 	assert.ok(fs.existsSync(path.join(dir, "src/features/playerdata/server/PlayerDataService.spec.luau")));
 	assert.ok(fs.existsSync(path.join(dir, "tests/e2e/spinner.luau")));
-	assert.match(read("src/features/clicker/client/ClickerController.luau"), /Charm\.signal/);
 
 	const agents = read("AGENTS.md");
 	assert.ok(agents.indexOf("## Player data") < agents.indexOf("<!-- rogen -->"), "add-on notes come before Rogen's");
@@ -456,8 +459,7 @@ test("swaps react-lua for Vide in a Luau game, with Charm's Vide binding", () =>
 	for (const react of ["React =", "ReactRoblox =", "ReactRipple =", "ReactCharm ="]) {
 		assert.doesNotMatch(wally, new RegExp(`^${react}`, "m"), `${react} is gone`);
 	}
-	assert.match(read("src/features/clicker/client/ClickerButton.story.luau"), /CreateVideStory/);
-	assert.match(read("src/app/client/App.luau"), /VideCharm/);
+	assert.ok(!fs.existsSync(path.join(dir, "src/app/client/App.luau")), "no UI root to start with");
 	const agents = read("AGENTS.md");
 	assert.match(agents, /## UI\n\nVide/);
 	assert.doesNotMatch(agents, /react-lua|ReactRipple/, "AGENTS.md names no React package");
@@ -494,9 +496,10 @@ test("lays out a multi-place Luau game as Rogen prescribes for Luau", () => {
 		assert.ok(exists(`projects/${place}/src/app/server/Main.server.luau`));
 		assert.ok(exists(`projects/${place}/world/default.project.json`));
 	}
-	assert.ok(exists("projects/common/src/features/clicker/server/ClickerService.luau"));
-	assert.ok(exists("projects/game/tests/e2e/clicker.luau"), "the shared code's end-to-end tests run in one place");
-	assert.ok(!exists("projects/lobby/tests/e2e/clicker.luau"));
+	assert.ok(exists("projects/common/src/.gitkeep"), "the shared code's folder stays, empty");
+	assert.ok(!exists("projects/common/src/features"), "no feature to start with");
+	assert.ok(exists("projects/game/tests/e2e/.gitkeep"));
+	assert.ok(exists("projects/lobby/tests/e2e/.gitkeep"));
 	for (const gone of ["src", "world", "tests", "default.rogen.json"]) assert.ok(!exists(gone), `${gone} moved`);
 	assert.ok(exists("wally.toml"), "the packages stay shared at the root");
 	assert.match(read("asphalt.toml"), /output_path = "projects\/common\/src\/shared"/);

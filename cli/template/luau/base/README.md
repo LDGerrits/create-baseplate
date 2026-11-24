@@ -5,7 +5,7 @@ A Roblox game in Luau, set up for coding agents: one command checks everything, 
 ## What it gives an agent
 
 - **One command checks everything.** `mise run check` formats, type-checks, lints, builds the place, checks that client code never reaches for the server's, runs the tests and renders the UI stories, in about ten seconds.
-- **Strict types for the whole game.** Every file is `--!strict`, and [luau-lsp](https://github.com/JohnnyMorganz/luau-lsp) type-checks it against every instance in the game, world included, and the packages' own types: `require(ReplicatedStorage.Shared.features.clicker.ClickerNetwork)` and `workspace.SpawnLocation` are typed, and a wrong name fails the check.
+- **Strict types for the whole game.** Every file is `--!strict`, and [luau-lsp](https://github.com/JohnnyMorganz/luau-lsp) type-checks it against every instance in the game, world included, and the packages' own types: `require(ReplicatedStorage.Shared.features.shop.ShopNetwork)` and `workspace.SpawnLocation` are typed, and a wrong name fails the check.
 - **Tests run without Studio.** Jest specs and end-to-end tests, with the real server and a client talking through remotes, run in [ree](https://github.com/Anime-Vanguards/roblox-engine-emulator), an emulated Roblox engine, in a few seconds; a failure points at the file and line. The same specs run in real Studio or Open Cloud through [jest-roblox](https://github.com/christopher-buss/jest-roblox-cli) (`mise run test:engine`).
 - **It can see the UI.** `mise run ui` renders every story offline with [rur](https://github.com/Anime-Vanguards/roblox-ui-renderer) and prints where each picture is.
 - **Remotes can't be taken unguarded.** Remotes are made with [Remo](https://github.com/littensy/remo): each declares its arguments' types and a [`t`](https://github.com/osyrisrblx/t) validator, and client-to-server remotes are throttled per player. The check fails on `OnServerEvent` in the game's own code.
@@ -65,13 +65,9 @@ Keys and local paths go in `.env`: copy `.env.example`, which lists each one.
 
 ```
 src/
-  app/                 entry scripts: start the services and controllers, mount the UI
-  features/
-    clicker/           an example feature
-      server/          ClickerService.luau: owns the counts, checks the cooldown; its spec
-      client/          ClickerController.luau, ClickerButton.luau and its story
-      shared/          ClickerNetwork.luau: the remotes (Remo)
-tests/e2e/             end-to-end tests: clicker.luau
+  app/                 entry scripts: start the services and controllers
+  features/            one folder per feature, started with `mise run feature <name>`
+tests/e2e/             end-to-end tests
 world/                 the map and lighting, edited in Studio and synced back
 wally.toml             the Roblox packages
 ```
