@@ -23,6 +23,7 @@ Before you change something, look at what's there: the code that calls it, where
 - When a Selene rule is wrong for one line, allow it on the line above with a comment saying why: `-- selene: allow(global_usage) -- <why>`. Don't silence the type checker with `:: any`; fix the type.
 - Every file is `--!strict` (`.luaurc`), and luau-lsp knows every instance in the game, world included: `ReplicatedStorage.Shared.features.shop.ShopNetwork` (once a `shop` feature has one) and `workspace.SpawnLocation` are typed, and a wrong name fails the check.
 - The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `wally`, `stylua`, `selene`, `luau-lsp`, `lune` and the rest are on the PATH only where your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills. To change a tool's pin in `mise.toml`, run `mise lock` after it: `mise install` refuses a tool that `mise.lock` doesn't list with its checksums.
+- `mise run dev` serves the code to Studio: it is the "serve script" that Rogen's section below refers to.
 - Generated files change through their generator, and a hook blocks direct edits: `Packages/`, `ServerPackages/`, `DevPackages/` and `wally.lock` (Wally, from `wally.toml`), `build/` (builds), `default.project.json` (Rogen), `game.project.json`, `test.project.json` and `sourcemap.json` (`mise run generate`, from the code and `world/`), `.luau-lsp/` (Roblox's types for the pinned luau-lsp).
 
 ## Where code goes
@@ -35,17 +36,17 @@ Each feature is a folder, `src/features/<feature>/`, which `mise run feature <na
 
 A file outside these three folders isn't placed in the game, and the check fails on it: there's no default side, so server code can't reach clients by mistake.
 
-Require by instance path, the way `rogen where <file>` prints it: `require(ReplicatedStorage.Shared.features.shop.ShopNetwork)`, `require(ServerScriptService.features.shop.ShopService)`. Client code is copied into each player at runtime, so it reaches other client code from `script`, as `src/app/client/Start.luau` does: `script.Parent.Parent.features.shop.ShopController`.
+Require by instance path, the way `rogen where <file>` prints it: `require(ReplicatedStorage.Shared.features.shop.ShopNetwork)`, `require(ServerScriptService.features.shop.ShopService)`. Client code is copied into each player at runtime, so it reaches other client code from `script`, as the lines `mise run feature` adds to `src/app/client/Start.luau` do: `script.Parent.Parent.features.shop.ShopController`.
 
-`src/app/` holds the entry scripts: `app/server/Main.server.luau` lists every service and starts each, `app/client/Start.luau` (which `Main.client.luau` runs) does the same for controllers. Both lists start empty, and the game has no UI root yet: see UI to add one. Files are PascalCase, named after what they hold: `InventoryService.luau`.
+`src/app/` holds the entry scripts: `app/server/Main.server.luau` lists every service and starts each, `app/client/Start.luau` (which `Main.client.luau` runs) does the same for controllers. Both lists start with only the services and controllers the add-ons bring (none, in a game without add-ons), and the game has no UI root yet: see UI to add one. Files are PascalCase, named after what they hold: `InventoryService.luau`.
 
 ## Adding a feature
 
 Run `mise run feature <name>` to start one, and read `.agents/skills/add-feature/SKILL.md`: it writes steps 1 and 2 below and the service's spec. By hand:
 
-1. Remotes in `shared/<Feature>Network.luau`, made with [Remo](https://github.com/littensy/remo) (`ReplicatedStorage.Packages.Remo`) in a namespace named after the feature, with a `Remotes` type that gives their arguments (`Remo.ClientToServer<number>`, `Remo.ServerToClient<number>`, `Remo.ServerAsync<(number), (string)>`), as the `<Feature>Network.luau` that `mise run feature` writes does. Each argument a client sends gets a `t` validator (`Remo.remote(t.integer, t.string)`), and each client-to-server remote `.middleware(Remo.throttleMiddleware(<seconds>))`.
+1. Remotes in `shared/<Feature>Network.luau`, made with [Remo](https://github.com/littensy/remo) (`ReplicatedStorage.Packages.Remo`) in a namespace named after the feature, with a `Remotes` type that gives their arguments (`Remo.ClientToServer<number>`, `Remo.ServerToClient<number>`, `Remo.ServerAsync<(number), (string)>`), as the `<Feature>Network.luau` that `mise run feature` writes does. Each argument a client sends gets a `t` validator (`Remo.remote(t.integer, t.string)`), and each client-to-server remote `.middleware(Remo.throttleMiddleware(<seconds>))`. A request the server answers (`ServerAsync`) declares what it returns: `Remo.remote(t.number).returns(t.string)`; the service connects with `Network.name:onRequest(function(player, id) return "..." end)` (the callback may return a Promise instead), and the client asks with `Network.name:request(id)`, a Promise of the answer, which Remo checks against `.returns`.
 2. A service in `server/<Feature>Service.luau` and, if the client takes part, a controller in `client/<Feature>Controller.luau`: a module with a `start()` that connects its remotes and events. Add each to the list in `src/app/server/Main.server.luau` or `src/app/client/Start.luau`, or it never starts; the check fails on one that isn't.
-3. UI as a component in `client/` with a story, rendered from the UI's root (see UI).
+3. UI as a component in `client/` with a story, rendered from the root component (see UI).
 4. Tests: a spec for the service, and an end-to-end test for each request a client sends.
 
 The rules the code follows:
@@ -123,7 +124,7 @@ The game's Roblox packages come from Wally: add one to `wally.toml` under `[depe
 
 ## Releases and updates
 
-You make a release ready and the user ships it: a hook stops `mise run publish` and Studio's Open Cloud tools. Read `.agents/skills/release/SKILL.md` to prepare one. For a Renovate update, a `*.baseplate-new` file or a failing `agent-files` check, read `.agents/skills/upgrade/SKILL.md`.
+You make a release ready and the user ships it: a hook stops `mise run publish`, Studio's Open Cloud tools and Luau run in Studio that reaches the live game's data. Read `.agents/skills/release/SKILL.md` to prepare one. For a Renovate update, a `*.baseplate-new` file or a failing `agent-files` check, read `.agents/skills/upgrade/SKILL.md`.
 
 ## Writing for people
 

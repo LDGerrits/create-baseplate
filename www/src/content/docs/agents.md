@@ -32,7 +32,7 @@ Each tool's config runs the same scripts in `.agents/hooks/`:
 | GitHub Copilot | `.github/hooks/checks.json` |
 | Gemini CLI | `.gemini/settings.json` |
 
-A hook that can't find mise does nothing, so a machine without the tools never blocks the agent. Codex runs project hooks once you trust them with `/hooks`, and Gemini CLI once you trust the folder. Copilot's CLI also reads `.claude/settings.json`, so there the hooks can run twice.
+A hook that can't find mise lets the agent carry on, so a machine without the tools never blocks it; the guard is the exception, and still blocks publishing and Studio's `open_cloud_invoke` and `execute_luau` when it can't run, since nothing else stops them. Codex runs project hooks once you trust them with `/hooks`, and Gemini CLI once you trust the folder. Copilot's CLI also reads `.claude/settings.json`, so there the hooks can run twice.
 
 In Claude Code, the commands the skills use (`forge`, `ror`, `rogen`, `mise run`, and their `mise x --` forms) are allowed in `.claude/settings.json`, so the agent isn't stopped to ask.
 
@@ -75,7 +75,7 @@ The agent files are `AGENTS.md`, the skills, the hooks and the agent tools' sett
 - A file the game deleted stays deleted.
 - Where both changed the same lines, the game's file stays and the template's version goes beside it as `<file>.baseplate-new`. The check fails until someone merges it by hand and deletes that file.
 
-`.baseplate/agent-files.json` records the files as the template last wrote them, the base of the next merge; the guard keeps agents from editing it. The check fails while the agent files lag behind the pin, and `mise run install` runs the sync when the pin moved. Run `pnpm dlx create-baseplate@<version> sync` to move by hand, or add `--check` to only see whether anything would change.
+`.baseplate/agent-files.json` records the files as the template last wrote them, the base of the next merge; the guard keeps agents from editing it. The check fails while the agent files lag behind the pin, and `mise run install` runs the sync when the pin moved. To move by hand, change `baseplate.version` in `package.json` and run `mise run install`, which runs the sync (an agent does the same, since the guard blocks `pnpm dlx`). Outside a game, or to only see whether anything would change, people run `pnpm dlx create-baseplate@<version> sync`, with `--check` to change nothing.
 
 ## Windows
 

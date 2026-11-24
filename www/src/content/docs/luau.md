@@ -16,7 +16,7 @@ pnpm create baseplate my-game --language luau
 | Packages | [Wally](https://wally.run), in `wally.toml`; [wally-package-types](https://github.com/JohnnyMorganz/wally-package-types) carries each package's types into its link file |
 | Types | [luau-lsp](https://github.com/JohnnyMorganz/luau-lsp), strict in every file (`.luaurc`), against every instance in the game |
 | Lint and format | [Selene](https://github.com/Kampfkarren/selene) and [StyLua](https://github.com/JohnnyMorganz/StyLua) |
-| Sync | [Rogen](https://github.com/LDGerrits/rogen) over [Rojo](https://rojo.space), and [rbx-forge](https://github.com/christopher-buss/rbx-forge) for Studio and syncback, as in roblox-ts games |
+| Sync | [Rogen](https://github.com/LDGerrits/rogen) over [Rojo](https://rojo.space), and [rbx-forge](https://github.com/christopher-buss/rbx-forge) for Studio and syncback (not with `--managed partial`, where `mise run dev` only serves the code), as in roblox-ts games |
 | Tests | [jest-lua](https://github.com/jsdotlua/jest-lua) from Wally, run in ree and through jest-roblox |
 | UI | [react-lua](https://github.com/jsdotlua/react-lua) with [Ripple](https://github.com/littensy/ripple)'s hooks, or Vide with `--ui vide`; stories in UI Labs' format |
 
@@ -30,7 +30,7 @@ mise pins every tool and locks its checksums. The scripts, hooks and Rogen, rbx-
 
 The same shape as a roblox-ts game, in Luau's naming: `src/features/<feature>/` with lowercase `server/`, `client/` and `shared/` folders that Rogen routes, and PascalCase files. Modules are required by instance path, as `rogen where <file>` prints it; client code reaches other client code from `script`, since each player gets a copy of it.
 
-Services and controllers are plain modules with a `start()` function. `src/app/server/Main.server.luau` lists every service and starts each; `src/app/client/Start.luau` does the same for controllers, and both lists start empty: `mise run feature <name>` writes a feature's files and adds its service and controller. The game has no UI root yet; the UI section of its `AGENTS.md` says how to mount one. The check fails on a `*Service.luau` or `*Controller.luau` neither lists.
+Services and controllers are plain modules with a `start()` function. `src/app/server/Main.server.luau` lists every service and starts each; `src/app/client/Start.luau` does the same for controllers, and both lists start with only what the add-ons bring: `mise run feature <name>` writes a feature's files and adds its service and controller. The game has no UI root yet; the UI section of its `AGENTS.md` says how to mount one. The check fails on a `*Service.luau` or `*Controller.luau` neither lists.
 
 ## Remotes
 
@@ -58,7 +58,7 @@ The type gives both sides the arguments. Remo runs the [`t`](https://github.com/
 
 ## Tests and UI
 
-Specs are `<Name>.spec.luau` beside the code, with Jest from `ReplicatedStorage.DevPackages.JestGlobals`; end-to-end tests are the same `tests/e2e/*.luau` harnesses as in a roblox-ts game. A failing frame names its file and line: `ServerScriptService.features.shop.ShopService.spec:22 → src/features/shop/server/ShopService.spec.luau:22`. Stories are `<Component>.story.luau`, made with UI Labs' `CreateReactStory`, and `mise run ui` renders them as in a roblox-ts game.
+Specs are `<Name>.spec.luau` beside the code, with Jest from `ReplicatedStorage.DevPackages.JestGlobals`; end-to-end tests are the same `tests/e2e/*.luau` harnesses as in a roblox-ts game. A failing frame names its file and line: `ServerScriptService.features.shop.ShopService.spec:22 → src/features/shop/server/ShopService.spec.luau:22`. Stories are `<Component>.story.luau`, made with UI Labs' `CreateReactStory` (`CreateVideStory` with Vide), and `mise run ui` renders them as in a roblox-ts game.
 
 ## Several places
 

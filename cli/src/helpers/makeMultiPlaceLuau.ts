@@ -175,6 +175,14 @@ export function makeMultiPlaceLuau(dir: string, name: string, managed: Managed) 
 		);
 	}
 	agents = agents.replaceAll("builds the place", "builds every place");
+	// Darklua's section names the folders its script processes, which the paths below would
+	// rewrite to the shared code alone; and the spinner's end-to-end test is only in the game place.
+	agents = agents
+		.replace(
+			"it processes `src/` and the packages",
+			"it processes `projects/` (every place and the shared code) and the packages",
+		)
+		.replaceAll("`tests/e2e/spinner.luau`", `\`projects/${SHARED_TESTS_PLACE}/tests/e2e/spinner.luau\``);
 	// Single-place paths, in the template's sections and the add-ons': a place's entry scripts,
 	// world and tests are in its folder, and everything else in src/ is shared.
 	agents = agents

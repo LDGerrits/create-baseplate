@@ -20,9 +20,10 @@ Before you change something, look at what's there: the code that calls it, where
 
 `mise run check` is the check: it formats, compiles, lints, builds the place, runs the tests and renders the UI stories, in about ten seconds. Run it after each change and fix what it reports until it passes. In Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI, a hook formats and lints each file you edit and, outside Cursor, hands back the lint problems left; another runs the check when you stop and hands back any failure; in any tool, the commit hook runs it on what you commit.
 
-- While iterating, narrower loops are faster: `mise run compile` for type errors, `mise run test` for the tests, `mise run ui --filter <name>` for one story's picture.
+- While iterating, narrower loops are faster: `mise run compile` for type errors, `mise run test` for the tests, `mise run ui -- --filter <name>` for one story's picture.
 - When a lint rule is wrong for one line, disable it on that line with a comment saying why.
 - The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `lune` and the rest are on the PATH only where your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills. To change a tool's pin in `mise.toml`, run `mise lock` after it: `mise install` refuses a tool that `mise.lock` doesn't list with its checksums.
+- `mise run dev` serves the code to Studio: it is the "serve script" that Rogen's section below refers to.
 - Generated files change through their generator, and a hook blocks direct edits: `out/` and `include/` (the compiler), `build/` (builds), `default.project.json` (Rogen), `game.project.json`, `test.project.json` and `src/world.d.ts` (`mise run check`, from the code and `world/`).
 
 ## Where code goes
@@ -43,20 +44,20 @@ Run `mise run feature <name>` to start one, and read `.agents/skills/add-feature
 
 1. Network events in `shared/<feature>-network.ts`, with `Networking.createEvent<ClientToServer, ServerToClient>()`.
 2. A service in `server/` and, if the client takes part, a controller in `client/`. Import each in `src/app/server/main.server.ts` or `src/app/client/main.client.ts`, or Flamework never starts it; the check fails on one that isn't.
-3. UI as a component in `client/` with a story, rendered from the UI's root (see UI below).
+3. UI as a component in `client/` with a story, rendered from the root component (see UI below).
 4. Tests: a spec for the service, and an end-to-end test for each request a client sends.
 
 The rules the code follows:
 
 - **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. Flamework checks the types of remote arguments, not whether the request is allowed. The check fails on a client-to-server event or function that `createServer` takes without middleware: give it Flamework middleware that rate-limits it, or mark its handler `// trusts-client: <why>`.
 - **Services own server state.** Only a service changes its state; other code calls its methods. Depend on another service through the constructor: `constructor(private readonly data: PlayerDataService) {}`.
-- **Controllers run the client side.** A controller handles input and the server's events and keeps what the UI shows; the UI's root subscribes to it.
+- **Controllers run the client side.** A controller handles input and the server's events and keeps what the UI shows; the root component subscribes to it.
 
 ## Tests
 
 `mise run test` runs them offline in ree, an emulated Roblox engine, in a few seconds. Pick the kind by what you test:
 
-- A service's rules and decisions: a spec, `<name>.spec.ts` beside the code. Pass time in as a parameter (`now = os.clock()`) so the spec doesn't wait. A spec elsewhere, or named `*.test.ts`, would never run, so the check fails on it.
+- A service's rules and decisions: a spec, `<name>.spec.ts` beside the code. Pass time in as a parameter (`now`, see `.agents/skills/write-tests/SKILL.md` for which clock) so the spec doesn't wait. A spec elsewhere, or named `*.test.ts`, would never run, so the check fails on it.
 - A client's request through the real server and remotes: an end-to-end test, `tests/e2e/<feature>.luau`.
 - Characters, physics, collisions or real DataStore limits, which ree doesn't emulate: an engine spec, `<name>.engine.spec.ts`, run in real Roblox by `mise run test:engine`.
 
@@ -112,7 +113,7 @@ Add one with `pnpm add <name>` (`-D` for build tools). pnpm installs only versio
 
 ## Releases and updates
 
-You make a release ready and the user ships it: a hook stops `mise run publish` and Studio's Open Cloud tools. Read `.agents/skills/release/SKILL.md` to prepare one. For a Renovate update, a `*.baseplate-new` file or a failing `agent-files` check, read `.agents/skills/upgrade/SKILL.md`.
+You make a release ready and the user ships it: a hook stops `mise run publish`, Studio's Open Cloud tools and Luau run in Studio that reaches the live game's data. Read `.agents/skills/release/SKILL.md` to prepare one. For a Renovate update, a `*.baseplate-new` file or a failing `agent-files` check, read `.agents/skills/upgrade/SKILL.md`.
 
 ## Writing for people
 

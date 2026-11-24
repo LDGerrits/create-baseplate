@@ -3,7 +3,7 @@ title: The project
 description: Where code goes, adding a feature, and the rules the code follows.
 ---
 
-This page describes a TypeScript game. A Luau game has the same shape in Luau's names (`src/features/<feature>/server/`), with plain modules for services and controllers and remotes taken through `Serve`: see [Luau games](/luau/).
+This page describes a TypeScript game. A Luau game has the same shape in Luau's names (`src/features/<feature>/server/`), with plain modules for services and controllers and remotes declared with Remo: see [Luau games](/luau/).
 
 ## Where code goes
 

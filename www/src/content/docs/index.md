@@ -17,7 +17,7 @@ hero:
 pnpm create baseplate my-game
 ```
 
-Baseplate creates a Roblox game in TypeScript ([roblox-ts](https://roblox-ts.com)) or [Luau](/luau/) that coding agents such as Claude Code, Codex, Cursor and Copilot can work on well:
+Baseplate creates a Roblox game in TypeScript ([roblox-ts](https://roblox-ts.com)) or [Luau](/luau/) that coding agents such as Claude Code, Codex, Cursor, Copilot and Gemini CLI can work on well:
 
 - **One check.** `mise run check` formats, compiles or type-checks, lints, builds the place, runs the tests and renders the UI stories, in about ten seconds.
 - **Tests and UI without Studio.** Tests run in ree, an emulated Roblox engine, in a few seconds; UI stories render to pictures offline.

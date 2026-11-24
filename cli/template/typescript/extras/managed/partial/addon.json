@@ -29,7 +29,7 @@
 		{
 			"file": "mise.toml",
 			"from": "description = \"Start the dev session: compile on save, serve code to Studio, open Studio on the world, and sync each Studio save back to world/. A multi-place game names the place: mise run dev lobby\"\ndepends = [\"generate\"]",
-			"to": "description = \"Start the dev session: compile on save and serve the code, for the Rojo plugin in Studio to connect to. A multi-place game names the place: mise run dev lobby\"\ndepends = [\"compile\"]"
+			"to": "description = \"Start the dev session: compile on save and serve the code, for the Rojo plugin in Studio to connect to (install the plugin once: mise x -- rojo plugin install). A multi-place game names the place: mise run dev lobby\"\ndepends = [\"compile\"]"
 		},
 		{
 			"file": "mise.toml",
@@ -45,6 +45,16 @@
 			"file": ".env.example",
 			"from": "# Open Cloud, for `mise run publish` from your machine; CI's publish workflow has its own, per\n# environment. A key with universe-places:write on the experience you publish to, its ID, and the\n# place's ID (in a multi-place game, each place's: lobby=123,game=456). Keep it apart from the test\n# key above.\nROBLOX_PUBLISH_API_KEY=\nROBLOX_PUBLISH_UNIVERSE_ID=\nROBLOX_PUBLISH_PLACE_ID=\n\n",
 			"to": ""
+		},
+		{
+			"file": "mise.toml",
+			"from": "so it can't lean on one place's map.",
+			"to": "so it can't import one place's own code."
+		},
+		{
+			"file": "mise.toml",
+			"from": "so it can't lean on one place's map.",
+			"to": "so it can't import one place's own code."
 		},
 		{
 			"file": ".env.example",
@@ -118,8 +128,8 @@
 		},
 		{
 			"file": "AGENTS.md",
-			"from": "a hook stops `mise run publish` and Studio's Open Cloud tools. Read `.agents/skills/release/SKILL.md`",
-			"to": "the place is published from Studio, and a hook stops `rojo upload` and Studio's Open Cloud tools. Read `.agents/skills/release/SKILL.md`"
+			"from": "a hook stops `mise run publish`, Studio's Open Cloud tools and Luau run in Studio that reaches the live game's data. Read `.agents/skills/release/SKILL.md`",
+			"to": "the place is published from Studio, and a hook stops `rojo upload`, Studio's Open Cloud tools and Luau run in Studio that reaches the live game's data. Read `.agents/skills/release/SKILL.md`"
 		},
 		{
 			"file": "AGENTS.md",
@@ -149,7 +159,7 @@
 		{
 			"file": "README.md",
 			"from": "| Sync      | [Rogen](https://github.com/LDGerrits/rogen) over [Rojo](https://rojo.space); [rbx-forge](https://github.com/christopher-buss/rbx-forge) runs Studio and syncback                                                                                                                     |",
-			"to": "| Sync      | [Rogen](https://github.com/LDGerrits/rogen) over [Rojo](https://rojo.space); [rbx-forge](https://github.com/christopher-buss/rbx-forge) runs the compiler and Studio                                                                                                                     |"
+			"to": "| Sync      | [Rogen](https://github.com/LDGerrits/rogen) over [Rojo](https://rojo.space); [rbx-forge](https://github.com/christopher-buss/rbx-forge) compiles on save, and opens a code-only place for agents                                                                                                                     |"
 		},
 		{
 			"file": "README.md",
@@ -158,13 +168,18 @@
 		},
 		{
 			"file": "README.md",
-			"from": "`.github/workflows/publish.yml` publishes the game through Open Cloud from git, never from a place edited by hand: main to a dev place each time CI passes on it, a version tag (`v1.2.0`) to the live game once someone approves it, after an optional stable place for testers. Each target is a GitHub environment (`dev`, `stable`, `prod`) holding the secret `ROBLOX_PUBLISH_API_KEY`, a key with `universe-places:write` on that target's experience, and its places are the variables `ROBLOX_<TARGET>_UNIVERSE_ID` and `ROBLOX_<TARGET>_PLACE_ID`; a target without them is skipped. Give `prod` required reviewers, or every tag goes live. `mise run publish` does the same from your machine, with the keys in `.env`.\n",
-			"to": "Nothing here publishes the game: Rojo syncs the code into your place in Studio, and you publish from Studio.\n"
+			"from": "`.github/workflows/publish.yml` publishes the game through Open Cloud from git, never from a place edited by hand: main to a dev place each time CI passes on it, a version tag (`v1.2.0`) to the live game once someone approves it, after an optional stable place for testers. Each target is a GitHub environment (`dev`, `stable`, `prod`) holding the secret `ROBLOX_PUBLISH_API_KEY`, a key with `universe-places:write` on that target's experience (`prod`'s also needs `universe-datastores.control:snapshot`, because the workflow snapshots the DataStores before it publishes), and its places are the variables `ROBLOX_<TARGET>_UNIVERSE_ID` and `ROBLOX_<TARGET>_PLACE_ID`; a target without them is skipped. Give `prod` required reviewers, or every tag goes live. `mise run publish` publishes the same way from your machine, with the keys in `.env`, but takes no snapshot.\n",
+			"to": "Nothing here publishes the game: Rojo syncs the code into your place in Studio, and you publish from Studio. Install Rojo's plugin in Studio once with `mise x -- rojo plugin install`; then, after `mise run dev`, open your place and press Connect in the plugin.\n"
 		},
 		{
 			"file": "README.md",
 			"from": "world/                 the map and lighting, edited in Studio and synced back\n",
 			"to": ""
+		},
+		{
+			"file": ".github/workflows/ci.yml",
+			"from": "on main, before\n    # it publishes to dev, and when run by hand.",
+			"to": "on main and\n    # when run by hand."
 		},
 		{
 			"file": ".agents/skills/drive-studio/SKILL.md",
@@ -175,6 +190,16 @@
 			"file": ".agents/skills/drive-studio/SKILL.md",
 			"from": "- **To change the world** rather than look at it, follow the `edit-world` skill: saving and syncing back happen there, and only when the user asked for the change.",
 			"to": "- **The world** is in the user's place, not in this repo. To look at the map or change it, ask the user to open their place in Studio and connect the Rojo plugin (`mise run dev`), then drive that Studio with the MCP below. Change the world only when the user asked for it."
+		},
+		{
+			"file": ".agents/skills/drive-studio/SKILL.md",
+			"from": "Change the TypeScript and let forge sync it.",
+			"to": "Change the TypeScript and let Rojo sync it (`mise run dev` for the user's Studio)."
+		},
+		{
+			"file": ".agents/skills/drive-studio/SKILL.md",
+			"from": "1. `list_roblox_studios` first, and pick the Studio whose place forge opened. Confirm the target before you change anything in it.",
+			"to": "1. `list_roblox_studios` first, and pick the Studio you mean: the one forge opened (a place of the code alone), or the user's own place, when you were asked to look at the map. Confirm the target before you change anything in it."
 		},
 		{
 			"file": ".agents/skills/drive-studio/SKILL.md",

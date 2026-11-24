@@ -218,7 +218,7 @@ const PATHS: [string, string][] = [
 	["`src/store/", "`projects/common/src/store/"],
 	["`src/shared/", "`projects/common/src/shared/"],
 	["`world/Workspace/", "`projects/<place>/world/Workspace/"],
-	["`tests/e2e/spinner.luau`", "`projects/<place>/tests/e2e/spinner.luau`"],
+	["`tests/e2e/spinner.luau`", `\`projects/${SHARED_TESTS_PLACE}/tests/e2e/spinner.luau\``],
 	["`src/app/client/app.tsx`", "each place's `src/app/client/app.tsx`"],
 	["`src/app/client/main.client.ts`", "each place's `src/app/client/main.client.ts`"],
 	["`src/app/server/main.server.ts`", "each place's `src/app/server/main.server.ts`"],

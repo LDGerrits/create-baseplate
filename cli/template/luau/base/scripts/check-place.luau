@@ -69,9 +69,8 @@ for _, serviceName in CLIENT_VISIBLE do
 	end
 end
 
--- Open Cloud's place publishing, which publish.yml uses, doesn't update these classes, so after
--- changing one, publish from Studio. Unions are PartOperations; WrapLayer, WrapTarget and
--- WrapDeformer are BaseWraps.
+-- Open Cloud's place publishing doesn't update these classes, so after changing one, publish from
+-- Studio. Unions are PartOperations; WrapLayer, WrapTarget and WrapDeformer are BaseWraps.
 local UNPUBLISHABLE = { "PartOperation", "BaseWrap", "SurfaceAppearance", "EditableImage", "EditableMesh" }
 for _, descendant in game:GetDescendants() do
 	for _, class in UNPUBLISHABLE do

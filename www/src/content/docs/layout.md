@@ -31,6 +31,10 @@ selene.toml, stylua.toml, .luaurc   lint, format and strict types
 scripts/, .agents/, mise.toml       as in a TypeScript game
 ```
 
+## Partially managed
+
+With `--managed partial`, Studio owns the place and its world, and the files hold only the code. Compared with the layouts above, the game has no `world/` (and, in a TypeScript game, no `src/world.d.ts` or `scripts/world-types.ts`), no `mise run sync` and `mise run publish` tasks, no `scripts/publish.ts` and its test, `scripts/snapshot.ts` or `.github/workflows/publish.yml`, and no `edit-world` skill. It adds `scripts/dev.ts`, which `mise run dev` runs to serve the code to the Rojo plugin in Studio, and replaces `rbx-forge.config.ts`, `scripts/game-project.ts` and the `release` skill with versions for a place made of the code alone.
+
 ## Several places
 
 With `--places multi`, laid out as [Rogen](https://github.com/LDGerrits/rogen) does for roblox-ts:

@@ -13,7 +13,7 @@ Everything an agent needs to know whether its change works is one command, `mise
 
 ### None is a choice
 
-Like create-t3-app, each question offers the most used libraries and "none", which is the default. The base game brings only what nearly every game needs (a structure for services and controllers, a UI library, the tooling) and leaves state, saved data, entities, assets and release builds to you. An add-on is a folder of files and a manifest, so adding one never touches the base.
+Like create-t3-app, each library question offers the most used libraries and "none", which is the default for player data, entities, assets and release builds; client state defaults to Reflex in a TypeScript game and Charm in a Luau game. The base game brings only what nearly every game needs (a structure for services and controllers, a UI library, the tooling) and leaves saved data, entities, assets and release builds to you. An add-on is a folder of files and a manifest, so adding one never touches the base.
 
 ### Pin everything, and wait
 
@@ -21,7 +21,7 @@ Every tool is pinned in `mise.toml` with its checksums in `mise.lock`, and every
 
 ### Tested in the real engine
 
-Specs run in seconds in ree, an emulated engine, but an emulator can be wrong. The same specs run in a real Roblox server through Open Cloud (`mise run test:engine`), in the game's CI once you add a key, and in Baseplate's own CI, where every add-on choice runs in a real server. A library update that breaks only in the real engine fails there.
+Specs run in seconds in ree, an emulated engine, but an emulator can be wrong. The same specs run in a real Roblox server through Open Cloud (`mise run test:engine`), in the game's CI once you add a key (on pushes to main and when run by hand, not on pull requests), and in Baseplate's own CI, where every add-on choice runs in a real server. A library update that breaks only in the real engine fails there.
 
 ### The world is files
 

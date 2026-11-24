@@ -18,7 +18,7 @@ AGENTS.md says which kind of test fits what you test. How to write each:
 
 Jest tests, `<Name>.spec.luau` beside the code, with `describe`, `it`, `expect` and `jest` from `ReplicatedStorage.DevPackages.JestGlobals`. `mise run feature <name>` writes one to start from, `server/<Name>Service.spec.luau`: it requires a fresh copy of the service before each test (`jest.resetModules()`, then `require(script.Parent.<Name>Service)`), so state doesn't carry from one test to the next, and calls its functions.
 
-When a decision depends on the time, take `now: number?` as a parameter that falls back to `os.clock()`, as in `function Service.claim(userId: number, now: number?)`, so a spec passes its own times instead of waiting.
+When a decision depends on the time, take `now: number?` as a parameter, as in `function Service.claim(userId: number, now: number?)`, so a spec passes its own times instead of waiting. Fall back to `os.time()` for anything saved or compared across servers (a daily reward, a cooldown that outlives a session): `os.clock()` counts from each server's own start and means nothing on another. Fall back to `os.clock()` only for durations within one server.
 
 jest-lua follows Jest's API with Luau names: `expect(x).toBe(y)`, `toEqual`, `toBeNil`, `toThrow`, `jest.fn()`. Its docs: https://jsdotlua.github.io/jest-lua/.
 

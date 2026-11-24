@@ -3,7 +3,7 @@ title: Add-ons
 description: The UI library, the place layout, and the libraries and tools the CLI can add for state, player data, entities, assets and release builds; what each wires in, and how to take it out.
 ---
 
-The base game brings Flamework and React with a few small helpers they work well with, and asks about libraries for state, data and entities. Like create-t3-app, the CLI asks about each, offering the most used libraries or none. None is the default, except for state: Reflex in TypeScript (Charm with Vide, which Reflex doesn't support) and Charm in Luau. It also asks which UI library to use and how many places:
+The base game brings Flamework and React with a few small helpers they work well with, and asks about libraries for state, data and entities. Like create-t3-app, the CLI asks about each, offering the most used libraries or none. None is the default, except for state: Reflex in TypeScript (Charm with Vide, which Reflex doesn't support) and Charm in Luau. It also asks which UI library to use, how many places, and how much of the place Rojo manages:
 
 | Question | Flag | Choices |
 | --- | --- | --- |
@@ -21,7 +21,7 @@ The base game brings Flamework and React with a few small helpers they work well
 pnpm create baseplate my-game --state charm --data profilestore --entities components
 ```
 
-Each add-on arrives wired in and tested, with a section in the game's `AGENTS.md` that tells agents how to use it. CI creates games with each choice alone, every question answered together, and enough combinations that every two choices meet in some game. The CLI refuses only what can't work: Reflex with Vide. [Folder layout](/layout/) lists the files each one adds.
+Each add-on arrives wired in and tested, with a section in the game's `AGENTS.md` that tells agents how to use it. CI creates games with each choice alone, every question answered together, and enough combinations that every two choices meet in some game. The CLI refuses only what can't work: Reflex with Vide, Darklua with `--managed partial` (nothing publishes from git to process), and a choice the language doesn't have (Reflex and Flamework Components in a Luau game). [Folder layout](/layout/) lists the files each one adds.
 
 ## UI: Vide
 
@@ -33,13 +33,13 @@ Each add-on arrives wired in and tested, with a section in the game's `AGENTS.md
 
 ## Managed: partial
 
-By default Rojo manages the whole place, as Roblox's [fully managed](https://create.roblox.com/docs/projects/rojo/fully-managed) workflow has it: the map and lighting are files in `world/`, Studio's edits sync back into them, the game builds from git and `mise run publish` uploads the tested build. `--managed partial` is Roblox's [partially managed](https://create.roblox.com/docs/projects/rojo/partially-managed) workflow: Studio owns the place and its world, and files hold only the code. The game has no `world/`, no `mise run sync`, no `edit-world` skill and no world types, and nothing publishes from the command line or CI: `mise run dev` serves the code, you connect the Rojo plugin in Studio to it, and you publish from Studio. Instances in the workspace aren't typed, so code reaches them with `WaitForChild` or `FindFirstChild` and checks what it finds. The check and the tests are the same, and run in a place made of the code alone. It combines with every other choice; with `--places multi`, each place is still a folder of code. To go from `partial` to `full`, create a game with `full` and move the code into it.
+By default Rojo manages the whole place, as Roblox's [fully managed](https://create.roblox.com/docs/projects/rojo/fully-managed) workflow has it: the map and lighting are files in `world/`, Studio's edits sync back into them, the game builds from git and `mise run publish` uploads the tested build. `--managed partial` is Roblox's [partially managed](https://create.roblox.com/docs/projects/rojo/partially-managed) workflow: Studio owns the place and its world, and files hold only the code. The game has no `world/`, no `mise run sync`, no `edit-world` skill and no world types, and nothing publishes from the command line or CI: `mise run dev` serves the code, you connect the Rojo plugin in Studio to it, and you publish from Studio. Instances in the workspace aren't typed, so code reaches them with `WaitForChild` or `FindFirstChild` and checks what it finds. The check and the tests are the same, and run in a place made of the code alone. It combines with every other choice except `--release darklua`, which the CLI refuses; with `--places multi`, each place is still a folder of code. To go from `partial` to `full`, create a game with `full` and move the code into it.
 
 ## State: Charm
 
 `--state charm` adds [Charm](https://github.com/littensy/charm), whose signals hold client state: a controller owns its signals, and UI reads one with `useSignalState` from `@rbxts/react-charm` (with Vide, `@rbxts/vide-charm`). Packages: `@rbxts/charm` and its UI binding. It adds no files, only its section of `AGENTS.md`.
 
-To remove it, `pnpm remove @rbxts/charm @rbxts/react-charm` and delete its section from `AGENTS.md`.
+To remove it, `pnpm remove @rbxts/charm @rbxts/react-charm` (`@rbxts/vide-charm` with Vide) and delete its section from `AGENTS.md`.
 
 ## State: Reflex
 

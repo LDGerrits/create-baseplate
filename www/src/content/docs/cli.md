@@ -40,6 +40,7 @@ Without a terminal, as when an agent or CI runs it, it asks nothing and takes th
 	"ok": true,
 	"name": "my-game",
 	"dir": "/path/to/my-game",
+	"language": "typescript",
 	"git": true,
 	"committed": true,
 	"installed": true,
@@ -49,7 +50,7 @@ Without a terminal, as when an agent or CI runs it, it asks nothing and takes th
 }
 ```
 
-`git` says whether the game is a git repo of its own, and `committed` whether the first commit is made. With `--no-install` and add-ons that change the packages or bring a tool (Asphalt, Darklua), the commit waits for the next steps, which bring them into `pnpm-lock.yaml` and `mise.lock`: `nextSteps` holds the commit. `warnings` says why git or a step was skipped.
+`git` says whether the game is a git repo of its own, and `committed` whether the first commit is made. With `--no-install` and add-ons that change the packages or bring a tool (the default state add-on alone adds packages; Asphalt and Darklua bring tools), the commit waits for the next steps, which bring them into `pnpm-lock.yaml` and `mise.lock`: `nextSteps` holds the commit. `warnings` says why git or a step was skipped.
 
 On failure it prints `{ "ok": false, "error": "..." }` and exits with 1, or with 2 when npm kept the flags for itself (put them after `--`).
 
@@ -60,7 +61,7 @@ pnpm dlx create-baseplate@<version> sync          # in the game's folder
 pnpm dlx create-baseplate@<version> sync --check  # change nothing; exit 1 if anything would change
 ```
 
-`sync` brings a game's agent files (`AGENTS.md`, skills, hooks and the agent tools' settings) up to that version's template, for the add-ons in `package.json`'s `baseplate.addOns`, and keeps the game's own edits. It exits with 1 when an edit clashes with the template's change, leaving the template's version beside the file as `<file>.baseplate-new`. Games normally don't need it run by hand: see [keeping the agent files current](/agents/#keeping-the-agent-files-current).
+`sync` brings a game's agent files (`AGENTS.md`, skills, hooks and the agent tools' settings) up to that version's template, for the add-ons in `package.json`'s `baseplate.addOns`, and keeps the game's own edits. It exits with 1 when an edit clashes with the template's change, leaving the template's version beside the file as `<file>.baseplate-new`. Games normally don't need it run by hand: Renovate moves `baseplate.version` and the game's workflow runs the sync. To move by hand, change that version in `package.json` and run `mise run install`, which runs `sync` (an agent does this too: its guard blocks `pnpm dlx`). See [keeping the agent files current](/agents/#keeping-the-agent-files-current).
 
 ## Reading the docs offline
 

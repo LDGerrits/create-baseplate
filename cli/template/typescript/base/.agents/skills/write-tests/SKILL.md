@@ -18,7 +18,7 @@ AGENTS.md says which kind of test fits what you test. How to write each:
 
 Jest tests written with `@rbxts/jest-globals`. `mise run feature <name>` writes one to start from, `<name>-service.spec.ts`: it constructs the service with `new` and calls its public methods.
 
-When a decision depends on the time, take `now` as a parameter that defaults to `os.clock()`, so a spec passes its own times instead of waiting.
+When a decision depends on the time, take `now` as a parameter, so a spec passes its own times instead of waiting. Default it to `os.time()` for anything saved or compared across servers (a daily reward, a cooldown that outlives a session): `os.clock()` counts from each server's own start and means nothing on another. Default to `os.clock()` only for durations within one server.
 
 ## End-to-end tests
 

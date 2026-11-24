@@ -26,8 +26,8 @@ Under **Settings > Secrets and variables > Actions** of the game's repository:
 
 | Name | Kind | What |
 | --- | --- | --- |
-| `ROBLOX_OPEN_CLOUD_API_KEY` | secret | Runs every spec, engine specs included, in a real Roblox server. Without it and the two variables, that job shows as skipped. |
+| `ROBLOX_OPEN_CLOUD_API_KEY` | secret | Runs every spec, engine specs included, in a real Roblox server, on pushes to main and when you run CI by hand, not on pull requests. Without the two variables that job shows as skipped; with them but without the key, it fails. |
 | `ROBLOX_UNIVERSE_ID`, `ROBLOX_PLACE_ID` | variables | The test experience and place, as above. |
-| `ROBLOX_PUBLISH_API_KEY` | environment secret | In each of the environments `dev`, `stable` and `prod`: the key `.github/workflows/publish.yml` publishes that target with (see [Publishing](/publishing/)). |
+| `ROBLOX_PUBLISH_API_KEY` | environment secret | In each environment you use (`dev`, `stable` and `prod`; stable is optional): the key `.github/workflows/publish.yml` publishes that target with, with `universe-places:write` on that target's experience (see [Publishing](/publishing/)). `prod`'s key also needs `universe-datastores.control:snapshot`, because the workflow snapshots the DataStores before it publishes. |
 | `ROBLOX_<TARGET>_UNIVERSE_ID`, `ROBLOX_<TARGET>_PLACE_ID` | variables | Each target's experience and place, such as `ROBLOX_DEV_PLACE_ID`. Without its place variable, a target's job shows as skipped. |
 | `BOT_APP_CLIENT_ID`, `BOT_APP_PRIVATE_KEY` | secrets | A GitHub App with Contents read and write on the repository. When Renovate updates a tool or create-baseplate, `.github/workflows/renovate-fixups.yml` pushes the new `mise.lock` or the synced agent files as this app, so CI runs again and the update can merge. |
