@@ -2,7 +2,7 @@
 -- Opens a built place and checks that every roblox-ts import in it resolves to
 -- an instance, the way RuntimeLib resolves it in game. A missing package mount or
 -- a file routed to the wrong side compiles fine but errors in Studio; this finds
--- it without opening Studio.
+-- it without opening Studio. It also fails on instances Open Cloud can't publish.
 --
 -- Usage: lune run scripts/check-place <place.rbxl>
 
@@ -186,11 +186,33 @@ for _, script in game:GetDescendants() do
 	end
 end
 
+-- Open Cloud's place publishing, which publish.yml uses, doesn't update these classes, so a place
+-- holding one has to be published from Studio. Unions are PartOperations; WrapLayer, WrapTarget and
+-- WrapDeformer are BaseWraps.
+local UNPUBLISHABLE = { "PartOperation", "BaseWrap", "SurfaceAppearance", "EditableImage", "EditableMesh" }
+local unpublishable: { string } = {}
+for _, descendant in game:GetDescendants() do
+	for _, class in UNPUBLISHABLE do
+		if descendant:IsA(class) then
+			table.insert(
+				unpublishable,
+				`{descendant:GetFullName()} is a {descendant.ClassName}, which Open Cloud's place publishing doesn't update, so publish.yml can't ship it (create.roblox.com/docs/cloud/guides/usage-place-publishing). Replace it, a union with an imported MeshPart, or take it out of world/.`
+			)
+			break
+		end
+	end
+end
+
+for _, problem in unpublishable do
+	print(problem)
+end
 if #problems > 0 then
 	for _, problem in problems do
 		print(problem)
 	end
 	print(`\n{#problems} of {checked} imports don't resolve in {placePath}`)
+end
+if #problems > 0 or #unpublishable > 0 then
 	process.exit(1)
 end
 

@@ -6,6 +6,11 @@
 				"command": "mise exec --quiet -- node .agents/hooks/guard.ts cursor"
 			}
 		],
+		"beforeMCPExecution": [
+			{
+				"command": "mise exec --quiet -- node .agents/hooks/guard.ts cursor"
+			}
+		],
 		"afterFileEdit": [
 			{
 				"command": "mise exec --quiet -- node .agents/hooks/edited.ts cursor",

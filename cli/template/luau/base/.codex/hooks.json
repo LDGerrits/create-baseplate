@@ -2,7 +2,7 @@
 	"hooks": {
 		"PreToolUse": [
 			{
-				"matcher": "Bash|apply_patch",
+				"matcher": "Bash|apply_patch|mcp__.*__(open_cloud_invoke|execute_luau)",
 				"hooks": [
 					{
 						"type": "command",

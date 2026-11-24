@@ -14,6 +14,8 @@ What you remember of roblox-ts, Flamework, Rogen and the Roblox API is likely ou
 - Rogen: `rogen doc <topic>` and `rogen help <command> --json`. Other tools: `<tool> --help`, and the skills below for how this game uses them.
 - How this game is set up (the check, tests, UI, the world, publishing, its keys): `mise run doc <topic>`, Baseplate's docs for the version this game came from; `mise run doc` lists the topics.
 
+Before you change something, look at what's there: the code that calls it, where it lands (`rogen where <path>`), and for the map its file in `world/`. Where this file and the code disagree, the code is right: follow it, and say so when you report back.
+
 ## Checking your work
 
 `mise run check` is the check: it formats, compiles, lints, builds the place, runs the tests and renders the UI stories, in about ten seconds. Run it after each change and fix what it reports until it passes. In Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI, a hook formats and lints each file you edit and, outside Cursor, hands back the lint problems left; another runs the check when you stop and hands back any failure; in any tool, the commit hook runs it on what you commit.
@@ -110,7 +112,7 @@ Add one with `pnpm add <name>` (`-D` for build tools). pnpm installs only versio
 
 ## Releases and updates
 
-You make a release ready and the user ships it: a hook stops `mise run publish`. Read `.agents/skills/release/SKILL.md` to prepare one. For a Renovate update, a `*.baseplate-new` file or a failing `agent-files` check, read `.agents/skills/upgrade/SKILL.md`.
+You make a release ready and the user ships it: a hook stops `mise run publish` and Studio's Open Cloud tools. Read `.agents/skills/release/SKILL.md` to prepare one. For a Renovate update, a `*.baseplate-new` file or a failing `agent-files` check, read `.agents/skills/upgrade/SKILL.md`.
 
 ## Writing for people
 

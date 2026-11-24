@@ -39,7 +39,7 @@ In a multi-place game, `ROBLOX_PUBLISH_PLACE_ID` names each place's ID: `lobby=1
 
 Keep this key apart from the test key the CI uses (`ROBLOX_OPEN_CLOUD_API_KEY`, see [environment variables](/environment/)): a key reaches every place of its experience, and the test key should only reach an experience made for tests.
 
-Agents don't publish: a hook stops them running `mise run publish`, and they tell you when a change is ready.
+Agents don't publish: a hook stops them running `mise run publish` or publishing through Studio's MCP server, and they tell you when a change is ready. Open Cloud's place publishing doesn't update unions, `SurfaceAppearance` or wrap layers, so the check fails on a place that holds one.
 
 ## Publish from CI
 
