@@ -35,7 +35,7 @@ Edit or add a `.model.json` under `world/<Service>/`, then run `mise run check`.
 ## Art and large models
 
 - Models from Studio's 3D Importer point to their meshes and textures by asset ID, so they stay small as `.model.json`. Anything else that holds its mesh or physics data itself is a binary blob that makes large, unreadable JSON: save such a model as an `.rbxm` over its path under `world/` (in Studio, **Save to File**), and syncback keeps it binary from then on.
-- Leave unions (`PartOperation`), `SurfaceAppearance` and wrap layers out of `world/`: Open Cloud's place publishing doesn't update them, so the place can't ship from CI, and the check fails on them. Export a union and import it as a `MeshPart` instead.
+- Prefer a `MeshPart` to a union (`PartOperation`): Open Cloud's place publishing doesn't update unions, `SurfaceAppearance` or wrap layers, so after changing one the user publishes from Studio, and the check warns about each. Export a union and import it as a `MeshPart` instead.
 - Source art (`.fbx`, `.blend`, `.psd`) goes outside `world/`, such as in `art/`. `.gitattributes` stores it in Git LFS, which each machine sets up once with `git lfs install`; it can't be merged, so lock a file (`git lfs lock <path>`) while you change it.
 - Uploading a mesh or texture again gives it a new asset ID: update the instances that use it.
 

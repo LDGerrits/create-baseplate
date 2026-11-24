@@ -6,14 +6,14 @@
 # have on their PATH. Without mise, or when the hook itself fails, it lets the agent carry on rather
 # than blocking every command, except the guard: it still blocks Studio's live tools and publishing,
 # which nothing else stops.
-cd "$(dirname "$0")/../.." 2>/dev/null || exit 0
 hook=$1
 shift
 input=$(cat)
 
 failed() {
 	[ "$hook" = guard.ts ] || exit 0
-	printf '%s' "$input" | grep -Eq 'open_cloud_invoke|execute_luau|mise +run +publish|scripts/publish\.ts|rojo +upload' || exit 0
+	# Only the tool's name and its command, which Copilot sends inside a JSON string.
+	printf '%s' "$input" | grep -Eq '"(tool_name|toolName)" *: *"[^"]*(open_cloud_invoke|execute_luau)"|command\\?" *: *\\?"[^"\\]*(mise +run +publish|scripts/publish\.ts|rojo +upload)' || exit 0
 	reason="The guard could not run (is mise installed?), so this call is blocked: it can act on the live game. Tell the user."
 	case $1 in
 	cursor) printf '{"permission":"deny","agent_message":"%s","user_message":"%s"}\n' "$reason" "$reason" ;;
@@ -24,6 +24,7 @@ failed() {
 	exit 0
 }
 
+cd "$(dirname "$0")/../.." 2>/dev/null || failed "$@"
 mise=$(command -v mise 2>/dev/null) || mise="$HOME/.local/bin/mise"
 [ -x "$mise" ] || failed "$@"
 printf '%s' "$input" | "$mise" exec --quiet -- node ".agents/hooks/$hook" "$@" || failed "$@"

@@ -159,6 +159,8 @@ export function guardReason(payload: Payload, root: string, start: string): stri
 	const studioTool = toolName === undefined ? undefined : STUDIO_TOOL.exec(toolName)?.[1];
 
 	if (studioTool !== undefined) return checkStudioTool(studioTool, input);
+	// Its `command` is the MCP server's launch command, not something the agent runs.
+	if (payload.hook_event_name === "beforeMCPExecution") return undefined;
 
 	if (payload.hook_event_name === "beforeReadFile" || (toolName !== undefined && READS.test(toolName))) {
 		return files.some(isSecretFile) ? SECRET : undefined;

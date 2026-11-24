@@ -6,7 +6,7 @@
 				"type": "command",
 				"matcher": "bash|powershell|edit|create|view|.*(open_cloud_invoke|execute_luau)",
 				"bash": "sh .agents/hooks/run guard.ts copilot",
-				"powershell": "if (Get-Command mise -ErrorAction SilentlyContinue) { mise exec --quiet -- node .agents/hooks/guard.ts copilot }; exit 0",
+				"powershell": "$i = [Console]::In.ReadToEnd(); if (Get-Command mise -ErrorAction SilentlyContinue) { $i | mise exec --quiet -- node .agents/hooks/guard.ts copilot; if ($LASTEXITCODE -eq 0) { exit 0 } }; if ($i -match '\"(tool_name|toolName)\" *: *\"[^\"]*(open_cloud_invoke|execute_luau)\"|command\\\\?\" *: *\\\\?\"[^\"\\\\]*(mise +run +publish|scripts/publish\\.ts|rojo +upload)') { '{\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"The guard could not run (is mise installed?), so this call is blocked: it can act on the live game. Tell the user.\"}' }; exit 0",
 				"cwd": ".",
 				"timeoutSec": 30
 			}

@@ -11,7 +11,7 @@ The map and lighting live in `world/` as files, apart from the code: a project f
 
 The game is built from git, never edited in place: `mise run build` makes the place from the code and `world/`, and [publishing](/publishing/) does the same from a commit. An edit made in Studio and never synced back is lost on the next build.
 
-- **Art.** Models from Studio's 3D Importer point to their meshes and textures by asset ID, so they stay small as JSON. Save a model that holds its own mesh data as an `.rbxm`, and syncback keeps it binary. Unions, `SurfaceAppearance` and wrap layers can't be in `world/`: Open Cloud's place publishing doesn't update them, so the check fails on them; import a union as a `MeshPart` instead. Source art (`.fbx`, `.blend`, `.psd`) goes in Git LFS, which `.gitattributes` sets up: run `git lfs install` once per machine.
+- **Art.** Models from Studio's 3D Importer point to their meshes and textures by asset ID, so they stay small as JSON. Save a model that holds its own mesh data as an `.rbxm`, and syncback keeps it binary. Open Cloud's place publishing doesn't update unions, `SurfaceAppearance` or wrap layers, so the check warns about each, and after changing one you publish from Studio; import a union as a `MeshPart` where you can. Source art (`.fbx`, `.blend`, `.psd`) goes in Git LFS, which `.gitattributes` sets up: run `git lfs install` once per machine.
 - **Many copies of one asset.** Keep the asset once, in `world/ServerStorage/`, and place tagged marker parts where it stands; a server service swaps each for a copy when the game starts, so changing the asset changes every copy. The `edit-world` skill describes it.
 - **Terrain** is one binary file that git can't merge: one person changes it at a time.
 

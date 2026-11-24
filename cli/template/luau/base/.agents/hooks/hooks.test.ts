@@ -66,6 +66,16 @@ test("blocks Studio's MCP from acting on the live game", () => {
 		reason({ tool_name: "mcp__Roblox_Studio__inspect_instance", tool_input: { path: "Workspace" } }),
 		undefined,
 	);
+	// Cursor's beforeMCPExecution names the server's launch command, which isn't the agent's command.
+	assert.equal(
+		reason({
+			hook_event_name: "beforeMCPExecution",
+			tool_name: "create_issue",
+			command: "npx -y @some/mcp-server",
+			tool_input: {},
+		}),
+		undefined,
+	);
 });
 
 test("blocks reading .env, but not reading generated files", () => {
@@ -259,13 +269,21 @@ test("the tree hash changes with every change, and the pass record sits in the w
 		fs.rmSync(dir, { recursive: true, force: true });
 	}
 });
+
 test("without mise, the guard still blocks Studio's live tools and publishing, and lets the rest through", () => {
 	const home = fs.mkdtempSync(path.join(os.tmpdir(), "no-mise-"));
+	// A PATH with only what `run` needs, so a mise installed system-wide can't stand in.
+	const bin = path.join(home, "bin");
+	fs.mkdirSync(bin);
+	for (const tool of ["sh", "cat", "dirname", "grep"]) {
+		const found = spawnSync("sh", ["-c", `command -v ${tool}`], { encoding: "utf8" }).stdout.trim();
+		fs.symlinkSync(found, path.join(bin, tool));
+	}
 	const guard = (format: string, payload: Payload) =>
-		spawnSync("sh", [path.join(import.meta.dirname, "run"), "guard.ts", format], {
+		spawnSync(path.join(bin, "sh"), [path.join(import.meta.dirname, "run"), "guard.ts", format], {
 			input: JSON.stringify(payload),
 			encoding: "utf8",
-			env: { PATH: "/usr/bin:/bin", HOME: home },
+			env: { PATH: bin, HOME: home },
 		});
 	try {
 		const live: Payload = { tool_name: "mcp__Roblox_Studio__open_cloud_invoke", tool_input: {} };
@@ -278,6 +296,14 @@ test("without mise, the guard still blocks Studio's live tools and publishing, a
 		const publish = guard("claude", { tool_name: "Bash", tool_input: { command: "mise run publish" } });
 		assert.equal(JSON.parse(publish.stdout).hookSpecificOutput.permissionDecision, "deny");
 		assert.equal(guard("claude", { tool_name: "Bash", tool_input: { command: "ls" } }).stdout, "");
+		const copilotPublish = guard("copilot", { toolName: "bash", toolArgs: '{"command":"mise run publish"}' });
+		assert.equal(JSON.parse(copilotPublish.stdout).permissionDecision, "deny");
+		// Only the tool and the command count, not what an edit writes.
+		const edit = {
+			tool_name: "Write",
+			tool_input: { file_path: "notes.md", content: "open_cloud_invoke, mise run publish" },
+		};
+		assert.equal(guard("claude", edit).stdout, "");
 	} finally {
 		fs.rmSync(home, { recursive: true, force: true });
 	}

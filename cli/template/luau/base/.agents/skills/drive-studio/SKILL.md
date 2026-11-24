@@ -25,7 +25,7 @@ The MCP can change the place in ways this project doesn't keep, so leave these a
 - **Scripts** (`multi_edit`): the code lives in `src/` and Rojo overwrites scripts in Studio. Change the files in `src/` and let forge sync them.
 - **Saving** (`save_place`): saving and syncing back to `world/` happen in the `edit-world` skill, and only when the user asked for the change.
 - **Assets** (`insert_asset`, `generate_*`, `upload_image`): only as part of a world change the user asked for, through `edit-world`.
-- **The live game** (`open_cloud_invoke`, and `execute_luau` that reaches DataStores, MemoryStores, messaging or HTTP): it publishes, restarts servers and changes real players' data, and a hook blocks it. Tell the user what you would run.
+- **The live game** (`open_cloud_invoke`, and `execute_luau` that reaches DataStores, MemoryStores, messaging or HTTP): it publishes, restarts servers and changes real players' data, and a hook blocks it. Tell the user what you would run. The hook only sees the names in your code, so Luau that calls the game's own modules, which use DataStores, gets past it: don't run code that saves player data, and in Studio's settings keep API access off unless the user turned it on.
 
 1. `list_roblox_studios` first, and pick the Studio whose place forge opened. Confirm the target before you change anything in it.
 2. Inspect without running code: `search_game_tree`, `inspect_instance`, `script_grep`.
