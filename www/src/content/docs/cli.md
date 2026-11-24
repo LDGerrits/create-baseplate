@@ -21,7 +21,7 @@ With npm, the flags go after `--`: npm reads flags before it as its own, and the
 | `--language <language>` | `typescript` (default): roblox-ts with Flamework; or `luau`: Luau with Wally, StyLua, Selene and luau-lsp. Asked first; each language has its own questions. |
 | `--ui <library>` | UI: `react` (default) or `vide`. |
 | `--places <layout>` | `single` (default), or `multi`: a lobby and a game sharing code, each place a folder in `projects/`. |
-| `--state <library>` | Client state: `charm`, `reflex` (TypeScript only) or `none` (default). |
+| `--state <library>` | Client state: `reflex` (TypeScript only; its default), `charm` (Luau's default, and the default with Vide, which Reflex doesn't support) or `none`. |
 | `--data <library>` | Player data: `profilestore`, `lapis` or `none` (default). |
 | `--entities <library>` | Entities: `components` (TypeScript only), `jecs` or `none` (default). |
 | `--assets <tool>` | Assets: `asphalt`, to upload images and sounds and type their IDs, or `none` (default). |
@@ -42,7 +42,7 @@ Without a terminal, as when an agent or CI runs it, it asks nothing and takes th
 	"git": true,
 	"committed": true,
 	"installed": true,
-	"addOns": { "ui": "react", "places": "single", "state": "none", "data": "none", "entities": "none", "assets": "none", "release": "none" },
+	"addOns": { "ui": "react", "places": "single", "state": "reflex", "data": "none", "entities": "none", "assets": "none", "release": "none" },
 	"warnings": [],
 	"nextSteps": ["cd my-game", "mise run check", "mise run dev"]
 }

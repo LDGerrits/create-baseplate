@@ -14,6 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
 	addOnsByLanguage,
+	choicesFor,
 	DEFAULT_LANGUAGE,
 	type Language,
 	languages,
@@ -67,15 +68,18 @@ export function generatorFor(language: Language) {
 		return entries.every((a, i) => entries.slice(i + 1).every((b) => !conflicts.has(pairKey(a, b))));
 	}
 
-	const defaults = (): Answers =>
-		Object.fromEntries(questions.map((question) => [question.name, question.defaultValue]));
+	/** `answers` filled in with what the CLI takes for the questions they leave out. */
+	const withDefaults = (answers: Answers = {}): Answers => choicesFor(language, answers);
+	const defaults = () => withDefaults();
 
-	/** The flags that create a game with `answers`; defaults are left out. */
+	/** The flags that create a game with `answers`; what the CLI would take anyway is left out. */
 	function flagsOf(answers: Answers): string {
+		const implied = (name: string) =>
+			withDefaults(Object.fromEntries(Object.entries(answers).filter(([other]) => other !== name)))[name];
 		return [
 			...(language === DEFAULT_LANGUAGE ? [] : [`--language ${language}`]),
 			...questions
-				.filter((question) => answers[question.name] !== question.defaultValue)
+				.filter((question) => answers[question.name] !== implied(question.name))
 				.map((question) => `--${question.name} ${answers[question.name]}`),
 		].join(" ");
 	}
@@ -143,7 +147,7 @@ export function generatorFor(language: Language) {
 
 	/** Each choice that isn't a default, alone. */
 	const alone = questions.flatMap((question) =>
-		question.values.slice(1).map((value) => ({ ...defaults(), [question.name]: value })),
+		question.values.slice(1).map((value) => withDefaults({ [question.name]: value })),
 	);
 
 	/**
@@ -151,7 +155,7 @@ export function generatorFor(language: Language) {
 	 * has several, the second game takes the next one, so both games differ as much as they can.
 	 */
 	const everything = (questions.find((question) => question.name === "ui")?.values ?? [""]).map((ui, i) => {
-		const answers: Answers = { ...defaults(), ui };
+		const answers: Answers = withDefaults({ ui });
 		for (const question of questions) {
 			if (question.name === "ui") continue;
 			const choices = question.values.filter((value) => value !== question.defaultValue && value !== "none");

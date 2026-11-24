@@ -23,10 +23,16 @@ for (const [language, generator] of Object.entries(generators) as [Language, (ty
 	});
 
 	test(`${language}: creates a game with every question answered, once per UI`, () => {
+		// A question whose only choice besides "none" is its default, such as Luau's state, answers with it.
+		const onlyChoice = (q: (typeof questions)[number]) => q.values.filter((value) => value !== "none").length === 1;
 		const uis = questions.find((question) => question.name === "ui")?.values ?? [];
 		for (const ui of uis) {
 			const all = matrices.create.find(
-				(game) => game.ui === ui && questions.every((q) => q.name === "ui" || game[q.name] !== q.defaultValue),
+				(game) =>
+					game.ui === ui &&
+					questions.every(
+						(q) => q.name === "ui" || (game[q.name] !== "none" && (onlyChoice(q) || game[q.name] !== q.defaultValue)),
+					),
 			);
 			assert.ok(all, `every question with ${ui}`);
 		}

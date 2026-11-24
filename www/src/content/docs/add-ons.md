@@ -3,14 +3,14 @@ title: Add-ons
 description: The UI library, the place layout, and the libraries and tools the CLI can add for state, player data, entities, assets and release builds; what each wires in, and how to take it out.
 ---
 
-The base game brings Flamework and React with a few small helpers they work well with, and leaves libraries for state, data and entities to you. Like create-t3-app, the CLI asks about each, offering the most used libraries or none, which is the default. It also asks which UI library to use and how many places:
+The base game brings Flamework and React with a few small helpers they work well with, and asks about libraries for state, data and entities. Like create-t3-app, the CLI asks about each, offering the most used libraries or none. None is the default, except for state: Reflex in TypeScript (Charm with Vide, which Reflex doesn't support) and Charm in Luau. It also asks which UI library to use and how many places:
 
 | Question | Flag | Choices |
 | --- | --- | --- |
 | Language | `--language` | `typescript` (default, roblox-ts), `luau` |
 | UI | `--ui` | `react` (default, [React](https://react.dev) for Roblox), `vide` ([Vide](https://github.com/centau/vide)) |
 | Places | `--places` | `single` (default), `multi` |
-| Client state | `--state` | `charm` ([Charm](https://github.com/littensy/charm)), `reflex` ([Reflex](https://github.com/littensy/reflex), no longer updated; TypeScript only), `none` |
+| Client state | `--state` | `charm` ([Charm](https://github.com/littensy/charm); Luau's default), `reflex` ([Reflex](https://github.com/littensy/reflex); TypeScript only, its default), `none` |
 | Player data | `--data` | `profilestore` ([ProfileStore](https://github.com/MadStudioRoblox/ProfileStore)), `lapis` ([Lapis](https://github.com/nezuo/lapis)), `none` |
 | Entities | `--entities` | `components` ([Flamework Components](https://flamework.fireboltofdeath.dev/docs/additional-modules/components); TypeScript only), `jecs` ([Jecs](https://github.com/Ukendio/jecs)), `none` |
 | Assets | `--assets` | `asphalt` ([Asphalt](https://github.com/jackTabsCode/asphalt)), `none` |
@@ -38,7 +38,7 @@ To remove it, put back the base game's `clicker-controller.ts` and `app.tsx` (fr
 
 ## State: Reflex
 
-`--state reflex` adds one [Reflex](https://github.com/littensy/reflex) store, `src/store/client/client-store.ts`, made of a slice per feature (`clicker-slice.ts`, with a spec). `ClickerController` changes it through the store's actions, and `app.tsx` reads it with `useSelector` inside a `ReflexProvider`. Packages: `@rbxts/reflex`, `@rbxts/react-reflex`. Reflex is no longer updated and has no Vide binding.
+`--state reflex` adds one [Reflex](https://github.com/littensy/reflex) store, `src/store/client/client-store.ts`, made of a slice per feature (`clicker-slice.ts`, with a spec). `ClickerController` changes it through the store's actions, and `app.tsx` reads it with `useSelector` inside a `ReflexProvider`. Packages: `@rbxts/reflex`, `@rbxts/react-reflex`. Reflex has no Vide binding, so a Vide game takes Charm by default.
 
 To remove it, delete `src/store/` and `clicker-slice.ts` and its spec, put back the base game's `clicker-controller.ts` and `app.tsx`, and `pnpm remove @rbxts/reflex @rbxts/react-reflex`.
 
@@ -99,5 +99,5 @@ A Luau add-on's packages are in `wally.toml`; to remove one, delete its lines th
 
 There's no command to remove one; the sections above list what each touches. Two things help:
 
-- **See exactly what it changed.** Create two games with the same flags, one without the add-on, and compare them: `pnpm create baseplate /tmp/with --no-git --no-install --state charm`, the same without `--state charm`, then `diff -r /tmp/with /tmp/without`.
+- **See exactly what it changed.** Create two games with the same flags, one without the add-on, and compare them: `pnpm create baseplate /tmp/with --no-git --no-install --data lapis`, the same without `--data lapis`, then `diff -r /tmp/with /tmp/without`.
 - **Finish the same way each time.** Delete the add-on's section in `AGENTS.md`, set its key under `baseplate.addOns` in `package.json` to `none`, and run `mise run check`.
