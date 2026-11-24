@@ -142,7 +142,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mise run ci
         working-directory: ${{ runner.temp }}/coin-rush
-      # The game's own CI runs this too, with --release.
+      # The game runs this when it publishes, with --release.
       - if: contains(matrix.addOns, '--release')
         run: mise run release
         working-directory: ${{ runner.temp }}/coin-rush

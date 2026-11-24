@@ -13,7 +13,7 @@ mise run build
 
 compiles the code and builds `build/game.rbxl`: the code and the world, as Studio would open it. In a multi-place game, each place builds its own, in `projects/<place>/build/game.rbxl`.
 
-With the release add-on (`--release darklua`), publish the release build instead:
+With the release add-on (`--release darklua`), `mise run publish` publishes the release build instead, which you can also build alone:
 
 ```sh
 mise run release

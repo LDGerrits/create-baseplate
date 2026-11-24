@@ -25,13 +25,19 @@ for (const [language, generator] of Object.entries(generators) as [Language, (ty
 	test(`${language}: creates a game with every question answered, once per UI`, () => {
 		// A question whose only choice besides "none" is its default, such as Luau's state, answers with it.
 		const onlyChoice = (q: (typeof questions)[number]) => q.values.filter((value) => value !== "none").length === 1;
+		// One that can't take any of its choices with the game's other answers, such as Darklua in a partially managed game, keeps its default.
+		const fitsAnother = (game: Answers, q: (typeof questions)[number]) =>
+			q.values.some((value) => value !== "none" && value !== q.defaultValue && allowed({ ...game, [q.name]: value }));
 		const uis = questions.find((question) => question.name === "ui")?.values ?? [];
 		for (const ui of uis) {
 			const all = matrices.create.find(
 				(game) =>
 					game.ui === ui &&
 					questions.every(
-						(q) => q.name === "ui" || (game[q.name] !== "none" && (onlyChoice(q) || game[q.name] !== q.defaultValue)),
+						(q) =>
+							q.name === "ui" ||
+							(game[q.name] !== "none" && (onlyChoice(q) || game[q.name] !== q.defaultValue)) ||
+							!fitsAnother(game, q),
 					),
 			);
 			assert.ok(all, `every question with ${ui}`);

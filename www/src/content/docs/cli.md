@@ -26,7 +26,7 @@ With npm, the flags go after `--`: npm reads flags before it as its own, and the
 | `--data <library>` | Player data: `profilestore`, `lapis` or `none` (default). |
 | `--entities <library>` | Entities: `components` (TypeScript only), `jecs` or `none` (default). |
 | `--assets <tool>` | Assets: `asphalt`, to upload images and sounds and type their IDs, or `none` (default). |
-| `--release <tool>` | Release builds: `darklua`, to minify and optimize the code you publish, or `none` (default). |
+| `--release <tool>` | Release builds: `darklua`, to minify and optimize the code `mise run publish` uploads (not with `--managed partial`), or `none` (default). |
 | `-V, --version` | Print the CLI's version. |
 
 Without a terminal, as when an agent or CI runs it, it asks nothing and takes the defaults. The folder may be a fresh clone: `.git`, a license and the OS's own files stay, and a README, `.gitignore` or `.gitattributes` from GitHub is replaced by the template's, with a warning; the first commit goes on top of the clone's. See [add-ons](/add-ons/) for what each library choice adds.

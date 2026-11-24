@@ -79,9 +79,9 @@ To remove it, delete those files and the generated ones, the Asphalt lines in `m
 
 ## Release builds: Darklua
 
-`--release darklua` adds `mise run release`: it processes the compiled code with [Darklua](https://darklua.com) into `dist/`, by the rules in `.darklua.json` (minified, dead code removed, locals renamed), builds `build/release.rbxl` from it and runs the tests on that build, so what you publish is what was tested. The game's CI runs it too. When the tests pass in `check` and fail in `release`, a rule broke the code: remove it from `.darklua.json`. Files: `.darklua.json`, `scripts/darklua.ts`, `scripts/release-project.ts`; the tool and the `release` task in `mise.toml`.
+`--release darklua` adds `mise run release`: it processes the compiled code with [Darklua](https://darklua.com) into `dist/`, by the rules in `.darklua.json` (minified, dead code removed, locals renamed), builds `build/release.rbxl` from it and runs the tests on that build, so what you publish is what was tested. It runs when you publish (`mise run publish` and the publish workflow), not in the check or the game's CI, so it never slows down development. A partially managed game can't take it, since Studio publishes that game. When the tests pass in `check` and fail in `release`, a rule broke the code: remove it from `.darklua.json`. Files: `.darklua.json`, `scripts/darklua.ts`, `scripts/release-project.ts`; the tool and the `release` task in `mise.toml`.
 
-To remove it, delete those files, the Darklua lines in `mise.toml` (then `mise lock`), `/dist` in `.gitignore`, and the `mise run release` step in `.github/workflows/ci.yml`.
+To remove it, delete those files, the Darklua lines in `mise.toml` (then `mise lock`), `/dist` in `.gitignore`, and set the `publish` task in `mise.toml` back to depend on `build` and publish `build/game.rbxl`.
 
 ## In a Luau game
 

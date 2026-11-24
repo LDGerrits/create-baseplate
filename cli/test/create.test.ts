@@ -477,7 +477,7 @@ test("adds the Luau tools: Asphalt's Luau module and Darklua's release", () => {
 	assert.match(read("asphalt.toml"), /src\/shared/);
 	assert.ok(fs.existsSync(path.join(dir, ".darklua.json")));
 	assert.match(read(".gitignore"), /^\/dist$/m);
-	assert.match(read(".github/workflows/ci.yml"), /mise run release/);
+	assert.doesNotMatch(read(".github/workflows/ci.yml"), /mise run release/);
 	assert.match(mise, /\[tasks\.publish\][^[]*depends = \["release"\][^[]*publish\.ts build\/release\.rbxl/);
 });
 
@@ -668,9 +668,16 @@ test("builds a release with Darklua", () => {
 	assert.match(mise, /\[tools\][^[]*"github:seaofvoices\/darklua" = "\d[^"]*"/);
 	assert.match(mise, /\n\[tasks\.release\]\n/);
 	assert.match(read(".gitignore"), /^\/dist$/m);
-	assert.match(read(".github/workflows/ci.yml"), /- run: mise run ci\n\s+- run: mise run release\n/);
+	assert.doesNotMatch(read(".github/workflows/ci.yml"), /mise run release/, "only publishing runs it");
 	assert.match(mise, /\[tasks\.publish\][^[]*depends = \["release"\][^[]*publish\.ts build\/release\.rbxl/);
 	assert.match(read("AGENTS.md"), /## Release builds/);
+});
+
+test("refuses Darklua in a partially managed game", () => {
+	const cwd = tempDir();
+	const run = create(cwd, "my-game", "--no-git", "--managed", "partial", "--release", "darklua");
+	assert.equal(run.status, 1);
+	assert.match(JSON.parse(run.stdout).error, /publishes from Studio/);
 });
 
 test("Asphalt writes its code into the shared code of a multi-place game", () => {
@@ -762,8 +769,8 @@ for (const language of ["typescript", "luau"]) {
 			"multi",
 			"--entities",
 			"jecs",
-			"--release",
-			"darklua",
+			"--assets",
+			"asphalt",
 		);
 		assert.equal(run.status, 0, run.stderr);
 		const dir = path.join(cwd, "my-game");
