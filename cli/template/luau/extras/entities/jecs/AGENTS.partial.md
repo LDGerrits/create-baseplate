@@ -1,0 +1,3 @@
+## Entities
+
+Entities live in a Jecs world (`ReplicatedStorage.Packages.Jecs`): `SpinnerService` adds an entity for each part tagged `Spinner`, and runs `SpinnerSystem.run` each frame on the entities that have the `Part` and `Spin` components. Declare components with their type, `Jecs.component() :: Jecs.Entity<BasePart>`, so queries and `world:get` are typed. Write systems as functions of the world and the time, as `SpinnerSystem.luau` does, so a spec can run them on its own world. Tag parts in Studio; `tests/e2e/spinner.luau` makes its own tagged part and checks it turns. Jecs documents its API in comments on the `World` type in `Packages/_Index/ukendio_jecs@*/jecs/src/jecs.luau`, and shows how to use it in `Packages/_Index/ukendio_jecs@*/jecs/how_to/`.

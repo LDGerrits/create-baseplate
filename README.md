@@ -20,6 +20,7 @@ The first question is the language, a fork in the road: `--language typescript` 
 | `--language` | `typescript`, `luau`                        |
 | `--ui`       | `react`, `vide`                             |
 | `--places`   | `single`, `multi`                           |
+| `--managed`  | `full`, `partial`                           |
 | `--state`    | `reflex` (TS), `charm`, `none`              |
 | `--data`     | `none`, `profilestore`, `lapis`             |
 | `--entities` | `none`, `components` (TS), `jecs`           |

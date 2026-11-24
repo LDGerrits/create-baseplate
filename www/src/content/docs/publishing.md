@@ -3,6 +3,8 @@ title: Publishing
 description: Build the place file and publish it to Roblox, from Studio or the command line.
 ---
 
+This page is about a game Rojo manages in full, the default. A game created with `--managed partial` has no `mise run publish` and no publish workflow: you publish from Studio, where the place and its world live, after `mise run dev` has synced the code into it.
+
 ## Build the place
 
 ```sh

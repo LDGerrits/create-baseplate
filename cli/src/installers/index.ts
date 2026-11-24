@@ -54,6 +54,18 @@ const places: AddOn = {
 	allowNone: false,
 };
 
+const managed: AddOn = {
+	name: "managed",
+	valueName: "mode",
+	question: "Should Rojo manage the whole place, or only the code?",
+	choices: [
+		{ value: "full", label: "The whole place", hint: "code and world are files, built and published from git" },
+		{ value: "partial", label: "Only the code", hint: "Studio keeps the place and its world; files hold the code" },
+	],
+	defaultValue: "full",
+	allowNone: false,
+};
+
 const assets: AddOn = {
 	name: "assets",
 	valueName: "tool",
@@ -87,6 +99,7 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 			allowNone: false,
 		},
 		places,
+		managed,
 		{
 			name: "state",
 			valueName: "library",
@@ -136,6 +149,7 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 			allowNone: false,
 		},
 		places,
+		managed,
 		{
 			name: "state",
 			valueName: "library",
@@ -245,9 +259,11 @@ interface Manifest {
 	 * Luau: require expressions added to the main script's list of services or controllers.
 	 */
 	imports: Record<string, string[]>;
+	/** Tasks of the game's mise.toml the choice removes, whatever other add-ons have done to them. */
+	removeMiseTasks?: string[];
 	/** Packages the choice replaces, from dependencies or devDependencies (by alias, in wally.toml). */
 	removeDependencies?: string[];
-	/** Base files the choice replaces. */
+	/** Base files or folders the choice replaces or drops. */
 	removeFiles?: string[];
 	/** The heading of the AGENTS.md section its AGENTS.md replaces, instead of adding a section. */
 	replaceAgentsSection?: string;
@@ -263,6 +279,11 @@ interface Manifest {
 			agents?: string;
 		}
 	>;
+	/**
+	 * What changes with the managed question's choice: `{ partial: { files, agents } }` copies that
+	 * folder over `files/` and uses that file in place of `AGENTS.md` when Rojo manages only the code.
+	 */
+	byManaged?: Record<string, { files?: string; agents?: string }>;
 	/** Choices of other questions this one can't go with, and why. */
 	conflicts?: Record<string, Record<string, string>>;
 }
@@ -284,19 +305,28 @@ export function findConflict(language: Language, chosen: AddOnChoices): string |
 	return undefined;
 }
 
-/** Applies each chosen add-on to the project in `dir`, in the order of the language's questions: the UI first. */
+/**
+ * Applies each chosen add-on to the project in `dir`, in the order of the language's questions: the
+ * UI first. What the managed question chooses goes last, so it changes the game as the other
+ * add-ons have left it.
+ */
 export function installAddOns(dir: string, language: Language, chosen: AddOnChoices) {
-	for (const addOn of addOnsByLanguage[language]) {
+	const questions = addOnsByLanguage[language];
+	const ordered = [...questions.filter((q) => q.name !== "managed"), ...questions.filter((q) => q.name === "managed")];
+	for (const addOn of ordered) {
 		const name = addOn.name;
 		const value = chosen[name] ?? addOn.defaultValue;
 		const manifest = manifestOf(language, name, value);
 		if (manifest === undefined) continue; // "none", or the base's own choice
 		const from = path.join(templateExtras(language), name, value);
 		const variant = manifest.byUi?.[chosen.ui ?? ""];
+		const managedVariant = manifest.byManaged?.[chosen.managed ?? ""];
 
-		for (const file of manifest.removeFiles ?? []) fs.rmSync(path.join(dir, file), { force: true });
+		for (const file of manifest.removeFiles ?? []) fs.rmSync(path.join(dir, file), { force: true, recursive: true });
 		const files = path.join(from, variant?.files ?? "files");
 		if (fs.existsSync(files)) fs.cpSync(files, dir, { recursive: true });
+		if (managedVariant?.files !== undefined) fs.cpSync(path.join(from, managedVariant.files), dir, { recursive: true });
+		for (const task of manifest.removeMiseTasks ?? []) removeMiseTask(dir, task);
 		const remove = manifest.removeDependencies ?? [];
 		if (language === "luau") {
 			editWally(dir, "dependencies", variant?.dependencies ?? manifest.dependencies, remove);
@@ -308,7 +338,7 @@ export function installAddOns(dir: string, language: Language, chosen: AddOnChoi
 		const mise = path.join(from, "mise.toml");
 		if (fs.existsSync(mise)) addMise(dir, fs.readFileSync(mise, "utf8"));
 		for (const [file, imports] of Object.entries(manifest.imports)) addImports(path.join(dir, file), imports);
-		const agents = fs.readFileSync(path.join(from, variant?.agents ?? "AGENTS.md"), "utf8");
+		const agents = fs.readFileSync(path.join(from, managedVariant?.agents ?? variant?.agents ?? "AGENTS.md"), "utf8");
 		if (manifest.replaceAgentsSection === undefined) addAgentsSection(dir, agents);
 		else replaceAgentsSection(dir, manifest.replaceAgentsSection, agents);
 		for (const { file, from: text, to } of manifest.replaceText ?? []) {
@@ -401,6 +431,17 @@ function editWally(dir: string, table: string, add: Record<string, string>, remo
 			? `${toml.trimEnd()}\n\n${header}\n${body}`
 			: `${toml.slice(0, bodyStart)}${body}${rest === "" ? "" : `\n${rest.replace(/^\n+/, "")}`}`,
 	);
+}
+
+/** Removes `[tasks.<name>]` from the game's mise.toml, up to the next table. */
+function removeMiseTask(dir: string, name: string) {
+	const file = path.join(dir, "mise.toml");
+	const mise = fs.readFileSync(file, "utf8");
+	const header = [`[tasks.${name}]`, `[tasks."${name}"]`].find((candidate) => mise.includes(`\n${candidate}\n`));
+	if (header === undefined) throw new Error(`mise.toml has no task ${name} to remove`);
+	const start = mise.indexOf(`\n${header}\n`) + 1;
+	const next = mise.indexOf("\n[", start);
+	fs.writeFileSync(file, `${mise.slice(0, start)}${next === -1 ? "" : mise.slice(next + 1)}`.replace(/\n+$/, "\n"));
 }
 
 /** Replaces the section under `## <heading>` with the add-on's, up to the next `## ` heading. */

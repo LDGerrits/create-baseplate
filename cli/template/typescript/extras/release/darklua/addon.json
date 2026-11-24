@@ -22,5 +22,10 @@
 			"from": "Build the game and publish it",
 			"to": "Build the release (mise run release) and publish it"
 		}
-	]
+	],
+	"byManaged": {
+		"partial": {
+			"agents": "AGENTS.partial.md"
+		}
+	}
 }

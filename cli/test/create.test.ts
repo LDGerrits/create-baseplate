@@ -312,6 +312,7 @@ test("applies the chosen add-ons", () => {
 	assert.deepEqual(JSON.parse(run.stdout).addOns, {
 		ui: "react",
 		places: "single",
+		managed: "full",
 		state: "charm",
 		data: "lapis",
 		entities: "jecs",
@@ -348,6 +349,7 @@ test("takes Reflex and no other add-ons by default", () => {
 	assert.deepEqual(JSON.parse(run.stdout).addOns, {
 		ui: "react",
 		places: "single",
+		managed: "full",
 		state: "reflex",
 		data: "none",
 		entities: "none",
@@ -368,6 +370,7 @@ test("creates a Luau game from the Luau template", () => {
 	assert.deepEqual(result.addOns, {
 		ui: "react",
 		places: "single",
+		managed: "full",
 		state: "charm",
 		data: "none",
 		entities: "none",
@@ -678,3 +681,100 @@ test("Asphalt writes its code into the shared code of a multi-place game", () =>
 	assert.match(read("asphalt.toml"), /output_path = "projects\/common\/src\/shared"/);
 	assert.match(read("AGENTS.md"), /`projects\/common\/src\/shared\/assets\.luau`/);
 });
+
+for (const language of ["typescript", "luau"]) {
+	test(`${language}: a partially managed game has no world, publishing or edit-world skill`, () => {
+		const cwd = tempDir();
+		const run = create(
+			cwd,
+			"my-game",
+			"--no-git",
+			"--language",
+			language,
+			"--managed",
+			"partial",
+			"--entities",
+			"jecs",
+		);
+		assert.equal(run.status, 0, run.stderr);
+		const dir = path.join(cwd, "my-game");
+		const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+		const exists = (file: string) => fs.existsSync(path.join(dir, file));
+		assert.equal(JSON.parse(read("package.json")).baseplate.addOns.managed, "partial");
+
+		for (const gone of [
+			"world",
+			"scripts/publish.ts",
+			"scripts/publish.test.ts",
+			"scripts/world-types.ts",
+			".github/workflows/publish.yml",
+			".agents/skills/edit-world",
+		]) {
+			assert.ok(!exists(gone), `${gone} is gone`);
+		}
+		const mise = read("mise.toml");
+		assert.doesNotMatch(mise, /\[tasks\.(sync|publish)\]|ROJO_SYNCBACK_DEBUG|syncback/);
+		assert.match(mise, /scripts\/dev\.ts/);
+		assert.doesNotMatch(read(".env.example"), /ROBLOX_PUBLISH/);
+		assert.match(read(".env.example"), /ROBLOX_OPEN_CLOUD_API_KEY/, "the engine tests keep their key");
+		assert.doesNotMatch(read(".agents/hooks/guard.ts"), /publish\.ts|world/);
+		assert.match(read(".agents/hooks/guard.ts"), /rojo\\s\+upload/, "uploading stays blocked");
+
+		const agents = read("AGENTS.md");
+		assert.match(agents, /## World and Studio\n\nStudio owns this game's place and its world/);
+		assert.match(agents, /WaitForChild/);
+		assert.match(agents, /drive-studio/);
+		assert.doesNotMatch(agents, /edit-world|`mise run publish`|world\.d\.ts|Spinner\.model\.json/);
+		assert.match(read(".agents/skills/release/SKILL.md"), /published from Studio/);
+		assert.doesNotMatch(read(".agents/skills/drive-studio/SKILL.md"), /edit-world|--syncback/);
+		// The spinner example needs no world part: its end-to-end test makes its own.
+		assert.match(read("tests/e2e/spinner.luau"), /Instance\.new\("Part"\)/);
+	});
+
+	test(`${language}: a fully managed game keeps its world, publishing and edit-world skill`, () => {
+		const cwd = tempDir();
+		const run = create(cwd, "my-game", "--no-git", "--language", language, "--managed", "full", "--entities", "jecs");
+		assert.equal(run.status, 0, run.stderr);
+		const dir = path.join(cwd, "my-game");
+		for (const kept of [
+			"world/default.project.json",
+			"world/Workspace/Spinner.model.json",
+			"scripts/publish.ts",
+			".github/workflows/publish.yml",
+			".agents/skills/edit-world/SKILL.md",
+		]) {
+			assert.ok(fs.existsSync(path.join(dir, kept)), `${kept} is kept`);
+		}
+		assert.match(fs.readFileSync(path.join(dir, "mise.toml"), "utf8"), /\[tasks\.sync\]/);
+	});
+
+	test(`${language}: a partially managed multi-place game has no world in any place`, () => {
+		const cwd = tempDir();
+		const run = create(
+			cwd,
+			"my-game",
+			"--no-git",
+			"--language",
+			language,
+			"--managed",
+			"partial",
+			"--places",
+			"multi",
+			"--entities",
+			"jecs",
+			"--release",
+			"darklua",
+		);
+		assert.equal(run.status, 0, run.stderr);
+		const dir = path.join(cwd, "my-game");
+		for (const place of ["lobby", "game"]) {
+			assert.ok(!fs.existsSync(path.join(dir, "projects", place, "world")), `${place} has no world`);
+			assert.ok(fs.existsSync(path.join(dir, "projects", place, "rbx-forge.config.ts")));
+		}
+		const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
+		assert.doesNotMatch(read("AGENTS.md"), /world\/(Workspace|Lighting|default)|mise run sync|world\.d\.ts/);
+		assert.doesNotMatch(read("README.md"), /mise run sync/);
+		assert.doesNotMatch(read(".gitignore"), /world/);
+		assert.match(read(".agents/skills/release/SKILL.md"), /^# .+\n\n> This game has several places/m);
+	});
+}

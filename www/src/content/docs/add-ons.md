@@ -10,6 +10,7 @@ The base game brings Flamework and React with a few small helpers they work well
 | Language | `--language` | `typescript` (default, roblox-ts), `luau` |
 | UI | `--ui` | `react` (default, [React](https://react.dev) for Roblox), `vide` ([Vide](https://github.com/centau/vide)) |
 | Places | `--places` | `single` (default), `multi` |
+| Managed | `--managed` | `full` (default), `partial` |
 | Client state | `--state` | `charm` ([Charm](https://github.com/littensy/charm); Luau's default), `reflex` ([Reflex](https://github.com/littensy/reflex); TypeScript only, its default), `none` |
 | Player data | `--data` | `profilestore` ([ProfileStore](https://github.com/MadStudioRoblox/ProfileStore)), `lapis` ([Lapis](https://github.com/nezuo/lapis)), `none` |
 | Entities | `--entities` | `components` ([Flamework Components](https://flamework.fireboltofdeath.dev/docs/additional-modules/components); TypeScript only), `jecs` ([Jecs](https://github.com/Ukendio/jecs)), `none` |
@@ -29,6 +30,10 @@ Each add-on arrives wired in and tested, with a section in the game's `AGENTS.md
 ## Places: several
 
 `--places multi` lays the game out as [Rogen](https://github.com/LDGerrits/rogen) does for roblox-ts: shared code in `projects/common/src`, and a lobby and a game in `projects/`, each with its own entry scripts, world, end-to-end tests, Rogen config and `tsconfig.<place>.json`. `mise run check` builds and tests every place; Studio commands name one: `mise run dev lobby`. The other add-ons follow it, so Asphalt writes its code into the shared code. There's no switch back; to move to one place, create a game without the flag and move the features into it.
+
+## Managed: partial
+
+By default Rojo manages the whole place, as Roblox's [fully managed](https://create.roblox.com/docs/projects/rojo/fully-managed) workflow has it: the map and lighting are files in `world/`, Studio's edits sync back into them, the game builds from git and `mise run publish` uploads the tested build. `--managed partial` is Roblox's [partially managed](https://create.roblox.com/docs/projects/rojo/partially-managed) workflow: Studio owns the place and its world, and files hold only the code. The game has no `world/`, no `mise run sync`, no `edit-world` skill and no world types, and nothing publishes from the command line or CI: `mise run dev` serves the code, you connect the Rojo plugin in Studio to it, and you publish from Studio. Instances in the workspace aren't typed, so code reaches them with `WaitForChild` or `FindFirstChild` and checks what it finds. The check and the tests are the same, and run in a place made of the code alone. It combines with every other choice; with `--places multi`, each place is still a folder of code. To go from `partial` to `full`, create a game with `full` and move the code into it.
 
 ## State: Charm
 
@@ -56,13 +61,13 @@ To remove it, delete `src/features/player-data/`, its import in `main.server.ts`
 
 ## Entities: Flamework Components
 
-`--entities components` adds `SpinnerComponent` (`src/features/spinner/server/spinner-component.ts`), a [Flamework Components](https://flamework.fireboltofdeath.dev/docs/additional-modules/components) class that spins each part tagged `Spinner`; `world/Workspace/Spinner.model.json` is one, and `tests/e2e/spinner.luau` checks it turns. Package: `@flamework/components`; the component is imported in `main.server.ts`.
+`--entities components` adds `SpinnerComponent` (`src/features/spinner/server/spinner-component.ts`), a [Flamework Components](https://flamework.fireboltofdeath.dev/docs/additional-modules/components) class that spins each part tagged `Spinner`; `world/Workspace/Spinner.model.json` is one (with `--managed partial`, the test makes its own part), and `tests/e2e/spinner.luau` checks it turns. Package: `@flamework/components`; the component is imported in `main.server.ts`.
 
 To remove it, delete `src/features/spinner/`, the model, the end-to-end test and the import, and `pnpm remove @flamework/components`.
 
 ## Entities: Jecs
 
-`--entities jecs` adds `SpinnerService`, which makes a [Jecs](https://github.com/Ukendio/jecs) entity for each part tagged `Spinner` and runs `spinnerSystem` each frame. Systems are functions of the world and the time, so `spinner-system.spec.ts` runs one on its own world. The same world part and end-to-end test come with it. Package: `@rbxts/jecs`.
+`--entities jecs` adds `SpinnerService`, which makes a [Jecs](https://github.com/Ukendio/jecs) entity for each part tagged `Spinner` and runs `spinnerSystem` each frame. Systems are functions of the world and the time, so `spinner-system.spec.ts` runs one on its own world. The same world part and end-to-end test come with it (with `--managed partial`, the test makes its own part). Package: `@rbxts/jecs`.
 
 To remove it, delete `src/features/spinner/`, the model, the end-to-end test and the import in `main.server.ts`, and `pnpm remove @rbxts/jecs`.
 
@@ -84,6 +89,7 @@ A [Luau game](/luau/) asks the same questions, with what Luau games use, and eac
 
 | Add-on | Packages (Wally) | Files |
 | --- | --- | --- |
+| `--managed partial` | | As in a TypeScript game: no `world/`, `sync` task, `edit-world` skill or publishing; the code alone is tested and typed |
 | `--places multi` | | Rogen's Luau layout: `<place>.rogen.json` at the root, shared code in `projects/common/src`, each place in `projects/<place>/` (see [Luau games](/luau/#several-places)) |
 | `--ui vide` | `centau/vide`, `littensy/vide-ripple`, in place of react-lua | Vide's section in `AGENTS.md` (mounting a root, `CreateVideStory`); the game starts without a UI |
 | `--state charm` | `littensy/charm`, with `littensy/react-charm` or `littensy/vide-charm` | Charm's section in `AGENTS.md`: a controller keeps a signal, and the UI reads it |

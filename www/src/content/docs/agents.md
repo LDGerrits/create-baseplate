@@ -44,7 +44,7 @@ Skills in `.agents/skills/` cover what only some tasks need. `AGENTS.md` says wh
 | --- | --- |
 | `add-feature` | A new mechanic or screen: `mise run feature <name>` starts it, the skill walks through the rules, the network, the UI and the tests. |
 | `write-tests` | A spec, an end-to-end test or an engine spec, and choosing between ree and real Studio. |
-| `edit-world` | The map and lighting in `world/`: looking at it, changing it in Studio or in files, syncing back. |
+| `edit-world` | (Not with `--managed partial`.) The map and lighting in `world/`: looking at it, changing it in Studio or in files, syncing back. |
 | `drive-studio` | Playtesting in real Studio through its MCP server. |
 | `release` | Making a commit ready to publish. Agents don't publish: a hook stops it, and the skill says what to tell you. |
 | `upgrade` | A Renovate update, a `.baseplate-new` file to merge, and the pins that need care (Rojo, Rogen, rbx-forge). |

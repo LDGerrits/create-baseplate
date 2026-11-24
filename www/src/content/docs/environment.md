@@ -15,7 +15,7 @@ None of these is needed for `mise run check`, nor for agents in the cloud, which
 | `JEST_ROBLOX_STUDIO_PATH` | `mise run test:engine` | WSL only: Windows Studio's `RobloxStudioBeta.exe`, as a `/mnt/c/...` path. |
 | `JEST_ROBLOX_PLUGINS_DIR` | `mise run test:engine` | WSL only: Windows Studio's plugins folder. |
 | `RUR_ROBLOX_CONTENT` | `mise run ui` | Studio's `content` folder, for its fonts, where rur can't find Studio by itself (macOS and Linux without Studio). |
-| `ROBLOX_PUBLISH_API_KEY` | `mise run publish` | A key with `universe-places:write` on the experience you publish to. Keep it apart from the test key. |
+| `ROBLOX_PUBLISH_API_KEY` | `mise run publish` (not with `--managed partial`) | A key with `universe-places:write` on the experience you publish to. Keep it apart from the test key. |
 | `ROBLOX_PUBLISH_UNIVERSE_ID` | `mise run publish` | That experience's ID. |
 | `ROBLOX_PUBLISH_PLACE_ID` | `mise run publish` | The place's ID; in a multi-place game, each place's: `lobby=123,game=456`. |
 | `ASPHALT_API_KEY` | `mise run assets` | With the assets add-on: a key with `asset:read` and `asset:write`, owned by the creator in `asphalt.toml`. |

@@ -12,14 +12,13 @@ export const PLACES = ["lobby", "game"];
  */
 export const SHARED_TESTS_PLACE = "game";
 
-const GITIGNORE = `
+/** Each place's generated files, and its world's project files when Rojo manages the world. */
+const gitignore = (managed: Managed) => `
 # Each place's generated files
 /projects/*/build
-/projects/*/src/world.d.ts
-/projects/*/.forge
+${managed === "full" ? "/projects/*/src/world.d.ts\n" : ""}/projects/*/.forge
 /projects/*/.jest-roblox
-!/projects/*/world/**/*.project.json
-`;
+${managed === "full" ? "!/projects/*/world/**/*.project.json\n" : ""}`;
 
 /**
  * Turns the single-place game in `dir` into several places. For roblox-ts: the shared code in
@@ -33,12 +32,19 @@ const GITIGNORE = `
  * into a folder inside rootDir), and Sloptor writes only inside its tsconfig's folder. So each
  * place compiles from tsconfig.<place>.json at the root to out/<place>, with the root's include/.
  */
-export function makeMultiPlace(dir: string, name: string, language: Language) {
-	if (language === "luau") makeMultiPlaceLuau(dir, name);
-	else makeMultiPlaceTypeScript(dir, name);
+export function makeMultiPlace(dir: string, name: string, language: Language, managed: Managed = "full") {
+	if (language === "luau") makeMultiPlaceLuau(dir, name, managed);
+	else makeMultiPlaceTypeScript(dir, name, managed);
 }
 
-function makeMultiPlaceTypeScript(dir: string, name: string) {
+/** Whether Rojo manages the whole place, world included, or only the code (see the managed question). */
+export type Managed = "full" | "partial";
+
+/** The managed question's answer in a game's add-on choices. */
+export const managedOf = (chosen: Record<string, string>): Managed =>
+	chosen.managed === "partial" ? "partial" : "full";
+
+function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 	const at = (...parts: string[]) => path.join(dir, ...parts);
 	const read = (file: string) => fs.readFileSync(at(file), "utf8");
 	// The template's text this relies on; fail rather than leave a half-converted game.
@@ -74,7 +80,7 @@ function makeMultiPlaceTypeScript(dir: string, name: string) {
 				code.replace(/^((?:import|export)\b[^"\n]*")\.\.\/\.\.\/(?!\.\.)/gm, "$1../../../../common/src/"),
 			);
 		}
-		fs.cpSync(at("world"), path.join(placeDir, "world"), { recursive: true });
+		if (managed === "full") fs.cpSync(at("world"), path.join(placeDir, "world"), { recursive: true });
 		// The template's end-to-end tests are the shared features'; the other places start with none.
 		if (place === SHARED_TESTS_PLACE) fs.cpSync(at("tests"), path.join(placeDir, "tests"), { recursive: true });
 		else {
@@ -149,7 +155,7 @@ function makeMultiPlaceTypeScript(dir: string, name: string) {
 			'"include": ["projects/common/src", "projects/common/shared.d.ts"]',
 		),
 	);
-	fs.appendFileSync(at(".gitignore"), GITIGNORE);
+	fs.appendFileSync(at(".gitignore"), gitignore(managed));
 	// Asphalt, from the root, writes the assets' IDs into the shared code.
 	if (fs.existsSync(at("asphalt.toml"))) {
 		fs.writeFileSync(
@@ -158,8 +164,17 @@ function makeMultiPlaceTypeScript(dir: string, name: string) {
 		);
 	}
 
+	// The sections that name the world have a variant for a game whose world lives in Studio.
 	const extra = (file: string) =>
-		fs.readFileSync(path.join(templateExtras("typescript"), "places", "multi", file), "utf8");
+		fs.readFileSync(
+			path.join(
+				templateExtras("typescript"),
+				"places",
+				"multi",
+				managed === "full" ? file : file.replace(/\.md$/, ".partial.md"),
+			),
+			"utf8",
+		);
 	let agents = replaceSection(read("AGENTS.md"), "Where code goes", extra("AGENTS.md"));
 	agents = replaceIn(
 		agents,
@@ -167,11 +182,13 @@ function makeMultiPlaceTypeScript(dir: string, name: string) {
 		"Import each in the entry script of every place that uses it, `projects/<place>/src/app/server/main.server.ts` or `projects/<place>/src/app/client/main.client.ts`",
 	);
 	agents = replaceIn(agents, "`tests/e2e/<feature>.luau`", "`projects/<place>/tests/e2e/<feature>.luau`");
-	agents = replaceIn(
-		agents,
-		"live in `world/` as files; code reaches them through the types in `src/world.d.ts`",
-		"live in each place's `world/` as files; that place's code reaches them through the types in its `src/world.d.ts`",
-	);
+	if (managed === "full") {
+		agents = replaceIn(
+			agents,
+			"live in `world/` as files; code reaches them through the types in `src/world.d.ts`",
+			"live in each place's `world/` as files; that place's code reaches them through the types in its `src/world.d.ts`",
+		);
+	}
 	agents = replaceIn(
 		agents,
 		"in `default.rogen.json`, like the existing scopes",
@@ -183,14 +200,14 @@ function makeMultiPlaceTypeScript(dir: string, name: string) {
 
 	let readme = replaceSection(read("README.md"), "Layout", extra("README-layout.md"));
 	readme = replaceIn(readme, "mise run dev       #", "mise run dev lobby #");
-	readme = replaceIn(readme, "mise run sync      #", "mise run sync lobby #");
+	if (managed === "full") readme = replaceIn(readme, "mise run sync      #", "mise run sync lobby #");
 	fs.writeFileSync(at("README.md"), readme);
 
 	// Skills describe one place; say how their paths map.
 	for (const skill of fs.readdirSync(at(".agents", "skills"))) {
 		const file = at(".agents", "skills", skill, "SKILL.md");
 		const text = fs.readFileSync(file, "utf8");
-		fs.writeFileSync(file, text.replace(/^(# .+\n)/m, `$1\n${SKILL_NOTE}\n`));
+		fs.writeFileSync(file, text.replace(/^(# .+\n)/m, `$1\n${skillNote(managed)}\n`));
 	}
 }
 
@@ -207,8 +224,10 @@ const PATHS: [string, string][] = [
 	["`src/app/server/main.server.ts`", "each place's `src/app/server/main.server.ts`"],
 ];
 
-const SKILL_NOTE =
-	"> This game has several places (see `AGENTS.md`). Below, `world/`, `src/app/`, `src/world.d.ts`, `tests/e2e/`, `build/` and `game.project.json` are each place's, under `projects/<place>/`, and shared features are in `projects/common/src/features/`. Run forge, ror and rojo from the place's folder, and name the place: `mise run dev <place>`, `mise run sync <place>`.";
+const skillNote = (managed: Managed) =>
+	managed === "full"
+		? "> This game has several places (see `AGENTS.md`). Below, `world/`, `src/app/`, `src/world.d.ts`, `tests/e2e/`, `build/` and `game.project.json` are each place's, under `projects/<place>/`, and shared features are in `projects/common/src/features/`. Run forge, ror and rojo from the place's folder, and name the place: `mise run dev <place>`, `mise run sync <place>`."
+		: "> This game has several places (see `AGENTS.md`). Below, `src/app/`, `tests/e2e/`, `build/` and `game.project.json` are each place's, under `projects/<place>/`, and shared features are in `projects/common/src/features/`. Run forge, ror and rojo from the place's folder, and name the place: `mise run dev <place>`.";
 
 /** Replaces the section under `## <heading>` with `section`, up to the next `## ` heading. */
 export function replaceSection(text: string, heading: string, section: string) {

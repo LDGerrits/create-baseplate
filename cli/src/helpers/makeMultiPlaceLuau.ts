@@ -1,15 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import { templateExtras } from "../consts.ts";
-import { PLACES, replaceSection, SHARED_TESTS_PLACE } from "./makeMultiPlace.ts";
+import { type Managed, PLACES, replaceSection, SHARED_TESTS_PLACE } from "./makeMultiPlace.ts";
 
-const GITIGNORE = `
+/** Each place's builds and session state, and its world's project files when Rojo manages the world. */
+const gitignore = (managed: Managed) => `
 # Each place's builds and session state
 /projects/*/build
 /projects/*/.forge
 /projects/*/.jest-roblox
-!/projects/*/world/**/*.project.json
-`;
+${managed === "full" ? "!/projects/*/world/**/*.project.json\n" : ""}`;
 
 /**
  * Turns the single-place Luau game in `dir` into places laid out as Rogen prescribes for Luau: each
@@ -24,7 +24,7 @@ const GITIGNORE = `
  *
  * Runs after the add-ons, so everything they put in src/ but app/ becomes shared code.
  */
-export function makeMultiPlaceLuau(dir: string, name: string) {
+export function makeMultiPlaceLuau(dir: string, name: string, managed: Managed) {
 	const at = (...parts: string[]) => path.join(dir, ...parts);
 	const read = (file: string) => fs.readFileSync(at(file), "utf8");
 	// The template's text this relies on; fail rather than leave a half-converted game.
@@ -32,7 +32,17 @@ export function makeMultiPlaceLuau(dir: string, name: string) {
 		if (!text.includes(from)) throw new Error(`places: the template no longer has: ${from}`);
 		return text.replaceAll(from, to);
 	};
-	const extra = (file: string) => fs.readFileSync(path.join(templateExtras("luau"), "places", "multi", file), "utf8");
+	// The sections that name the world have a variant for a game whose world lives in Studio.
+	const extra = (file: string) =>
+		fs.readFileSync(
+			path.join(
+				templateExtras("luau"),
+				"places",
+				"multi",
+				managed === "full" ? file : file.replace(/\.md$/, ".partial.md"),
+			),
+			"utf8",
+		);
 	const json = (value: unknown) => `${JSON.stringify(value, undefined, "\t")}\n`;
 
 	const common = at("projects", "common", "src");
@@ -52,7 +62,7 @@ export function makeMultiPlaceLuau(dir: string, name: string) {
 	for (const place of PLACES) {
 		const placeDir = at("projects", place);
 		fs.cpSync(at("src", "app"), path.join(placeDir, "src", "app"), { recursive: true });
-		fs.cpSync(at("world"), path.join(placeDir, "world"), { recursive: true });
+		if (managed === "full") fs.cpSync(at("world"), path.join(placeDir, "world"), { recursive: true });
 		// The template's end-to-end tests are the shared features'; the other places start with none.
 		if (place === SHARED_TESTS_PLACE) fs.cpSync(at("tests"), path.join(placeDir, "tests"), { recursive: true });
 		else {
@@ -96,7 +106,7 @@ export function makeMultiPlaceLuau(dir: string, name: string) {
 		fs.rmSync(at(gone), { recursive: true, force: true });
 	}
 
-	fs.appendFileSync(at(".gitignore"), GITIGNORE);
+	fs.appendFileSync(at(".gitignore"), gitignore(managed));
 	fs.appendFileSync(at(".styluaignore"), "/projects/*/build\n");
 	fs.writeFileSync(at("mise.toml"), replaceIn(read("mise.toml"), '"selene src tests"', '"selene projects"'));
 	// Asphalt, from the root, writes the assets' IDs into the shared code.
@@ -146,21 +156,24 @@ export function makeMultiPlaceLuau(dir: string, name: string) {
 	fs.writeFileSync(at(".vscode", "settings.json"), json(settings));
 
 	let agents = read("AGENTS.md");
+	const fromWorld = managed === "full" ? " and `world/`" : "";
 	agents = replaceIn(
 		agents,
-		"`default.project.json` (Rogen), `game.project.json`, `test.project.json` and `sourcemap.json` (`mise run generate`, from the code and `world/`)",
-		"`<place>.project.json` at the root (Rogen, from `<place>.rogen.json`), each place's `game.project.json`, `test.project.json` and `sourcemap.json`, and `test.<place>.project.json` and `sourcemap.json` at the root (`mise run generate`, from the code and `world/`)",
+		`\`default.project.json\` (Rogen), \`game.project.json\`, \`test.project.json\` and \`sourcemap.json\` (\`mise run generate\`, from the code${fromWorld})`,
+		`\`<place>.project.json\` at the root (Rogen, from \`<place>.rogen.json\`), each place's \`game.project.json\`, \`test.project.json\` and \`sourcemap.json\`, and \`test.<place>.project.json\` and \`sourcemap.json\` at the root (\`mise run generate\`, from the code${fromWorld})`,
 	);
 	agents = replaceIn(
 		agents,
 		"Add each to the list in `src/app/server/Main.server.luau` or `src/app/client/Start.luau`, or it never starts;",
 		"Add each to the list in `src/app/server/Main.server.luau` or `src/app/client/Start.luau` of every place that uses it, or it never starts there;",
 	);
-	agents = replaceIn(
-		agents,
-		"The map and lighting live in `world/` as files; luau-lsp types them from `sourcemap.json`",
-		"Each place's map and lighting live in `world/` as files; luau-lsp types them from the place's `sourcemap.json`",
-	);
+	if (managed === "full") {
+		agents = replaceIn(
+			agents,
+			"The map and lighting live in `world/` as files; luau-lsp types them from `sourcemap.json`",
+			"Each place's map and lighting live in `world/` as files; luau-lsp types them from the place's `sourcemap.json`",
+		);
+	}
 	agents = agents.replaceAll("builds the place", "builds every place");
 	// Single-place paths, in the template's sections and the add-ons': a place's entry scripts,
 	// world and tests are in its folder, and everything else in src/ is shared.
@@ -176,7 +189,7 @@ export function makeMultiPlaceLuau(dir: string, name: string) {
 
 	let readme = replaceSection(read("README.md"), "Layout", extra("README-layout.md"));
 	readme = replaceIn(readme, "mise run dev       #", "mise run dev lobby #");
-	readme = replaceIn(readme, "mise run sync      #", "mise run sync lobby #");
+	if (managed === "full") readme = replaceIn(readme, "mise run sync      #", "mise run sync lobby #");
 	readme = readme.replaceAll("builds the place", "builds every place");
 	fs.writeFileSync(at("README.md"), readme);
 
@@ -184,9 +197,11 @@ export function makeMultiPlaceLuau(dir: string, name: string) {
 	for (const skill of fs.readdirSync(at(".agents", "skills"))) {
 		const file = at(".agents", "skills", skill, "SKILL.md");
 		const text = fs.readFileSync(file, "utf8");
-		fs.writeFileSync(file, text.replace(/^(# .+\n)/m, `$1\n${SKILL_NOTE}\n`));
+		fs.writeFileSync(file, text.replace(/^(# .+\n)/m, `$1\n${skillNote(managed)}\n`));
 	}
 }
 
-const SKILL_NOTE =
-	"> This game has several places (see `AGENTS.md`). Below, `world/`, `src/app/`, `tests/e2e/`, `build/`, `game.project.json` and `sourcemap.json` are each place's, under `projects/<place>/`, and the rest of `src/` is shared, in `projects/common/src/`. Run forge, ror and rojo from the place's folder, and name the place: `mise run dev <place>`, `mise run sync <place>`.";
+const skillNote = (managed: Managed) =>
+	managed === "full"
+		? "> This game has several places (see `AGENTS.md`). Below, `world/`, `src/app/`, `tests/e2e/`, `build/`, `game.project.json` and `sourcemap.json` are each place's, under `projects/<place>/`, and the rest of `src/` is shared, in `projects/common/src/`. Run forge, ror and rojo from the place's folder, and name the place: `mise run dev <place>`, `mise run sync <place>`."
+		: "> This game has several places (see `AGENTS.md`). Below, `src/app/`, `tests/e2e/`, `build/`, `game.project.json` and `sourcemap.json` are each place's, under `projects/<place>/`, and the rest of `src/` is shared, in `projects/common/src/`. Run forge, ror and rojo from the place's folder, and name the place: `mise run dev <place>`.";

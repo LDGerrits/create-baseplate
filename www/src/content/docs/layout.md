@@ -12,7 +12,7 @@ src/
   app/                 entry scripts: start Flamework
   features/            one folder per feature, started by `mise run feature <name>`
 tests/e2e/             end-to-end tests
-world/                 the map and lighting, edited in Studio and synced back
+world/                 the map and lighting, edited in Studio and synced back (not with --managed partial)
 scripts/               the tasks' scripts: tests, UI pictures, the source checks
 .agents/               agents' skills and hooks, shared by Claude Code, Codex and Cursor
 mise.toml, mise.lock   the pinned tools and their checksums, and the tasks
@@ -25,7 +25,7 @@ src/
   app/                 entry scripts: start the services and controllers
   features/            one folder per feature, started with `mise run feature <name>`
 tests/e2e/             end-to-end tests
-world/                 the map and lighting, edited in Studio and synced back
+world/                 the map and lighting, edited in Studio and synced back (not with --managed partial)
 wally.toml, wally.lock the Roblox packages
 selene.toml, stylua.toml, .luaurc   lint, format and strict types
 scripts/, .agents/, mise.toml       as in a TypeScript game

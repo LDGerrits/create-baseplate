@@ -3,6 +3,8 @@ title: World and Studio
 description: The map as files, syncback, and driving Studio from an agent.
 ---
 
+This page is about a game Rojo manages in full, the default. A game created with `--managed partial` keeps its world in Studio: see [When Studio keeps the world](#when-studio-keeps-the-world).
+
 ## The world
 
 The map and lighting live in `world/` as files, apart from the code: a project file per service, and a `.model.json` per instance (Terrain stays binary). Studio edits them, and syncback writes the edits back. Code reaches world instances through generated types, such as `Workspace.SpawnLocation`, so a missing part fails the compile.
@@ -20,3 +22,11 @@ The game is built from git, never edited in place: `mise run build` makes the pl
 `mise run dev` starts a session with [rbx-forge](https://github.com/christopher-buss/rbx-forge): the compiler on watch, Studio open on the world, and Rojo syncing the code in. `mise run sync` writes Studio's world edits into `world/`. An edit to `world/`'s files reaches a running Studio only through `forge restart`, which rebuilds the place and drops edits not yet synced: Rojo serves only the code, and its live sync can't set a MeshId, Terrain or unions anyway.
 
 Agents drive Studio through Roblox's Studio MCP server: playtest, read the output, simulate input and take screenshots.
+
+## When Studio keeps the world
+
+With `--managed partial`, Studio owns the place and its world, as in Roblox's [partially managed](https://create.roblox.com/docs/projects/rojo/partially-managed) workflow, and files hold only the code. There is no `world/`, no `mise run sync` and no `edit-world` skill, and no world types: `Workspace.SpawnLocation` doesn't compile, and in Luau isn't in the sourcemap. Code reaches an instance of the world with `WaitForChild` or `FindFirstChild` and checks its class.
+
+`mise run dev` compiles on save (TypeScript) and serves the code with Rogen, and opens nothing: open your place in Studio and press **Connect** in the Rojo plugin. Rojo overwrites the scripts Studio holds with the code; the map stays yours, and you save and publish it from Studio.
+
+The check and the tests don't need the world: they build and run a place made of the code alone, so a spec or an end-to-end test creates the instances it uses. Agents see or change the map through the Studio MCP server, in the Studio you've opened (the `drive-studio` skill), and `forge up --studio` opens a place of the code alone for a playtest.

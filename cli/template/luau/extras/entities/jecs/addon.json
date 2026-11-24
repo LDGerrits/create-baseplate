@@ -4,5 +4,11 @@
 	},
 	"imports": {
 		"src/app/server/Main.server.luau": ["ServerScriptService.features.spinner.SpinnerService"]
+	},
+	"byManaged": {
+		"partial": {
+			"files": "files-partial",
+			"agents": "AGENTS.partial.md"
+		}
 	}
 }

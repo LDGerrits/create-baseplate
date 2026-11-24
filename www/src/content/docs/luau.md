@@ -24,7 +24,7 @@ mise pins every tool and locks its checksums. The scripts, hooks and Rogen, rbx-
 
 ## Types for the whole game
 
-`mise run generate` writes `sourcemap.json` from the game's code and its world, and luau-lsp reads it with `strictDatamodelTypes` on (`.vscode/settings.json`, which the check and the editor share). So `require(ReplicatedStorage.Shared.features.shop.ShopNetwork)` is typed by what that module returns, `workspace.SpawnLocation` is a `SpawnLocation`, and a module or part that isn't there fails the check. Roblox's API types come from the pinned luau-lsp's release, into `.luau-lsp/`, where an agent can search them.
+`mise run generate` writes `sourcemap.json` from the game's code and its world (with `--managed partial`, from the code alone, so `workspace.SpawnLocation` fails the check and a game reaches the world with `WaitForChild`), and luau-lsp reads it with `strictDatamodelTypes` on (`.vscode/settings.json`, which the check and the editor share). So `require(ReplicatedStorage.Shared.features.shop.ShopNetwork)` is typed by what that module returns, `workspace.SpawnLocation` is a `SpawnLocation`, and a module or part that isn't there fails the check. Roblox's API types come from the pinned luau-lsp's release, into `.luau-lsp/`, where an agent can search them.
 
 ## Where code goes
 

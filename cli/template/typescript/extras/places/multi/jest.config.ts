@@ -24,7 +24,7 @@ collect(JSON.parse(fs.readFileSync(new URL(`../../${project}`, import.meta.url),
 export default defineConfig({
 	rootDir: "../..",
 	placeFile: "projects/PLACE/build/test.rbxl",
-	// The whole place, code and world, as the tests in ree see it, with the loadstring() Jest needs.
+	// The whole place as the tests in ree see it, with the loadstring() Jest needs.
 	rojoProject: project,
 	luauRoots: mounts,
 	formatters: ["agent"],

@@ -1,0 +1,3 @@
+## Release builds
+
+`mise run release` builds the release of the code: it compiles, processes the compiled code with Darklua into `dist/` by the rules in `.darklua.json` (minified, with dead branches and unused variables removed and locals renamed), builds `build/release.rbxl` from it, and runs the tests on that build. The user publishes from Studio: to publish the processed code, they serve `release.project.json`, which this writes, with `rojo serve` into their place first. Develop and debug on `mise run check` and `mise run dev`, which use the unprocessed code in `out/`: the release's error lines and names don't match the source. When the tests pass in `mise run check` and fail in `mise run release`, a Darklua rule broke the code: remove that rule from `.darklua.json`.

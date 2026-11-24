@@ -20,7 +20,7 @@ collect(fs.existsSync("test.project.json") ? JSON.parse(fs.readFileSync("test.pr
 
 export default defineConfig({
 	placeFile: "./build/test.rbxl",
-	// The whole game, code and world, as the tests in ree see it, with the loadstring() Jest needs.
+	// The whole game as the tests in ree see it, with the loadstring() Jest needs.
 	rojoProject: "test.project.json",
 	// Jest from Wally's dev packages; the specs are Luau as written, so there's no source map to follow.
 	jestPath: "ReplicatedStorage/DevPackages/Jest",

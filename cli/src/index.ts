@@ -10,7 +10,7 @@ import { runDoc } from "./doc/command.ts";
 import { commitAll, initGit } from "./helpers/git.ts";
 import { installDependencies, isMiseInstalled } from "./helpers/installDependencies.ts";
 import { logNextSteps, nextSteps } from "./helpers/logNextSteps.ts";
-import { makeMultiPlace, PLACES } from "./helpers/makeMultiPlace.ts";
+import { makeMultiPlace, managedOf, PLACES } from "./helpers/makeMultiPlace.ts";
 import { scaffoldProject } from "./helpers/scaffoldProject.ts";
 import { recordOrigin, setProjectName } from "./helpers/setProjectName.ts";
 import { findConflict, installAddOns } from "./installers/index.ts";
@@ -70,7 +70,8 @@ async function main() {
 		/^\[tools\]\n([\s\S]*?)(?=^\[)/m.exec(fs.readFileSync(path.join(options.dir, "mise.toml"), "utf8"))?.[1];
 	const baseTools = tools();
 	installAddOns(options.dir, options.language, options.addOns);
-	if (options.addOns.places === "multi") makeMultiPlace(options.dir, options.name, options.language);
+	if (options.addOns.places === "multi")
+		makeMultiPlace(options.dir, options.name, options.language, managedOf(options.addOns));
 	recordOrigin(options.dir, version, options.language, options.addOns);
 	recordAgentFiles(options.dir, version);
 	// The template's lockfile lists the base's packages only, until an install adds the add-ons'.
