@@ -152,7 +152,7 @@
 		},
 		{
 			"file": "README.md",
-			"from": "`.github/workflows/publish.yml` publishes the game through Open Cloud from git, never from a place edited by hand: main to a dev place each time CI passes on it, a version tag (`v1.2.0`) to a stable place for playtests, and then, once someone approves, to the live game. Each target is a GitHub environment (`dev`, `stable`, `prod`) holding the secret `ROBLOX_PUBLISH_API_KEY`, a key with `universe-places:write` on that target's experience, and its places are the variables `ROBLOX_<TARGET>_UNIVERSE_ID` and `ROBLOX_<TARGET>_PLACE_ID`; a target without them is skipped. Give `prod` required reviewers, or every tag goes live. `mise run publish` does the same from your machine, with the keys in `.env`.\n",
+			"from": "`.github/workflows/publish.yml` publishes the game through Open Cloud from git, never from a place edited by hand: main to a dev place each time CI passes on it, a version tag (`v1.2.0`) to the live game once someone approves it, after an optional stable place for testers. Each target is a GitHub environment (`dev`, `stable`, `prod`) holding the secret `ROBLOX_PUBLISH_API_KEY`, a key with `universe-places:write` on that target's experience, and its places are the variables `ROBLOX_<TARGET>_UNIVERSE_ID` and `ROBLOX_<TARGET>_PLACE_ID`; a target without them is skipped. Give `prod` required reviewers, or every tag goes live. `mise run publish` does the same from your machine, with the keys in `.env`.\n",
 			"to": "Nothing here publishes the game: Rojo syncs the code into your place in Studio, and you publish from Studio.\n"
 		},
 		{

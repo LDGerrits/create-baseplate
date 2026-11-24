@@ -43,13 +43,15 @@ Agents don't publish: a hook stops them running `mise run publish` or publishing
 
 ## Publish from CI
 
-Every published version should come from a commit, so you can publish any of them again. `.github/workflows/publish.yml` publishes to three places, each in its own experience:
+Every published version should come from a commit, so you can publish any of them again. `.github/workflows/publish.yml` publishes to up to three targets, each in its own experience:
 
 | Target | When | For |
 | --- | --- | --- |
 | dev | each push to main, once CI passes on it | the latest code, to try together |
-| stable | a version tag, `git tag v1.2.0 && git push origin v1.2.0` | playtests |
-| prod | the same tag, after stable, once someone approves it | the game players join |
+| stable (optional) | a version tag, `git tag v1.2.0 && git push origin v1.2.0` | testers playing the release before players do |
+| prod | the same tag, after stable if you use it, once someone approves it | the game players join |
+
+Most games need only dev and prod. Add stable when other people test releases, such as a QA group or trusted players: they play the exact build prod will get, while dev keeps moving. Each experience has its own DataStores, and its own developer products, game passes and badges, with their own IDs, so every target is one more set of these to keep in step.
 
 Set up each target you use:
 

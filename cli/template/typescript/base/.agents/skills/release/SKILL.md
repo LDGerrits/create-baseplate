@@ -12,8 +12,8 @@ You don't publish: a hook stops `mise run publish`, and publishing replaces the 
 3. **Look at what the world and the UI do.** The tests don't see a map that looks wrong. Render the world (`edit-world` skill) and the stories you changed, and play it in Studio when the change is about feel (`drive-studio` skill).
 4. **Publishing is the user's.** Tell them which commit is ready, and how it goes out (`mise run doc publishing` has the details):
    - `dev`: merging to main publishes it when `.github/workflows/publish.yml` has the dev place set.
-   - `stable`: a tag, `git tag v1.2.0 && git push origin v1.2.0`, for playtests.
-   - `prod`: the same tag, once a reviewer approves the `prod` environment.
+   - `stable`, if the game uses it: a tag, `git tag v1.2.0 && git push origin v1.2.0`, for testers.
+   - `prod`: a tag (the same one, after stable), once a reviewer approves the `prod` environment.
 5. **Say what changed for players**, in a few lines, for the tag or the release notes: what they will see and do differently, and anything that resets or migrates their data.
 
 When asked to deploy and the keys aren't set up, point to `mise run doc publishing` and `.env.example`; don't ask for a key in the chat or put one in a file.

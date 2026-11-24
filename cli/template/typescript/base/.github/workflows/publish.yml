@@ -3,8 +3,8 @@ name: Publish
 # Builds the game from a commit and publishes it to Roblox through Open Cloud (`mise run publish`),
 # so every published version comes from a commit and can be published again from it:
 # - dev: main, each time CI passes on it.
-# - stable: a version tag (`git tag v1.2.0 && git push origin v1.2.0`), for playtests.
-# - prod: the same tag, after stable, once someone approves it.
+# - stable (optional): a version tag (`git tag v1.2.0 && git push origin v1.2.0`), for testers.
+# - prod: the same tag, after stable if it is set up, once someone approves it.
 #
 # Each target is a GitHub environment (Settings > Environments) holding the secret
 # ROBLOX_PUBLISH_API_KEY, a key with universe-places:write on that target's experience only (prod's
@@ -85,7 +85,10 @@ jobs:
   prod:
     name: Publish the tag to prod
     needs: stable
-    if: vars.ROBLOX_PROD_PLACE_ID != ''
+    # After stable when it's set up; stable is optional, so a skipped stable doesn't hold prod back.
+    if: >-
+      !cancelled() && github.event_name == 'push' && needs.stable.result != 'failure' &&
+      vars.ROBLOX_PROD_PLACE_ID != ''
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Waits here for the environment's required reviewers.
