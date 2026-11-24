@@ -3,11 +3,27 @@
 #   .agents/hooks/run guard.ts <format>
 # It runs from the project folder whichever folder the tool started it in, and finds mise on the
 # PATH or where mise's installer puts it (~/.local/bin), which apps started outside a shell may not
-# have on their PATH. Without mise, or when the hook itself fails, it exits 0 and prints nothing:
-# a broken hook lets the agent carry on rather than blocking every command.
+# have on their PATH. Without mise, or when the hook itself fails, it lets the agent carry on rather
+# than blocking every command, except the guard: it still blocks Studio's live tools and publishing,
+# which nothing else stops.
 cd "$(dirname "$0")/../.." 2>/dev/null || exit 0
-mise=$(command -v mise 2>/dev/null) || mise="$HOME/.local/bin/mise"
-[ -x "$mise" ] || exit 0
 hook=$1
 shift
-"$mise" exec --quiet -- node ".agents/hooks/$hook" "$@" || exit 0
+input=$(cat)
+
+failed() {
+	[ "$hook" = guard.ts ] || exit 0
+	printf '%s' "$input" | grep -Eq 'open_cloud_invoke|execute_luau|mise +run +publish|scripts/publish\.ts|rojo +upload' || exit 0
+	reason="The guard could not run (is mise installed?), so this call is blocked: it can act on the live game. Tell the user."
+	case $1 in
+	cursor) printf '{"permission":"deny","agent_message":"%s","user_message":"%s"}\n' "$reason" "$reason" ;;
+	copilot) printf '{"permissionDecision":"deny","permissionDecisionReason":"%s"}\n' "$reason" ;;
+	gemini) printf '{"decision":"deny","reason":"%s"}\n' "$reason" ;;
+	*) printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$reason" ;;
+	esac
+	exit 0
+}
+
+mise=$(command -v mise 2>/dev/null) || mise="$HOME/.local/bin/mise"
+[ -x "$mise" ] || failed "$@"
+printf '%s' "$input" | "$mise" exec --quiet -- node ".agents/hooks/$hook" "$@" || failed "$@"

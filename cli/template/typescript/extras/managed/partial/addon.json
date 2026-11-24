@@ -117,8 +117,8 @@
 		},
 		{
 			"file": "AGENTS.md",
-			"from": "a hook stops `mise run publish`. Read `.agents/skills/release/SKILL.md`",
-			"to": "the place is published from Studio, and a hook stops `rojo upload`. Read `.agents/skills/release/SKILL.md`"
+			"from": "a hook stops `mise run publish` and Studio's Open Cloud tools. Read `.agents/skills/release/SKILL.md`",
+			"to": "the place is published from Studio, and a hook stops `rojo upload` and Studio's Open Cloud tools. Read `.agents/skills/release/SKILL.md`"
 		},
 		{
 			"file": "AGENTS.md",
@@ -184,6 +184,11 @@
 			"file": ".agents/skills/drive-studio/SKILL.md",
 			"from": "- **Assets** (`insert_asset`, `generate_*`, `upload_image`): only as part of a world change the user asked for, through `edit-world`.",
 			"to": "- **Assets** (`insert_asset`, `generate_*`, `upload_image`): only as part of a world change the user asked for."
+		},
+		{
+			"file": "AGENTS.md",
+			"from": "and for the map its file in `world/`.",
+			"to": "and for the map, the place in Studio (`.agents/skills/drive-studio/SKILL.md`)."
 		}
 	]
 }

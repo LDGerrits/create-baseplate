@@ -259,3 +259,26 @@ test("the tree hash changes with every change, and the pass record sits in the w
 		fs.rmSync(dir, { recursive: true, force: true });
 	}
 });
+test("without mise, the guard still blocks Studio's live tools and publishing, and lets the rest through", () => {
+	const home = fs.mkdtempSync(path.join(os.tmpdir(), "no-mise-"));
+	const guard = (format: string, payload: Payload) =>
+		spawnSync("sh", [path.join(import.meta.dirname, "run"), "guard.ts", format], {
+			input: JSON.stringify(payload),
+			encoding: "utf8",
+			env: { PATH: "/usr/bin:/bin", HOME: home },
+		});
+	try {
+		const live: Payload = { tool_name: "mcp__Roblox_Studio__open_cloud_invoke", tool_input: {} };
+		const claude = guard("claude", live);
+		assert.equal(claude.status, 0);
+		assert.equal(JSON.parse(claude.stdout).hookSpecificOutput.permissionDecision, "deny");
+		assert.equal(JSON.parse(guard("copilot", live).stdout).permissionDecision, "deny");
+		assert.equal(JSON.parse(guard("gemini", live).stdout).decision, "deny");
+		assert.equal(JSON.parse(guard("cursor", live).stdout).permission, "deny");
+		const publish = guard("claude", { tool_name: "Bash", tool_input: { command: "mise run publish" } });
+		assert.equal(JSON.parse(publish.stdout).hookSpecificOutput.permissionDecision, "deny");
+		assert.equal(guard("claude", { tool_name: "Bash", tool_input: { command: "ls" } }).stdout, "");
+	} finally {
+		fs.rmSync(home, { recursive: true, force: true });
+	}
+});
