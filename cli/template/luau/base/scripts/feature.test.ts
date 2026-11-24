@@ -5,14 +5,18 @@ import path from "node:path";
 import { test } from "node:test";
 import { addEntry, createFeature } from "./feature.ts";
 
-const SERVER = `local services: { { start: () -> () } } = {
-	require(ServerScriptService.features.clicker.ClickerService),
-}
+const SERVER = `local services: { { start: () -> () } } = {}
+
+for _, service in services do
+	service.start()
+end
 `;
-const CLIENT = `local controllers: { { start: () -> () } } = {
-	require(features.clicker.ClickerController),
-}
+const CLIENT = `local controllers: { { start: () -> () } } = {}
+
+local Start = {}
 `;
+const SERVICES = /^\trequire\(ServerScriptService\.features\..*\),$/;
+const PRELUDE = 'local ServerScriptService = game:GetService("ServerScriptService")';
 
 function game(files: Record<string, string>) {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "feature-"));
@@ -28,12 +32,20 @@ const entries = (root: string) => ({
 	[`${root}/app/client/Start.luau`]: CLIENT,
 });
 
-test("adds a require after the last feature in the list, once", () => {
-	const line = "\trequire(ServerScriptService.features.shop.ShopService),";
-	const once = addEntry(SERVER, line, /^\trequire\(ServerScriptService\.features\..*\),$/);
-	assert.match(once, /ClickerService\),\n\trequire\(ServerScriptService\.features\.shop\.ShopService\),\n\}/);
-	assert.equal(addEntry(once, line, /^\trequire\(ServerScriptService\.features\..*\),$/), once);
-	assert.throws(() => addEntry("nothing\n", line, /^\trequire\(features\..*\),$/), /No list of requires/);
+test("opens an empty list, then adds after the last feature in it, once", () => {
+	const shop = "\trequire(ServerScriptService.features.shop.ShopService),";
+	const quest = "\trequire(ServerScriptService.features.quest.QuestService),";
+	const add = (source: string, line: string) => addEntry(source, line, SERVICES, /^local services\b/, PRELUDE);
+	const first = add(SERVER, shop);
+	assert.match(
+		first,
+		/^local ServerScriptService = game:GetService\("ServerScriptService"\)\n\nlocal services: .* = \{\n\trequire\(.*ShopService\),\n\}\n/,
+	);
+	const second = add(first, quest);
+	assert.match(second, /ShopService\),\n\trequire\(ServerScriptService\.features\.quest\.QuestService\),\n\}/);
+	assert.equal(second.split(PRELUDE).length, 2);
+	assert.equal(add(second, quest), second);
+	assert.throws(() => add("nothing\n", shop), /No list of requires/);
 });
 
 test("starts a feature in a single-place game and lists it in the entry scripts", () => {
@@ -52,7 +64,9 @@ test("starts a feature in a single-place game and lists it in the entry scripts"
 		read(dir, "src/app/server/Main.server.luau"),
 		/require\(ServerScriptService\.features\.shop\.ShopService\),/,
 	);
-	assert.match(read(dir, "src/app/client/Start.luau"), /require\(features\.shop\.ShopController\),/);
+	const client = read(dir, "src/app/client/Start.luau");
+	assert.match(client, /local features = script\.Parent\.Parent\.features\n\nlocal controllers/);
+	assert.match(client, /require\(features\.shop\.ShopController\),/);
 });
 
 test("puts a multi-place feature in the shared code and lists it in every place", () => {

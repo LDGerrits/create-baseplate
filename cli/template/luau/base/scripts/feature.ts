@@ -118,13 +118,24 @@ return ${Name}Controller
 	};
 }
 
-/** Adds `line` after the last line of `source` that matches `list`, a require in the entry script's list. */
-export function addEntry(source: string, line: string, list: RegExp): string {
+/**
+ * Adds `line` after the last line of `source` that matches `list`, a require in the entry script's
+ * list. While the list is empty (`= {}`, on the line matching `declaration`), it opens the list,
+ * and first adds `prelude`, the local the line needs, above it.
+ */
+export function addEntry(source: string, line: string, list: RegExp, declaration: RegExp, prelude: string): string {
 	if (source.includes(line.trim())) return source;
 	const lines = source.split("\n");
 	const last = lines.findLastIndex((text) => list.test(text));
-	if (last === -1) throw new Error(`No list of requires like ${list} to add ${line.trim()} to.`);
-	lines.splice(last + 1, 0, line);
+	if (last !== -1) {
+		lines.splice(last + 1, 0, line);
+		return lines.join("\n");
+	}
+	const empty = lines.findIndex((text) => declaration.test(text) && text.endsWith("= {}"));
+	if (empty === -1) throw new Error(`No list of requires like ${list} to add ${line.trim()} to.`);
+	const open = (lines[empty] ?? "").slice(0, -1);
+	const needsPrelude = !source.includes(prelude);
+	lines.splice(empty, 1, ...(needsPrelude ? [prelude, ""] : []), open, line, "}");
 	return lines.join("\n");
 }
 
@@ -173,6 +184,8 @@ export function createFeature(cwd: string, name: string, place?: string): string
 				fs.readFileSync(path.join(cwd, server), "utf8"),
 				`\trequire(ServerScriptService.features.${name}.${Name}Service),`,
 				/^\trequire\(ServerScriptService\.features\..*\),$/,
+				/^local services\b/,
+				'local ServerScriptService = game:GetService("ServerScriptService")',
 			),
 		);
 		written.push(server);
@@ -183,6 +196,8 @@ export function createFeature(cwd: string, name: string, place?: string): string
 				fs.readFileSync(path.join(cwd, client), "utf8"),
 				`\trequire(features.${name}.${Name}Controller),`,
 				/^\trequire\(features\..*\),$/,
+				/^local controllers\b/,
+				"-- Client code is cloned into each player at runtime, so it reaches other client code from `script`.\nlocal features = script.Parent.Parent.features",
 			),
 		);
 		written.push(client);

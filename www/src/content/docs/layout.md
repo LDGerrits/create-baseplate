@@ -22,13 +22,9 @@ A [Luau game](/luau/):
 
 ```
 src/
-  app/                 entry scripts: start the services and controllers, mount the UI
-  features/
-    clicker/           an example feature
-      server/          ClickerService.luau: owns the counts, checks the cooldown; its spec
-      client/          ClickerController.luau, ClickerButton.luau and its story
-      shared/          ClickerNetwork.luau: the remotes (Remo), their types and validators
-tests/e2e/             end-to-end tests: clicker.luau
+  app/                 entry scripts: start the services and controllers
+  features/            one folder per feature, started with `mise run feature <name>`
+tests/e2e/             end-to-end tests
 world/                 the map and lighting, edited in Studio and synced back
 wally.toml, wally.lock the Roblox packages
 selene.toml, stylua.toml, .luaurc   lint, format and strict types

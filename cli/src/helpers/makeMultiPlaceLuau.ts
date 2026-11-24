@@ -40,6 +40,8 @@ export function makeMultiPlaceLuau(dir: string, name: string) {
 	for (const entry of fs.readdirSync(at("src"))) {
 		if (entry !== "app") fs.renameSync(at("src", entry), path.join(common, entry));
 	}
+	// A game that starts with no shared code still needs the folder Rogen reads.
+	if (fs.readdirSync(common).length === 0) fs.writeFileSync(path.join(common, ".gitkeep"), "");
 
 	const {
 		name: _name,

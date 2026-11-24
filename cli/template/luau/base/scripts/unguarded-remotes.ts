@@ -27,7 +27,7 @@ export function unguardedRemotes(files: Map<string, string>): string[] {
 			const taken = /\bOnServer(Event|Invoke)\b/.exec(line)?.[0];
 			if (taken === undefined) return;
 			problems.push(
-				`${file}:${index + 1}: ${taken} takes what clients send with no validators or throttle. Declare the remote with Remo in the feature's shared/<Feature>Network.luau, with a \`t\` validator for each argument and throttleMiddleware, and connect to it, as ClickerService does.`,
+				`${file}:${index + 1}: ${taken} takes what clients send with no validators or throttle. Declare the remote with Remo in the feature's shared/<Feature>Network.luau, with a \`t\` validator for each argument and throttleMiddleware, and connect to it, as the service that \`mise run feature\` writes does.`,
 			);
 		});
 	}
