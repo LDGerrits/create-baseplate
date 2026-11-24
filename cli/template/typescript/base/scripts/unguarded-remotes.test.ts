@@ -22,7 +22,6 @@ function check(server: string, network = NETWORK) {
 		new Map([
 			["src/features/shop/shared/shop-network.ts", network],
 			["src/features/shop/server/shop-service.ts", `import { ShopNetwork } from "../shared/shop-network";\n${server}`],
-			["src/network/server/rate-limit.ts", ""],
 		]),
 	);
 }
@@ -34,7 +33,7 @@ test("a remote with no middleware fails, and the message says what to do", () =>
 	assert.deepEqual(remotes(errors), ["click", "buy", "shop"]);
 	assert.match(
 		errors[0] ?? "",
-		/^src\/features\/shop\/server\/shop-service\.ts: .*middleware: \{ click: \[rateLimit\(20\)\] \}.*src\/network\/server\/rate-limit\.ts.*trusts-client/,
+		/^src\/features\/shop\/server\/shop-service\.ts: .*Flamework middleware that rate-limits it, `middleware: \{ click: \[\.\.\.\] \}`.*trusts-client/,
 	);
 });
 
@@ -69,9 +68,9 @@ events.buy.connect(() => {});`);
 	assert.deepEqual(remotes(noReason), ["click", "buy", "shop"]);
 });
 
-test("functions get rateLimitFunction, and client code isn't checked", () => {
+test("functions are checked too, and client code isn't", () => {
 	const fn = NETWORK.replace("createEvent", "createFunction");
-	assert.match(check("const fns = ShopNetwork.createServer({});", fn)[0] ?? "", /rateLimitFunction\(20\)/);
+	assert.deepEqual(remotes(check("const fns = ShopNetwork.createServer({});", fn)), ["click", "buy", "shop"]);
 	const client = unguardedRemotes(
 		new Map([
 			["src/features/shop/shared/shop-network.ts", NETWORK],

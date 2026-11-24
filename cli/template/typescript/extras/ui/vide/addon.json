@@ -12,9 +12,6 @@
 		"eslint-plugin-react-hooks",
 		"eslint-plugin-react-x"
 	],
-	"removeFiles": [
-		"src/app/client/react-dev.ts"
-	],
 	"imports": {},
 	"replaceAgentsSection": "UI",
 	"replaceText": [
@@ -35,7 +32,7 @@
 		},
 		{
 			"file": "README.md",
-			"from": "- **React DevTools:** run `mise x -- pnpm dlx react-devtools` in your own terminal, set the attribute `ReactDevTools` to true on Workspace in Studio, and play: the app shows the UI's component tree, props and state. React logs one harmless telemetry error when it connects.\n",
+			"from": "- **React DevTools:** once the UI is mounted as AGENTS.md's UI section shows, run `mise x -- pnpm dlx react-devtools` in your own terminal, set the attribute `ReactDevTools` to true on Workspace in Studio, and play: the app shows the UI's component tree, props and state. React logs one harmless telemetry error when it connects.\n",
 			"to": ""
 		},
 		{

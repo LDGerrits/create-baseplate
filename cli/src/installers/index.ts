@@ -295,7 +295,9 @@ export function installAddOns(dir: string, language: Language, chosen: AddOnChoi
 		const variant = manifest.byUi?.[chosen.ui ?? ""];
 
 		for (const file of manifest.removeFiles ?? []) fs.rmSync(path.join(dir, file), { force: true });
-		fs.cpSync(path.join(from, variant?.files ?? "files"), dir, { recursive: true });
+		// An add-on that is only packages and a section of AGENTS.md has no files.
+		const files = path.join(from, variant?.files ?? "files");
+		if (fs.existsSync(files)) fs.cpSync(files, dir, { recursive: true });
 		const remove = manifest.removeDependencies ?? [];
 		if (language === "luau") {
 			editWally(dir, "dependencies", variant?.dependencies ?? manifest.dependencies, remove);

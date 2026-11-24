@@ -24,7 +24,7 @@ test("blocks edits to generated files, whatever the tool calls its path", () => 
 	];
 	for (const payload of edits) assert.match(reason(payload) ?? "", /is generated/, JSON.stringify(payload));
 	assert.equal(reason({ tool_name: "Edit", tool_input: { file_path: "/game/src/app/app.tsx" } }), undefined);
-	assert.equal(reason({ toolName: "edit", toolArgs: { path: "src/features/clicker/server/x.ts" } }), undefined);
+	assert.equal(reason({ toolName: "edit", toolArgs: { path: "src/features/shop/server/x.ts" } }), undefined);
 });
 
 test("blocks commands that skip the rules, from each tool's shell", () => {
@@ -99,7 +99,7 @@ test("checks only the project's own files that Biome formats, not generated ones
 		"src/app/app.tsx",
 		"/game/tsconfig.json",
 		"README.md",
-		"tests/e2e/clicker.luau",
+		"tests/e2e/shop.luau",
 		"/elsewhere/x.ts",
 		"../x.ts",
 		"out/app/main.server.luau",

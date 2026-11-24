@@ -1,3 +1,13 @@
 ## State
 
-Client state lives in one Reflex store, `src/store/client/client-store.ts` (in a `client` folder, so it ships only to players), made of a slice per feature (`clicker-slice.ts`). Controllers change it through the store's actions, as `ClickerController` calls `store.setClicks`; UI reads it with `useSelector` from `@rbxts/react-reflex`, inside the `ReflexProvider` in `app.tsx`. Give a new feature a slice and add it to `combineProducers` in the store.
+Client state lives in one Reflex store, `src/store/client/client-store.ts` (in a `client` folder, so it ships only to players), made of a slice per feature. The game starts without it: write the first feature's slice with `createProducer` in that feature's `client/` folder, then create the store:
+
+```ts
+import { combineProducers, type InferState } from "@rbxts/reflex";
+import { cartSlice } from "../../features/shop/client/cart-slice";
+
+export const store = combineProducers({ cart: cartSlice });
+export type RootState = InferState<typeof store>;
+```
+
+Controllers change the store through its actions; UI reads it with `useSelector` from `@rbxts/react-reflex`, inside a `ReflexProvider` (`<ReflexProvider producer={store}>`) around the root component. Give each new feature's slice a spec and add it to `combineProducers`.

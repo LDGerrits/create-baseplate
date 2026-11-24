@@ -24,7 +24,7 @@ Each add-on arrives wired in and tested, with a section in the game's `AGENTS.md
 
 ## UI: Vide
 
-`--ui vide` swaps React for [Vide](https://github.com/centau/vide), fine-grained reactivity without re-renders. The example UI (`app.tsx`, `start.tsx`, the clicker button and its story), the JSX settings in `tsconfig.json` and `AGENTS.md`'s UI section become Vide's; React, its hooks, Ripple, React DevTools and React's lint rules go. [UI](/ui/#vide) has the differences. Going back to React means rewriting the UI: create a game without the flag and copy its `src/app/client` and the button.
+`--ui vide` swaps React for [Vide](https://github.com/centau/vide), fine-grained reactivity without re-renders. The JSX settings in `tsconfig.json` and `AGENTS.md`'s UI section, which shows how to mount a root, become Vide's; React, its hooks, Ripple, React DevTools and React's lint rules go. [UI](/ui/#vide) has the differences. Going back to React means changing those settings and the UI's code by hand: create a game without the flag and compare.
 
 ## Places: several
 
@@ -32,15 +32,15 @@ Each add-on arrives wired in and tested, with a section in the game's `AGENTS.md
 
 ## State: Charm
 
-`--state charm` keeps the clicker's count in a [Charm](https://github.com/littensy/charm) signal that `ClickerController` owns; `app.tsx` reads it with `useSignalState` from `@rbxts/react-charm` (with Vide, `@rbxts/vide-charm`). Packages: `@rbxts/charm` and its UI binding. Files: `clicker-controller.ts` and `app.tsx`.
+`--state charm` adds [Charm](https://github.com/littensy/charm), whose signals hold client state: a controller owns its signals, and UI reads one with `useSignalState` from `@rbxts/react-charm` (with Vide, `@rbxts/vide-charm`). Packages: `@rbxts/charm` and its UI binding. It adds no files, only its section of `AGENTS.md`.
 
-To remove it, put back the base game's `clicker-controller.ts` and `app.tsx` (from a game created without the flag), and `pnpm remove @rbxts/charm @rbxts/react-charm`.
+To remove it, `pnpm remove @rbxts/charm @rbxts/react-charm` and delete its section from `AGENTS.md`.
 
 ## State: Reflex
 
-`--state reflex` adds one [Reflex](https://github.com/littensy/reflex) store, `src/store/client/client-store.ts`, made of a slice per feature (`clicker-slice.ts`, with a spec). `ClickerController` changes it through the store's actions, and `app.tsx` reads it with `useSelector` inside a `ReflexProvider`. Packages: `@rbxts/reflex`, `@rbxts/react-reflex`. Reflex has no Vide binding, so a Vide game takes Charm by default.
+`--state reflex` adds [Reflex](https://github.com/littensy/reflex), one store for the client made of a slice per feature. Controllers change it through its actions, and UI reads it with `useSelector` inside a `ReflexProvider`. Packages: `@rbxts/reflex`, `@rbxts/react-reflex`. It adds no files, only its section of `AGENTS.md`, which shows how to write the store (`src/store/client/client-store.ts`) with the first slice. Reflex has no Vide binding, so a Vide game takes Charm by default.
 
-To remove it, delete `src/store/` and `clicker-slice.ts` and its spec, put back the base game's `clicker-controller.ts` and `app.tsx`, and `pnpm remove @rbxts/reflex @rbxts/react-reflex`.
+To remove it, delete `src/store/` if you wrote it and its section of `AGENTS.md`, and `pnpm remove @rbxts/reflex @rbxts/react-reflex`.
 
 ## Player data: ProfileStore
 

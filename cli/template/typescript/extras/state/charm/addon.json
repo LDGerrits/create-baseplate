@@ -10,7 +10,6 @@
 				"@rbxts/charm": "0.11.1",
 				"@rbxts/vide-charm": "0.4.1"
 			},
-			"files": "files-vide",
 			"agents": "AGENTS.vide.md"
 		}
 	}

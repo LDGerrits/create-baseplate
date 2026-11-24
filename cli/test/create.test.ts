@@ -327,7 +327,7 @@ test("applies the chosen add-ons", () => {
 	}
 	assert.ok(fs.existsSync(path.join(dir, "src/features/player-data/server/player-data-service.ts")));
 	assert.ok(fs.existsSync(path.join(dir, "tests/e2e/spinner.luau")));
-	assert.match(read("src/features/clicker/client/clicker-controller.ts"), /@rbxts\/charm/);
+	assert.ok(!fs.existsSync(path.join(dir, "src/features/clicker")), "no example feature");
 
 	const main = read("src/app/server/main.server.ts");
 	assert.match(
@@ -540,10 +540,10 @@ test("swaps React for Vide", () => {
 	for (const react of ["@rbxts/react", "@rbxts/react-roblox", "@rbxts/pretty-react-hooks", "eslint-plugin-react-x"]) {
 		assert.equal(all[react], undefined, `${react} is gone`);
 	}
-	assert.ok(!fs.existsSync(path.join(dir, "src/app/client/react-dev.ts")));
 	assert.match(read("tsconfig.json"), /"jsxFactory": "Vide\.jsx"/);
 	assert.doesNotMatch(read("eslint.config.ts"), /react/);
-	assert.match(read("src/features/clicker/client/clicker-button.story.tsx"), /CreateVideStory/);
+	assert.ok(!fs.existsSync(path.join(dir, "src/app/client/app.tsx")), "no UI is mounted");
+	assert.match(read("AGENTS.md"), /CreateVideStory/);
 
 	const agents = read("AGENTS.md");
 	assert.match(agents, /and Vide for the UI/);
@@ -561,7 +561,6 @@ test("takes Charm, with its Vide binding, by default with Vide", () => {
 	const dependencies = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8")).dependencies;
 	assert.ok(dependencies["@rbxts/vide-charm"] !== undefined);
 	assert.equal(dependencies["@rbxts/react-charm"], undefined);
-	assert.match(fs.readFileSync(path.join(dir, "src/app/client/app.tsx"), "utf8"), /@rbxts\/vide-charm/);
 	assert.match(fs.readFileSync(path.join(dir, "AGENTS.md"), "utf8"), /@rbxts\/vide-charm/);
 });
 
@@ -584,9 +583,8 @@ test("lays out a multi-place game in projects/", () => {
 	for (const gone of ["src", "world", "tests", "default.rogen.json", "rbx-forge.config.ts", "jest.config.ts"]) {
 		assert.ok(!exists(gone), `${gone} moved into the places`);
 	}
-	assert.ok(exists("projects/common/src/features/clicker/server/clicker-service.ts"));
 	assert.ok(exists("projects/common/src/features/player-data/server/player-data-service.ts"), "add-ons are shared");
-	assert.match(read("tsconfig.json"), /"include": \["projects\/common\/src"\]/);
+	assert.match(read("tsconfig.json"), /"include": \["projects\/common\/src", "projects\/common\/shared\.d\.ts"\]/);
 
 	for (const place of ["lobby", "game"]) {
 		const rogen = JSON.parse(read(`projects/${place}/default.rogen.json`));
@@ -594,10 +592,8 @@ test("lays out a multi-place game in projects/", () => {
 		assert.deepEqual(rogen.sourcePaths, ["../common/src", "src"]);
 		assert.equal(rogen.compiledPath, `../../out/${place}`);
 		assert.equal(rogen.tree.ReplicatedStorage.rbxts_include.node_modules["@rbxts"].$path, "../../node_modules/@rbxts");
-		assert.match(
-			read(`projects/${place}/src/app/server/main.server.ts`),
-			/import "\.\.\/\.\.\/\.\.\/\.\.\/common\/src\/features\/clicker\/server\/clicker-service";/,
-		);
+		assert.match(read(`projects/${place}/src/app/server/main.server.ts`), /Flamework\.ignite\(\);/);
+		assert.match(read(`projects/${place}/src/app/client/main.client.ts`), /Flamework\.ignite\(\);/);
 		assert.equal(JSON.parse(read(`projects/${place}/tsconfig.json`)).extends, `../../tsconfig.${place}.json`);
 		const tsconfig = JSON.parse(read(`tsconfig.${place}.json`));
 		assert.deepEqual(tsconfig.include, ["projects/common/src", `projects/${place}/src`]);
@@ -609,9 +605,9 @@ test("lays out a multi-place game in projects/", () => {
 		assert.match(read(`projects/${place}/rbx-forge.config.ts`), /node \.\.\/\.\.\/scripts\/game-project\.ts/);
 	}
 	assert.match(read(".gitignore"), /\/projects\/\*\/build/);
-	// Shared tests run once, in the game place.
-	assert.ok(exists("projects/game/tests/e2e/clicker.luau"));
-	assert.ok(!exists("projects/lobby/tests/e2e/clicker.luau"));
+	// Shared tests run once, in the game place; each place keeps its own tests folder.
+	assert.ok(exists("projects/game/tests/e2e/.gitkeep"));
+	assert.ok(exists("projects/lobby/tests/e2e/.gitkeep"));
 	assert.equal(JSON.parse(read("tsconfig.game.json")).exclude, undefined);
 	assert.deepEqual(JSON.parse(read("tsconfig.lobby.json")).exclude, [
 		"projects/common/src/**/*.spec.ts",
@@ -624,6 +620,14 @@ test("lays out a multi-place game in projects/", () => {
 	assert.match(read(".agents/skills/edit-world/SKILL.md"), /^# .+\n\n> This game has several places/m);
 	assert.match(read("README.md"), /mise run dev lobby/);
 	assert.deepEqual(JSON.parse(run.stdout).nextSteps.slice(-1), ["mise run dev lobby"]);
+});
+
+test("keeps the shared code of a multi-place game with no features type-checkable", () => {
+	const cwd = tempDir();
+	const run = create(cwd, "my-game", "--no-git", "--places", "multi", "--state", "none");
+	assert.equal(run.status, 0, run.stderr);
+	assert.ok(fs.existsSync(path.join(cwd, "my-game/projects/common/src/.gitkeep")));
+	assert.ok(fs.existsSync(path.join(cwd, "my-game/projects/common/shared.d.ts")));
 });
 
 test("uploads assets with Asphalt", () => {

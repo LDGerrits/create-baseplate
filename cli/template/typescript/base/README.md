@@ -47,7 +47,7 @@ Keys and local paths go in `.env`: copy `.env.example`, which lists each one.
 - **Editor:** open the folder in VS Code and install the recommended extensions. The mise extension gives VS Code the pinned Node and tools; Biome formats on save and ESLint fixes what it can; the roblox-ts extension shows compile errors as you type.
 - **Other editors:** `.editorconfig` sets tabs and line endings, and any TypeScript language server works with `tsconfig.json`. Run `mise run check` to format.
 - **The commit hook** formats the staged files and runs `mise run ci` on exactly what you commit: lint-staged sets unstaged changes and untracked files aside first, so `git add -p` works. It takes a few seconds. To commit work in progress anyway, `git commit --no-verify`.
-- **React DevTools:** run `mise x -- pnpm dlx react-devtools` in your own terminal, set the attribute `ReactDevTools` to true on Workspace in Studio, and play: the app shows the UI's component tree, props and state. React logs one harmless telemetry error when it connects.
+- **React DevTools:** once the UI is mounted as AGENTS.md's UI section shows, run `mise x -- pnpm dlx react-devtools` in your own terminal, set the attribute `ReactDevTools` to true on Workspace in Studio, and play: the app shows the UI's component tree, props and state. React logs one harmless telemetry error when it connects.
 - **Tooling in TypeScript:** scripts, hooks and configs are `.ts`. Node runs them directly, ESLint loads its config through jiti, and `tsconfig.node.json` type-checks them in `mise run check`.
 - **Snippets:** in VS Code, type `service` or `controller` in a new file for a Flamework skeleton named after the file.
 - **Tasks:** `mise tasks` lists every task with what it does.
@@ -64,12 +64,8 @@ Keys and local paths go in `.env`: copy `.env.example`, which lists each one.
 
 ```
 src/
-  app/                 entry scripts: start Flamework, mount the UI
-  features/
-    clicker/           an example feature
-      server/          clicker-service.ts: owns the counts, checks the cooldown; its spec
-      client/          clicker-controller.ts, clicker-button.tsx and its story
-      shared/          clicker-network.ts
-tests/e2e/             end-to-end tests: clicker.luau
+  app/                 entry scripts: start Flamework
+  features/            one folder per feature, started by `mise run feature <name>`
+tests/e2e/             end-to-end tests
 world/                 the map and lighting, edited in Studio and synced back
 ```

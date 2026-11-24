@@ -53,6 +53,13 @@ function makeMultiPlaceTypeScript(dir: string, name: string) {
 		if (entry !== "app" && entry !== "world.d.ts") fs.renameSync(at("src", entry), path.join(common, entry));
 	}
 
+	// A game that starts without features has nothing shared yet. Keep the folder in git, and give
+	// the shared code's own type-check a source file, since tsc rejects a project with none.
+	if (fs.readdirSync(common).length === 0) {
+		fs.writeFileSync(path.join(common, ".gitkeep"), "");
+		fs.writeFileSync(at("projects", "common", "shared.d.ts"), "export {};\n");
+	}
+
 	const rogen = JSON.parse(read("default.rogen.json")) as Record<string, unknown>;
 	for (const place of PLACES) {
 		const placeDir = at("projects", place);
@@ -139,7 +146,7 @@ function makeMultiPlaceTypeScript(dir: string, name: string) {
 		replaceIn(
 			replaceIn(read("tsconfig.json"), '"rootDir": "src",', '"rootDir": "projects/common/src",\n\t\t"noEmit": true,'),
 			'"include": ["src"]',
-			'"include": ["projects/common/src"]',
+			'"include": ["projects/common/src", "projects/common/shared.d.ts"]',
 		),
 	);
 	fs.appendFileSync(at(".gitignore"), GITIGNORE);
@@ -156,8 +163,8 @@ function makeMultiPlaceTypeScript(dir: string, name: string) {
 	let agents = replaceSection(read("AGENTS.md"), "Where code goes", extra("AGENTS.md"));
 	agents = replaceIn(
 		agents,
-		"Import each in `src/app/server/main.server.ts` or `src/app/client/start.tsx`",
-		"Import each in the entry script of every place that uses it, `projects/<place>/src/app/server/main.server.ts` or `projects/<place>/src/app/client/start.tsx`",
+		"Import each in `src/app/server/main.server.ts` or `src/app/client/main.client.ts`",
+		"Import each in the entry script of every place that uses it, `projects/<place>/src/app/server/main.server.ts` or `projects/<place>/src/app/client/main.client.ts`",
 	);
 	agents = replaceIn(agents, "`tests/e2e/<feature>.luau`", "`projects/<place>/tests/e2e/<feature>.luau`");
 	agents = replaceIn(
@@ -195,7 +202,8 @@ const PATHS: [string, string][] = [
 	["`src/shared/", "`projects/common/src/shared/"],
 	["`world/Workspace/", "`projects/<place>/world/Workspace/"],
 	["`tests/e2e/spinner.luau`", "`projects/<place>/tests/e2e/spinner.luau`"],
-	["`src/app/client/start.tsx`", "each place's `src/app/client/start.tsx`"],
+	["`src/app/client/app.tsx`", "each place's `src/app/client/app.tsx`"],
+	["`src/app/client/main.client.ts`", "each place's `src/app/client/main.client.ts`"],
 	["`src/app/server/main.server.ts`", "each place's `src/app/server/main.server.ts`"],
 ];
 

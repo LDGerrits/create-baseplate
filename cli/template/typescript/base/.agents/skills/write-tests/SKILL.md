@@ -16,18 +16,72 @@ AGENTS.md says which kind of test fits what you test. How to write each:
 
 ## Specs
 
-Jest tests written with `@rbxts/jest-globals`. Copy `src/features/clicker/server/clicker-service.spec.ts`: it constructs the service with `new` and calls its public methods.
+Jest tests written with `@rbxts/jest-globals`. `mise run feature <name>` writes one to start from, `<name>-service.spec.ts`: it constructs the service with `new` and calls its public methods.
 
-When a decision depends on the time, take `now` as a parameter that defaults to `os.clock()`, as `ClickerService.click` does, so a spec passes its own times instead of waiting.
+When a decision depends on the time, take `now` as a parameter that defaults to `os.clock()`, so a spec passes its own times instead of waiting.
 
 ## End-to-end tests
 
-A ree harness in `tests/e2e/<feature>.luau`, run with the server and one player's client in one process. Copy `tests/e2e/clicker.luau`:
+A ree harness in `tests/e2e/<feature>.luau`, run with the server and one player's client in one process. Start from this, and replace the `Client` function with the requests you test:
 
-- `Server` boots the game's own server script; keep its `bootServer` as it is.
+```luau
+-- A harness replaces the place's own boot, so start the server's entry script ourselves.
+local function bootServer()
+	local main = game:GetService("ServerScriptService").app.main
+	local run = assert(loadstring(main.Source, "=" .. main:GetFullName()))
+	setfenv(run, setmetatable({ script = main }, { __index = getfenv(0) }))
+	task.spawn(run)
+end
+
+-- Wait for a condition rather than a fixed time: fixed waits make tests slow and flaky.
+local function waitFor<T>(what: string, check: () -> T?, seconds: number?): T
+	local deadline = os.clock() + (seconds or 5)
+	while os.clock() < deadline do
+		local value = check()
+		if value then
+			return value
+		end
+		task.wait()
+	end
+	error(`timed out waiting for {what}`)
+end
+
+-- Flamework creates the remotes as the server starts.
+local function remote(name: string): RemoteEvent
+	return waitFor(`the {name} remote`, function()
+		for _, descendant in game:GetService("ReplicatedStorage"):GetDescendants() do
+			if descendant.Name == name and descendant:IsA("RemoteEvent") then
+				return descendant
+			end
+		end
+		return nil
+	end)
+end
+
+return {
+	Server = function()
+		bootServer()
+	end,
+
+	Client = function()
+		local changed = {}
+		remote("changed").OnClientEvent:Connect(function(value)
+			table.insert(changed, value)
+		end)
+		remote("request"):FireServer()
+		waitFor("the server's answer", function()
+			return #changed >= 1
+		end)
+		assert(changed[1] == 0, `expected 0, got {changed[1]}`)
+		print("@done")
+	end,
+}
+```
+
+- `Server` boots the game's own server script; keep `bootServer` as it is. A test of the world can also do its checks in `Server`, and print `@done` there.
 - `Client` talks to the server through the game's remotes, the way the real client would, and `assert`s on what comes back. Wait for what you expect with `waitFor`, not a fixed `task.wait`.
 - The test passes when the client prints `@done`. A failed `assert`, or any script error on either side, fails it.
-- To test what the player sees, start the client's own UI, as `tests/e2e/clicker-ui.luau` does: the client can't run a script's source in ree, so it calls `start()` from `src/app/client/start.tsx`, which `main.client.tsx` runs in the game, and reads the instances it mounts.
+- The client can't run a script's source in ree, so a test of what the player sees can't boot `main.client.ts`: test the controller's logic in a spec, and look at the UI through its stories.
 
 ## Engine specs
 

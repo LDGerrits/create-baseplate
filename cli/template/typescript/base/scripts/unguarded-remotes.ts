@@ -2,7 +2,7 @@
 // `createServer` leave out any remote's middleware, so a remote can reach a service with no rate
 // limit at all, and missing server checks are how games get exploited. Each remote in a network's
 // ClientToServer interface needs, where the server creates that network:
-// - an entry in `createServer({ middleware: { <remote>: [...] } })`, such as `rateLimit`; or
+// - an entry in `createServer({ middleware: { <remote>: [...] } })`, Flamework middleware that rate-limits it; or
 // - `// trusts-client: <why>` on the line above its handler (`.<remote>.connect(` or
 //   `.<remote>.setCallback(`), or above or inside the `createServer(` call for the whole network.
 // check-sources.ts runs it on the game's sources.
@@ -13,7 +13,6 @@ const TRUSTS = /\/\/\s*trusts-client:\s*\S/;
 /** Errors for the remotes that `sources` (path from the repo root → text) take unguarded. */
 export function unguardedRemotes(sources: Map<string, string>): string[] {
 	const errors: string[] = [];
-	const helper = [...sources.keys()].find((file) => file.endsWith("network/server/rate-limit.ts"));
 	for (const [file, text] of sources) {
 		if (!file.split("/").includes("server")) continue;
 		for (const call of text.matchAll(/\b(\w+)\.createServer\s*\(/g)) {
@@ -35,9 +34,8 @@ export function unguardedRemotes(sources: Map<string, string>): string[] {
 			const guarded = new Set(middlewareKeys(config));
 			for (const remote of clientToServer(definition.text, definition.interfaceName)) {
 				if (guarded.has(remote) || trustedHandler(text, remote)) continue;
-				const limit = definition.kind === "Function" ? "rateLimitFunction" : "rateLimit";
 				errors.push(
-					`${file}: ${network}.createServer takes "${remote}" from clients (${definition.file}) with no middleware, so a client can send it as often as it likes. Add \`middleware: { ${remote}: [${limit}(20)] }\`${helper === undefined ? "" : ` (${limit} is in ${helper})`} and validate the request in the service; or, if any client may send it freely, put \`// trusts-client: <why>\` on the line above its handler.`,
+					`${file}: ${network}.createServer takes "${remote}" from clients (${definition.file}) with no middleware, so a client can send it as often as it likes. Give it Flamework middleware that rate-limits it, \`middleware: { ${remote}: [...] }\`, and validate the request in the service; or, if any client may send it freely, put \`// trusts-client: <why>\` on the line above its handler.`,
 				);
 			}
 		}
@@ -111,11 +109,11 @@ function findNetwork(sources: Map<string, string>, file: string, text: string, n
 	for (const candidate of candidates) {
 		const definition = sources.get(candidate.file);
 		if (definition === undefined) continue;
-		const created = new RegExp(`\\b${candidate.name}\\s*=\\s*Networking\\.create(Event|Function)\\s*<\\s*(\\w+)`).exec(
-			definition,
-		);
-		if (created?.[2] !== undefined) {
-			return { file: candidate.file, text: definition, kind: created[1], interfaceName: created[2] };
+		const created = new RegExp(
+			`\\b${candidate.name}\\s*=\\s*Networking\\.create(?:Event|Function)\\s*<\\s*(\\w+)`,
+		).exec(definition);
+		if (created?.[1] !== undefined) {
+			return { file: candidate.file, text: definition, interfaceName: created[1] };
 		}
 	}
 	return undefined;

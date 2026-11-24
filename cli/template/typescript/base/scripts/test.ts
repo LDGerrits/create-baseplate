@@ -75,7 +75,7 @@ const runs: Run[] = [
 		})),
 ];
 
-// Traces name the game's instances (`ServerScriptService.features.clicker.clicker-service.spec:17`), at
+// Traces name the game's instances (`ServerScriptService.features.shop.shop-service.spec:17`), at
 // lines of the compiled Luau. Each such frame gets the TypeScript file and line it came from, through
 // the project file (instance to compiled file) and the compiler's source map beside that file.
 const compiledFiles = new Map<string, string>();
