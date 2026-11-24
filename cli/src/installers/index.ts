@@ -18,7 +18,10 @@ export interface AddOn {
 	readonly valueName: string;
 	readonly question: string;
 	readonly choices: readonly { readonly value: string; readonly label: string; readonly hint: string }[];
-	/** The choice taken when none is given; "none" unless the question has no "none". */
+	/**
+	 * The choice taken when none is given. Where it can't go with the other answers, as Reflex can't
+	 * with Vide, the first choice that can is taken instead (see defaultFor).
+	 */
 	readonly defaultValue: string;
 	readonly allowNone: boolean;
 }
@@ -89,10 +92,10 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 			valueName: "library",
 			question: "Which library for client state?",
 			choices: [
+				{ value: "reflex", label: "Reflex", hint: "a Redux-like store" },
 				{ value: "charm", label: "Charm", hint: "signals, the most used" },
-				{ value: "reflex", label: "Reflex", hint: "a Redux-like store; no longer updated" },
 			],
-			defaultValue: NONE,
+			defaultValue: "reflex",
 			allowNone: true,
 		},
 		{
@@ -138,7 +141,7 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 			valueName: "library",
 			question: "Which library for client state?",
 			choices: [{ value: "charm", label: "Charm", hint: "signals, the most used" }],
-			defaultValue: NONE,
+			defaultValue: "charm",
 			allowNone: true,
 		},
 		{
@@ -193,9 +196,28 @@ export const flagValuesOf = (name: string) => [
 	),
 ];
 
-/** A language's answers: `given` where set, each question's default otherwise. */
-export const choicesFor = (language: Language, given: Partial<AddOnChoices>): AddOnChoices =>
-	Object.fromEntries(addOnsByLanguage[language].map((addOn) => [addOn.name, given[addOn.name] ?? addOn.defaultValue]));
+/**
+ * The choice `addOn` takes when none is given, with `chosen` the other answers: its default, or,
+ * where that can't go with them (Reflex with Vide), its first choice that can, else none.
+ */
+export function defaultFor(language: Language, addOn: AddOn, chosen: Partial<AddOnChoices>): string {
+	const fits = (value: string) =>
+		findConflict(language, { ...chosen, [addOn.name]: value } as AddOnChoices) === undefined;
+	if (fits(addOn.defaultValue)) return addOn.defaultValue;
+	return addOn.choices.map((choice) => choice.value).find(fits) ?? (addOn.allowNone ? NONE : addOn.defaultValue);
+}
+
+/** A language's answers: `given` where set, each question's default otherwise, in question order. */
+export function choicesFor(language: Language, given: Partial<AddOnChoices>): AddOnChoices {
+	const chosen: AddOnChoices = {};
+	for (const addOn of addOnsByLanguage[language]) {
+		const known = Object.fromEntries(
+			Object.entries({ ...given, ...chosen }).filter(([, value]) => value !== undefined),
+		);
+		chosen[addOn.name] = given[addOn.name] ?? defaultFor(language, addOn, known);
+	}
+	return chosen;
+}
 
 /** Why a flag's value doesn't fit the language, such as Flamework Components in a Luau game. */
 export function flagProblem(language: Language, given: Partial<AddOnChoices>): string | undefined {

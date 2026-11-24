@@ -8,6 +8,7 @@ import {
 	allAddOns,
 	choicesFor,
 	DEFAULT_LANGUAGE,
+	defaultFor,
 	findConflict,
 	flagProblem,
 	flagValuesOf,
@@ -180,7 +181,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 			if (givenAddOns[addOn.name] !== undefined) continue;
 			const answer = await p.select({
 				message: addOn.question,
-				initialValue: addOn.defaultValue,
+				initialValue: defaultFor(language, addOn, chosen),
 				options: [
 					// Leave out what can't go with the answers so far, such as Reflex with Vide.
 					...addOn.choices.filter(

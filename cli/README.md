@@ -20,7 +20,7 @@ With npm, put the flags after `--`, as in `npm create baseplate@latest my-game -
 | `--language <language>` | `typescript` (default): roblox-ts with Flamework; or `luau`: Luau with Wally, StyLua, Selene and luau-lsp. Asked first; each language has its own questions. |
 | `--ui <library>`       | UI: `react` (default) or `vide`.                                                             |
 | `--places <layout>`    | `single` (default), or `multi`: a lobby and a game sharing code, each place a folder in `projects/`.     |
-| `--state <library>`    | Client state: `charm`, `reflex` (TypeScript only) or `none` (default).                       |
+| `--state <library>`    | Client state: `reflex` (TypeScript only; its default), `charm` (Luau's default, and with Vide) or `none`. |
 | `--data <library>`     | Player data: `profilestore`, `lapis` or `none` (default).                                    |
 | `--entities <library>` | Entities: `components` (TypeScript only), `jecs` or `none` (default).                        |
 | `--assets <tool>`      | Assets: `asphalt`, to upload images and sounds and type their IDs, or `none` (default).      |

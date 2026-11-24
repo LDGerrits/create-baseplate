@@ -36,7 +36,7 @@ const create = (cwd: string, ...args: string[]) =>
 
 test("creates a named project an agent can read", () => {
 	const cwd = tempDir();
-	const run = create(cwd, "games/coin-rush", "--no-git");
+	const run = create(cwd, "games/coin-rush", "--no-git", "--state", "none");
 	assert.equal(run.status, 0, run.stderr);
 	const result = JSON.parse(run.stdout) as { ok: boolean; name: string; dir: string; nextSteps: string[] };
 	assert.equal(result.ok, true);
@@ -74,7 +74,7 @@ test("records which CLI and add-ons made the game", () => {
 
 test("makes a git repo", () => {
 	const cwd = tempDir();
-	const run = create(cwd, "my-game");
+	const run = create(cwd, "my-game", "--state", "none");
 	assert.equal(run.status, 0, run.stderr);
 	const log = spawnSync("git", ["log", "--oneline"], { cwd: path.join(cwd, "my-game"), encoding: "utf8" });
 	assert.match(log.stdout, /Initial commit from create-baseplate/);
@@ -186,7 +186,7 @@ test("creates into a freshly cloned repo, and commits there", () => {
 	git("add", "--all");
 	git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "--quiet", "--message", "Initial commit");
 
-	const run = create(cwd, "coin-rush");
+	const run = create(cwd, "coin-rush", "--state", "none");
 	assert.equal(run.status, 0, run.stderr);
 	const result = JSON.parse(run.stdout) as { ok: boolean; git: boolean; committed: boolean; warnings: string[] };
 	assert.equal(result.ok, true);
@@ -342,13 +342,13 @@ test("applies the chosen add-ons", () => {
 	assert.match(agents, /## Entities/);
 });
 
-test("takes no add-ons by default", () => {
+test("takes Reflex and no other add-ons by default", () => {
 	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git");
 	assert.deepEqual(JSON.parse(run.stdout).addOns, {
 		ui: "react",
 		places: "single",
-		state: "none",
+		state: "reflex",
 		data: "none",
 		entities: "none",
 		assets: "none",
@@ -368,7 +368,7 @@ test("creates a Luau game from the Luau template", () => {
 	assert.deepEqual(result.addOns, {
 		ui: "react",
 		places: "single",
-		state: "none",
+		state: "charm",
 		data: "none",
 		entities: "none",
 		assets: "none",
@@ -524,7 +524,7 @@ test("refuses an add-on choice that doesn't exist", () => {
 	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--state", "redux");
 	assert.equal(run.status, 1);
-	assert.match(JSON.parse(run.stdout).error, /charm, reflex, none/);
+	assert.match(JSON.parse(run.stdout).error, /reflex, charm, none/);
 });
 
 test("swaps React for Vide", () => {
@@ -548,14 +548,15 @@ test("swaps React for Vide", () => {
 	const agents = read("AGENTS.md");
 	assert.match(agents, /and Vide for the UI/);
 	assert.match(agents, /## UI\n\nVide/);
-	assert.doesNotMatch(agents, /react|ripple/i, "AGENTS.md names no React package");
+	assert.doesNotMatch(agents, /\bReact\b|@rbxts\/react|[Rr]ipple/, "AGENTS.md names no React package");
 	assert.doesNotMatch(read("README.md"), /React DevTools/);
 });
 
-test("uses Charm's Vide binding with Vide", () => {
+test("takes Charm, with its Vide binding, by default with Vide", () => {
 	const cwd = tempDir();
-	const run = create(cwd, "my-game", "--no-git", "--ui", "vide", "--state", "charm");
+	const run = create(cwd, "my-game", "--no-git", "--ui", "vide");
 	assert.equal(run.status, 0, run.stderr);
+	assert.equal(JSON.parse(run.stdout).addOns.state, "charm");
 	const dir = path.join(cwd, "my-game");
 	const dependencies = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8")).dependencies;
 	assert.ok(dependencies["@rbxts/vide-charm"] !== undefined);
