@@ -14,8 +14,8 @@
 		},
 		{
 			"file": "biome.json",
-			"from": "\"!**/*.md\"]",
-			"to": "\"!**/*.md\", \"!**/src/shared/assets.d.ts\"]"
+			"from": "\"!**/*.md\"\n\t\t]",
+			"to": "\"!**/*.md\",\n\t\t\t\"!**/src/shared/assets.d.ts\"\n\t\t]"
 		},
 		{
 			"file": "eslint.config.ts",

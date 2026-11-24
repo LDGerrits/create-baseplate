@@ -45,7 +45,7 @@ const places: AddOn = {
 	question: "One place, or several?",
 	choices: [
 		{ value: "single", label: "One place", hint: "the whole game in one place" },
-		{ value: "multi", label: "Several places", hint: "a lobby and a game sharing code, laid out as Rogen does" },
+		{ value: "multi", label: "Several places", hint: "a lobby and a game sharing code, each in projects/" },
 	],
 	defaultValue: "single",
 	allowNone: false,

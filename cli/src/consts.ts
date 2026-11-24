@@ -21,7 +21,7 @@ export const NAMED_FILES = [
 	"package.json",
 	"default.rogen.json",
 	"src/app/client/ui.storybook.ts",
-	"src/App/Client/Game.storybook.luau",
+	"src/app/client/Game.storybook.luau",
 	"AGENTS.md",
 	"README.md",
 	".gitignore",

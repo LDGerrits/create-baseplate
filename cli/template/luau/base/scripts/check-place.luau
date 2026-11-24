@@ -61,7 +61,7 @@ for _, serviceName in CLIENT_VISIBLE do
 			if reached then
 				table.insert(
 					problems,
-					`{descendant:GetFullName()} reaches {serverOnly}, which is empty on clients. Move the code it needs into a Shared/ folder, or this file into a Server/ one.`
+					`{descendant:GetFullName()} reaches {serverOnly}, which is empty on clients. Move the code it needs into a shared/ folder, or this file into a server/ one.`
 				)
 			end
 		end

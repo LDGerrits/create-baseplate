@@ -19,29 +19,31 @@ What you remember of Luau's type system, react-lua, Rogen and the Roblox API is 
 
 - While iterating, narrower loops are faster: `mise run analyze` for type errors, `mise run test` for the tests, `mise run ui -- --filter <name>` for one story's picture.
 - When a Selene rule is wrong for one line, allow it on the line above with a comment saying why: `-- selene: allow(global_usage) -- <why>`. Don't silence the type checker with `:: any`; fix the type.
-- Every file is `--!strict` (`.luaurc`), and luau-lsp knows every instance in the game, world included: `ReplicatedStorage.Shared.Features.Clicker.ClickerNetwork` and `workspace.SpawnLocation` are typed, and a wrong name fails the check.
+- Every file is `--!strict` (`.luaurc`), and luau-lsp knows every instance in the game, world included: `ReplicatedStorage.Shared.features.clicker.ClickerNetwork` and `workspace.SpawnLocation` are typed, and a wrong name fails the check.
 - The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `wally`, `stylua`, `selene`, `luau-lsp`, `lune` and the rest are on the PATH only where your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills. To change a tool's pin in `mise.toml`, run `mise lock` after it: `mise install` refuses a tool that `mise.lock` doesn't list with its checksums.
 - Generated files change through their generator, and a hook blocks direct edits: `Packages/`, `ServerPackages/`, `DevPackages/` and `wally.lock` (Wally, from `wally.toml`), `build/` (builds), `default.project.json` (Rogen), `game.project.json`, `test.project.json` and `sourcemap.json` (`mise run generate`, from the code and `world/`), `.luau-lsp/` (Roblox's types for the pinned luau-lsp).
 
 ## Where code goes
 
-Each feature is a folder, `src/Features/<Feature>/`; `src/Features/Clicker` is the example to copy. Inside it, the folder a file sits in decides where it runs:
+Each feature is a folder, `src/features/<feature>/`; `src/features/clicker` is the example to copy. Inside it, the folder a file sits in decides where it runs:
 
-- `Server/`: only on the server, never sent to clients: `ServerScriptService.Features.<Feature>`. Rules, validation and secrets go here.
-- `Client/`: only on the player's device: `StarterPlayerScripts.Features.<Feature>`, copied into each player.
-- `Shared/`: both: `ReplicatedStorage.Shared.Features.<Feature>`. It can't require `Server/` or `Client/` code: the server's folders are empty on clients, and the check fails on client-visible code that reaches for `ServerScriptService` or `ServerStorage`.
+- `server/`: only on the server, never sent to clients: `ServerScriptService.features.<feature>`. Rules, validation and secrets go here.
+- `client/`: only on the player's device: `StarterPlayerScripts.features.<feature>`, copied into each player.
+- `shared/`: both: `ReplicatedStorage.Shared.features.<feature>`. It can't require `server/` or `client/` code: the server's folders are empty on clients, and the check fails on client-visible code that reaches for `ServerScriptService` or `ServerStorage`.
 
 A file outside these three folders isn't placed in the game, and the check fails on it: there's no default side, so server code can't reach clients by mistake.
 
-Require by instance path, the way `rogen where <file>` prints it: `require(ReplicatedStorage.Shared.Features.Clicker.ClickerNetwork)`, `require(ServerScriptService.Network.Serve)`. Client code is copied into each player at runtime, so it reaches other client code from `script`, as `src/App/Client/Start.luau` does: `script.Parent.Parent.Features.Clicker.ClickerController`.
+Require by instance path, the way `rogen where <file>` prints it: `require(ReplicatedStorage.Shared.features.clicker.ClickerNetwork)`, `require(ServerScriptService.network.Serve)`. Client code is copied into each player at runtime, so it reaches other client code from `script`, as `src/app/client/Start.luau` does: `script.Parent.Parent.features.clicker.ClickerController`.
 
-`src/App/` holds the entry scripts: `App/Server/Main.server.luau` lists every service and starts each, `App/Client/Start.luau` (which `Main.client.luau` runs) does the same for controllers and mounts the UI, and `App/Client/App.luau` is the root of the UI. `src/Network/` holds the remotes (`Shared/Remote.luau`) and how the server takes them (`Server/Serve.luau`, `Server/RateLimit.luau`). Files are PascalCase, named after what they hold: `InventoryService.luau`.
+`src/app/` holds the entry scripts: `app/server/Main.server.luau` lists every service and starts each, `app/client/Start.luau` (which `Main.client.luau` runs) does the same for controllers and mounts the UI, and `app/client/App.luau` is the root of the UI. `src/network/` holds the remotes (`shared/Remote.luau`) and how the server takes them (`server/Serve.luau`, `server/RateLimit.luau`). Files are PascalCase, named after what they hold: `InventoryService.luau`.
 
 ## Adding a feature
 
-1. Remotes in `Shared/<Feature>Network.luau`, declared with `Remote.clientEvent`, `Remote.clientRequest` or `Remote.serverEvent` and their argument types, as `ClickerNetwork.luau` does. What a client sends gets a `t` check (`t.tuple(t.integer, t.string)`).
-2. A service in `Server/<Feature>Service.luau` and, if the client takes part, a controller in `Client/<Feature>Controller.luau`: a module with a `start()` that connects its remotes and events. Add each to the list in `src/App/Server/Main.server.luau` or `src/App/Client/Start.luau`, or it never starts; the check fails on one that isn't.
-3. UI as a component in `Client/` with a story, rendered from `App.luau`.
+Run `mise run feature <name>` to start one, and read `.agents/skills/add-feature/SKILL.md`: it writes steps 1 and 2 below and the service's spec. By hand:
+
+1. Remotes in `shared/<Feature>Network.luau`, declared with `Remote.clientEvent`, `Remote.clientRequest` or `Remote.serverEvent` and their argument types, as `ClickerNetwork.luau` does. What a client sends gets a `t` check (`t.tuple(t.integer, t.string)`).
+2. A service in `server/<Feature>Service.luau` and, if the client takes part, a controller in `client/<Feature>Controller.luau`: a module with a `start()` that connects its remotes and events. Add each to the list in `src/app/server/Main.server.luau` or `src/app/client/Start.luau`, or it never starts; the check fails on one that isn't.
+3. UI as a component in `client/` with a story, rendered from `App.luau`.
 4. Tests: a spec for the service, and an end-to-end test for each request a client sends.
 
 The rules the code follows:
@@ -58,7 +60,7 @@ The rules the code follows:
 - A client's request through the real server and remotes: an end-to-end test, `tests/e2e/<feature>.luau`.
 - Characters, physics, collisions or real DataStore limits, which ree doesn't emulate: an engine spec, `<Name>.engine.spec.luau`, run in real Roblox by `mise run test:engine`.
 
-A failing test's trace names the instance and the file: `ServerScriptService.Features.Clicker.ClickerService.spec:22 → src/Features/Clicker/Server/ClickerService.spec.luau:22`. Before writing a test or debugging a failing one, read `.agents/skills/write-tests/SKILL.md`.
+A failing test's trace names the instance and the file: `ServerScriptService.features.clicker.ClickerService.spec:22 → src/features/clicker/server/ClickerService.spec.luau:22`. Before writing a test or debugging a failing one, read `.agents/skills/write-tests/SKILL.md`.
 
 ## UI
 
@@ -91,6 +93,10 @@ luau-lsp and Selene catch most mistakes. These they don't explain:
 
 The game's Roblox packages come from Wally: add one to `wally.toml` under `[dependencies]` (shared), `[server-dependencies]` (server only, in `ServerScriptService.ServerPackages`) or `[dev-dependencies]` (tests and stories, in `ReplicatedStorage.DevPackages`), pinned exactly (`Name = "scope/name@=1.2.3"`), then run `mise run install`; its types come with it. Find a package and its versions at https://wally.run. The tools written for Node (Rogen, rbx-forge, jest-roblox, Biome) are in `package.json`, added with `pnpm add -D`; pnpm installs only versions published at least two weeks ago.
 
+## Releases and updates
+
+You make a release ready and the user ships it: a hook stops `mise run publish`. Read `.agents/skills/release/SKILL.md` to prepare one. For a Renovate update, a `*.baseplate-new` file or a failing `agent-files` check, read `.agents/skills/upgrade/SKILL.md`.
+
 ## Writing for people
 
 Comments, commit messages and pull requests are read by someone who never saw this conversation. Say what the code does and why, not how you got there. When you report back, say how you checked the work: the check passed, which pictures you looked at, what you played in Studio.
@@ -98,28 +104,12 @@ Comments, commit messages and pull requests are read by someone who never saw th
 <!-- rogen -->
 ## Rogen
 
-This repo uses Rogen. Each `*.rogen.json` generates the Rojo project file beside it (`game.rogen.json` → `game.project.json`) from folder and file names, so a file's path on disk is not its path in the game, and adding, moving or deleting a file can leave the project file out of date.
+This repo uses Rogen: each `*.rogen.json` generates the `*.project.json` beside it from folder and file names.
 
-After you add, move, rename or delete files, or edit a `*.rogen.json`, run `rogen check <paths>` from the repo root. Fix each line it prints, or tell the user why it stays. When it says to run `rogen write`, run it.
-
-### Placing code
-
-- Name new files like their neighbours: same folders, `@` suffixes and casing. Run `rogen where <path>` to see where a file lands and how to require it.
-- A folder or `@` suffix named after a key in `routes` routes its contents: `Shop/Server/`, `Save@Server.luau`.
+- A file's path on disk is not its path in the game. Run `rogen where <path>` to see where it lands and how to require it.
 - The outermost route wins, so `Shared/Server/Save.luau` ships to clients. Keep server-only code under a server route.
-- In roblox-ts, import by relative path.
-
-### Changing the setup
-
-- Edit the `*.rogen.json`, never the generated `*.project.json`.
-- Put what names can't place, such as packages, in the `tree`; Rogen adds the routed files to it.
-- Configs share nothing: apply a change to `routes`, `sourcePaths` or `tree` to every `*.rogen.json` it concerns.
-- Read `rogen doc routing` before adding a route or a new naming pattern.
-
-### Commands
-
-- In roblox-ts, check `projects/common` through a place that uses it: `rogen check projects/game`.
-- Run other commands in the folder of the `*.rogen.json`, or name it: `rogen write projects/game`.
-- To sync to Studio, run `rogen serve --json` in the background and leave it running. `rogen help serve` explains its output.
-- `rogen doc <topic>` covers `routing`, `config`, `layout` and `output`; `rogen help <command> --json` lists a command's flags and JSON output.
+- After you add, move or delete files, run `rogen check <paths>` and fix what it prints.
+- Edit the `*.rogen.json`, never the `*.project.json`. Packages go in its `tree`, and a change to `routes` goes in every `*.rogen.json` it concerns.
+- To sync to Studio, use the repo's serve script, or run `rogen serve --json` in the background.
+- For anything else, run `rogen doc <topic>` or `rogen help <command> --json`.
 <!-- /rogen -->

@@ -3,10 +3,10 @@
 // - a test named *.test.luau: Jest here runs *.spec.luau files only, and skips the rest without a word;
 // - a spec outside the source folders: no project file mounts it, so it never runs;
 // - a service or controller no entry script lists: nothing requires it, so it never starts.
-//   Services (*Service.luau that Rogen routes to the server: under a Server/ folder, at any depth,
-//   or named *Service@Server) start from src/App/Server/Main.server.luau, controllers
-//   (*Controller.luau routed to the client) from src/App/Client/Start.luau;
-// - a remote the server takes outside Network/Server/Serve.luau, with no rate limit or argument
+//   Services (*Service.luau that Rogen routes to the server: under a server/ folder, at any depth,
+//   or named *Service@server) start from src/app/server/Main.server.luau, controllers
+//   (*Controller.luau routed to the client) from src/app/client/Start.luau;
+// - a remote the server takes outside network/server/Serve.luau, with no rate limit or argument
 //   check (see unguarded-remotes.ts).
 // `mise run check` runs it. In a multi-place game, a place's entry scripts start its own code and
 // the shared code; shared code passes when one place lists it.
@@ -14,8 +14,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { unguardedRemotes } from "./unguarded-remotes.ts";
 
-const SERVER_ENTRY = "App/Server/Main.server.luau";
-const CLIENT_ENTRY = "App/Client/Start.luau";
+const SERVER_ENTRY = "app/server/Main.server.luau";
+const CLIENT_ENTRY = "app/client/Start.luau";
 const SKIPPED = new Set([
 	"node_modules",
 	"Packages",
@@ -71,12 +71,12 @@ const entries = places.map((place) => {
 	return { root, server: code(`${root}/${SERVER_ENTRY}`), client: code(`${root}/${CLIENT_ENTRY}`) };
 });
 
-const ROUTE = /^[Ss](erver|hared)$|^[Cc]lient$/;
-const SUFFIX = /@([Ss]erver|[Cc]lient|[Ss]hared)$/;
+const ROUTE = /^(server|shared|client)$/;
+const SUFFIX = /@(server|client|shared)$/;
 
 /**
  * Where Rogen routes a source file, and its instance names below the route's target: the governing
- * route is the outermost routing folder (`Server/`) or `@` suffix (`Bank@Server.luau`), and that
+ * route is the outermost routing folder (`server/`) or `@` suffix (`Bank@server.luau`), and that
  * folder leaves no instance, while the suffix comes off the name.
  */
 function routeOf(file: string): { side: string; names: string[] } | undefined {
@@ -90,11 +90,11 @@ function routeOf(file: string): { side: string; names: string[] } | undefined {
 	for (const part of parts) {
 		const folder = side === undefined ? ROUTE.exec(part)?.[0] : undefined;
 		if (folder !== undefined) {
-			side = folder.toLowerCase();
+			side = folder;
 			continue;
 		}
 		const suffix = SUFFIX.exec(part)?.[1];
-		if (side === undefined && suffix !== undefined) side = suffix.toLowerCase();
+		if (side === undefined && suffix !== undefined) side = suffix;
 		names.push(part.replace(SUFFIX, ""));
 	}
 	return side === undefined ? undefined : { side, names };

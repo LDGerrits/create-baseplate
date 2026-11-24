@@ -3,7 +3,7 @@
 
 -- A harness replaces the place's own boot, so start the server's entry script ourselves.
 local function bootServer()
-	local main = game:GetService("ServerScriptService").App.Main
+	local main = game:GetService("ServerScriptService").app.Main
 	local run = assert(loadstring(main.Source, "=" .. main:GetFullName()))
 	setfenv(run, setmetatable({ script = main }, { __index = getfenv(0) }))
 	task.spawn(run)
@@ -41,7 +41,7 @@ return {
 	Client = function()
 		-- The client can't run a script's source here, so call what main.client runs.
 		local scripts = game:GetService("StarterPlayer").StarterPlayerScripts
-		require(scripts.App.Start).start()
+		require(scripts.app.Start).start()
 
 		local gui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 		local label = waitFor("the clicker button", function()

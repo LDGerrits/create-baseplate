@@ -23,8 +23,8 @@ test("blocks edits to generated files, whatever the tool calls its path", () => 
 		{ tool_name: "apply_patch", tool_input: { command: "*** Begin Patch\n*** Update File: DevPackages/Jest.lua\n" } }, // Codex
 	];
 	for (const payload of edits) assert.match(reason(payload) ?? "", /is generated/, JSON.stringify(payload));
-	assert.equal(reason({ tool_name: "Edit", tool_input: { file_path: "/game/src/App/Client/App.luau" } }), undefined);
-	assert.equal(reason({ toolName: "edit", toolArgs: { path: "src/Features/Clicker/Server/X.luau" } }), undefined);
+	assert.equal(reason({ tool_name: "Edit", tool_input: { file_path: "/game/src/app/client/App.luau" } }), undefined);
+	assert.equal(reason({ toolName: "edit", toolArgs: { path: "src/features/clicker/server/X.luau" } }), undefined);
 	assert.equal(reason({ tool_name: "Edit", tool_input: { file_path: "/game/wally.toml" } }), undefined);
 });
 
@@ -35,10 +35,13 @@ test("blocks commands that skip the rules, from each tool's shell", () => {
 		{ toolName: "bash", toolArgs: '{"command":"npx eslint src"}' },
 		{ tool_name: "run_shell_command", tool_input: { command: "cat .env", dir_path: "." } },
 		{ command: "git config core.hooksPath /dev/null" }, // Cursor's beforeShellExecution
+		{ tool_name: "Bash", tool_input: { command: "mise run publish" } },
+		{ tool_name: "Bash", tool_input: { command: "mise x -- node scripts/publish.ts build/game.rbxl" } },
 	];
 	for (const payload of commands) assert.notEqual(reason(payload), undefined, JSON.stringify(payload));
 	assert.equal(reason({ tool_name: "Bash", tool_input: { command: 'git commit -m "no -n here"' } }), undefined);
 	assert.equal(reason({ tool_name: "run_shell_command", tool_input: { command: "mise run check" } }), undefined);
+	assert.equal(reason({ tool_name: "Bash", tool_input: { command: "git diff scripts/publish.ts" } }), undefined);
 });
 
 test("blocks reading .env, but not reading generated files", () => {
@@ -94,7 +97,7 @@ test("checks only the project's own files that StyLua or Biome formats, not gene
 	const files = [
 		"/game/src/A.luau",
 		"src/A.luau",
-		"src/App/Client/App.luau",
+		"src/app/client/App.luau",
 		"/game/wally.toml",
 		"/game/scripts/test.ts",
 		"biome.json",
@@ -110,7 +113,7 @@ test("checks only the project's own files that StyLua or Biome formats, not gene
 	];
 	assert.deepEqual(filesToCheck(files, root, root), [
 		"src/A.luau",
-		"src/App/Client/App.luau",
+		"src/app/client/App.luau",
 		"scripts/test.ts",
 		"biome.json",
 		"tests/e2e/clicker.luau",

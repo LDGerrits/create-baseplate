@@ -3,6 +3,6 @@
 "github:jackTabsCode/asphalt" = "2.0.2"
 
 [tasks.assets]
-description = "Upload the new and changed files in assets/ to Roblox and write their IDs to src/Shared/Assets.luau; needs asphalt.toml's creator and ASPHALT_API_KEY in .env"
+description = "Upload the new and changed files in assets/ to Roblox and write their IDs to src/shared/Assets.luau; needs asphalt.toml's creator and ASPHALT_API_KEY in .env"
 env = { _.file = ".env" }
 run = "node scripts/assets.ts"

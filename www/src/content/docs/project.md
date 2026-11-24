@@ -3,7 +3,7 @@ title: The project
 description: Where code goes, adding a feature, and the rules the code follows.
 ---
 
-This page describes a TypeScript game. A Luau game has the same shape in Luau's names (`src/Features/<Feature>/Server/`), with plain modules for services and controllers and remotes taken through `Serve`: see [Luau games](/luau/).
+This page describes a TypeScript game. A Luau game has the same shape in Luau's names (`src/features/<feature>/server/`), with plain modules for services and controllers and remotes taken through `Serve`: see [Luau games](/luau/).
 
 ## Where code goes
 
@@ -16,6 +16,8 @@ Each feature is a folder, `src/features/<feature>/`. Inside it, the folder a fil
 `src/app/` holds the entry scripts, which start Flamework, and the root of the UI. The example feature, `src/features/clicker`, shows the whole shape.
 
 ## Adding a feature
+
+`mise run feature <name>` writes the first two steps, and the service's spec: the network file, a service with every client-to-server event behind `rateLimit`, a controller, and their imports in the entry scripts. In a multi-place game the feature goes in the shared code; `mise run feature <name> <place>` keeps it to one place. The `add-feature` skill walks an agent through the rest.
 
 1. Network events in `shared/<feature>-network.ts`.
 2. A Flamework service in `server/` and, if the client takes part, a controller in `client/`. Import each in the matching `main` file.
