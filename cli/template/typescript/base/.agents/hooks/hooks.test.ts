@@ -43,6 +43,30 @@ test("blocks commands that skip the rules, from each tool's shell", () => {
 	assert.equal(reason({ tool_name: "Bash", tool_input: { command: "git diff scripts/publish.ts" } }), undefined);
 });
 
+test("blocks Studio's MCP from acting on the live game", () => {
+	for (const tool_name of [
+		"mcp__Roblox_Studio__open_cloud_invoke",
+		"Roblox_Studio-open_cloud_invoke",
+		"open_cloud_invoke",
+	]) {
+		assert.match(reason({ tool_name, tool_input: { method: "GET" } }) ?? "", /Open Cloud/, tool_name);
+	}
+	const luau = (code: string) =>
+		reason({ tool_name: "mcp__Roblox_Studio__execute_luau", tool_input: { code, datamodel_type: "Server" } });
+	assert.match(luau('game:GetService("DataStoreService"):GetDataStore("Players")') ?? "", /real player data/);
+	assert.match(luau('HttpService:GetAsync("https://example.com")') ?? "", /real player data/);
+	assert.match(
+		reason({ toolName: "Roblox_Studio-execute_luau", toolArgs: '{"code":"HttpService:RequestAsync({})"}' }) ?? "",
+		/internet/,
+	);
+	assert.equal(luau("print(workspace.SpawnLocation.Position)"), undefined);
+	assert.equal(luau('print(game:GetService("HttpService"):JSONEncode({ 1 }))'), undefined);
+	assert.equal(
+		reason({ tool_name: "mcp__Roblox_Studio__inspect_instance", tool_input: { path: "Workspace" } }),
+		undefined,
+	);
+});
+
 test("blocks reading .env, but not reading generated files", () => {
 	assert.match(reason({ tool_name: "Read", tool_input: { file_path: "/game/.env" } }) ?? "", /secret/);
 	assert.match(reason({ toolName: "view", toolArgs: { path: ".env.local" } }) ?? "", /secret/);
