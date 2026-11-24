@@ -7,7 +7,8 @@ name: Publish
 # - prod: the same tag, after stable, once someone approves it.
 #
 # Each target is a GitHub environment (Settings > Environments) holding the secret
-# ROBLOX_PUBLISH_API_KEY, a key with universe-places:write on that target's experience only. Its
+# ROBLOX_PUBLISH_API_KEY, a key with universe-places:write on that target's experience only (prod's
+# also needs universe-datastores.control:snapshot: it snapshots the DataStores before publishing). Its
 # places are repository variables (Settings > Secrets and variables > Actions):
 # ROBLOX_<TARGET>_UNIVERSE_ID and ROBLOX_<TARGET>_PLACE_ID, such as ROBLOX_DEV_PLACE_ID. In a
 # multi-place game the place ID names each place: lobby=123,game=456. A target without its place
@@ -102,6 +103,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mise run install
+      # Before players get the new version, so their data as it stands now stays restorable for 30
+      # days if the release corrupts it (scripts/snapshot.ts).
+      - run: mise exec -- node scripts/snapshot.ts
+        env:
+          ROBLOX_PUBLISH_API_KEY: ${{ secrets.ROBLOX_PUBLISH_API_KEY }}
+          ROBLOX_PUBLISH_UNIVERSE_ID: ${{ vars.ROBLOX_PROD_UNIVERSE_ID }}
       - run: mise run publish
         env:
           ROBLOX_PUBLISH_API_KEY: ${{ secrets.ROBLOX_PUBLISH_API_KEY }}

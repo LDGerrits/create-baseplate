@@ -6,6 +6,7 @@
 		"scripts/world-types.ts",
 		"scripts/publish.ts",
 		"scripts/publish.test.ts",
+		"scripts/snapshot.ts",
 		".github/workflows/publish.yml",
 		".agents/skills/edit-world"
 	],

@@ -54,7 +54,7 @@ Every published version should come from a commit, so you can publish any of the
 Set up each target you use:
 
 1. Create the experience and its places, and publish them once from Studio.
-2. Under **Settings > Environments**, add an environment named after the target (`dev`, `stable`, `prod`) with the secret `ROBLOX_PUBLISH_API_KEY`: a key with `universe-places:write` on that experience only.
+2. Under **Settings > Environments**, add an environment named after the target (`dev`, `stable`, `prod`) with the secret `ROBLOX_PUBLISH_API_KEY`: a key with `universe-places:write` on that experience only. Prod's key also needs `universe-datastores.control:snapshot`: before it publishes, the workflow snapshots the DataStores (`scripts/snapshot.ts`), which costs no storage of yours and keeps every player's data as it stood restorable for 30 days if the release corrupts it.
 3. Under **Settings > Secrets and variables > Actions > Variables**, add `ROBLOX_<TARGET>_UNIVERSE_ID` and `ROBLOX_<TARGET>_PLACE_ID`, such as `ROBLOX_DEV_PLACE_ID`.
 4. For prod, give the environment **required reviewers**, so a tag waits for someone to approve it; without them, every tag goes live. Limit its deployments to tags matching `v*`.
 
