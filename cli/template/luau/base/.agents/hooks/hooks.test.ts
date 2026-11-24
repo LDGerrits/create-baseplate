@@ -270,7 +270,10 @@ test("the tree hash changes with every change, and the pass record sits in the w
 	}
 });
 
-test("without mise, the guard still blocks Studio's live tools and publishing, and lets the rest through", () => {
+// The PATH it builds from symbolic links to sh, cat and grep only works outside Windows.
+test("without mise, the guard still blocks Studio's live tools and publishing, and lets the rest through", {
+	skip: process.platform === "win32",
+}, () => {
 	const home = fs.mkdtempSync(path.join(os.tmpdir(), "no-mise-"));
 	// A PATH with only what `run` needs, so a mise installed system-wide can't stand in.
 	const bin = path.join(home, "bin");
