@@ -25,7 +25,11 @@ jobs:
           persist-credentials: false
       # rur renders the stories in the check; GitHub's Linux machines have no GPU, so give it Mesa's
       # software Vulkan driver.
-      - run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends mesa-vulkan-drivers
+      # The runner's package lists are usually fresh enough; `apt-get update` takes most of this
+      # step, so it runs only when the install fails without it.
+      - run: |
+          sudo apt-get install -y -q --no-install-recommends mesa-vulkan-drivers ||
+            { sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends mesa-vulkan-drivers; }
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
           version: 2026.11.8
