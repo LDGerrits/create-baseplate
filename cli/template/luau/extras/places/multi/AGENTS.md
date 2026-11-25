@@ -15,7 +15,7 @@ The four layers sit in each source root, `projects/common/src` and `projects/<pl
 - `game/<system>/`: the always-on systems and what features build on; it never requires a feature or `app`.
 - `platform/<module>/`: game-agnostic code that would move unchanged to another game; it requires none of the others.
 
-A feature or a system? Delete the folder: if the game still works, it's a feature; if other code breaks, it belongs in `game/`. The children of `game/` and `platform/` are folders named for what they hold: no loose files there, and no `utils`, `helpers`, `common`, `misc`, `shared` or `lib`.
+A feature or a system? Delete the folder: if the game still works, it's a feature; if other code breaks, it belongs in `game/`. The children of `game/` and `platform/` are folders named for what they hold: no loose files there, and no `util(s)`, `lib(s)`, `helper(s)`, `common` or `misc`.
 
 Folder names are lowercase letters and digits, since they are parts of a require path.
 

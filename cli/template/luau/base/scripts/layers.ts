@@ -13,7 +13,7 @@ export const LAYERS = ["app", "features", "game", "platform"] as const;
 export type Layer = (typeof LAYERS)[number];
 export const SIDES = ["server", "client", "shared"];
 /** Names that say nothing about what a module holds. */
-export const REFUSED_MODULES = ["utils", "helpers", "common", "misc", "shared", "lib"];
+export const REFUSED_MODULES = ["util", "utils", "lib", "libs", "helper", "helpers", "common", "misc"];
 
 /** A file's source root: the longest of `roots` it sits under. */
 export function rootOf(file: string, roots: string[]): string | undefined {
@@ -87,10 +87,10 @@ export function structureErrors(files: string[], roots: string[]): string[] {
 			);
 			continue;
 		}
-		if (layer !== "features" && REFUSED_MODULES.includes(moduleName)) {
+		if (REFUSED_MODULES.includes(moduleName.toLowerCase())) {
 			once(
 				`${root}/${layer}/${moduleName}`,
-				`${root}/${layer}/${moduleName}/: "${moduleName}" says nothing about what the module holds. Name each module for the one thing it does (game/currency, platform/sound), and split this one up.`,
+				`${root}/${layer}/${moduleName}/: "${moduleName}" says nothing about what the module holds. Name each folder for the one thing it does (game/currency, platform/sound), and split this one up.`,
 			);
 			continue;
 		}
