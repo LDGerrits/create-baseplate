@@ -15,7 +15,7 @@ You don't publish: a hook stops `mise run publish` and Studio's live tools, and 
    - `stable`, if the game uses it: a tag, `git tag v1.2.0 && git push origin v1.2.0`, for testers.
    - `prod`: a tag (the same one, after stable), once a reviewer approves the `prod` environment.
 
-   A tag publishes only a commit whose CI passed on main, so tag a commit that has merged.
+   A tag publishes only a commit whose CI passed on main, so tag a commit that has merged (every push to main gets its own CI run, so an older commit still has its result).
 5. **Say what changed for players**, in a few lines, for the tag or the release notes: what they will see and do differently, and anything that resets or migrates their data.
 
 When asked to deploy and the keys aren't set up, point to `mise run doc publishing` and `.env.example`; don't ask for a key in the chat or put one in a file.

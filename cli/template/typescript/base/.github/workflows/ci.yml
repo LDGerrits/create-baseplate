@@ -10,9 +10,11 @@ on:
 permissions:
   contents: read
 
+# A new push to a pull request cancels its older run. Main's runs are one each (the commit in the group
+# name) and finish, so a tag on an older commit of main still finds its CI (publish.yml's verify job).
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
