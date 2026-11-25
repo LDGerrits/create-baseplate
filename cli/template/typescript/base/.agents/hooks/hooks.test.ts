@@ -5,7 +5,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { changedFiles, failureOutput, passFile, treeHash, wantsCheck } from "./check.ts";
+import { changedFiles, failureOutput, wantsCheck } from "./check.ts";
 import { biomeProblems, editedFiles, editedOutput, filesToCheck } from "./edited.ts";
 import { guardOutput, guardReason, type Payload } from "./guard.ts";
 
@@ -206,7 +206,7 @@ test("a failing check sends the agent back once, then tells the user", () => {
 const expect = (output: string) =>
 	`\`mise run check\` fails after your changes. Fix it, or tell the user why it stays failing:\n${output}`;
 
-test("the tree hash changes with every change, and the pass record sits in the worktree's git folder", () => {
+test("the stop hook looks only at changed files that aren't Markdown", () => {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hooks-"));
 	const back = process.cwd();
 	// Inside a commit hook, git's variables would point these git commands at the outer repo.
@@ -217,22 +217,12 @@ test("the tree hash changes with every change, and the pass record sits in the w
 		git("init", "-q");
 		git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "start");
 		process.chdir(dir);
-		const clean = treeHash();
 		assert.deepEqual(changedFiles(), []);
 		fs.writeFileSync("a.ts", "1");
-		const one = treeHash();
-		assert.notEqual(one, clean);
 		assert.deepEqual(changedFiles(), ["a.ts"]);
-		fs.writeFileSync("a.ts", "2");
-		assert.notEqual(treeHash(), one);
-		fs.writeFileSync("a.ts", "1");
-		assert.equal(treeHash(), one);
 		fs.writeFileSync("notes.md", "x");
+		fs.writeFileSync("README.MD", "x");
 		assert.deepEqual(changedFiles(), ["a.ts"]);
-		assert.equal(passFile(), path.join(fs.realpathSync(dir), ".git", "agent-check-passed"));
-		git("worktree", "add", "-q", "--detach", "wt");
-		process.chdir(path.join(dir, "wt"));
-		assert.match(passFile() ?? "", /\.git[/\\]worktrees[/\\]wt[/\\]agent-check-passed$/);
 	} finally {
 		process.chdir(back);
 		Object.assign(process.env, Object.fromEntries(saved));
