@@ -24,6 +24,10 @@ export interface AddOn {
 	 */
 	readonly defaultValue: string;
 	readonly allowNone: boolean;
+	/** A question about the project's shape (places, what Rojo manages), asked before the stack. */
+	readonly shape?: boolean;
+	/** What the question picks, for the summary of the recommended stack, such as "player data". */
+	readonly topic: string;
 }
 
 export const NONE = "none";
@@ -52,6 +56,8 @@ const places: AddOn = {
 	],
 	defaultValue: "single",
 	allowNone: false,
+	shape: true,
+	topic: "places",
 };
 
 const managed: AddOn = {
@@ -64,10 +70,13 @@ const managed: AddOn = {
 	],
 	defaultValue: "full",
 	allowNone: false,
+	shape: true,
+	topic: "management",
 };
 
 const assets: AddOn = {
 	name: "assets",
+	topic: "asset uploads",
 	valueName: "tool",
 	question: "Which tool to upload images and sounds?",
 	choices: [{ value: "asphalt", label: "Asphalt", hint: "uploads assets/ to Roblox and types their IDs" }],
@@ -77,6 +86,7 @@ const assets: AddOn = {
 
 const release: AddOn = {
 	name: "release",
+	topic: "release builds",
 	valueName: "tool",
 	question: "Which tool to process release builds?",
 	choices: [{ value: "darklua", label: "Darklua", hint: "minifies and optimizes the code you publish" }],
@@ -89,6 +99,7 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 	typescript: [
 		{
 			name: "ui",
+			topic: "UI",
 			valueName: "library",
 			question: "Which UI library?",
 			choices: [
@@ -102,6 +113,7 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 		managed,
 		{
 			name: "state",
+			topic: "state",
 			valueName: "library",
 			question: "Which library for client state?",
 			choices: [
@@ -113,6 +125,7 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 		},
 		{
 			name: "data",
+			topic: "player data",
 			valueName: "library",
 			question: "Which library to save player data?",
 			choices: [
@@ -124,6 +137,7 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 		},
 		{
 			name: "entities",
+			topic: "entities",
 			valueName: "library",
 			question: "Which library for entities and components?",
 			choices: [
@@ -139,6 +153,7 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 	luau: [
 		{
 			name: "ui",
+			topic: "UI",
 			valueName: "library",
 			question: "Which UI library?",
 			choices: [
@@ -152,6 +167,7 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 		managed,
 		{
 			name: "state",
+			topic: "state",
 			valueName: "library",
 			question: "Which library for client state?",
 			choices: [{ value: "charm", label: "Charm", hint: "signals, the most used" }],
@@ -160,6 +176,7 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 		},
 		{
 			name: "data",
+			topic: "player data",
 			valueName: "library",
 			question: "Which library to save player data?",
 			choices: [
@@ -171,6 +188,7 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 		},
 		{
 			name: "entities",
+			topic: "entities",
 			valueName: "library",
 			question: "Which library for entities and components?",
 			choices: [{ value: "jecs", label: "Jecs", hint: "an entity component system" }],

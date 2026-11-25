@@ -3,7 +3,7 @@ title: Add-ons
 description: The UI library, the place layout, and the libraries and tools the CLI can add for state, player data, entities, assets and release builds; what each wires in, and how to take it out.
 ---
 
-The base game brings Flamework and React with a few small helpers they work well with, and asks about libraries for state, data and entities. Like create-t3-app, the CLI asks about each, offering the most used libraries or none. None is the default, except for state: Reflex in TypeScript (Charm with Vide, which Reflex doesn't support) and Charm in Luau. It also asks which UI library to use, how many places, and how much of the place Rojo manages:
+The base game brings Flamework and React with a few small helpers they work well with, and asks about libraries for state, data and entities. The CLI first asks how many places and how much of the place Rojo manages. Then it offers the recommended libraries and tools in one answer, or asks about each, offering the most used libraries or none. The recommended stack is each question's default: none, except for the UI (React) and state (Reflex in TypeScript, Charm with Vide, which Reflex doesn't support, and Charm in Luau):
 
 | Question | Flag | Choices |
 | --- | --- | --- |

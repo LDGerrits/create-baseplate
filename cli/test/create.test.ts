@@ -255,6 +255,31 @@ test("refuses a folder with files at the prompt, before the other questions", { 
 	assert.doesNotMatch(shown, /Which language/);
 });
 
+test("asks the project's shape, then offers the recommended stack in one answer", { skip: !hasScript }, () => {
+	const cwd = tempDir();
+	// The name, then Enter for TypeScript, one place, the whole place and the recommended stack.
+	const keys = ["coin-rush\r", "\r", "\r", "\r", "\r"].map((key) => `printf '${key}'; sleep 1;`).join(" ");
+	const shown = stripVTControlCharacters(
+		spawnSync(
+			"sh",
+			[
+				"-c",
+				`(sleep 0.5; ${keys} sleep 2) | script -qec "stty cols 160 rows 40; node ${CLI} --no-install --no-git" /dev/null`,
+			],
+			{ cwd, encoding: "utf8", timeout: 15_000 },
+		).stdout,
+	);
+	assert.ok(shown.indexOf("One place, or several") < shown.indexOf("Which libraries and tools"), "shape first");
+	assert.match(
+		shown,
+		/The recommended ones \(React and Reflex; no player data, entities, asset uploads or release builds yet\)/,
+	);
+	assert.doesNotMatch(shown, /Which library for client state/, "the recommended stack skips the stack's questions");
+	const pkg = JSON.parse(fs.readFileSync(path.join(cwd, "coin-rush/package.json"), "utf8"));
+	assert.equal(pkg.baseplate.addOns.state, "reflex");
+	assert.equal(pkg.baseplate.addOns.places, "single");
+});
+
 test("refuses flags that can't go together at the prompt, before asking a question with no choice", {
 	skip: !hasScript,
 }, () => {
