@@ -133,6 +133,10 @@ export async function serve({ root, linter, idleMs = IDLE_MS, onListening }: Ser
 		if (process.platform !== "win32") fs.rmSync(where, { force: true });
 		server.close();
 	};
+	for (const signal of ["SIGTERM", "SIGINT", "SIGHUP"] as const) process.once(signal, () => process.exit(0));
+	process.once("exit", () => {
+		if (process.platform !== "win32") fs.rmSync(where, { force: true });
+	});
 	const arm = () => {
 		if (idle !== undefined) clearTimeout(idle);
 		idle = setTimeout(stop, idleMs);
