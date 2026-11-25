@@ -2,4 +2,4 @@
 "create-baseplate": patch
 ---
 
-The check also refuses folders named `util`, `libs` and `helper`, in any case, and in `features/` as well as `game/` and `platform/`.
+The check refuses folders named `util`, `utils`, `lib` or `libs`, in any case, in `features/`, `game/` and `platform/`; `helpers`, `common` and `misc` are allowed.

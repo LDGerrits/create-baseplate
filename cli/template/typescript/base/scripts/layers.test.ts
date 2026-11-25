@@ -35,13 +35,14 @@ test("refuses a loose file directly in game/ or platform/, naming the next move"
 });
 
 test("refuses module names that say nothing, once per module", () => {
-	for (const name of ["util", "utils", "lib", "libs", "helper", "helpers", "common", "misc", "shared"]) {
+	for (const name of ["util", "utils", "lib", "libs", "shared"]) {
 		const errors = errorsFor(`src/game/${name}/server/a.ts`, `src/game/${name}/client/b.ts`);
 		assert.equal(errors.length, 1, name);
 		assert.match(errors[0] ?? "", /says nothing|side folder/);
 	}
 	assert.match(errorsFor("src/features/utils/server/a.ts")[0] ?? "", /says nothing/);
 	assert.deepEqual(errorsFor("src/game/utilities/server/a.ts"), []);
+	assert.deepEqual(errorsFor("src/platform/helpers/shared/a.ts"), []);
 	assert.match(errorsFor("src/platform/Utils/shared/a.ts")[0] ?? "", /says nothing/);
 });
 

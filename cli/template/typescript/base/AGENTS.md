@@ -35,7 +35,7 @@ Code in `src/` sits in four layers, and imports only go down: `app`, then `featu
 - `game/<system>/`: the always-on systems: platform singletons (the one `ProcessReceipt`, the player's saved data), what features build on (currency, teams) and concepts several features write. It never imports a feature or `app`.
 - `platform/<module>/`: game-agnostic Roblox code that would move unchanged to another game: network middleware, sound playback, UI primitives. It imports none of the other layers.
 
-A feature or a system? Delete the folder: if the game still works, it's a feature; if other code breaks, it belongs in `game/`. The children of `game/` and `platform/` are folders named for what they hold: no loose files there, and no `util(s)`, `lib(s)`, `helper(s)`, `common` or `misc`.
+A feature or a system? Delete the folder: if the game still works, it's a feature; if other code breaks, it belongs in `game/`. The children of `game/` and `platform/` are folders named for what they hold: no loose files there, and no `util(s)` or `lib(s)`.
 
 Inside a feature or module, and in `app/`, the folder a file sits in decides where it runs:
 

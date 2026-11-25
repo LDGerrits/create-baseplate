@@ -13,7 +13,7 @@ export const LAYERS = ["app", "features", "game", "platform"] as const;
 export type Layer = (typeof LAYERS)[number];
 export const SIDES = ["server", "client", "shared"];
 /** Names that say nothing about what a module holds. */
-export const REFUSED_MODULES = ["util", "utils", "lib", "libs", "helper", "helpers", "common", "misc"];
+export const REFUSED_MODULES = ["util", "utils", "lib", "libs"];
 
 /** A file's source root: the longest of `roots` it sits under. */
 export function rootOf(file: string, roots: string[]): string | undefined {
