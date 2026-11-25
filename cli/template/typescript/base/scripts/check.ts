@@ -62,7 +62,8 @@ const steps: Step[] = [
 		command: 'node scripts/each-place.ts --if-multi "tsc --noEmit -p tsconfig.json"',
 		needs: ["compile"],
 	},
-	{ name: "rogen", command: 'node scripts/each-place.ts --parallel "rogen check"', needs: ["format"] },
+	// Rogen checks the compiled Luau too: without out/ it reports every source folder as empty.
+	{ name: "rogen", command: 'node scripts/each-place.ts --parallel "rogen check"', needs: ["compile"] },
 	// No --cache: type-aware rules depend on other files, which the cache doesn't track.
 	{ name: "lint", command: "eslint --max-warnings 0 --no-error-on-unmatched-pattern src projects", needs: ["format"] },
 	{
