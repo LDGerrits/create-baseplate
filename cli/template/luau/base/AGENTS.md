@@ -43,6 +43,8 @@ Inside a feature or module, and in `app/`, the folder a file sits in decides whe
 - `client/`: only on the player's device: `StarterPlayerScripts.features.<feature>`, copied into each player.
 - `shared/`: both: `ReplicatedStorage.Shared.features.<feature>`. It can't require `server/` or `client/` code: the server's folders are empty on clients, and the check fails on client-visible code that reaches for `ServerScriptService` or `ServerStorage`.
 
+The check also keeps each side's own APIs on that side (`scripts/sides.ts` lists them): `Players.LocalPlayer`, `UserInputService`, `RunService.RenderStepped` and the like fail in `server/`; `DataStoreService`, `MessagingService`, `ServerStorage`, `HttpService:RequestAsync` and the like fail in `client/`. Both lists apply in `shared/`: if a call there is guarded by `RunService:IsServer()` or `IsClient()`, add `-- guarded: <why>` to its line.
+
 Side folders sit only at `app/<side>/` and `<layer>/<module>/<side>/`, and a file outside one isn't placed in the game: there's no default side, so server code can't reach clients by mistake. Files are PascalCase, named after what they hold: `InventoryService.luau`.
 
 Require by instance path, the way `rogen where <file>` prints it: `require(ReplicatedStorage.Shared.features.shop.ShopNetwork)`, `require(ServerScriptService.game.bank.Bank)`. Client code is copied into each player at runtime, so it reaches other client code from `script`, as the lines `mise run feature` adds to `src/app/client/Start.luau` do: `script.Parent.Parent.features.shop.ShopController`.

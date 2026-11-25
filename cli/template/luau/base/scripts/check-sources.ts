@@ -11,11 +11,14 @@
 // - code outside the four layers (app, features, game, platform), a side folder at the wrong depth, a
 //   layer that requires one above it, and a cycle between feature folders (see layers.ts); the
 //   requires are read through the sourcemap `mise run generate` writes.
+// - a Roblox API on the wrong side: client-only ones in server/ code, server-only ones in client/ code,
+//   both in shared/ (see sides.ts).
 // `mise run check` runs it. In a multi-place game, a place's entry scripts start its own code and
 // the shared code; shared code passes when one place lists it.
 import fs from "node:fs";
 import path from "node:path";
 import { cycleErrors, layerErrors, requireEdges, type SourcemapNode, structureErrors } from "./layers.ts";
+import { type Side, sideErrors } from "./sides.ts";
 import { unguardedRemotes } from "./unguarded-remotes.ts";
 
 const SERVER_ENTRY = "app/server/Main.server.luau";
@@ -134,6 +137,13 @@ for (const file of sources) {
 }
 
 errors.push(...structureErrors(sources, sourceRoots));
+
+for (const file of sources) {
+	const side = routeOf(file)?.side;
+	if (side === "server" || side === "client" || side === "shared") {
+		errors.push(...sideErrors(file, side as Side, fs.readFileSync(file, "utf8")));
+	}
+}
 
 // The requires between the game's files, as each place's sourcemap resolves them.
 const sourceSet = new Set(sources);

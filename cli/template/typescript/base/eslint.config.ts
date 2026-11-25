@@ -8,6 +8,7 @@ import reactX from "eslint-plugin-react-x";
 import roblox from "eslint-plugin-roblox-ts";
 import tseslint from "typescript-eslint";
 import { layerZones } from "./scripts/layers.ts";
+import { sideRestrictions } from "./scripts/sides.ts";
 
 // The source roots: src, or in a multi-place game the shared code's and each place's.
 const places = fs.existsSync("projects")
@@ -75,6 +76,8 @@ export default defineConfig(
 			"@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
 		},
 	},
+	// Roblox APIs that work on one side only, kept out of the other side's folders (scripts/sides.ts).
+	...sideRestrictions(roots),
 	{
 		// Specs: no focused or skipped tests left behind, and every test asserts something.
 		files: ["src/**/*.spec.ts", "src/**/*.spec.tsx"],

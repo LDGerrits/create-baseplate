@@ -43,6 +43,8 @@ Inside a feature or module, and in `app/`, the folder a file sits in decides whe
 - `client/`: only on the player's device.
 - `shared/`: both. It can't import `server/` or `client/` code; ESLint enforces the sides.
 
+ESLint also keeps each side's own APIs on that side (`scripts/sides.ts` lists them): `Players.LocalPlayer`, `UserInputService`, `RunService.RenderStepped` and the like fail in `server/`; `DataStoreService`, `MessagingService`, `ServerStorage`, `HttpService:RequestAsync` and the like fail in `client/`. Both lists apply in `shared/`: if a call there is guarded by `RunService.IsServer()` or `IsClient()`, disable the rule on that line and say so.
+
 Side folders sit only at `app/<side>/` and `<layer>/<module>/<side>/`, and a file outside one isn't placed in the game: there's no default side, so server code can't reach clients by mistake. Files are kebab-case, named after what they hold: `inventory-service.ts`.
 
 Code meets in three ways. Import directly by default: a feature imports the service it needs. When one owner has many contributors, put a registry in `game/`: the one `ProcessReceipt` handler lives there, and each feature registers its product handlers with it, so `game/` never imports a feature. For a fact that others react to, the emitter exports a typed signal that listeners subscribe to. Never a string-keyed event bus.
