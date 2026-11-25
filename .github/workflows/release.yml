@@ -117,6 +117,7 @@ jobs:
           publish-script: ${{ vars.NPM_PUBLISH == 'true' && 'pnpm release' || '' }}
           commit-message: Version packages
           pr-title: Version packages
+          # The app's token, so the version pull request's CI runs (GitHub starts none for GITHUB_TOKEN's).
+          github-token: ${{ steps.app.outputs.token || secrets.GITHUB_TOKEN }}
         env:
-          GITHUB_TOKEN: ${{ steps.app.outputs.token || secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
