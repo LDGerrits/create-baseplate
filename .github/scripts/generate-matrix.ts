@@ -1,19 +1,29 @@
-// The sets of add-ons CI creates games with, generated from the CLI's questions
-// (cli/src/installers/index.ts) and the manifests' `conflicts`, for each language, so a new
-// language, question or choice is tested without editing the workflow:
-// - create: no add-ons, each choice alone, every question answered together (once per UI), and
-//   then as few more as it takes for every two choices of different questions to meet in some game
-//   (pairwise), which catches add-ons that break each other.
+// The games CI creates, generated from the CLI's questions (cli/src/installers/index.ts) and the
+// manifests' `conflicts`, for each language, so a new language, question or choice is tested without
+// editing the workflow. The sets:
+// - pull: no add-ons, every question answered together (once per UI), and then as few more games as it
+//   takes for every two choices of different questions to meet in some game (pairwise), which catches
+//   add-ons that break each other. Every choice is in some pair, so this covers each one.
+// - full: no add-ons, each choice alone, every question answered together and the pairwise games: what
+//   a pull request runs, and each choice alone besides.
 // - windows: no add-ons, and every question answered together.
 // - engine: no add-ons, and as few games as it takes for each choice to run once in a real Roblox
-//   server; the runs share one test place and go one at a time.
-// `node .github/scripts/generate-matrix.ts` prints them; given a file, as CI gives "$GITHUB_OUTPUT", it
-// also writes them there as JSON, the step's outputs `create`, `windows` and `engine`. A game of a
-// language other than the default starts its flags with `--language <language>`.
+//   server; the runs share one test place and go one at a time, in one job.
+// Which sets a run takes depends on the event (`plan`): a pull request creates `pull`, a push to main,
+// the nightly run and a run by hand create `full`; the engine runs on those, and on Renovate's pull
+// requests, not on the others. A pull request that changes only the docs site and Markdown files
+// creates no game. The games are grouped into batches, about BATCH_SIZE to a job, by language, so a job
+// installs the tools once and creates and checks each game in turn (run-games.ts).
+// `node .github/scripts/generate-matrix.ts` prints the plan of every event; `--event <name>` prints one
+// (with `--head-ref <branch>` and `--changed-files <file>` for a pull request); given a file, as CI
+// gives "$GITHUB_OUTPUT", it also writes the plan there, as the step's outputs. A game of a language
+// other than the default starts its flags with `--language <language>`.
 import fs from "node:fs";
 import path from "node:path";
+import { parseArgs } from "node:util";
 import {
 	addOnsByLanguage,
+	choicesFor,
 	DEFAULT_LANGUAGE,
 	type Language,
 	languages,
@@ -67,15 +77,18 @@ export function generatorFor(language: Language) {
 		return entries.every((a, i) => entries.slice(i + 1).every((b) => !conflicts.has(pairKey(a, b))));
 	}
 
-	const defaults = (): Answers =>
-		Object.fromEntries(questions.map((question) => [question.name, question.defaultValue]));
+	/** `answers` filled in with what the CLI takes for the questions they leave out. */
+	const withDefaults = (answers: Answers = {}): Answers => choicesFor(language, answers);
+	const defaults = () => withDefaults();
 
-	/** The flags that create a game with `answers`; defaults are left out. */
+	/** The flags that create a game with `answers`; what the CLI would take anyway is left out. */
 	function flagsOf(answers: Answers): string {
+		const implied = (name: string) =>
+			withDefaults(Object.fromEntries(Object.entries(answers).filter(([other]) => other !== name)))[name];
 		return [
 			...(language === DEFAULT_LANGUAGE ? [] : [`--language ${language}`]),
 			...questions
-				.filter((question) => answers[question.name] !== question.defaultValue)
+				.filter((question) => answers[question.name] !== implied(question.name))
 				.map((question) => `--${question.name} ${answers[question.name]}`),
 		].join(" ");
 	}
@@ -143,7 +156,7 @@ export function generatorFor(language: Language) {
 
 	/** Each choice that isn't a default, alone. */
 	const alone = questions.flatMap((question) =>
-		question.values.slice(1).map((value) => ({ ...defaults(), [question.name]: value })),
+		question.values.slice(1).map((value) => withDefaults({ [question.name]: value })),
 	);
 
 	/**
@@ -151,7 +164,7 @@ export function generatorFor(language: Language) {
 	 * has several, the second game takes the next one, so both games differ as much as they can.
 	 */
 	const everything = (questions.find((question) => question.name === "ui")?.values ?? [""]).map((ui, i) => {
-		const answers: Answers = { ...defaults(), ui };
+		const answers: Answers = withDefaults({ ui });
 		for (const question of questions) {
 			if (question.name === "ui") continue;
 			const choices = question.values.filter((value) => value !== question.defaultValue && value !== "none");
@@ -163,8 +176,12 @@ export function generatorFor(language: Language) {
 
 	const unique = (games: Answers[]) => [...new Map(games.map((game) => [flagsOf(game), game])).values()];
 
+	/** The games that cover every pair of choices, and "every question answered" once per UI. */
+	const pull = unique(cover(unique([none, ...everything]), allPairs(), pairsOf));
+
 	const matrices = {
-		create: unique(cover(unique([none, ...alone, ...everything]), allPairs(), pairsOf)),
+		pull,
+		full: unique(cover(unique([none, ...alone, ...everything]), allPairs(), pairsOf)),
 		windows: unique([none, everything.at(-1) ?? none]),
 		engine: unique(
 			cover(
@@ -175,7 +192,16 @@ export function generatorFor(language: Language) {
 		),
 	};
 
-	return { questions, allowed, allPairs, pairsOf, flagsOf, matrices };
+	/**
+	 * How long a game takes, next to the default one (the sets' unit): each answer that differs from the
+	 * defaults adds an add-on's packages and files to install and check. Measured on one machine, a game
+	 * with every question answered took 1.25 times as long as the default; only the balance between
+	 * batches depends on it.
+	 */
+	const weightOf = (answers: Answers) =>
+		1 + 0.05 * questions.filter((question) => answers[question.name] !== question.defaultValue).length;
+
+	return { questions, allowed, allPairs, pairsOf, flagsOf, weightOf, matrices };
 }
 
 /** Each language's generator. */
@@ -183,26 +209,188 @@ export const generators = Object.fromEntries(
 	languages.map((language) => [language.value, generatorFor(language.value)]),
 ) as Record<Language, ReturnType<typeof generatorFor>>;
 
+export type Job = "pull" | "full" | "windows" | "engine";
+
 /** The sets of every language together, as the flags that create each game. */
 export const allMatrices = Object.fromEntries(
-	(["create", "windows", "engine"] as const).map((job) => [
+	(["pull", "full", "windows", "engine"] as const).map((job) => [
 		job,
 		Object.values(generators).flatMap((generator) => generator.matrices[job].map(generator.flagsOf)),
 	]),
-) as Record<"create" | "windows" | "engine", string[]>;
+) as Record<Job, string[]>;
+
+/** The most games one job creates and checks. */
+export const BATCH_SIZE = 6;
+
+/** What a job needs: the games to create and check, one after another, and a template to check first. */
+export interface Batch {
+	/** Shown in the job's name. */
+	name: string;
+	language: Language;
+	/** The flags that create each game. */
+	games: string[];
+	/** Whether the job checks the language's template (cli/template/<language>/base) too. */
+	template: boolean;
+}
+
+/**
+ * `games` of one language, in as few batches of at most `size` as it takes, balanced by what each is
+ * expected to cost (the longest first into the lightest batch). The first batch also takes the
+ * template's check, which counts as a game. Games keep their order within a batch.
+ */
+export function batchesOf(
+	language: Language,
+	games: { flags: string; weight: number }[],
+	{ size = BATCH_SIZE, template = false } = {},
+): Batch[] {
+	const count = Math.max(1, Math.ceil((games.length + (template ? 1 : 0)) / size));
+	const bins = Array.from({ length: count }, (_, index) => ({
+		games: [] as { flags: string; weight: number; order: number }[],
+		// The template's check takes about a game's time.
+		load: template && index === 0 ? 1 : 0,
+		size: template && index === 0 ? 1 : 0,
+	}));
+	const ordered = games
+		.map((game, order) => ({ ...game, order }))
+		.sort((a, b) => b.weight - a.weight || a.order - b.order);
+	for (const game of ordered) {
+		const open = bins.filter((bin) => bin.size < size);
+		const lightest = open.reduce((a, b) => (b.load < a.load ? b : a));
+		lightest.games.push(game);
+		lightest.load += game.weight;
+		lightest.size += 1;
+	}
+	return bins.map((bin, index) => ({
+		name: count === 1 ? language : `${language} ${index + 1}/${count}`,
+		language,
+		games: bin.games.sort((a, b) => a.order - b.order).map((game) => game.flags),
+		template: template && index === 0,
+	}));
+}
+
+/** The events whose runs differ. A push is to main; the others are by what triggered the run. */
+export type Event = "pull_request" | "push" | "schedule" | "workflow_dispatch";
+export const events: Event[] = ["pull_request", "push", "schedule", "workflow_dispatch"];
+
+/** Whether a path is a Markdown file: the repository's one definition (the local check scopes by it too). */
+export const isMarkdown = (file: string) => /\.md$/i.test(file);
+
+/**
+ * Whether `files` (a pull request's changed paths) are all the docs site (`www/`) or Markdown files
+ * outside the templates (a template's Markdown files ship in every game). No files, or none known,
+ * is not docs only.
+ */
+export function docsOnly(files: string[]): boolean {
+	return (
+		files.length > 0 &&
+		files.every((file) => {
+			if (file.startsWith("cli/template/")) return false;
+			return file.startsWith("www/") || isMarkdown(file);
+		})
+	);
+}
+
+export interface Plan {
+	/** The batches of games to create and check on Linux. */
+	create: Batch[];
+	/** The batches of games to create and check on Windows. */
+	windows: Batch[];
+	/** The flags of the games the engine job creates and runs in real Roblox. */
+	engine: string[];
+}
+
+/**
+ * What CI runs for a run of `event`. A pull request takes the pairwise sets, and the engine games only
+ * from Renovate (`headRef` starts with renovate/), where an update that breaks only in the real engine
+ * is what to find; the other events take the full sets and the engine. A pull request that changes only
+ * the docs (`changedFiles`) creates no game.
+ */
+export function plan({
+	event,
+	headRef = "",
+	changedFiles = [],
+}: {
+	event: Event;
+	headRef?: string;
+	changedFiles?: string[];
+}): Plan {
+	const pullRequest = event === "pull_request";
+	if (pullRequest && docsOnly(changedFiles)) return { create: [], windows: [], engine: [] };
+	const create = pullRequest ? "pull" : "full";
+	const batches = (job: "pull" | "full" | "windows", template: boolean) =>
+		Object.entries(generators).flatMap(([language, generator]) =>
+			batchesOf(
+				language as Language,
+				generator.matrices[job].map((game) => ({ flags: generator.flagsOf(game), weight: generator.weightOf(game) })),
+				{ template },
+			),
+		);
+	return {
+		create: batches(create, true),
+		windows: batches("windows", false),
+		engine: !pullRequest || headRef.startsWith("renovate/") ? allMatrices.engine : [],
+	};
+}
+
+/** The step's outputs: the matrices of the jobs, and whether each job runs. */
+export function outputsOf(result: Plan): Record<string, string> {
+	return {
+		create: JSON.stringify({ include: result.create }),
+		windows: JSON.stringify({ include: result.windows }),
+		engine: JSON.stringify(result.engine),
+		"run-create": String(result.create.length > 0),
+		"run-windows": String(result.windows.length > 0),
+		"run-engine": String(result.engine.length > 0),
+	};
+}
+
+function describe(event: string, result: Plan): string {
+	const lines = [`${event}:`];
+	for (const [job, batches] of [
+		["create", result.create],
+		["windows", result.windows],
+	] as const) {
+		const games = batches.reduce((sum, batch) => sum + batch.games.length, 0);
+		lines.push(`  ${job}: ${games} games in ${batches.length} jobs`);
+		for (const batch of batches) {
+			lines.push(`    ${batch.name}${batch.template ? " (+ template)" : ""}: ${batch.games.length}`);
+			for (const game of batch.games) lines.push(`      ${game || "(no add-ons)"}`);
+		}
+	}
+	lines.push(`  engine: ${result.engine.length} games in ${result.engine.length > 0 ? 1 : 0} job`);
+	for (const game of result.engine) lines.push(`    ${game || "(no add-ons)"}`);
+	return lines.join("\n");
+}
 
 if (import.meta.main) {
-	const outputFile = process.argv[2];
+	const { values, positionals } = parseArgs({
+		allowPositionals: true,
+		options: {
+			event: { type: "string" },
+			"head-ref": { type: "string", default: "" },
+			"changed-files": { type: "string" },
+		},
+	});
+	const changedFiles =
+		values["changed-files"] === undefined
+			? []
+			: fs
+					.readFileSync(values["changed-files"], "utf8")
+					.split("\n")
+					.filter((file) => file !== "");
+	const outputFile = positionals[0];
 	if (outputFile !== undefined) {
+		const event = values.event as Event | undefined;
+		if (event === undefined || !events.includes(event)) throw new Error(`--event is one of ${events.join(", ")}`);
+		const outputs = outputsOf(plan({ event, headRef: values["head-ref"], changedFiles }));
 		fs.appendFileSync(
 			outputFile,
-			Object.entries(allMatrices)
-				.map(([job, games]) => `${job}=${JSON.stringify({ addOns: games })}\n`)
+			Object.entries(outputs)
+				.map(([name, value]) => `${name}=${value}\n`)
 				.join(""),
 		);
 	}
-	for (const [job, games] of Object.entries(allMatrices)) {
-		console.log(`${job} (${games.length}):`);
-		for (const game of games) console.log(`  ${game || "(no add-ons)"}`);
+	for (const event of values.event === undefined ? events : [values.event as Event]) {
+		console.log(describe(event, plan({ event, headRef: values["head-ref"], changedFiles })));
 	}
 }

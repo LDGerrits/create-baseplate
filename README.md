@@ -2,7 +2,7 @@
 
 The agent-ready way to start a Roblox game, in roblox-ts or Luau.
 
-Baseplate creates a Roblox game, in TypeScript (roblox-ts) or Luau, that coding agents can work on well: one command checks everything, tests and UI run without Studio, hooks keep agents to the rules, and the world lives in files. It works with Claude Code, Codex, Cursor and Copilot.
+Baseplate creates a Roblox game, in TypeScript (roblox-ts) or Luau, that coding agents can work on well: one command checks everything, tests and UI run without Studio, hooks keep agents to the rules, and the world lives in files. It works with Claude Code, Codex, Cursor, Copilot and Gemini CLI.
 
 > Not published yet.
 
@@ -20,7 +20,8 @@ The first question is the language, a fork in the road: `--language typescript` 
 | `--language` | `typescript`, `luau`                        |
 | `--ui`       | `react`, `vide`                             |
 | `--places`   | `single`, `multi`                           |
-| `--state`    | `none`, `charm`, `reflex` (TS)              |
+| `--managed`  | `full`, `partial`                           |
+| `--state`    | `reflex` (TS), `charm`, `none`              |
 | `--data`     | `none`, `profilestore`, `lapis`             |
 | `--entities` | `none`, `components` (TS), `jecs`           |
 | `--assets`   | `none`, `asphalt`                           |
@@ -32,7 +33,7 @@ The first question is the language, a fork in the road: `--language typescript` 
 | ---------------------- | ------------------------------------------------------------------------------------- |
 | `cli/`                 | `create-baseplate`: prompts or flags, copies the template                             |
 | `cli/template/<language>/base/`   | A language's game template (`typescript`, `luau`): a complete project that passes its own checks |
-| `cli/template/<language>/extras/` | That language's add-ons, one folder per choice: UI, places, state, data, entities, assets and release |
+| `cli/template/<language>/extras/` | That language's add-ons, one folder per choice: UI, places, managed, state, data, entities, assets and release |
 | `www/`                 | The docs site: Astro with Starlight, with `llms.txt` for agents                       |
 
 ## License

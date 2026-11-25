@@ -5,14 +5,15 @@ description: Keeping a game up to date, npm and yarn, Studio, removing an add-on
 
 ## How do I keep my game up to date?
 
-The game's tools and packages, with Renovate: `.github/renovate.json` proposes updates two weeks after each release, and the game's CI checks each one before it merges. A tool's pin also needs its checksums in `mise.lock`, which `.github/workflows/mise-lock.yml` adds on Renovate's branches.
+The game's tools and packages, with Renovate: `.github/renovate.json` proposes updates two weeks after each release, and the game's CI checks each one before it merges. A tool's pin also needs its checksums in `mise.lock`, which `.github/workflows/renovate-fixups.yml` adds on Renovate's branches.
 
-The template itself, no: there's no upgrade command, and once created, the game is yours. Its `package.json` records where it started:
+The template's agent files (`AGENTS.md`, the skills, the hooks and the agent tools' settings) follow the create-baseplate version in `package.json`'s `baseplate.version`: Renovate moves it, and `create-baseplate sync` brings them up to that version, keeping your edits (see [keeping the agent files current](/agents/#keeping-the-agent-files-current)). The rest of the template, no: there's no command for it, and once created, the game is yours. Its `package.json` records where it started:
 
 ```json
 "baseplate": {
 	"version": "0.1.0",
-	"addOns": { "ui": "react", "places": "single", "state": "charm", "data": "none", "entities": "none", "assets": "none", "release": "none" }
+	"language": "typescript",
+	"addOns": { "ui": "react", "places": "single", "managed": "full", "state": "reflex", "data": "none", "entities": "none", "assets": "none", "release": "none" }
 }
 ```
 
@@ -32,7 +33,7 @@ By hand; [Add-ons](/add-ons/) lists what each one adds and how to take it out. T
 
 ## Which agents does it work with?
 
-Claude Code, Codex, Cursor and GitHub Copilot read `AGENTS.md` (Claude Code through `CLAUDE.md`) and the skills in `.agents/skills/`. [How agents work in it](/agents/) says which hooks each one runs. Any other agent that reads `AGENTS.md` and runs shell commands works too: what matters is that it runs `mise run check`.
+Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI read `AGENTS.md` (Claude Code through `CLAUDE.md`, Gemini CLI through `.gemini/settings.json`) and the skills in `.agents/skills/`. [How agents work in it](/agents/) says which hooks each one runs. Any other agent that reads `AGENTS.md` and runs shell commands works too: what matters is that it runs `mise run check`.
 
 ## Can I use Luau instead of TypeScript?
 

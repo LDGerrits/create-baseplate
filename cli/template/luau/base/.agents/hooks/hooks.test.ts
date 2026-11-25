@@ -5,7 +5,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { changedFiles, failureOutput, passFile, treeHash, wantsCheck } from "./check.ts";
+import { changedFiles, failureOutput, wantsCheck } from "./check.ts";
 import { biomeProblems, editedFiles, editedOutput, filesToCheck, seleneProblems, styluaProblems } from "./edited.ts";
 import { guardOutput, guardReason, type Payload } from "./guard.ts";
 
@@ -23,8 +23,8 @@ test("blocks edits to generated files, whatever the tool calls its path", () => 
 		{ tool_name: "apply_patch", tool_input: { command: "*** Begin Patch\n*** Update File: DevPackages/Jest.lua\n" } }, // Codex
 	];
 	for (const payload of edits) assert.match(reason(payload) ?? "", /is generated/, JSON.stringify(payload));
-	assert.equal(reason({ tool_name: "Edit", tool_input: { file_path: "/game/src/app/client/App.luau" } }), undefined);
-	assert.equal(reason({ toolName: "edit", toolArgs: { path: "src/features/clicker/server/X.luau" } }), undefined);
+	assert.equal(reason({ tool_name: "Edit", tool_input: { file_path: "/game/src/app/client/Start.luau" } }), undefined);
+	assert.equal(reason({ toolName: "edit", toolArgs: { path: "src/features/shop/server/X.luau" } }), undefined);
 	assert.equal(reason({ tool_name: "Edit", tool_input: { file_path: "/game/wally.toml" } }), undefined);
 });
 
@@ -42,6 +42,40 @@ test("blocks commands that skip the rules, from each tool's shell", () => {
 	assert.equal(reason({ tool_name: "Bash", tool_input: { command: 'git commit -m "no -n here"' } }), undefined);
 	assert.equal(reason({ tool_name: "run_shell_command", tool_input: { command: "mise run check" } }), undefined);
 	assert.equal(reason({ tool_name: "Bash", tool_input: { command: "git diff scripts/publish.ts" } }), undefined);
+});
+
+test("blocks Studio's MCP from acting on the live game", () => {
+	for (const tool_name of [
+		"mcp__Roblox_Studio__open_cloud_invoke",
+		"Roblox_Studio-open_cloud_invoke",
+		"open_cloud_invoke",
+	]) {
+		assert.match(reason({ tool_name, tool_input: { method: "GET" } }) ?? "", /Open Cloud/, tool_name);
+	}
+	const luau = (code: string) =>
+		reason({ tool_name: "mcp__Roblox_Studio__execute_luau", tool_input: { code, datamodel_type: "Server" } });
+	assert.match(luau('game:GetService("DataStoreService"):GetDataStore("Players")') ?? "", /real player data/);
+	assert.match(luau('HttpService:GetAsync("https://example.com")') ?? "", /real player data/);
+	assert.match(
+		reason({ toolName: "Roblox_Studio-execute_luau", toolArgs: '{"code":"HttpService:RequestAsync({})"}' }) ?? "",
+		/internet/,
+	);
+	assert.equal(luau("print(workspace.SpawnLocation.Position)"), undefined);
+	assert.equal(luau('print(game:GetService("HttpService"):JSONEncode({ 1 }))'), undefined);
+	assert.equal(
+		reason({ tool_name: "mcp__Roblox_Studio__inspect_instance", tool_input: { path: "Workspace" } }),
+		undefined,
+	);
+	// Cursor's beforeMCPExecution names the server's launch command, which isn't the agent's command.
+	assert.equal(
+		reason({
+			hook_event_name: "beforeMCPExecution",
+			tool_name: "create_issue",
+			command: "npx -y @some/mcp-server",
+			tool_input: {},
+		}),
+		undefined,
+	);
 });
 
 test("blocks reading .env, but not reading generated files", () => {
@@ -97,12 +131,12 @@ test("checks only the project's own files that StyLua or Biome formats, not gene
 	const files = [
 		"/game/src/A.luau",
 		"src/A.luau",
-		"src/app/client/App.luau",
+		"src/app/client/Start.luau",
 		"/game/wally.toml",
 		"/game/scripts/test.ts",
 		"biome.json",
 		"README.md",
-		"tests/e2e/clicker.luau",
+		"tests/e2e/shop.luau",
 		"/elsewhere/X.luau",
 		"../X.luau",
 		"Packages/React.lua",
@@ -113,10 +147,10 @@ test("checks only the project's own files that StyLua or Biome formats, not gene
 	];
 	assert.deepEqual(filesToCheck(files, root, root), [
 		"src/A.luau",
-		"src/app/client/App.luau",
+		"src/app/client/Start.luau",
 		"scripts/test.ts",
 		"biome.json",
-		"tests/e2e/clicker.luau",
+		"tests/e2e/shop.luau",
 	]);
 	assert.deepEqual(filesToCheck(["B.luau", "../C.luau"], root, "/game/src"), ["src/B.luau", "C.luau"]);
 });
@@ -202,7 +236,7 @@ test("a failing check sends the agent back once, then tells the user", () => {
 const expect = (output: string) =>
 	`\`mise run check\` fails after your changes. Fix it, or tell the user why it stays failing:\n${output}`;
 
-test("the tree hash changes with every change, and the pass record sits in the worktree's git folder", () => {
+test("the stop hook looks only at changed files that aren't Markdown", () => {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hooks-"));
 	const back = process.cwd();
 	// Inside a commit hook, git's variables would point these git commands at the outer repo.
@@ -213,25 +247,88 @@ test("the tree hash changes with every change, and the pass record sits in the w
 		git("init", "-q");
 		git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "start");
 		process.chdir(dir);
-		const clean = treeHash();
 		assert.deepEqual(changedFiles(), []);
 		fs.writeFileSync("a.ts", "1");
-		const one = treeHash();
-		assert.notEqual(one, clean);
 		assert.deepEqual(changedFiles(), ["a.ts"]);
-		fs.writeFileSync("a.ts", "2");
-		assert.notEqual(treeHash(), one);
-		fs.writeFileSync("a.ts", "1");
-		assert.equal(treeHash(), one);
 		fs.writeFileSync("notes.md", "x");
+		fs.writeFileSync("README.MD", "x");
 		assert.deepEqual(changedFiles(), ["a.ts"]);
-		assert.equal(passFile(), path.join(fs.realpathSync(dir), ".git", "agent-check-passed"));
-		git("worktree", "add", "-q", "--detach", "wt");
-		process.chdir(path.join(dir, "wt"));
-		assert.match(passFile() ?? "", /\.git[/\\]worktrees[/\\]wt[/\\]agent-check-passed$/);
 	} finally {
 		process.chdir(back);
 		Object.assign(process.env, Object.fromEntries(saved));
 		fs.rmSync(dir, { recursive: true, force: true });
 	}
+});
+
+// The PATH it builds from symbolic links to sh, cat and grep only works outside Windows.
+test("without mise, the guard still blocks Studio's live tools and publishing, and lets the rest through", {
+	skip: process.platform === "win32",
+}, () => {
+	const home = fs.mkdtempSync(path.join(os.tmpdir(), "no-mise-"));
+	// A PATH with only what `run` needs, so a mise installed system-wide can't stand in.
+	const bin = path.join(home, "bin");
+	fs.mkdirSync(bin);
+	for (const tool of ["sh", "cat", "dirname", "grep"]) {
+		const found = spawnSync("sh", ["-c", `command -v ${tool}`], { encoding: "utf8" }).stdout.trim();
+		fs.symlinkSync(found, path.join(bin, tool));
+	}
+	const guard = (format: string, payload: Payload) =>
+		spawnSync(path.join(bin, "sh"), [path.join(import.meta.dirname, "run"), "guard.ts", format], {
+			input: JSON.stringify(payload),
+			encoding: "utf8",
+			env: { PATH: bin, HOME: home },
+		});
+	try {
+		const live: Payload = { tool_name: "mcp__Roblox_Studio__open_cloud_invoke", tool_input: {} };
+		const claude = guard("claude", live);
+		assert.equal(claude.status, 0);
+		assert.equal(JSON.parse(claude.stdout).hookSpecificOutput.permissionDecision, "deny");
+		assert.equal(JSON.parse(guard("copilot", live).stdout).permissionDecision, "deny");
+		assert.equal(JSON.parse(guard("gemini", live).stdout).decision, "deny");
+		assert.equal(JSON.parse(guard("cursor", live).stdout).permission, "deny");
+		// Cursor reads a deny from the JSON on stdout of an exit 0, and fails open on any other exit.
+		const cursorLive = guard("cursor", live);
+		assert.equal(cursorLive.status, 0);
+		assert.equal(JSON.parse(cursorLive.stdout).permission, "deny");
+		assert.match(JSON.parse(cursorLive.stdout).agent_message, /blocked/);
+		const cursorPublish = guard("cursor", { tool_name: "Shell", tool_input: { command: "mise run publish" } });
+		assert.equal(JSON.parse(cursorPublish.stdout).permission, "deny");
+		const cursorStudio = guard("cursor", { command: "mise run publish", cwd: "/game" });
+		assert.equal(JSON.parse(cursorStudio.stdout).permission, "deny");
+		assert.equal(guard("cursor", { tool_name: "Shell", tool_input: { command: "ls" } }).stdout, "");
+		const publish = guard("claude", { tool_name: "Bash", tool_input: { command: "mise run publish" } });
+		assert.equal(JSON.parse(publish.stdout).hookSpecificOutput.permissionDecision, "deny");
+		assert.equal(guard("claude", { tool_name: "Bash", tool_input: { command: "ls" } }).stdout, "");
+		const copilotPublish = guard("copilot", { toolName: "bash", toolArgs: '{"command":"mise run publish"}' });
+		assert.equal(JSON.parse(copilotPublish.stdout).permissionDecision, "deny");
+		// Only the tool and the command count, not what an edit writes.
+		const edit = {
+			tool_name: "Write",
+			tool_input: { file_path: "notes.md", content: "open_cloud_invoke, mise run publish" },
+		};
+		assert.equal(guard("claude", edit).stdout, "");
+	} finally {
+		fs.rmSync(home, { recursive: true, force: true });
+	}
+});
+
+test("Cursor's hooks go through .agents/hooks/run, so the guard fails closed without mise", () => {
+	const hooks = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "../../.cursor/hooks.json"), "utf8")) as {
+		hooks: Record<string, { command: string }[]>;
+	};
+	for (const [event, list] of Object.entries(hooks.hooks)) {
+		for (const { command } of list) {
+			assert.match(command, /^sh \.agents\/hooks\/run \w+\.ts cursor$/, event);
+		}
+	}
+});
+
+// The check runs `rogen check`, so Rogen's own stop hook (rogen-check.mjs, which stays as Rogen writes it)
+// would run it a second time at every stop.
+test("no agent tool starts Rogen's stop hook beside the check", () => {
+	const folder = path.join(import.meta.dirname, "../..");
+	for (const file of [".claude/settings.json", ".codex/hooks.json", ".cursor/hooks.json", ".gemini/settings.json"]) {
+		assert.doesNotMatch(fs.readFileSync(path.join(folder, file), "utf8"), /rogen-check/, file);
+	}
+	assert.match(fs.readFileSync(path.join(folder, "scripts/check.ts"), "utf8"), /rogen check/);
 });

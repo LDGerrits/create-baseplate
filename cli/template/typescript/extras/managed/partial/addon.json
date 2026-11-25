@@ -1,0 +1,215 @@
+{
+	"dependencies": {},
+	"imports": {},
+	"removeFiles": [
+		"world",
+		"scripts/world-types.ts",
+		"scripts/publish.ts",
+		"scripts/publish.test.ts",
+		"scripts/snapshot.ts",
+		".github/workflows/publish.yml",
+		".agents/skills/edit-world"
+	],
+	"removeMiseTasks": [
+		"sync",
+		"publish"
+	],
+	"replaceAgentsSection": "World and Studio",
+	"replaceText": [
+		{
+			"file": "mise.toml",
+			"from": "# Syncback writes each new world instance as a readable .model.json instead of a binary .rbxm.\n# Set for every task so forge's sync on save gets it too. It's Rojo's undocumented debug switch\n# (src/syncback/mod.rs), not a stable option: check it still works when upgrading Rojo.\nROJO_SYNCBACK_DEBUG = \"2\"\n",
+			"to": ""
+		},
+		{
+			"file": "mise.toml",
+			"from": "description = \"Write the generated files of each place: default.project.json (code), game.project.json (code and world), src/world.d.ts (its map's types)\"\ndepends = [\"deps\"]\nrun = 'node scripts/each-place.ts \"rogen write --quiet\" \"node {root}/scripts/game-project.ts\" \"node {root}/scripts/world-types.ts\"'",
+			"to": "description = \"Write the generated files of each place: default.project.json (code), game.project.json (the code as a game, for builds and tests)\"\ndepends = [\"deps\"]\nrun = 'node scripts/each-place.ts \"rogen write --quiet\" \"node {root}/scripts/game-project.ts\"'"
+		},
+		{
+			"file": "mise.toml",
+			"from": "description = \"Start the dev session: compile on save, serve code to Studio, open Studio on the world, and sync each Studio save back to world/. A multi-place game names the place: mise run dev lobby\"\ndepends = [\"generate\"]",
+			"to": "description = \"Start the dev session: compile on save and serve the code, for the Rojo plugin in Studio to connect to (install the plugin once: mise x -- rojo plugin install). A multi-place game names the place: mise run dev lobby\"\ndepends = [\"compile\"]"
+		},
+		{
+			"file": "mise.toml",
+			"from": "\"forge start --syncback\"",
+			"to": "\"node {root}/scripts/dev.ts\""
+		},
+		{
+			"file": "mise.toml",
+			"from": "Compile and build the whole game, code and world, to build/game.rbxl",
+			"to": "Compile and build the game's code to build/game.rbxl, the place the check and the tests run on"
+		},
+		{
+			"file": ".env.example",
+			"from": "# Open Cloud, for `mise run publish` from your machine; CI's publish workflow has its own, per\n# environment. A key with universe-places:write on the experience you publish to, its ID, and the\n# place's ID (in a multi-place game, each place's: lobby=123,game=456). Keep it apart from the test\n# key above.\nROBLOX_PUBLISH_API_KEY=\nROBLOX_PUBLISH_UNIVERSE_ID=\nROBLOX_PUBLISH_PLACE_ID=\n\n",
+			"to": ""
+		},
+		{
+			"file": "scripts/check.ts",
+			"from": "so it can't lean on one place's map.",
+			"to": "so it can't import one place's own code."
+		},
+		{
+			"file": ".env.example",
+			"from": "(test:engine, ui, publish and, with Asphalt, assets)",
+			"to": "(test:engine, ui and, with Asphalt, assets)"
+		},
+		{
+			"file": ".gitignore",
+			"from": "# The world's project files are written by hand and by syncback; keep them\n!/world/**/*.project.json\n\n# Generated from world/ by scripts/world-types.ts\n/src/world.d.ts\n\n",
+			"to": ""
+		},
+		{
+			"file": "eslint.config.ts",
+			"from": ", \"**/world.d.ts\"",
+			"to": ""
+		},
+		{
+			"file": "biome.json",
+			"from": ",\n\t\"overrides\": [\n\t\t{\n\t\t\t\"includes\": [\"**/world/**\"],\n\t\t\t\"assist\": {\n\t\t\t\t\"actions\": {\n\t\t\t\t\t\"source\": {\n\t\t\t\t\t\t\"useSortedKeys\": \"on\"\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t]",
+			"to": ""
+		},
+		{
+			"file": ".agents/hooks/guard.ts",
+			"from": "\t[\n\t\t/^(projects\\/[^/]+\\/)?src\\/world\\.d\\.ts$/,\n\t\t\"scripts/world-types.ts writes it from world/: change world/ and run `mise run check`\",\n\t],\n",
+			"to": ""
+		},
+		{
+			"file": ".agents/hooks/guard.ts",
+			"from": "scripts/game-project.ts writes it from default.project.json and world/: run `mise run check`",
+			"to": "scripts/game-project.ts writes it from default.project.json: run `mise run check`"
+		},
+		{
+			"file": ".agents/hooks/guard.ts",
+			"from": "project files, world types and builds",
+			"to": "project files and builds"
+		},
+		{
+			"file": ".agents/hooks/hooks.test.ts",
+			"from": "/game/src/world.d.ts",
+			"to": "/game/test.project.json"
+		},
+		{
+			"file": ".agents/hooks/hooks.test.ts",
+			"from": "\t\t\"src/world.d.ts\",\n\t\t\"projects/lobby/src/world.d.ts\",\n",
+			"to": ""
+		},
+		{
+			"file": ".agents/hooks/guard.ts",
+			"from": "/\\bmise\\s+run\\s+publish\\b|\\bnode\\b[^|;&]*scripts\\/publish\\.ts|\\brojo\\s+upload\\b/",
+			"to": "/\\brojo\\s+upload\\b/"
+		},
+		{
+			"file": ".agents/hooks/guard.ts",
+			"from": "Publishing replaces the game players join. Only a person publishes, with `mise run publish` or a tag (see `mise run doc publishing`): tell the user it's ready.",
+			"to": "Publishing replaces the game players join. Only a person publishes, from Studio: tell the user it's ready."
+		},
+		{
+			"file": ".agents/hooks/hooks.test.ts",
+			"from": "\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise run publish\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise x -- node scripts/publish.ts build/game.rbxl\" } },\n",
+			"to": "\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise x -- rojo upload --asset 1 default.project.json\" } },\n"
+		},
+		{
+			"file": ".agents/hooks/hooks.test.ts",
+			"from": "git diff scripts/publish.ts",
+			"to": "git diff default.project.json"
+		},
+		{
+			"file": "AGENTS.md",
+			"from": "(the check, tests, UI, the world, publishing, its keys)",
+			"to": "(the check, tests, UI, its keys)"
+		},
+		{
+			"file": "AGENTS.md",
+			"from": "a hook stops `mise run publish`, Studio's Open Cloud tools and Luau run in Studio that reaches the live game's data. Read `.agents/skills/release/SKILL.md`",
+			"to": "the place is published from Studio, and a hook stops `rojo upload`, Studio's Open Cloud tools and Luau run in Studio that reaches the live game's data. Read `.agents/skills/release/SKILL.md`"
+		},
+		{
+			"file": "AGENTS.md",
+			"from": "`game.project.json`, `test.project.json` and `src/world.d.ts` (`mise run check`, from the code and `world/`)",
+			"to": "`game.project.json` and `test.project.json` (`mise run check`, from the code)"
+		},
+		{
+			"file": ".agents/skills/write-tests/SKILL.md",
+			"from": "A test of the world can also do its checks",
+			"to": "A test can also do its checks"
+		},
+		{
+			"file": "README.md",
+			"from": "A Roblox game in roblox-ts, set up for coding agents: one command checks everything, tests and UI run without Studio, and the world lives in files. Works with Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI.",
+			"to": "A Roblox game in roblox-ts, set up for coding agents: one command checks everything, tests and UI run without Studio, and Studio owns the world. Works with Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI."
+		},
+		{
+			"file": "README.md",
+			"from": "- **The world is files, apart from the code.** Studio edits the map and [rbx-forge](https://github.com/christopher-buss/rbx-forge) syncs it back into `world/` as readable JSON, while Rojo serves only code. The map is typed: `Workspace.SpawnLocation` compiles only if it exists.",
+			"to": "- **Studio owns the world.** The map and lighting stay in your place in Studio, and Rojo serves it only the code (`mise run dev`). The repo holds no `world/` and nothing here publishes: you publish from Studio. Instances in the workspace aren't typed, so code reaches them with `WaitForChild` and checks what it finds."
+		},
+		{
+			"file": "README.md",
+			"from": "covers tests, the world and Studio.",
+			"to": "covers tests and Studio."
+		},
+		{
+			"file": "README.md",
+			"from": "| Sync      | [Rogen](https://github.com/LDGerrits/rogen) over [Rojo](https://rojo.space); [rbx-forge](https://github.com/christopher-buss/rbx-forge) runs Studio and syncback                                                                                                                     |",
+			"to": "| Sync      | [Rogen](https://github.com/LDGerrits/rogen) over [Rojo](https://rojo.space); [rbx-forge](https://github.com/christopher-buss/rbx-forge) compiles on save, and opens a code-only place for agents                                                                                                                     |"
+		},
+		{
+			"file": "README.md",
+			"from": "mise run dev       # compile on save, open Studio on the world, serve the code\nmise run sync      # write Studio's world edits into world/\n",
+			"to": "mise run dev       # compile on save, serve the code to Studio\n"
+		},
+		{
+			"file": "README.md",
+			"from": "`.github/workflows/publish.yml` publishes the game through Open Cloud from git, never from a place edited by hand: main to a dev place each time CI passes on it, a version tag (`v1.2.0`) to the live game once someone approves it, after an optional stable place for testers. Each target is a GitHub environment (`dev`, `stable`, `prod`) holding the secret `ROBLOX_PUBLISH_API_KEY`, a key with `universe-places:write` on that target's experience (`prod`'s also needs `universe-datastores.control:snapshot`, because the workflow snapshots the DataStores before it publishes), and its places are the variables `ROBLOX_<TARGET>_UNIVERSE_ID` and `ROBLOX_<TARGET>_PLACE_ID`; a target without them is skipped. Give `prod` required reviewers, or every tag goes live. `mise run publish` publishes the same way from your machine, with the keys in `.env`, but takes no snapshot.\n",
+			"to": "Nothing here publishes the game: Rojo syncs the code into your place in Studio, and you publish from Studio. Install Rojo's plugin in Studio once with `mise x -- rojo plugin install`; then, after `mise run dev`, open your place and press Connect in the plugin.\n"
+		},
+		{
+			"file": "README.md",
+			"from": "world/                 the map and lighting, edited in Studio and synced back\n",
+			"to": ""
+		},
+		{
+			"file": ".github/workflows/ci.yml",
+			"from": "on main, before\n    # it publishes to dev, and when run by hand.",
+			"to": "on main and\n    # when run by hand."
+		},
+		{
+			"file": ".agents/skills/drive-studio/SKILL.md",
+			"from": "`forge up --studio --syncback --json` starts the session, or joins the running one: Studio opens hidden on the world, and Rojo syncs the compiled code into it.",
+			"to": "`forge up --studio --json` starts the session, or joins the running one: Studio opens hidden on a place made of the code alone, with no map, and Rojo syncs the compiled code into it."
+		},
+		{
+			"file": ".agents/skills/drive-studio/SKILL.md",
+			"from": "- **To change the world** rather than look at it, follow the `edit-world` skill: saving and syncing back happen there, and only when the user asked for the change.",
+			"to": "- **The world** is in the user's place, not in this repo. To look at the map or change it, ask the user to open their place in Studio and connect the Rojo plugin (`mise run dev`), then drive that Studio with the MCP below. Change the world only when the user asked for it."
+		},
+		{
+			"file": ".agents/skills/drive-studio/SKILL.md",
+			"from": "Change the TypeScript and let forge sync it.",
+			"to": "Change the TypeScript and let Rojo sync it (`mise run dev` for the user's Studio)."
+		},
+		{
+			"file": ".agents/skills/drive-studio/SKILL.md",
+			"from": "1. `list_roblox_studios` first, and pick the Studio whose place forge opened. Confirm the target before you change anything in it.",
+			"to": "1. `list_roblox_studios` first, and pick the Studio you mean: the one forge opened (a place of the code alone), or the user's own place, when you were asked to look at the map. Confirm the target before you change anything in it."
+		},
+		{
+			"file": ".agents/skills/drive-studio/SKILL.md",
+			"from": "- **Saving** (`save_place`): saving and syncing back to `world/` happen in the `edit-world` skill, and only when the user asked for the change.",
+			"to": "- **Saving** (`save_place`): the place is the user's, so leave saving and publishing to them."
+		},
+		{
+			"file": ".agents/skills/drive-studio/SKILL.md",
+			"from": "- **Assets** (`insert_asset`, `generate_*`, `upload_image`): only as part of a world change the user asked for, through `edit-world`.",
+			"to": "- **Assets** (`insert_asset`, `generate_*`, `upload_image`): only as part of a world change the user asked for."
+		},
+		{
+			"file": "AGENTS.md",
+			"from": "and for the map its file in `world/`.",
+			"to": "and for the map, the place in Studio (`.agents/skills/drive-studio/SKILL.md`)."
+		}
+	]
+}

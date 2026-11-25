@@ -16,6 +16,7 @@ shared-packages = "game.ReplicatedStorage.Packages"
 React = "jsdotlua/react@=17.2.1"
 ReactRipple = "littensy/react-ripple@=3.0.1"
 ReactRoblox = "jsdotlua/react-roblox@=17.2.1"
+Remo = "littensy/remo@=1.5.3"
 t = "osyrisrblx/t@=3.1.1"
 
 [dev-dependencies]

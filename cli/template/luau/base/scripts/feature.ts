@@ -1,5 +1,5 @@
 // `mise run feature <name>`: starts a feature the way AGENTS.md's "Adding a feature" describes, so
-// its folders, its rate-limited event and its entry-script entries are right from the first line.
+// its folders, its throttled remote and its entry-script entries are right from the first line.
 //
 //   node scripts/feature.ts <name> [<place>]
 //
@@ -19,27 +19,37 @@ const pascal = (name: string) => name.replace(/^./, (letter) => letter.toUpperCa
 export function featureFiles(name: string): Record<string, string> {
 	const Name = pascal(name);
 	return {
-		[`shared/${Name}Network.luau`]: `-- The ${name} feature's remotes. Each declares the arguments it carries: the type for the type checker,
--- and for what clients send, a \`t\` check the server runs before any handler sees the call.
+		[`shared/${Name}Network.luau`]: `-- The ${name} feature's remotes, made with Remo. The type gives both sides each remote's arguments;
+-- Remo runs the \`t\` validators on what arrives before any handler sees it, so every argument a
+-- client sends gets one, and throttleMiddleware drops a player's floods.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Remote = require(ReplicatedStorage.Shared.network.Remote)
+local Remo = require(ReplicatedStorage.Packages.Remo)
 local t = require(ReplicatedStorage.Packages.t)
 
-return {
-	-- Client to server: the player asks for their value. Carries nothing.
-	request = Remote.clientEvent("request", t.tuple()) :: Remote.ClientEvent<()>,
-	-- Server to client: the player's value.
-	changed = Remote.serverEvent("changed") :: Remote.ServerEvent<number>,
+type Remotes = {
+	${name}: {
+		-- Client to server: the player asks for their value. Carries nothing.
+		request: Remo.ClientToServer<()>,
+		-- Server to client: the player's value.
+		changed: Remo.ServerToClient<number>,
+	},
 }
+
+-- The namespace keeps these names apart from other features': "${name}.request", "${name}.changed".
+local remotes: Remotes = Remo.createRemotes({
+	${name} = Remo.namespace({
+		request = Remo.remote().middleware(Remo.throttleMiddleware(0.1)),
+		changed = Remo.remote(t.number),
+	}),
+})
+
+return remotes.${name}
 `,
 		[`server/${Name}Service.luau`]: `-- Owns every player's ${name} state. Clients ask; this service decides.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
 
 local ${Name}Network = require(ReplicatedStorage.Shared.features.${name}.${Name}Network)
-local RateLimit = require(ServerScriptService.network.RateLimit)
-local Serve = require(ServerScriptService.network.Serve)
 
 local ${Name}Service = {}
 
@@ -51,8 +61,8 @@ end
 
 -- Main.server.luau calls this once, after every service has loaded.
 function ${Name}Service.start()
-	-- Every client-to-server event needs a rate limit, or the check fails.
-	Serve.event(${Name}Network.request, { limit = RateLimit.perSecond(10) }, function(player)
+	-- The remote's throttle drops floods; the service still checks each request.
+	${Name}Network.request:connect(function(player)
 		${Name}Network.changed:fire(player, ${Name}Service.getValue(player.UserId))
 	end)
 end
@@ -108,13 +118,24 @@ return ${Name}Controller
 	};
 }
 
-/** Adds `line` after the last line of `source` that matches `list`, a require in the entry script's list. */
-export function addEntry(source: string, line: string, list: RegExp): string {
+/**
+ * Adds `line` after the last line of `source` that matches `list`, a require in the entry script's
+ * list. While the list is empty (`= {}`, on the line matching `declaration`), it opens the list,
+ * and first adds `prelude`, the local the line needs, above it.
+ */
+export function addEntry(source: string, line: string, list: RegExp, declaration: RegExp, prelude: string): string {
 	if (source.includes(line.trim())) return source;
 	const lines = source.split("\n");
 	const last = lines.findLastIndex((text) => list.test(text));
-	if (last === -1) throw new Error(`No list of requires like ${list} to add ${line.trim()} to.`);
-	lines.splice(last + 1, 0, line);
+	if (last !== -1) {
+		lines.splice(last + 1, 0, line);
+		return lines.join("\n");
+	}
+	const empty = lines.findIndex((text) => declaration.test(text) && text.endsWith("= {}"));
+	if (empty === -1) throw new Error(`No list of requires like ${list} to add ${line.trim()} to.`);
+	const open = (lines[empty] ?? "").slice(0, -1);
+	const needsPrelude = !source.includes(prelude);
+	lines.splice(empty, 1, ...(needsPrelude ? [prelude, ""] : []), open, line, "}");
 	return lines.join("\n");
 }
 
@@ -162,7 +183,9 @@ export function createFeature(cwd: string, name: string, place?: string): string
 			addEntry(
 				fs.readFileSync(path.join(cwd, server), "utf8"),
 				`\trequire(ServerScriptService.features.${name}.${Name}Service),`,
-				/^\trequire\(ServerScriptService\.features\..*\),$/,
+				/^\trequire\(ServerScriptService\.(?:features|game|platform)\..*\),$/,
+				/^local services\b/,
+				'local ServerScriptService = game:GetService("ServerScriptService")',
 			),
 		);
 		written.push(server);
@@ -172,7 +195,9 @@ export function createFeature(cwd: string, name: string, place?: string): string
 			addEntry(
 				fs.readFileSync(path.join(cwd, client), "utf8"),
 				`\trequire(features.${name}.${Name}Controller),`,
-				/^\trequire\(features\..*\),$/,
+				/^\trequire\((?:features|game|platform)\..*\),$/,
+				/^local controllers\b/,
+				"-- Client code is cloned into each player at runtime, so it reaches other client code from `script`.\nlocal features = script.Parent.Parent.features",
 			),
 		);
 		written.push(client);

@@ -8,8 +8,8 @@ _.path = ["{{config_root}}/node_modules/.bin"]
 
 [tasks.check]
 description = "The check after each change to the CLI or the docs site: format, lint, build, type-check and test"
-run = ["pnpm install --frozen-lockfile --silent", "biome check --write .", "turbo run build typecheck test"]
+run = "node scripts/check.ts"
 
 [tasks.ci]
 description = "check, without writing fixes: fails on unformatted code"
-run = ["pnpm install --frozen-lockfile --silent", "biome ci .", "turbo run build typecheck test"]
+run = "node scripts/check.ts --ci"

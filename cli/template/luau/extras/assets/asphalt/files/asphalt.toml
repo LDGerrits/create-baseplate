@@ -1,5 +1,5 @@
 # Asphalt uploads the files in assets/ to Roblox (`mise run assets`) and writes their IDs as a Luau
-# module, src/shared/Assets.luau (the input's name, in output_path). Commit that module and
+# module, src/game/assets/shared/Assets.luau (the input's name, in output_path). Commit that module and
 # asphalt.lock.toml, which records what is uploaded.
 
 # Who owns the uploads: a Roblox user (type = "user") or group (type = "group"), by its ID. The key
@@ -16,7 +16,7 @@ strip_extensions = true
 
 [inputs.Assets]
 path = "assets/**/*"
-output_path = "src/shared"
+output_path = "src/game/assets/shared"
 
 # Assets already on Roblox, by their path under assets/, to use in code like the uploaded ones:
 # [inputs.Assets.web]

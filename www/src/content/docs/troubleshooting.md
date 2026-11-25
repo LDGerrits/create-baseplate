@@ -8,6 +8,7 @@ description: What goes wrong when setting up or running a game, and how to fix i
 - **`npm create` ignores the flags.** npm reads flags before a `--` as its own. Put them after it: `npm create baseplate@latest my-game -- --yes`. With pnpm, no `--` is needed.
 - **"The game is inside the git repo at …".** A folder above the game is a git repository, often a home folder someone ran `git init` in. Create the game elsewhere, or run `git init` in the game's folder yourself.
 - **"The first commit failed: Please tell me who you are".** git has no name and email yet: `git config --global user.name "…"` and `git config --global user.email "…"`, then commit.
+- **The CLI exits with 1 and says the first commit failed.** The game is created but uncommitted: the commit hook ran the game's check and it failed. Read what the CLI printed, fix it, and run `git add --all && git commit --message "Initial commit from create-baseplate"` in the game's folder (`mise run check` shows the failure again).
 - **"mise isn't installed".** Install it from [mise.jdx.dev](https://mise.jdx.dev/getting-started.html), then run the next steps the CLI printed.
 
 ## Tools and packages
@@ -16,6 +17,8 @@ description: What goes wrong when setting up or running a game, and how to fix i
 - **"… is not in the lockfile".** A tool's pin in `mise.toml` changed without `mise.lock`. Run `mise lock`, and commit `mise.lock`.
 - **"Regenerate the lockfile" from pnpm.** `package.json` changed without `pnpm-lock.yaml`. Run `mise exec -- pnpm install`, and commit the lockfile.
 - **pnpm refuses a package version.** It installs only versions published at least two weeks ago. Pick an older version.
+- **A hook skipped the check and you want it to run.** The stop and commit hooks skip the check when it already passed on exactly the same files (the record is `check-passed` in the worktree's git folder, never committed). `mise run check` always runs; change a file, or delete that record, to make the hooks run it too.
+- **An `eslint-server.ts` process is running.** In a TypeScript game, the edit hook starts it to keep ESLint loaded between edits; it stops itself after ten idle minutes. It is safe to kill, and `BASEPLATE_ESLINT_SERVER=0` keeps the hook from using it.
 
 ## Windows and WSL
 

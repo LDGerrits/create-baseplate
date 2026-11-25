@@ -3,11 +3,14 @@ name: Publish
 # Builds the game from a commit and publishes it to Roblox through Open Cloud (`mise run publish`),
 # so every published version comes from a commit and can be published again from it:
 # - dev: main, each time CI passes on it.
-# - stable: a version tag (`git tag v1.2.0 && git push origin v1.2.0`), for playtests.
-# - prod: the same tag, after stable, once someone approves it.
+# - stable (optional): a version tag (`git tag v1.2.0 && git push origin v1.2.0`), for testers.
+# - prod: the same tag, after stable if it is set up, once someone approves it.
+# A tag publishes only a commit whose CI passed on main (the verify job waits for a run that is
+# still going), so tag a commit of main, after it has merged.
 #
 # Each target is a GitHub environment (Settings > Environments) holding the secret
-# ROBLOX_PUBLISH_API_KEY, a key with universe-places:write on that target's experience only. Its
+# ROBLOX_PUBLISH_API_KEY, a key with universe-places:write on that target's experience only (prod's
+# also needs universe-datastores.control:snapshot: it snapshots the DataStores before publishing). Its
 # places are repository variables (Settings > Secrets and variables > Actions):
 # ROBLOX_<TARGET>_UNIVERSE_ID and ROBLOX_<TARGET>_PLACE_ID, such as ROBLOX_DEV_PLACE_ID. In a
 # multi-place game the place ID names each place: lobby=123,game=456. A target without its place
@@ -26,6 +29,38 @@ permissions:
   contents: read
 
 jobs:
+  verify:
+    name: CI passed on the tagged commit
+    if: >-
+      github.event_name == 'push' &&
+      (vars.ROBLOX_STABLE_PLACE_ID != '' || vars.ROBLOX_PROD_PLACE_ID != '')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+    steps:
+      - run: |
+          run=$(gh run list --repo "$REPO" --workflow ci.yml --branch main --event push --commit "$SHA" \
+            --limit 1 --json databaseId,status,conclusion --jq '.[0] // empty')
+          if [ -z "$run" ]; then
+            echo "::error::No CI run on main for $SHA. Tag a commit that has merged to main, and wait for its CI."
+            exit 1
+          fi
+          if [ "$(jq -r .status <<< "$run")" != completed ]; then
+            gh run watch "$(jq -r .databaseId <<< "$run")" --repo "$REPO" > /dev/null || true
+            run=$(gh run list --repo "$REPO" --workflow ci.yml --branch main --event push --commit "$SHA" \
+              --limit 1 --json databaseId,status,conclusion --jq '.[0]')
+          fi
+          conclusion=$(jq -r .conclusion <<< "$run")
+          if [ "$conclusion" != success ]; then
+            echo "::error::CI on main for $SHA ended as '$conclusion'. Fix it, or re-run it, before publishing this tag."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+
   dev:
     name: Publish main to dev
     if: >-
@@ -58,6 +93,7 @@ jobs:
 
   stable:
     name: Publish the tag to stable
+    needs: verify
     if: github.event_name == 'push' && vars.ROBLOX_STABLE_PLACE_ID != ''
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -83,8 +119,11 @@ jobs:
 
   prod:
     name: Publish the tag to prod
-    needs: stable
-    if: vars.ROBLOX_PROD_PLACE_ID != ''
+    needs: [verify, stable]
+    # After stable when it's set up; stable is optional, so a skipped stable doesn't hold prod back.
+    if: >-
+      !cancelled() && github.event_name == 'push' && needs.verify.result == 'success' &&
+      needs.stable.result != 'failure' && vars.ROBLOX_PROD_PLACE_ID != ''
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Waits here for the environment's required reviewers.
@@ -102,6 +141,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mise run install
+      # Before players get the new version, so their data as it stands now stays restorable for 30
+      # days if the release corrupts it (scripts/snapshot.ts).
+      - run: mise exec -- node scripts/snapshot.ts
+        env:
+          ROBLOX_PUBLISH_API_KEY: ${{ secrets.ROBLOX_PUBLISH_API_KEY }}
+          ROBLOX_PUBLISH_UNIVERSE_ID: ${{ vars.ROBLOX_PROD_UNIVERSE_ID }}
       - run: mise run publish
         env:
           ROBLOX_PUBLISH_API_KEY: ${{ secrets.ROBLOX_PUBLISH_API_KEY }}

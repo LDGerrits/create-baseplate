@@ -1,5 +1,7 @@
 // The pre-commit hook (.githooks/pre-commit): runs lint-staged.config.ts on exactly what is being
 // committed. `--hide-all` sets unstaged changes and untracked files aside while the check runs.
+// It skips the check when only Markdown is staged, or when the check already passed on exactly the
+// files being committed (the index, not what else is on disk); see .agents/hooks/fingerprint.ts.
 //
 // Git's stash, which lint-staged uses for that, deletes a file whose deletion is staged but that
 // is still on disk, such as `.env` after `git rm --cached .env`, and lint-staged drops the stash
@@ -8,6 +10,13 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { commitSkip, stagedFiles } from "../.agents/hooks/fingerprint.ts";
+
+const skip = commitSkip(process.cwd(), stagedFiles(process.cwd()));
+if (skip !== undefined) {
+	console.log(`pre-commit: check skipped: ${skip}.`);
+	process.exit(0);
+}
 
 const staged = spawnSync("git", ["diff", "--cached", "--name-only", "--relative", "--diff-filter=D", "-z"], {
 	encoding: "utf8",

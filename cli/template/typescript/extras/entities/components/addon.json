@@ -6,5 +6,11 @@
 		"src/app/server/main.server.ts": [
 			"../../features/spinner/server/spinner-component"
 		]
+	},
+	"byManaged": {
+		"partial": {
+			"files": "files-partial",
+			"agents": "AGENTS.partial.md"
+		}
 	}
 }

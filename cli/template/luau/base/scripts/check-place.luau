@@ -2,7 +2,8 @@
 -- Opens a built place and checks what the type checker can't: that no code a client can see
 -- reaches for a server-only service. luau-lsp resolves every require through sourcemap.json, but
 -- `require(ServerScriptService.X)` type-checks in a client module too, and only fails in game,
--- where ServerScriptService and ServerStorage are empty on clients. Packages are left out.
+-- where ServerScriptService and ServerStorage are empty on clients. Packages are left out. It also
+-- warns of instances Open Cloud's place publishing doesn't update.
 --
 -- Usage: lune run scripts/check-place <place.rbxl>
 
@@ -64,6 +65,20 @@ for _, serviceName in CLIENT_VISIBLE do
 					`{descendant:GetFullName()} reaches {serverOnly}, which is empty on clients. Move the code it needs into a shared/ folder, or this file into a server/ one.`
 				)
 			end
+		end
+	end
+end
+
+-- Open Cloud's place publishing doesn't update these classes, so after changing one, publish from
+-- Studio. Unions are PartOperations; WrapLayer, WrapTarget and WrapDeformer are BaseWraps.
+local UNPUBLISHABLE = { "PartOperation", "BaseWrap", "SurfaceAppearance", "EditableImage", "EditableMesh" }
+for _, descendant in game:GetDescendants() do
+	for _, class in UNPUBLISHABLE do
+		if descendant:IsA(class) then
+			print(
+				`! {descendant:GetFullName()} is a {descendant.ClassName}: Open Cloud's place publishing doesn't update these, so after changing it, publish from Studio (create.roblox.com/docs/cloud/guides/usage-place-publishing).`
+			)
+			break
 		end
 	end
 end

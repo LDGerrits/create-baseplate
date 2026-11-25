@@ -21,11 +21,12 @@ With npm, the flags go after `--`: npm reads flags before it as its own, and the
 | `--language <language>` | `typescript` (default): roblox-ts with Flamework; or `luau`: Luau with Wally, StyLua, Selene and luau-lsp. Asked first; each language has its own questions. |
 | `--ui <library>` | UI: `react` (default) or `vide`. |
 | `--places <layout>` | `single` (default), or `multi`: a lobby and a game sharing code, each place a folder in `projects/`. |
-| `--state <library>` | Client state: `charm`, `reflex` (TypeScript only) or `none` (default). |
+| `--managed <mode>` | `full` (default): Rojo manages the whole place, code and world as files, built and published from git; or `partial`: Rojo manages only the code, and Studio keeps the place and its world. |
+| `--state <library>` | Client state: `reflex` (TypeScript only; its default), `charm` (Luau's default, and the default with Vide, which Reflex doesn't support) or `none`. |
 | `--data <library>` | Player data: `profilestore`, `lapis` or `none` (default). |
 | `--entities <library>` | Entities: `components` (TypeScript only), `jecs` or `none` (default). |
 | `--assets <tool>` | Assets: `asphalt`, to upload images and sounds and type their IDs, or `none` (default). |
-| `--release <tool>` | Release builds: `darklua`, to minify and optimize the code you publish, or `none` (default). |
+| `--release <tool>` | Release builds: `darklua`, to minify and optimize the code `mise run publish` uploads (not with `--managed partial`), or `none` (default). |
 | `-V, --version` | Print the CLI's version. |
 
 Without a terminal, as when an agent or CI runs it, it asks nothing and takes the defaults. The folder may be a fresh clone: `.git`, a license and the OS's own files stay, and a README, `.gitignore` or `.gitattributes` from GitHub is replaced by the template's, with a warning; the first commit goes on top of the clone's. See [add-ons](/add-ons/) for what each library choice adds.
@@ -39,18 +40,21 @@ Without a terminal, as when an agent or CI runs it, it asks nothing and takes th
 	"ok": true,
 	"name": "my-game",
 	"dir": "/path/to/my-game",
+	"language": "typescript",
 	"git": true,
 	"committed": true,
 	"installed": true,
-	"addOns": { "ui": "react", "places": "single", "state": "none", "data": "none", "entities": "none", "assets": "none", "release": "none" },
+	"addOns": { "ui": "react", "places": "single", "managed": "full", "state": "reflex", "data": "none", "entities": "none", "assets": "none", "release": "none" },
 	"warnings": [],
 	"nextSteps": ["cd my-game", "mise run check", "mise run dev"]
 }
 ```
 
-`git` says whether the game is a git repo of its own, and `committed` whether the first commit is made. With `--no-install` and add-ons that change the packages or bring a tool (Asphalt, Darklua), the commit waits for the next steps, which bring them into `pnpm-lock.yaml` and `mise.lock`: `nextSteps` holds the commit. `warnings` says why git or a step was skipped.
+`git` says whether the game is a git repo of its own, and `committed` whether the first commit is made. With `--no-install` and add-ons that change the packages or bring a tool (the default state add-on alone adds packages; Asphalt and Darklua bring tools), the commit waits for the next steps, which bring them into `pnpm-lock.yaml` and `mise.lock`: `nextSteps` holds the commit. `warnings` says why git or a step was skipped.
 
-On failure it prints `{ "ok": false, "error": "..." }` and exits with 1, or with 2 when npm kept the flags for itself (put them after `--`).
+If the first commit fails (its hook runs the game's check), the game stays in its folder, uncommitted, and the CLI exits with 1: the JSON has `"ok": false`, `"created": true`, an `error` with what the hook printed, and `nextSteps` ending in the commit command to run once the check passes.
+
+On any other failure it prints `{ "ok": false, "error": "..." }` and exits with 1, or with 2 when npm kept the flags for itself (put them after `--`).
 
 ## Updating a game's agent files
 
@@ -59,7 +63,7 @@ pnpm dlx create-baseplate@<version> sync          # in the game's folder
 pnpm dlx create-baseplate@<version> sync --check  # change nothing; exit 1 if anything would change
 ```
 
-`sync` brings a game's agent files (`AGENTS.md`, skills, hooks and the agent tools' settings) up to that version's template, for the add-ons in `package.json`'s `baseplate.addOns`, and keeps the game's own edits. It exits with 1 when an edit clashes with the template's change, leaving the template's version beside the file as `<file>.baseplate-new`. Games normally don't need it run by hand: see [keeping the agent files current](/agents/#keeping-the-agent-files-current).
+`sync` brings a game's agent files (`AGENTS.md`, skills, hooks and the agent tools' settings) up to that version's template, for the add-ons in `package.json`'s `baseplate.addOns`, and keeps the game's own edits. It exits with 1 when an edit clashes with the template's change, leaving the template's version beside the file as `<file>.baseplate-new`. Games normally don't need it run by hand: Renovate moves `baseplate.version` and the game's workflow runs the sync. To move by hand, change that version in `package.json` and run `mise run install`, which runs `sync` (an agent does this too: its guard blocks `pnpm dlx`). See [keeping the agent files current](/agents/#keeping-the-agent-files-current).
 
 ## Reading the docs offline
 

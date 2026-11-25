@@ -1,9 +1,16 @@
 name: CI
 
+# A pull request creates the games that cover every two add-ons together, and the engine job (real Roblox)
+# runs on it only for Renovate's updates. The games that make each add-on alone and the engine are what
+# a push to main, the nightly run and a run by hand add; the Windows games run on every event
+# (.github/scripts/generate-matrix.ts).
 on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,62 +23,15 @@ env:
   GIT_COMMITTER_EMAIL: ci@example.com
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # The nightly run is on main's ref too; it must not cancel, or wait for, a push's run.
+  group: ci-${{ github.event_name == 'schedule' && 'nightly' || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  template:
-    name: Template (cli/template/${{ matrix.language }}/base)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [typescript, luau]
-    defaults:
-      run:
-        working-directory: cli/template/${{ matrix.language }}/base
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      # rur renders the stories in the check; GitHub's Linux machines have no GPU, so give it Mesa's
-      # software Vulkan driver.
-      - run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends mesa-vulkan-drivers
-      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
-        with:
-          version: 2026.11.8
-          working_directory: cli/template/${{ matrix.language }}/base
-        env:
-          # mise downloads Rojo, the compiler or Luau tools, ree and the rest from GitHub releases.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: mise run install
-      - run: mise run ci
-
   cli:
     name: CLI
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
-        with:
-          version: 2026.11.8
-      # mise's own version is pinned by hand in several files; they must agree, with the right SHA-256s.
-      - run: node .github/scripts/check-mise-pins.ts
-      - run: mise run ci
-
-  changeset:
-    # A change to what create-baseplate ships (cli/src, cli/template) needs a changeset, so the next
-    # release says what changed for someone creating a game. .changeset/config.json's
-    # changedFilePatterns limits it to those folders. Renovate's updates and the release pull request
-    # carry none, by design.
-    name: Changeset
-    if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'renovate[bot]' && !startsWith(github.head_ref, 'renovate/') && !startsWith(github.head_ref, 'changeset-release/')
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -82,8 +42,15 @@ jobs:
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
           version: 2026.11.8
-      - run: pnpm install --frozen-lockfile
+      # mise's own version is pinned by hand in several files; they must agree, with the right SHA-256s.
+      - run: node .github/scripts/check-mise-pins.ts
+      - run: mise run ci
+      # A change to what create-baseplate ships (cli/src, cli/template) needs a changeset, so the next
+      # release says what changed for someone creating a game. .changeset/config.json's
+      # changedFilePatterns limits it to those folders. Renovate's updates and the release pull request
+      # carry none, by design. It runs even when the check failed, so one run shows both.
       - name: Check for a changeset
+        if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.user.login != 'renovate[bot]' && !startsWith(github.head_ref, 'renovate/') && !startsWith(github.head_ref, 'changeset-release/') }}
         run: |
           pnpm changeset status --since "origin/$BASE_REF" || {
             echo "::error::This pull request changes cli/src or cli/template without a changeset. Run \`pnpm changeset\`, pick the bump and say what changed for someone creating a game."
@@ -92,71 +59,95 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
 
-  matrix:
-    # The sets of add-ons the jobs below create games with, generated from the CLI's questions and
-    # the add-ons' conflicts (.github/scripts/generate-matrix.ts, which says what each set covers).
-    name: Add-on sets
+  plan:
+    # What the jobs below create, generated from the CLI's questions and the add-ons' conflicts, and
+    # for this event (.github/scripts/generate-matrix.ts, which says what each set covers).
+    name: Plan
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
       create: ${{ steps.generate.outputs.create }}
       windows: ${{ steps.generate.outputs.windows }}
       engine: ${{ steps.generate.outputs.engine }}
+      run-create: ${{ steps.generate.outputs.run-create }}
+      run-windows: ${{ steps.generate.outputs.run-windows }}
+      run-engine: ${{ steps.generate.outputs.run-engine }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # A pull request's merge commit and both its parents, to list what the pull request changes.
+          fetch-depth: 2
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
           version: 2026.11.8
       - id: generate
-        run: node .github/scripts/generate-matrix.ts "$GITHUB_OUTPUT"
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            # A pull request of only the docs site and Markdown files creates no games (the generator decides).
+            git diff --no-renames --name-only HEAD^1 HEAD > "$RUNNER_TEMP/changed-files.txt" || : > "$RUNNER_TEMP/changed-files.txt"
+            set -- --head-ref "$HEAD_REF" --changed-files "$RUNNER_TEMP/changed-files.txt"
+          fi
+          node .github/scripts/generate-matrix.ts --event "$EVENT" "$@" "$GITHUB_OUTPUT"
+        env:
+          EVENT: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
 
   create:
-    # What a user gets: create a game with the CLI, then run that game's own checks: with no
-    # add-ons, each add-on alone, every question answered together, and enough more that every two
-    # choices meet in some game.
-    name: Created game (${{ matrix.addOns }})
-    needs: matrix
+    # What a user gets: create games with the CLI and run each game's own check, a batch of games to a
+    # job so the tools are installed once. The first commit's hook runs the check, so that is the game's
+    # check, and a game that fails is named in the log, the job's summary and an annotation, without
+    # hiding the games after it. The first batch of each language also checks the template itself.
+    name: Games (${{ matrix.name }})
+    needs: plan
+    if: needs.plan.outputs.run-create == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.matrix.outputs.create) }}
+      matrix: ${{ fromJSON(needs.plan.outputs.create) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # rur renders the stories in the check; GitHub's Linux machines have no GPU, so give it Mesa's
-      # software Vulkan driver.
-      - run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends mesa-vulkan-drivers
+      # Mesa's software Vulkan driver, installed while the rest sets up; `wait` is before the first check.
+      # Its .deb files are cached by runner image version, so most runs need no download.
+      - id: mesa
+        run: sh .github/scripts/mesa.sh key >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/mesa-debs
+          key: ${{ steps.mesa.outputs.key }}
+      - run: sh .github/scripts/mesa.sh start
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
           version: 2026.11.8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # The package as npm would publish it: packing builds it (prepack), from this clean checkout.
+      # The package as npm would publish it: packing builds it (prepack), from this clean checkout, and
+      # its dependencies come from npm, as for someone running `pnpm create baseplate`.
       - run: pnpm install --frozen-lockfile && pnpm --filter create-baseplate pack --pack-destination "$RUNNER_TEMP"
-      - run: npm exec --yes --package="$(ls "$RUNNER_TEMP"/create-baseplate-*.tgz)" -- create-baseplate "$RUNNER_TEMP/coin-rush" --json ${{ matrix.addOns }}
+      - run: npm install --no-audit --no-fund --prefix "$RUNNER_TEMP/cli" "$RUNNER_TEMP"/create-baseplate-*.tgz
+      - run: sh .github/scripts/mesa.sh wait
+      - run: node .github/scripts/run-games.ts check
         env:
+          GAMES: ${{ toJSON(matrix) }}
+          CLI: ${{ runner.temp }}/cli/node_modules/create-baseplate/dist/index.js
+          GAMES_DIR: ${{ runner.temp }}/games
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: mise run ci
-        working-directory: ${{ runner.temp }}/coin-rush
-      # The game's own CI runs this too, with --release.
-      - if: contains(matrix.addOns, '--release')
-        run: mise run release
-        working-directory: ${{ runner.temp }}/coin-rush
 
   windows:
     # A created game on native Windows, where mise runs the tasks with cmd: the defaults, and every
-    # option together. The tasks run their steps without a shell (scripts/each-place.ts).
-    name: Created game on Windows (${{ matrix.addOns }})
-    needs: matrix
+    # option together, a batch for each language. The tasks run their steps without a shell
+    # (scripts/each-place.ts).
+    name: Games on Windows (${{ matrix.name }})
+    needs: plan
+    if: needs.plan.outputs.run-windows == 'true'
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.matrix.outputs.windows) }}
+      matrix: ${{ fromJSON(needs.plan.outputs.windows) }}
     defaults:
       run:
         shell: bash
@@ -170,38 +161,35 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: pnpm install --frozen-lockfile && pnpm --filter create-baseplate pack --pack-destination "$RUNNER_TEMP"
-      - run: npm exec --yes --package="$(ls "$RUNNER_TEMP"/create-baseplate-*.tgz)" -- create-baseplate "$RUNNER_TEMP/coin-rush" --json ${{ matrix.addOns }}
+      - run: npm install --no-audit --no-fund --prefix "$RUNNER_TEMP/cli" "$RUNNER_TEMP"/create-baseplate-*.tgz
+      - run: node .github/scripts/run-games.ts check
         env:
+          GAMES: ${{ toJSON(matrix) }}
+          CLI: ${{ runner.temp }}/cli/node_modules/create-baseplate/dist/index.js
+          GAMES_DIR: ${{ runner.temp }}/games
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: mise run ci
-        working-directory: ${{ runner.temp }}/coin-rush
-      - if: contains(matrix.addOns, '--release')
-        run: mise run release
-        working-directory: ${{ runner.temp }}/coin-rush
 
   engine:
     # Created games' specs, *.engine.spec included, in a real Roblox server through Open Cloud:
-    # what ree can't vouch for, such as an update that breaks only in the real engine. Set the
-    # secret ROBLOX_OPEN_CLOUD_API_KEY and the variables ROBLOX_UNIVERSE_ID and ROBLOX_PLACE_ID
+    # what ree can't vouch for, such as an update that breaks only in the real engine. One job, set up
+    # once, that runs each game's specs in turn: the games share the test place, and a concurrency group
+    # of its own keeps two runs from using it at once. (GitHub keeps one waiting job per group: a third
+    # run to ask replaces the second, which is cancelled; run it again.) A run takes the Open Cloud quota
+    # and the test place's real DataStores, so it's not on pull requests, except Renovate's. A set that
+    # fails on Roblox's side (an HTTP 5xx, a task that never finishes) runs once more.
+    # Set the secret ROBLOX_OPEN_CLOUD_API_KEY and the variables ROBLOX_UNIVERSE_ID and ROBLOX_PLACE_ID
     # (in an experience made only for tests: each run uploads to the place, and the key can write
     # every place of its experience); without the variables the job is skipped.
-    name: Created game in Roblox (${{ matrix.addOns }})
-    needs: [matrix, create]
+    name: Games in Roblox
+    needs: plan
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      # The runs share the test place, so one at a time within a workflow run; the concurrency
-      # group below keeps the same option set of two runs from overlapping.
-      max-parallel: 1
-      # No add-ons, and as few games as it takes for each choice to run once.
-      matrix: ${{ fromJSON(needs.matrix.outputs.engine) }}
+    timeout-minutes: 60
     concurrency:
-      group: roblox-open-cloud-${{ strategy.job-index }}
+      group: roblox-open-cloud
       cancel-in-progress: false
     # Without the variables, GitHub shows the job as skipped, not passed. With them but no key, the
     # specs fail. (A job's `if` can't read secrets; only the last step gets the key.)
-    if: vars.ROBLOX_UNIVERSE_ID != '' && vars.ROBLOX_PLACE_ID != ''
+    if: needs.plan.outputs.run-engine == 'true' && vars.ROBLOX_UNIVERSE_ID != '' && vars.ROBLOX_PLACE_ID != ''
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -212,13 +200,41 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: pnpm install --frozen-lockfile && pnpm --filter create-baseplate build
-      - run: node cli/dist/index.js "$RUNNER_TEMP/coin-rush" --json ${{ matrix.addOns }}
+      - run: node .github/scripts/run-games.ts prepare
         env:
+          GAMES: ${{ needs.plan.outputs.engine }}
+          CLI: cli/dist/index.js
+          GAMES_DIR: ${{ runner.temp }}/games
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: mise run test:engine -- --backend open-cloud
-        working-directory: ${{ runner.temp }}/coin-rush
+      - run: node .github/scripts/run-games.ts engine
         env:
+          GAMES: ${{ needs.plan.outputs.engine }}
+          GAMES_DIR: ${{ runner.temp }}/games
           # The key only here: the steps before run installs and tools, which never see it.
           ROBLOX_OPEN_CLOUD_API_KEY: ${{ secrets.ROBLOX_OPEN_CLOUD_API_KEY }}
           ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
           ROBLOX_PLACE_ID: ${{ vars.ROBLOX_PLACE_ID }}
+
+  passed:
+    # The one check a branch ruleset requires on main, and what the release waits for (its own job,
+    # not the run's conclusion). The jobs above have names that change with the add-on sets, so a
+    # ruleset can't name them. A skipped job (the games on a pull request of only docs, the engine job
+    # off pull requests or without its variables) is fine; a failed or cancelled one is not. The engine
+    # job counts only on pull requests (.github/scripts/ci-passed.jq): elsewhere it shows red on its own.
+    name: CI passed
+    if: always()
+    needs: [cli, plan, create, windows, engine]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Fail when a job failed or was cancelled
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$NEEDS" | jq -e --arg event "$EVENT" -f .github/scripts/ci-passed.jq > /dev/null
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          EVENT: ${{ github.event_name }}

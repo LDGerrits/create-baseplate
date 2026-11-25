@@ -72,42 +72,12 @@ depends = ["generate"]
 run = 'node scripts/each-place.ts "node {root}/scripts/analyze.ts"'
 
 [tasks.check]
-description = "The one command to run after every change: format, type-check, lint, build, verify each place and run the tests"
-depends = ["generate"]
-run = [
-	"stylua .",
-	"biome check --write --no-errors-on-unmatched .",
-	# Tests named so they never run, services nothing starts, and remotes taken without a rate limit.
-	"node scripts/check-sources.ts",
-	# The agent files at the create-baseplate version package.json pins, and no clash left unmerged.
-	"node scripts/agent-files.ts --check",
-	"tsc -p tsconfig.node.json",
-	# The agent hooks' and scripts' own tests.
-	'node --test --test-reporter=dot ".agents/hooks/*.test.ts" "scripts/*.test.ts"',
-	"rogen check",
-	'node scripts/each-place.ts "node {root}/scripts/analyze.ts"',
-	"selene src tests",
-	'node scripts/each-place.ts "mkdir build" "rojo build game.project.json --output build/game.rbxl" "lune run {root}/scripts/check-place build/game.rbxl" "node {root}/scripts/test.ts" "node {root}/scripts/ui.ts --check"',
-]
+description = "The one command to run after every change: format, type-check, lint, build, verify each place and run the tests. Runs independent steps at once and prints only a failed step's output"
+run = "node scripts/check.ts"
 
 [tasks.ci]
-description = "check, without writing fixes: fails on unformatted code"
-depends = ["generate"]
-run = [
-	"stylua --check .",
-	"biome ci .",
-	# Tests named so they never run, services nothing starts, and remotes taken without a rate limit.
-	"node scripts/check-sources.ts",
-	# The agent files at the create-baseplate version package.json pins, and no clash left unmerged.
-	"node scripts/agent-files.ts --check",
-	"tsc -p tsconfig.node.json",
-	# The agent hooks' and scripts' own tests.
-	'node --test --test-reporter=dot ".agents/hooks/*.test.ts" "scripts/*.test.ts"',
-	"rogen check",
-	'node scripts/each-place.ts "node {root}/scripts/analyze.ts"',
-	"selene src tests",
-	'node scripts/each-place.ts "mkdir build" "rojo build game.project.json --output build/game.rbxl" "lune run {root}/scripts/check-place build/game.rbxl" "node {root}/scripts/test.ts" "node {root}/scripts/ui.ts --check"',
-]
+description = "check, without writing fixes: fails on unformatted code. On CI, and with `-- --all`, it also reruns the tooling's own checks when they haven't changed"
+run = "node scripts/check.ts --ci"
 
 [tasks.test]
 description = "Run the tests offline in ree: Jest specs, except *.engine.spec, then tests/e2e"

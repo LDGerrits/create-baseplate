@@ -1,11 +1,7 @@
-// Finds server code that takes what clients send without src/network/server/Serve.luau: any use of
-// `OnServerEvent` or `OnServerInvoke` anywhere else. Serve.luau gives
-// every such remote a rate limit and checks its arguments; a remote taken directly has neither, and
-// lets a client flood the server or send it anything. `scripts/check-sources.ts` runs it.
-import path from "node:path";
-
-/** The one file allowed to take remotes directly: Serve.luau, in the game's network/server. */
-const SERVE = /^(projects\/common\/)?src\/network\/server\/Serve\.luau$/;
+// Finds code that takes what clients send without Remo: any use of `OnServerEvent` or
+// `OnServerInvoke` in the game's own code. A remote declared with Remo runs its validators on what
+// a client sends, and its throttle middleware drops floods; a remote taken directly has neither,
+// and lets a client flood the server or send it anything. `scripts/check-sources.ts` runs it.
 
 /**
  * Blanks out Luau's comments and string contents, keeping line breaks, so a remote named in either
@@ -25,14 +21,13 @@ const codeOnly = (code: string) =>
 export function unguardedRemotes(files: Map<string, string>): string[] {
 	const problems: string[] = [];
 	for (const [file, code] of files) {
-		if (SERVE.test(file.split(path.sep).join("/"))) continue;
 		const lines = codeOnly(code).split("\n");
 		lines.forEach((line, index) => {
 			// Any use of the name, however it's reached: `.OnServerEvent`, `["OnServerEvent"]`, across lines.
 			const taken = /\bOnServer(Event|Invoke)\b/.exec(line)?.[0];
 			if (taken === undefined) return;
 			problems.push(
-				`${file}:${index + 1}: ${taken} outside src/network/server/Serve.luau takes what clients send with no rate limit or argument check. Declare the remote in the feature's shared/<Feature>Network.luau and take it with Serve.event or Serve.request, as ClickerService does.`,
+				`${file}:${index + 1}: ${taken} takes what clients send with no validators or throttle. Declare the remote with Remo in the feature's shared/<Feature>Network.luau, with a \`t\` validator for each argument and throttleMiddleware, and connect to it, as the service that \`mise run feature\` writes does.`,
 			);
 		});
 	}

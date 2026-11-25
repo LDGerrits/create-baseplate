@@ -25,6 +25,7 @@ The MCP can change the place in ways this project doesn't keep, so leave these a
 - **Scripts** (`multi_edit`): the code lives in `src/` and Rojo overwrites scripts in Studio. Change the TypeScript and let forge sync it.
 - **Saving** (`save_place`): saving and syncing back to `world/` happen in the `edit-world` skill, and only when the user asked for the change.
 - **Assets** (`insert_asset`, `generate_*`, `upload_image`): only as part of a world change the user asked for, through `edit-world`.
+- **The live game** (`open_cloud_invoke`, and `execute_luau` that reaches DataStores, MemoryStores, messaging or HTTP): it publishes, restarts servers and changes real players' data, and a hook blocks it. Tell the user what you would run. The hook only sees the names in your code, so Luau that calls the game's own modules, which use DataStores, gets past it: don't run code that saves player data, and in Studio's settings keep API access off unless the user turned it on.
 
 1. `list_roblox_studios` first, and pick the Studio whose place forge opened. Confirm the target before you change anything in it.
 2. Inspect without running code: `search_game_tree`, `inspect_instance`, `script_grep`.
@@ -37,7 +38,7 @@ The MCP can change the place in ways this project doesn't keep, so leave these a
 
    Then read the result with `execute_luau` on the `Client`, such as the button's `Text`.
 4. `execute_luau` runs Luau when the tools above can't answer. It needs `datamodel_type` (`Edit`, or `Server`/`Client` during a playtest) and runs as a plugin, so its `_G` isn't the game's.
-5. For debugging with breakpoints, profiling or other devices, Studio has Roblox's own skills: `list_skills`, then `skill` (`rbx-debug`, `rbx-perf-profiling`, `rbx-device-simulator-lua`). For API facts, `http_get` reads Roblox's documentation.
+5. For debugging with breakpoints, profiling or other devices, Studio serves Roblox's own skills: list them with its tool that lists Roblox skills (Roblox renames these tools, so go by what it offers), then load `rbx-debug`, `rbx-perf-profiling`, `rbx-device-simulator-lua` or `rbx-scene-analysis`. Leave its `rbx-unit-test` alone: this game's tests run in ree (the `write-tests` skill). For API facts, `http_get` reads Roblox's documentation.
 
 Edits made during a playtest are lost when it stops.
 

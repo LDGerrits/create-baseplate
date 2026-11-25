@@ -3,17 +3,20 @@
 // - a spec outside the source folders: nothing compiles it, so it never runs;
 // - a Flamework service, controller or component no entry script imports: Flamework starts only
 //   what's loaded, so it never starts. Services start from src/app/server/main.server.ts,
-//   controllers from src/app/client/start.tsx, components from either;
+//   controllers from src/app/client/main.client.ts, components from either;
 // - a client-to-server remote the server takes with no middleware and no `// trusts-client: <why>`:
 //   Flamework's types allow it, and it lets a client flood the server (see unguarded-remotes.ts).
+// - code outside the four layers (app, features, game, platform) or a side folder at the wrong depth,
+//   and a cycle between feature folders (see layers.ts); ESLint checks which layer imports which.
 // `mise run check` runs it. In a multi-place game, a place's entry scripts start its own code and
 // the shared code it imports; shared code passes when one place imports it.
 import fs from "node:fs";
 import path from "node:path";
+import { cycleErrors, importEdges, structureErrors } from "./layers.ts";
 import { unguardedRemotes } from "./unguarded-remotes.ts";
 
 const SERVER_ENTRY = "app/server/main.server.ts";
-const CLIENT_ENTRY = "app/client/start.tsx";
+const CLIENT_ENTRY = "app/client/main.client.ts";
 const SKIPPED = new Set(["node_modules", "out", "include", "build", "dist", ".git"]);
 
 const multi = fs.existsSync("projects");
@@ -94,6 +97,14 @@ for (const file of sources) {
 		`${file}: a @${kind} that no entry script imports, so Flamework never starts it. Import it in ${root}/${where}.`,
 	);
 }
+
+errors.push(...structureErrors(sources, sourceRoots));
+errors.push(
+	...cycleErrors(
+		importEdges(new Map(sources.map((file) => [file, fs.readFileSync(file, "utf8")])), path.posix.join),
+		sourceRoots,
+	),
+);
 
 errors.push(...unguardedRemotes(new Map(sources.map((file) => [file, fs.readFileSync(file, "utf8")]))));
 

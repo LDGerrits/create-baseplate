@@ -20,11 +20,12 @@ With npm, put the flags after `--`, as in `npm create baseplate@latest my-game -
 | `--language <language>` | `typescript` (default): roblox-ts with Flamework; or `luau`: Luau with Wally, StyLua, Selene and luau-lsp. Asked first; each language has its own questions. |
 | `--ui <library>`       | UI: `react` (default) or `vide`.                                                             |
 | `--places <layout>`    | `single` (default), or `multi`: a lobby and a game sharing code, each place a folder in `projects/`.     |
-| `--state <library>`    | Client state: `charm`, `reflex` (TypeScript only) or `none` (default).                       |
+| `--managed <mode>`     | `full` (default): Rojo manages the whole place, code and world, built and published from git; or `partial`: only the code, and Studio keeps the place and its world. |
+| `--state <library>`    | Client state: `reflex` (TypeScript only; its default), `charm` (Luau's default, and with Vide) or `none`. |
 | `--data <library>`     | Player data: `profilestore`, `lapis` or `none` (default).                                    |
 | `--entities <library>` | Entities: `components` (TypeScript only), `jecs` or `none` (default).                        |
 | `--assets <tool>`      | Assets: `asphalt`, to upload images and sounds and type their IDs, or `none` (default).      |
-| `--release <tool>`     | Release builds: `darklua`, to minify and optimize the code you publish, or `none` (default). |
+| `--release <tool>`     | Release builds: `darklua`, to minify and optimize the code you publish (not with `--managed partial`), or `none` (default). |
 | `-V, --version`        | Print the CLI's version.                                                                     |
 
 Without a terminal (an agent, CI) it asks nothing and takes the defaults. Installing needs [mise](https://mise.jdx.dev/getting-started.html).

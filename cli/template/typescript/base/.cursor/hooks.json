@@ -3,21 +3,23 @@
 	"hooks": {
 		"preToolUse": [
 			{
-				"command": "mise exec --quiet -- node .agents/hooks/guard.ts cursor"
+				"command": "sh .agents/hooks/run guard.ts cursor"
+			}
+		],
+		"beforeMCPExecution": [
+			{
+				"command": "sh .agents/hooks/run guard.ts cursor"
 			}
 		],
 		"afterFileEdit": [
 			{
-				"command": "mise exec --quiet -- node .agents/hooks/edited.ts cursor",
+				"command": "sh .agents/hooks/run edited.ts cursor",
 				"timeout": 30
 			}
 		],
 		"stop": [
 			{
-				"command": "mise exec -- node .agents/hooks/rogen-check.mjs cursor"
-			},
-			{
-				"command": "mise exec --quiet -- node .agents/hooks/check.ts cursor",
+				"command": "sh .agents/hooks/run check.ts cursor",
 				"timeout": 180
 			}
 		]

@@ -1,5 +1,5 @@
 // `mise run feature <name>`: starts a feature the way AGENTS.md's "Adding a feature" describes, so
-// its folders, its rate-limited event and its entry-script imports are right from the first line.
+// its folders, its event and its entry-script imports are right from the first line.
 //
 //   node scripts/feature.ts <name> [<place>]
 //
@@ -10,12 +10,12 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const ENTRIES = { server: "app/server/main.server.ts", client: "app/client/start.tsx" };
+const ENTRIES = { server: "app/server/main.server.ts", client: "app/client/main.client.ts" };
 
 const pascal = (name: string) => name.replace(/(^|-)([a-z0-9])/g, (_, __, letter: string) => letter.toUpperCase());
 
-/** The files of a feature, by path from its folder. `rateLimit` is the import path of rate-limit.ts from the service. */
-export function featureFiles(name: string, rateLimit: string): Record<string, string> {
+/** The files of a feature, by path from its folder. */
+export function featureFiles(name: string): Record<string, string> {
 	const Name = pascal(name);
 	return {
 		[`shared/${name}-network.ts`]: `import { Networking } from "@flamework/networking";
@@ -31,11 +31,9 @@ interface ServerToClient {
 export const ${Name}Network = Networking.createEvent<ClientToServer, ServerToClient>();
 `,
 		[`server/${name}-service.ts`]: `import { type OnStart, Service } from "@flamework/core";
-import { rateLimit } from "${rateLimit}";
 import { ${Name}Network } from "../shared/${name}-network";
 
-// Every client-to-server event needs middleware, or the check fails.
-const events = ${Name}Network.createServer({ middleware: { request: [rateLimit(10)] } });
+const events = ${Name}Network.createServer({});
 
 /** Owns every player's ${name} state. Clients ask; this service decides. */
 @Service()
@@ -43,6 +41,7 @@ export class ${Name}Service implements OnStart {
 	private readonly values = new Map<number, number>();
 
 	onStart() {
+		// trusts-client: it only reads. An event that changes state needs middleware that rate-limits it, and a check here.
 		events.request.connect((player) => {
 			events.changed.fire(player, this.getValue(player.UserId));
 		});
@@ -131,9 +130,8 @@ export function createFeature(cwd: string, name: string, place?: string): string
 	const featureRoot = at(place === undefined ? sharedRoot : at("projects", place, "src"), "features", name);
 	if (fs.existsSync(path.join(cwd, featureRoot))) throw new Error(`${featureRoot} already exists.`);
 
-	const rateLimit = path.posix.relative(at(featureRoot, "server"), at(sharedRoot, "network", "server", "rate-limit"));
 	const written: string[] = [];
-	for (const [file, text] of Object.entries(featureFiles(name, rateLimit))) {
+	for (const [file, text] of Object.entries(featureFiles(name))) {
 		const target = at(featureRoot, file);
 		fs.mkdirSync(path.dirname(path.join(cwd, target)), { recursive: true });
 		fs.writeFileSync(path.join(cwd, target), text);

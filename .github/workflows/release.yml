@@ -10,25 +10,72 @@ name: Release
 # wouldn't run. With the repository's GitHub App in BOT_APP_CLIENT_ID and BOT_APP_PRIVATE_KEY (the
 # one the mise lock workflow uses; it needs Contents and Pull requests: read and write), the PR is
 # opened as the app and its CI runs.
+#
+# The workflow starts when CI has finished on a push to main, and only goes on when CI's "CI passed"
+# job succeeded (not the run's conclusion: the engine job can be red on main without it, since a
+# Roblox outage mustn't stop a release) and the commit is still main's tip: nothing untested reaches
+# npm, and a stale run can't version or publish over a newer commit. It checks out the commit CI
+# tested, and looks at main's tip once more right before the changesets step. The changesets action
+# reads the workflow's own sha (main's tip when this run started, which GitHub doesn't let a step
+# override), so that second look is what keeps it from acting on a commit whose CI didn't pass.
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
 
 permissions:
-  contents: write
-  pull-requests: write
-  id-token: write
+  contents: read
 
 concurrency:
   group: release
   cancel-in-progress: false
 
 jobs:
+  gate:
+    name: CI passed on main's tip
+    if: github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      go: ${{ steps.tip.outputs.go }}
+    steps:
+      - id: tip
+        run: |
+          passed=$(gh api "repos/$REPO/actions/runs/$RUN_ID/jobs?per_page=100" \
+            --jq '[.jobs[] | select(.name == "CI passed") | .conclusion] | first // ""')
+          if [ "$passed" != success ]; then
+            echo "::notice::CI's \"CI passed\" job ended as '${passed:-missing}' for $SHA; nothing to release from it."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          tip=$(gh api "repos/$REPO/commits/main" --jq .sha)
+          if [ "$tip" = "$SHA" ]; then
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::$SHA is no longer main's tip ($tip); its release waits for that commit's CI."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+
   release:
     name: Version or publish
+    needs: gate
+    if: needs.gate.outputs.go == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
     env:
       HAS_APP: ${{ secrets.BOT_APP_CLIENT_ID != '' }}
     steps:
@@ -40,6 +87,7 @@ jobs:
           private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.event.workflow_run.head_sha }}
           token: ${{ steps.app.outputs.token || secrets.GITHUB_TOKEN }}
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
@@ -47,7 +95,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: pnpm install --frozen-lockfile
-      - uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+      # The install took a while: main may have moved on since the gate looked.
+      - id: still
+        run: |
+          tip=$(gh api "repos/$REPO/commits/main" --jq .sha)
+          if [ "$tip" = "$SHA" ]; then
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::$SHA is no longer main's tip ($tip); its release waits for that commit's CI."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+      - if: steps.still.outputs.go == 'true'
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           version-script: pnpm changeset version
           # Empty until publishing is switched on: the action then only versions.

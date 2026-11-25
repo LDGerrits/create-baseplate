@@ -18,7 +18,7 @@ Games work on Windows, macOS and Linux, and in WSL. On Windows, install mise wit
 pnpm create baseplate my-game
 ```
 
-It asks the game's name, when no folder is given, then the language: TypeScript (roblox-ts) or [Luau](/luau/). Then it asks which of that language's add-ons to use (see [add-ons](/add-ons/)), and whether to make a git repo and install now. Then it creates the folder, installs the tools and packages, and makes the first commit. To skip the questions, as an agent would:
+It asks the game's name, when no folder is given, then the language: TypeScript (roblox-ts) or [Luau](/luau/). Then it asks the project's shape: one place or several, and whether Rojo manages the whole place or only the code. Then the libraries and tools: take the recommended ones in one answer, or choose each (see [add-ons](/add-ons/)). Last, whether to make a git repo and install now. Then it creates the folder, installs the tools and packages, and makes the first commit. To skip the questions, as an agent would:
 
 ```sh
 pnpm create baseplate my-game --yes

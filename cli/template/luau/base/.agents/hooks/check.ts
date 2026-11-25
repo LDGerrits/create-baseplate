@@ -1,16 +1,14 @@
-// Stop hook, for every agent tool that runs hooks: when files changed, run `mise run check` (about
-// ten seconds) and hand any failure back to the agent before it ends its turn. `.agents/hooks/run`
-// starts it, with the tool's reply format as the argument: claude (also Codex's), cursor, copilot
-// or gemini.
+// Stop hook, for every agent tool that runs hooks: when files changed, run `mise run check` and hand
+// any failure back to the agent before it ends its turn. `.agents/hooks/run` starts it, with the
+// tool's reply format as the argument: claude (also Codex's), cursor, copilot or gemini.
 // When the agent already had its chance in this stop and the check still fails, it may stop, so the
 // hook can't loop, and the user is told the check fails where the tool can show it. Cursor says
 // nothing of the earlier follow-up, so it gets a few follow-ups instead.
-// After a pass, the hook remembers the state of the files, and skips the check on later stops until
-// a file changes again.
+// The check records the state of the files it passed on (fingerprint.ts), and the hook skips the check
+// on later stops until a file changes again, whether the agent ran the check itself or the hook did.
 import { spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import fs from "node:fs";
-import path from "node:path";
+import { alreadyPassed, CHECK_RECORD, isMarkdown, readRecord, stateId, writeRecord } from "./fingerprint.ts";
 import { type Format, formatArg, projectRoot } from "./project.ts";
 
 export interface StopPayload {
@@ -59,7 +57,7 @@ export function changedFiles(): string[] {
 	return [
 		...git("diff", "-z", "--name-only", "--relative", "HEAD").toString("utf8").split("\0"),
 		...untracked(),
-	].filter((file) => file !== "" && !file.endsWith(".md"));
+	].filter((file) => file !== "" && !isMarkdown(file));
 }
 
 const untracked = () =>
@@ -67,28 +65,6 @@ const untracked = () =>
 		.toString("utf8")
 		.split("\0")
 		.filter((file) => file !== "");
-
-/** A hash of the current folder's changes against HEAD: the diff, and the untracked files' names and contents. */
-export function treeHash(): string {
-	const hash = createHash("sha256");
-	hash.update(process.cwd()).update("\0");
-	hash.update(git("rev-parse", "HEAD")).update("\0");
-	hash.update(git("diff", "--binary", "HEAD", "--", ".")).update("\0");
-	for (const file of untracked().sort()) {
-		hash.update(file).update("\0");
-		try {
-			hash.update(fs.readFileSync(file));
-		} catch {}
-		hash.update("\0");
-	}
-	return hash.digest("hex");
-}
-
-/** Where the hash of the last passing state is kept: in this worktree's own git folder. */
-export function passFile(): string | undefined {
-	const at = git("rev-parse", "--git-path", "agent-check-passed").toString("utf8").trim();
-	return at === "" ? undefined : path.resolve(at);
-}
 
 if (import.meta.main) {
 	let payload: StopPayload = {};
@@ -105,15 +81,10 @@ if (import.meta.main) {
 	process.chdir(root);
 
 	if (changedFiles().length === 0) process.exit(0);
-	const record = passFile();
-	const passed = (() => {
-		try {
-			return record === undefined ? undefined : fs.readFileSync(record, "utf8").trim();
-		} catch {
-			return undefined;
-		}
-	})();
-	if (passed !== undefined && passed === treeHash()) process.exit(0);
+	if (alreadyPassed(root, "files")) {
+		console.error("check: passed already on exactly these files; skipped");
+		process.exit(0);
+	}
 
 	const check = spawnSync("mise", ["run", "--quiet", "check"], {
 		encoding: "utf8",
@@ -122,12 +93,9 @@ if (import.meta.main) {
 	});
 	if (check.error !== undefined) process.exit(0);
 	if (check.status === 0) {
-		// The check formats files, so the hash is of the state after it.
-		if (record !== undefined) {
-			try {
-				fs.writeFileSync(record, `${treeHash()}\n`);
-			} catch {}
-		}
+		// The check records its own pass; this covers a game whose check predates the record.
+		const state = stateId(root, "files");
+		if (state !== undefined && readRecord(root, CHECK_RECORD) !== state) writeRecord(root, CHECK_RECORD, state);
 		process.exit(0);
 	}
 	const output = failureOutput(format, payload, `${check.stdout}${check.stderr}`.trim());

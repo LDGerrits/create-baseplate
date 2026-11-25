@@ -2,7 +2,7 @@
 	"hooks": {
 		"PreToolUse": [
 			{
-				"matcher": "Bash|apply_patch",
+				"matcher": "Bash|apply_patch|mcp__.*__(open_cloud_invoke|execute_luau)",
 				"hooks": [
 					{
 						"type": "command",
@@ -26,10 +26,6 @@
 		"Stop": [
 			{
 				"hooks": [
-					{
-						"type": "command",
-						"command": "d=\"$PWD\"; while [ ! -f \"$d/.codex/hooks.json\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; cd \"$d\" && mise exec -- node .agents/hooks/rogen-check.mjs"
-					},
 					{
 						"type": "command",
 						"command": "d=\"$PWD\"; while [ ! -f \"$d/.agents/hooks/run\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; sh \"$d/.agents/hooks/run\" check.ts claude",

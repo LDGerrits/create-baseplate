@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { makeMultiPlace } from "../helpers/makeMultiPlace.ts";
+import { makeMultiPlace, managedOf } from "../helpers/makeMultiPlace.ts";
 import { scaffoldProject } from "../helpers/scaffoldProject.ts";
 import { recordOrigin, setProjectName } from "../helpers/setProjectName.ts";
 import {
@@ -44,7 +44,7 @@ function templateAgentFiles(name: string, language: Language, chosen: AddOnChoic
 		scaffoldProject(dir, language);
 		setProjectName(dir, name);
 		installAddOns(dir, language, chosen);
-		if (chosen.places === "multi") makeMultiPlace(dir, name, language);
+		if (chosen.places === "multi") makeMultiPlace(dir, name, language, managedOf(chosen));
 		recordOrigin(dir, version, language, chosen);
 		return readAgentFiles(dir);
 	} finally {

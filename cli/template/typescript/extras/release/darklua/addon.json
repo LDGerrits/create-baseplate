@@ -8,11 +8,6 @@
 			"to": "\n/out\n/dist\n"
 		},
 		{
-			"file": ".github/workflows/ci.yml",
-			"from": "      - run: mise run ci\n",
-			"to": "      - run: mise run ci\n      - run: mise run release\n"
-		},
-		{
 			"file": "mise.toml",
 			"from": "depends = [\"build\"]\nenv = { _.file = \".env\" }\nrun = 'node scripts/each-place.ts \"node {root}/scripts/publish.ts build/game.rbxl\"'",
 			"to": "depends = [\"release\"]\nenv = { _.file = \".env\" }\nrun = 'node scripts/each-place.ts \"node {root}/scripts/publish.ts build/release.rbxl\"'"
@@ -22,5 +17,10 @@
 			"from": "Build the game and publish it",
 			"to": "Build the release (mise run release) and publish it"
 		}
-	]
+	],
+	"conflicts": {
+		"managed": {
+			"partial": "Darklua processes what `mise run publish` uploads, and a partially managed game publishes from Studio: with --managed partial, choose --release none."
+		}
+	}
 }

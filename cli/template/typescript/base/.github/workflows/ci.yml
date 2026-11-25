@@ -4,13 +4,17 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Run it by hand (Actions > CI > Run workflow) for the engine job on a branch.
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+# A new push to a pull request cancels its older run. Main's runs are one each (the commit in the group
+# name) and finish, so a tag on an older commit of main still finds its CI (publish.yml's verify job).
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
@@ -23,7 +27,11 @@ jobs:
           persist-credentials: false
       # rur renders the stories in the check; GitHub's Linux machines have no GPU, so give it Mesa's
       # software Vulkan driver.
-      - run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends mesa-vulkan-drivers
+      # The runner's package lists are usually fresh enough; `apt-get update` takes most of this
+      # step, so it runs only when the install fails without it.
+      - run: |
+          sudo apt-get install -y -q --no-install-recommends mesa-vulkan-drivers ||
+            { sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends mesa-vulkan-drivers; }
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
           version: 2026.11.8
@@ -34,7 +42,9 @@ jobs:
       - run: mise run ci
 
   engine:
-    # Every spec, *.engine.spec included, in a real Roblox engine through Open Cloud.
+    # Every spec, *.engine.spec included, in a real Roblox engine through Open Cloud: on main, before
+    # it publishes to dev, and when run by hand. Not on pull requests, which ree already checks: each
+    # run spends the key's Open Cloud quota and the test place's real DataStores.
     # Set the secret ROBLOX_OPEN_CLOUD_API_KEY and the variables ROBLOX_UNIVERSE_ID and ROBLOX_PLACE_ID
     # (Settings > Secrets and variables > Actions); without the variables the job is skipped.
     name: Specs in Roblox (Open Cloud)
@@ -47,7 +57,7 @@ jobs:
       cancel-in-progress: false
     # Without the variables, GitHub shows the job as skipped, not passed. With them but no key, the
     # specs fail. (A job's `if` can't read secrets; only the last step gets the key.)
-    if: vars.ROBLOX_UNIVERSE_ID != '' && vars.ROBLOX_PLACE_ID != ''
+    if: github.event_name != 'pull_request' && vars.ROBLOX_UNIVERSE_ID != '' && vars.ROBLOX_PLACE_ID != ''
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

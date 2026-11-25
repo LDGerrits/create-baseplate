@@ -7,7 +7,7 @@ export const SPIN_SPEED = math.pi / 2;
 
 /**
  * Spins each part tagged `Spinner` in place. Flamework makes one component per tagged instance
- * (add the tag in Studio, or in a `.model.json` under world/), and destroys it when the tag goes.
+ * (tag a part in Studio), and destroys it when the tag goes.
  */
 @Component({ tag: "Spinner" })
 export class SpinnerComponent extends BaseComponent<object, BasePart> implements OnStart {

@@ -1,30 +1,22 @@
 // Run after each file edit, for every agent tool that runs hooks: formats the edited file with Biome,
 // applies ESLint's fixes to it and hands what's left to the agent at once, so a lint error surfaces
 // while the agent is in that file, not only at the stop check. It never runs the compiler or lints
-// other files: the stop check does. `.agents/hooks/run` starts it, with the tool's reply format as the
-// argument: claude (also Codex's), cursor, copilot or gemini. Cursor shows nothing of what a hook
-// prints after an edit, so there the fixes apply silently.
+// other files: the stop check does. ESLint stays loaded in a server between edits (eslint-server.ts),
+// so an edit takes a fraction of a second after the first. `.agents/hooks/run` starts it, with the
+// tool's reply format as the argument: claude (also Codex's), cursor, copilot or gemini. Cursor shows
+// nothing of what a hook prints after an edit, so there the fixes apply silently.
 
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import module from "node:module";
 import path from "node:path";
-import type { ESLint } from "eslint";
+import { type Linted, lintViaServer, UNFIXED } from "./eslint-server.ts";
 import { GENERATED, namedFiles, type Payload, patched, toolInput } from "./guard.ts";
 import { type Format, formatArg, projectRoot } from "./project.ts";
 
 // What Biome formats; ESLint lints the TypeScript among them under src/ or projects/, as the check does.
 const FORMATS = /\.(ts|tsx|js|mjs|cjs|json|jsonc)$/;
 const LINTS = /^(src|projects)\/.+\.tsx?$/;
-
-// Fixes that would undo what the agent is in the middle of writing: an import it hasn't used yet
-// (no-unused-vars deletes it), a `let` it's about to reassign, an import it will use as a value
-// (both rewritten to fit the code as it stands). They're still reported, just not applied.
-const UNFIXED = new Set([
-	"@typescript-eslint/no-unused-vars",
-	"prefer-const",
-	"@typescript-eslint/consistent-type-imports",
-]);
 
 const MAX_PROBLEMS = 10;
 
@@ -69,7 +61,7 @@ export function editedOutput(format: Format, problems: string[]): object | undef
 const relative = (file: string) => path.relative(process.cwd(), file).split(path.sep).join("/");
 
 /** ESLint's messages for one file as `file:line rule: message`. */
-export function eslintProblems(result: ESLint.LintResult): string[] {
+export function eslintProblems(result: Linted): string[] {
 	return result.messages.map((m) => `${relative(result.filePath)}:${m.line} ${m.ruleId ?? "error"}: ${m.message}`);
 }
 
@@ -98,8 +90,16 @@ function format(files: string[], root: string): Promise<string[]> {
 	});
 }
 
-/** Lints the files once `formatted` is done, applying the fixes that keep what the agent wrote. */
-async function lint(files: string[], formatted: Promise<unknown>): Promise<ESLint.LintResult[]> {
+/**
+ * Lints the files once `formatted` is done, applying the fixes that keep what the agent wrote. A
+ * server that keeps ESLint loaded does it when it can (eslint-server.ts); otherwise it runs here.
+ */
+async function lint(files: string[], root: string, formatted: Promise<unknown>): Promise<Linted[]> {
+	if (process.env.BASEPLATE_ESLINT_SERVER !== "0") {
+		await formatted;
+		const served = await lintViaServer(root, files);
+		if (served !== undefined) return served;
+	}
 	const { ESLint } = await import("eslint");
 	const eslint = new ESLint({
 		fix: (message) => message.ruleId === null || !UNFIXED.has(message.ruleId),
@@ -113,8 +113,6 @@ async function lint(files: string[], formatted: Promise<unknown>): Promise<ESLin
 }
 
 if (import.meta.main) {
-	// Most of the time goes to loading ESLint's plugins; V8's compile cache shortens that on later edits.
-	module.enableCompileCache?.();
 	let payload: Payload = {};
 	try {
 		payload = JSON.parse(fs.readFileSync(0, "utf8")) as Payload;
@@ -125,14 +123,18 @@ if (import.meta.main) {
 	const files = filesToCheck(editedFiles(payload), root, start).filter((file) => fs.existsSync(path.join(root, file)));
 	if (files.length === 0) process.exit(0);
 	process.chdir(root);
+	// When there's no ESLint server to ask, this process loads ESLint's plugins; V8's compile cache
+	// shortens that on later edits by about 0.2s. It lives in node_modules, so deleting that removes it:
+	// Node's default folder in the temp folder grows with every checkout and is never cleaned.
+	module.enableCompileCache?.(path.join(root, "node_modules/.cache/node-compile-cache"));
 
-	// Biome formats while ESLint loads its config and plugins, which takes most of the time; ESLint
-	// reads the files only once Biome is done with them.
+	// ESLint reads the files only once Biome is done with them; when this process has to load ESLint
+	// itself, which takes most of the time, Biome formats meanwhile.
 	const formatted = format(files, root);
 	const problems: string[] = [];
 	const linted = files.filter((file) => LINTS.test(file));
 	try {
-		const results = linted.length === 0 ? [] : await lint(linted, formatted);
+		const results = linted.length === 0 ? [] : await lint(linted, root, formatted);
 		// When ESLint couldn't parse a file it says why itself, so Biome's version of it would repeat it.
 		const unparsed = results.filter((r) => r.messages.some((m) => m.fatal === true)).map((r) => relative(r.filePath));
 		problems.push(...(await formatted).filter((p) => !unparsed.some((file) => p.startsWith(`${file}:`))));

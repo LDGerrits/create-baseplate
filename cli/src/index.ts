@@ -10,7 +10,7 @@ import { runDoc } from "./doc/command.ts";
 import { commitAll, initGit } from "./helpers/git.ts";
 import { installDependencies, isMiseInstalled } from "./helpers/installDependencies.ts";
 import { logNextSteps, nextSteps } from "./helpers/logNextSteps.ts";
-import { makeMultiPlace, PLACES } from "./helpers/makeMultiPlace.ts";
+import { makeMultiPlace, managedOf, PLACES } from "./helpers/makeMultiPlace.ts";
 import { scaffoldProject } from "./helpers/scaffoldProject.ts";
 import { recordOrigin, setProjectName } from "./helpers/setProjectName.ts";
 import { findConflict, installAddOns } from "./installers/index.ts";
@@ -70,7 +70,8 @@ async function main() {
 		/^\[tools\]\n([\s\S]*?)(?=^\[)/m.exec(fs.readFileSync(path.join(options.dir, "mise.toml"), "utf8"))?.[1];
 	const baseTools = tools();
 	installAddOns(options.dir, options.language, options.addOns);
-	if (options.addOns.places === "multi") makeMultiPlace(options.dir, options.name, options.language);
+	if (options.addOns.places === "multi")
+		makeMultiPlace(options.dir, options.name, options.language, managedOf(options.addOns));
 	recordOrigin(options.dir, version, options.language, options.addOns);
 	recordAgentFiles(options.dir, version);
 	// The template's lockfile lists the base's packages only, until an install adds the add-ons'.
@@ -104,6 +105,7 @@ async function main() {
 	}
 
 	let committed = false;
+	let commitError: string | undefined;
 	// Committed now, pnpm-lock.yaml wouldn't match package.json, or mise.lock wouldn't record the
 	// add-ons' tools, and the game's install (locked, frozen) fails on that; or wally.lock wouldn't
 	// list the add-ons' Wally packages, and the first install would leave it changed.
@@ -122,15 +124,22 @@ async function main() {
 		const error = await commitAll(options.dir, "Initial commit from create-baseplate");
 		spinner?.stop(error === undefined ? "Made the first commit; the check passed" : "The first commit failed");
 		if (error === undefined) committed = true;
-		else warnings.push(`The first commit failed:\n${error}`);
+		else commitError = error;
 	}
 
 	for (const warning of warnings) logger.warn(warning);
-	const steps = { installed, packagesChanged, toolsChanged, commit: waitForInstall, place };
+	// The first commit's hook runs the game's check, so a failure means the game doesn't pass it as
+	// created. The game stays, uncommitted; the exit code says the job isn't done.
+	const failure =
+		commitError === undefined
+			? undefined
+			: `The first commit failed, so the game is created in ${options.dir} but nothing is committed. Its commit hook runs the game's check; fix what this reports (\`mise run check\` in the folder shows it again), then commit:\n${commitError}`;
+	const steps = { installed, packagesChanged, toolsChanged, commit: waitForInstall || failure !== undefined, place };
 	if (options.json) {
 		console.log(
 			JSON.stringify({
-				ok: true,
+				ok: failure === undefined,
+				...(failure === undefined ? {} : { created: true, error: failure }),
 				name: options.name,
 				dir: options.dir,
 				git,
@@ -143,9 +152,11 @@ async function main() {
 			}),
 		);
 	} else {
+		if (failure !== undefined) logger.error(failure);
 		logNextSteps(options.dir, steps);
 		logger.info(pc.dim(`create-baseplate ${version}`));
 	}
+	if (failure !== undefined) process.exitCode = 1;
 }
 
 main().catch((error: unknown) => {

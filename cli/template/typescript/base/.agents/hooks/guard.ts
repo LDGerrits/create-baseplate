@@ -108,6 +108,23 @@ export function namedFiles(payload: Payload, input = toolInput(payload)): string
 	].filter((file): file is string => file !== undefined && file !== "");
 }
 
+// Roblox Studio's MCP server reaches the live game. Each agent tool names its tools its own way
+// (mcp__Roblox_Studio__execute_luau, Roblox_Studio-execute_luau, execute_luau): the tool is the end.
+const STUDIO_TOOL = /(?:^|[_\-:/.])(open_cloud_invoke|execute_luau)$/;
+// Luau that, run in Studio, reads or writes the published game's real data or reaches the internet.
+const LIVE_LUAU =
+	/DataStoreService|MemoryStoreService|MessagingService|GetSecret|RequestAsync|PostAsync|HttpService\W[\s\S]*GetAsync/;
+
+function checkStudioTool(tool: string, input: Record<string, unknown>): string | undefined {
+	if (tool === "open_cloud_invoke") {
+		return "Open Cloud acts on the live game: publishing, restarting servers, products, player data. Only a person does that: tell the user what you would run and why.";
+	}
+	if (LIVE_LUAU.test(JSON.stringify(input))) {
+		return "Run in Studio, this Luau reaches the published game's real player data or the internet. Test data code in a spec (`mise run test`), or ask the user to run it.";
+	}
+	return undefined;
+}
+
 /** The reason to block this tool call, or undefined to let it through. */
 export function guardReason(payload: Payload, root: string, start: string): string | undefined {
 	const checkFile = (file: string): string | undefined => {
@@ -121,6 +138,11 @@ export function guardReason(payload: Payload, root: string, start: string): stri
 	const input = toolInput(payload);
 	const command = payload.command ?? (typeof input.command === "string" ? input.command : undefined);
 	const files = namedFiles(payload, input);
+	const studioTool = toolName === undefined ? undefined : STUDIO_TOOL.exec(toolName)?.[1];
+
+	if (studioTool !== undefined) return checkStudioTool(studioTool, input);
+	// Its `command` is the MCP server's launch command, not something the agent runs.
+	if (payload.hook_event_name === "beforeMCPExecution") return undefined;
 
 	if (payload.hook_event_name === "beforeReadFile" || (toolName !== undefined && READS.test(toolName))) {
 		return files.some(isSecretFile) ? SECRET : undefined;

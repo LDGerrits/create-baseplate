@@ -18,9 +18,16 @@ export interface AddOn {
 	readonly valueName: string;
 	readonly question: string;
 	readonly choices: readonly { readonly value: string; readonly label: string; readonly hint: string }[];
-	/** The choice taken when none is given; "none" unless the question has no "none". */
+	/**
+	 * The choice taken when none is given. Where it can't go with the other answers, as Reflex can't
+	 * with Vide, the first choice that can is taken instead (see defaultFor).
+	 */
 	readonly defaultValue: string;
 	readonly allowNone: boolean;
+	/** A question about the project's shape (places, what Rojo manages), asked before the stack. */
+	readonly shape?: boolean;
+	/** What the question picks, for the summary of the recommended stack, such as "player data". */
+	readonly topic: string;
 }
 
 export const NONE = "none";
@@ -49,10 +56,27 @@ const places: AddOn = {
 	],
 	defaultValue: "single",
 	allowNone: false,
+	shape: true,
+	topic: "places",
+};
+
+const managed: AddOn = {
+	name: "managed",
+	valueName: "mode",
+	question: "Should Rojo manage the whole place, or only the code?",
+	choices: [
+		{ value: "full", label: "The whole place", hint: "code and world are files, built and published from git" },
+		{ value: "partial", label: "Only the code", hint: "Studio keeps the place and its world; files hold the code" },
+	],
+	defaultValue: "full",
+	allowNone: false,
+	shape: true,
+	topic: "management",
 };
 
 const assets: AddOn = {
 	name: "assets",
+	topic: "asset uploads",
 	valueName: "tool",
 	question: "Which tool to upload images and sounds?",
 	choices: [{ value: "asphalt", label: "Asphalt", hint: "uploads assets/ to Roblox and types their IDs" }],
@@ -62,6 +86,7 @@ const assets: AddOn = {
 
 const release: AddOn = {
 	name: "release",
+	topic: "release builds",
 	valueName: "tool",
 	question: "Which tool to process release builds?",
 	choices: [{ value: "darklua", label: "Darklua", hint: "minifies and optimizes the code you publish" }],
@@ -74,6 +99,7 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 	typescript: [
 		{
 			name: "ui",
+			topic: "UI",
 			valueName: "library",
 			question: "Which UI library?",
 			choices: [
@@ -84,19 +110,22 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 			allowNone: false,
 		},
 		places,
+		managed,
 		{
 			name: "state",
+			topic: "state",
 			valueName: "library",
 			question: "Which library for client state?",
 			choices: [
+				{ value: "reflex", label: "Reflex", hint: "a Redux-like store" },
 				{ value: "charm", label: "Charm", hint: "signals, the most used" },
-				{ value: "reflex", label: "Reflex", hint: "a Redux-like store; no longer updated" },
 			],
-			defaultValue: NONE,
+			defaultValue: "reflex",
 			allowNone: true,
 		},
 		{
 			name: "data",
+			topic: "player data",
 			valueName: "library",
 			question: "Which library to save player data?",
 			choices: [
@@ -108,6 +137,7 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 		},
 		{
 			name: "entities",
+			topic: "entities",
 			valueName: "library",
 			question: "Which library for entities and components?",
 			choices: [
@@ -123,6 +153,7 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 	luau: [
 		{
 			name: "ui",
+			topic: "UI",
 			valueName: "library",
 			question: "Which UI library?",
 			choices: [
@@ -133,16 +164,19 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 			allowNone: false,
 		},
 		places,
+		managed,
 		{
 			name: "state",
+			topic: "state",
 			valueName: "library",
 			question: "Which library for client state?",
 			choices: [{ value: "charm", label: "Charm", hint: "signals, the most used" }],
-			defaultValue: NONE,
+			defaultValue: "charm",
 			allowNone: true,
 		},
 		{
 			name: "data",
+			topic: "player data",
 			valueName: "library",
 			question: "Which library to save player data?",
 			choices: [
@@ -154,6 +188,7 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 		},
 		{
 			name: "entities",
+			topic: "entities",
 			valueName: "library",
 			question: "Which library for entities and components?",
 			choices: [{ value: "jecs", label: "Jecs", hint: "an entity component system" }],
@@ -193,9 +228,28 @@ export const flagValuesOf = (name: string) => [
 	),
 ];
 
-/** A language's answers: `given` where set, each question's default otherwise. */
-export const choicesFor = (language: Language, given: Partial<AddOnChoices>): AddOnChoices =>
-	Object.fromEntries(addOnsByLanguage[language].map((addOn) => [addOn.name, given[addOn.name] ?? addOn.defaultValue]));
+/**
+ * The choice `addOn` takes when none is given, with `chosen` the other answers: its default, or,
+ * where that can't go with them (Reflex with Vide), its first choice that can, else none.
+ */
+export function defaultFor(language: Language, addOn: AddOn, chosen: Partial<AddOnChoices>): string {
+	const fits = (value: string) =>
+		findConflict(language, { ...chosen, [addOn.name]: value } as AddOnChoices) === undefined;
+	if (fits(addOn.defaultValue)) return addOn.defaultValue;
+	return addOn.choices.map((choice) => choice.value).find(fits) ?? (addOn.allowNone ? NONE : addOn.defaultValue);
+}
+
+/** A language's answers: `given` where set, each question's default otherwise, in question order. */
+export function choicesFor(language: Language, given: Partial<AddOnChoices>): AddOnChoices {
+	const chosen: AddOnChoices = {};
+	for (const addOn of addOnsByLanguage[language]) {
+		const known = Object.fromEntries(
+			Object.entries({ ...given, ...chosen }).filter(([, value]) => value !== undefined),
+		);
+		chosen[addOn.name] = given[addOn.name] ?? defaultFor(language, addOn, known);
+	}
+	return chosen;
+}
 
 /** Why a flag's value doesn't fit the language, such as Flamework Components in a Luau game. */
 export function flagProblem(language: Language, given: Partial<AddOnChoices>): string | undefined {
@@ -223,9 +277,11 @@ interface Manifest {
 	 * Luau: require expressions added to the main script's list of services or controllers.
 	 */
 	imports: Record<string, string[]>;
+	/** Tasks of the game's mise.toml the choice removes, whatever other add-ons have done to them. */
+	removeMiseTasks?: string[];
 	/** Packages the choice replaces, from dependencies or devDependencies (by alias, in wally.toml). */
 	removeDependencies?: string[];
-	/** Base files the choice replaces. */
+	/** Base files or folders the choice replaces or drops. */
 	removeFiles?: string[];
 	/** The heading of the AGENTS.md section its AGENTS.md replaces, instead of adding a section. */
 	replaceAgentsSection?: string;
@@ -241,6 +297,11 @@ interface Manifest {
 			agents?: string;
 		}
 	>;
+	/**
+	 * What changes with the managed question's choice: `{ partial: { files, agents } }` copies that
+	 * folder over `files/` and uses that file in place of `AGENTS.md` when Rojo manages only the code.
+	 */
+	byManaged?: Record<string, { files?: string; agents?: string }>;
 	/** Choices of other questions this one can't go with, and why. */
 	conflicts?: Record<string, Record<string, string>>;
 }
@@ -262,18 +323,28 @@ export function findConflict(language: Language, chosen: AddOnChoices): string |
 	return undefined;
 }
 
-/** Applies each chosen add-on to the project in `dir`, in the order of the language's questions: the UI first. */
+/**
+ * Applies each chosen add-on to the project in `dir`, in the order of the language's questions: the
+ * UI first. What the managed question chooses goes last, so it changes the game as the other
+ * add-ons have left it.
+ */
 export function installAddOns(dir: string, language: Language, chosen: AddOnChoices) {
-	for (const addOn of addOnsByLanguage[language]) {
+	const questions = addOnsByLanguage[language];
+	const ordered = [...questions.filter((q) => q.name !== "managed"), ...questions.filter((q) => q.name === "managed")];
+	for (const addOn of ordered) {
 		const name = addOn.name;
 		const value = chosen[name] ?? addOn.defaultValue;
 		const manifest = manifestOf(language, name, value);
 		if (manifest === undefined) continue; // "none", or the base's own choice
 		const from = path.join(templateExtras(language), name, value);
 		const variant = manifest.byUi?.[chosen.ui ?? ""];
+		const managedVariant = manifest.byManaged?.[chosen.managed ?? ""];
 
-		for (const file of manifest.removeFiles ?? []) fs.rmSync(path.join(dir, file), { force: true });
-		fs.cpSync(path.join(from, variant?.files ?? "files"), dir, { recursive: true });
+		for (const file of manifest.removeFiles ?? []) fs.rmSync(path.join(dir, file), { force: true, recursive: true });
+		const files = path.join(from, variant?.files ?? "files");
+		if (fs.existsSync(files)) fs.cpSync(files, dir, { recursive: true });
+		if (managedVariant?.files !== undefined) fs.cpSync(path.join(from, managedVariant.files), dir, { recursive: true });
+		for (const task of manifest.removeMiseTasks ?? []) removeMiseTask(dir, task);
 		const remove = manifest.removeDependencies ?? [];
 		if (language === "luau") {
 			editWally(dir, "dependencies", variant?.dependencies ?? manifest.dependencies, remove);
@@ -285,7 +356,7 @@ export function installAddOns(dir: string, language: Language, chosen: AddOnChoi
 		const mise = path.join(from, "mise.toml");
 		if (fs.existsSync(mise)) addMise(dir, fs.readFileSync(mise, "utf8"));
 		for (const [file, imports] of Object.entries(manifest.imports)) addImports(path.join(dir, file), imports);
-		const agents = fs.readFileSync(path.join(from, variant?.agents ?? "AGENTS.md"), "utf8");
+		const agents = fs.readFileSync(path.join(from, managedVariant?.agents ?? variant?.agents ?? "AGENTS.md"), "utf8");
 		if (manifest.replaceAgentsSection === undefined) addAgentsSection(dir, agents);
 		else replaceAgentsSection(dir, manifest.replaceAgentsSection, agents);
 		for (const { file, from: text, to } of manifest.replaceText ?? []) {
@@ -320,9 +391,26 @@ function addImports(file: string, imports: string[]) {
 	const lines = fs.readFileSync(file, "utf8").split("\n");
 	if (file.endsWith(".luau")) {
 		const last = lines.findLastIndex((line) => /^\s+require\(/.test(line));
-		if (last === -1) throw new Error(`${file} has no list of required modules to add to`);
-		const indent = /^\s+/.exec(lines[last] ?? "")?.[0] ?? "\t";
-		lines.splice(last + 1, 0, ...imports.map((module) => `${indent}require(${module}),`));
+		if (last !== -1) {
+			const indent = /^\s+/.exec(lines[last] ?? "")?.[0] ?? "\t";
+			lines.splice(last + 1, 0, ...imports.map((module) => `${indent}require(${module}),`));
+		} else {
+			// An empty list, `= {}`: open it, and get the service the modules' paths start from.
+			const empty = lines.findIndex((line) => /^local \w+: .* = \{\}$/.test(line));
+			if (empty === -1) throw new Error(`${file} has no list of required modules to add to`);
+			const service = "ServerScriptService";
+			const needsService =
+				imports.some((module) => module.startsWith(`${service}.`)) &&
+				!lines.some((line) => line.startsWith(`local ${service} `));
+			lines.splice(
+				empty,
+				1,
+				...(needsService ? [`local ${service} = game:GetService("${service}")`, ""] : []),
+				(lines[empty] ?? "").slice(0, -1),
+				...imports.map((module) => `\trequire(${module}),`),
+				"}",
+			);
+		}
 	} else {
 		const last = lines.findLastIndex((line) => line.startsWith("import "));
 		lines.splice(last + 1, 0, ...imports.map((module) => `import "${module}";`));
@@ -361,6 +449,17 @@ function editWally(dir: string, table: string, add: Record<string, string>, remo
 			? `${toml.trimEnd()}\n\n${header}\n${body}`
 			: `${toml.slice(0, bodyStart)}${body}${rest === "" ? "" : `\n${rest.replace(/^\n+/, "")}`}`,
 	);
+}
+
+/** Removes `[tasks.<name>]` from the game's mise.toml, up to the next table. */
+function removeMiseTask(dir: string, name: string) {
+	const file = path.join(dir, "mise.toml");
+	const mise = fs.readFileSync(file, "utf8");
+	const header = [`[tasks.${name}]`, `[tasks."${name}"]`].find((candidate) => mise.includes(`\n${candidate}\n`));
+	if (header === undefined) throw new Error(`mise.toml has no task ${name} to remove`);
+	const start = mise.indexOf(`\n${header}\n`) + 1;
+	const next = mise.indexOf("\n[", start);
+	fs.writeFileSync(file, `${mise.slice(0, start)}${next === -1 ? "" : mise.slice(next + 1)}`.replace(/\n+$/, "\n"));
 }
 
 /** Replaces the section under `## <heading>` with the add-on's, up to the next `## ` heading. */

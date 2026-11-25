@@ -6,6 +6,8 @@
 //   node scripts/each-place.ts "<step>" ["<step>"...] [-- <extra args for the last step>]
 //   node scripts/each-place.ts --one <place> "<step>"...   only that place; a multi-place game needs it
 //   node scripts/each-place.ts --if-multi "<step>"...      once, at the root, in a multi-place game only
+//   node scripts/each-place.ts --parallel "<step>"...      the places at the same time; each place's output is
+//                                                          held and printed whole, in the places' order
 //
 // A step is a command and its arguments, split at spaces; "double quotes" keep spaces in one argument.
 // Each runs only if the one before it passed. In a step, {root} is the repo root, {dir} the place's
@@ -31,6 +33,11 @@ const places = multi
 let args = process.argv.slice(2);
 let only: string | undefined;
 let ifMulti = false;
+let parallel = false;
+if (args[0] === "--parallel") {
+	parallel = true;
+	args = args.slice(1);
+}
 if (args[0] === "--if-multi") {
 	ifMulti = true;
 	args = args.slice(1);
@@ -55,7 +62,7 @@ const dash = args.indexOf("--");
 const steps = dash === -1 ? args : args.slice(0, dash);
 const extra = dash === -1 ? [] : args.slice(dash + 1);
 if (steps.length === 0) {
-	console.error('Usage: node scripts/each-place.ts [--one <place> | --if-multi] "<step>"... [-- <args>]');
+	console.error('Usage: node scripts/each-place.ts [--one <place> | --if-multi | --parallel] "<step>"... [-- <args>]');
 	process.exit(1);
 }
 if (ifMulti && !multi) process.exit(0);
@@ -75,9 +82,10 @@ const placeTarget = (place: string): Target => ({ dir: path.join(ROOT, "projects
 const perPlace = multi && !ifMulti;
 const targets = perPlace ? places.filter((place) => only === undefined || place === only).map(placeTarget) : [root];
 
-for (const target of targets) {
+/** Runs the steps in one place, writing what they print through `write`; the code to exit with, or 0. */
+async function runTarget(target: Target, write: (text: string) => void, inherit: boolean): Promise<number> {
 	const placeholders: Record<string, string> = { root: ROOT, ...target };
-	if (perPlace) console.log(`── ${target.place}`);
+	if (perPlace) write(`── ${target.place}\n`);
 	for (const [index, step] of steps.entries()) {
 		const [command, ...stepArgs] = words(step).map((word) =>
 			word.replaceAll(/\{(root|dir|place)\}/g, (_, name: string) => placeholders[name] ?? ""),
@@ -88,15 +96,39 @@ for (const target of targets) {
 			for (const folder of stepArgs) fs.mkdirSync(path.resolve(target.dir, folder), { recursive: true });
 			continue;
 		}
-		const run = spawn.sync(command, stepArgs, {
-			cwd: target.dir,
-			stdio: "inherit",
-			env: { ...process.env, ROOT, PLACE: target.place },
+		const code = await new Promise<number>((resolve) => {
+			const child = spawn(command, stepArgs, {
+				cwd: target.dir,
+				stdio: inherit ? "inherit" : ["ignore", "pipe", "pipe"],
+				env: { ...process.env, ROOT, PLACE: target.place },
+			});
+			child.stdout?.on("data", (chunk: Buffer) => write(chunk.toString("utf8")));
+			child.stderr?.on("data", (chunk: Buffer) => write(chunk.toString("utf8")));
+			child.on("error", (error) => {
+				write(`${command}: ${error.message}\n`);
+				resolve(1);
+			});
+			child.on("close", (status) => resolve(status ?? 1));
 		});
-		if (run.error) {
-			console.error(`${command}: ${run.error.message}`);
-			process.exit(1);
-		}
-		if (run.status !== 0) process.exit(run.status ?? 1);
+		if (code !== 0) return code;
+	}
+	return 0;
+}
+
+if (parallel && targets.length > 1) {
+	const outputs = await Promise.all(
+		targets.map(async (target) => {
+			let text = "";
+			const code = await runTarget(target, (chunk) => (text += chunk), false);
+			return { code, text };
+		}),
+	);
+	for (const { text } of outputs) process.stdout.write(text);
+	const failed = outputs.find(({ code }) => code !== 0);
+	if (failed !== undefined) process.exit(failed.code);
+} else {
+	for (const target of targets) {
+		const code = await runTarget(target, (text) => process.stdout.write(text), true);
+		if (code !== 0) process.exit(code);
 	}
 }

@@ -119,6 +119,23 @@ test("a Luau game keeps the Luau template's agent files", () => {
 	assert.equal(check.status, 0, check.stdout + check.stderr);
 });
 
+test("a partially managed game's sync doesn't bring back the world's files", () => {
+	for (const language of ["typescript", "luau"]) {
+		const dir = createGame("--language", language, "--managed", "partial");
+		const { files } = readBase(dir);
+		assert.ok(!files[".agents/skills/edit-world/SKILL.md"], "no edit-world skill recorded");
+		assert.doesNotMatch(files["AGENTS.md"] ?? "", /edit-world|mise run publish/);
+		// A game that lost its record syncs from the template as it is: the skill must not come back.
+		fs.rmSync(path.join(dir, BASE));
+		const run = sync(dir);
+		assert.equal(run.status, 0, run.stdout + run.stderr);
+		assert.ok(!fs.existsSync(path.join(dir, ".agents/skills/edit-world")), `${language}: edit-world stays gone`);
+		assert.ok(!fs.existsSync(path.join(dir, "world")));
+		const check = sync(dir, "--check");
+		assert.equal(check.status, 0, check.stdout + check.stderr);
+	}
+});
+
 test("a game made before the language question syncs as TypeScript", () => {
 	const dir = createGame();
 	const file = path.join(dir, "package.json");

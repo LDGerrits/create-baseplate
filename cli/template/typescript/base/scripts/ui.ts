@@ -1,6 +1,6 @@
 // Renders every UI story (`*.story.tsx`) offline with rur and lists each picture, so you can look
 // at it. Run it through `mise run ui`, which compiles first. Extra arguments go to `rur-native sweep`,
-// such as `--filter clicker-button`. Fails when a story doesn't render cleanly.
+// such as `--filter shop-button`. Fails when a story doesn't render cleanly.
 // With --check, as `mise run check` runs it: prints only the stories that fail. Without Studio's
 // fonts it renders without text, so a story that crashes still fails, even in CI.
 import { spawnSync } from "node:child_process";

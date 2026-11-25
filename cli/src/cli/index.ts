@@ -3,11 +3,13 @@ import { Command, CommanderError, Option } from "commander";
 import { DEFAULT_APP_NAME } from "../consts.ts";
 import { folderProblem } from "../helpers/scaffoldProject.ts";
 import {
+	type AddOn,
 	type AddOnChoices,
 	addOnsByLanguage,
 	allAddOns,
 	choicesFor,
 	DEFAULT_LANGUAGE,
+	defaultFor,
 	findConflict,
 	flagProblem,
 	flagValuesOf,
@@ -52,6 +54,17 @@ function flagsConflict(given: Language | undefined, addOns: Partial<AddOnChoices
 		.filter((language) => flagProblem(language, addOns) === undefined)
 		.map((language) => findConflict(language, choicesFor(language, addOns)));
 	return problems.length > 0 && problems.every((problem) => problem !== undefined) ? problems[0] : undefined;
+}
+
+/** What the recommended stack holds, such as "React and Reflex; no player data, entities, … yet". */
+export function stackSummary(stack: readonly AddOn[], chosen: AddOnChoices): string {
+	const picked = stack.flatMap((addOn) => addOn.choices.filter((choice) => choice.value === chosen[addOn.name]));
+	const left = stack.filter((addOn) => chosen[addOn.name] === NONE).map((addOn) => addOn.topic);
+	const list = (items: string[]) =>
+		items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} or ${items.at(-1)}`;
+	const has = picked.map((choice) => choice.label);
+	const hasText = has.length < 2 ? has.join("") : `${has.slice(0, -1).join(", ")} and ${has.at(-1)}`;
+	return [hasText, left.length > 0 ? `no ${list(left)} yet` : ""].filter((part) => part !== "").join("; ");
 }
 
 /** Why the game can't be made in the folder `input` names, with `name` (--name) or the folder's name. */
@@ -176,11 +189,10 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 		// question with no choice to offer: refuse before asking it.
 		const conflict = findConflict(language, chosen);
 		if (conflict !== undefined) refuse(conflict);
-		for (const addOn of addOnsByLanguage[language]) {
-			if (givenAddOns[addOn.name] !== undefined) continue;
+		const choose = async (addOn: AddOn) => {
 			const answer = await p.select({
 				message: addOn.question,
-				initialValue: addOn.defaultValue,
+				initialValue: defaultFor(language, addOn, chosen),
 				options: [
 					// Leave out what can't go with the answers so far, such as Reflex with Vide.
 					...addOn.choices.filter(
@@ -191,6 +203,22 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 			});
 			cancelled(answer);
 			chosen[addOn.name] = answer as string;
+		};
+		const unanswered = addOnsByLanguage[language].filter((addOn) => givenAddOns[addOn.name] === undefined);
+		// The project's shape first, then the libraries and tools: the recommended ones, or each in turn.
+		for (const addOn of unanswered.filter((addOn) => addOn.shape === true)) await choose(addOn);
+		const stack = unanswered.filter((addOn) => addOn.shape !== true);
+		if (stack.length > 0) {
+			for (const addOn of stack) chosen[addOn.name] = defaultFor(language, addOn, chosen);
+			const answer = await p.select({
+				message: "Which libraries and tools?",
+				options: [
+					{ value: "recommended", label: "The recommended ones", hint: stackSummary(stack, chosen) },
+					{ value: "choose", label: "Choose each one" },
+				],
+			});
+			cancelled(answer);
+			if (answer === "choose") for (const addOn of stack) await choose(addOn);
 		}
 		const answers = await p.group(
 			{

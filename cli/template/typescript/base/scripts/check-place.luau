@@ -2,7 +2,8 @@
 -- Opens a built place and checks that every roblox-ts import in it resolves to
 -- an instance, the way RuntimeLib resolves it in game. A missing package mount or
 -- a file routed to the wrong side compiles fine but errors in Studio; this finds
--- it without opening Studio.
+-- it without opening Studio. It also warns of instances Open Cloud's place publishing doesn't
+-- update.
 --
 -- Usage: lune run scripts/check-place <place.rbxl>
 
@@ -186,11 +187,27 @@ for _, script in game:GetDescendants() do
 	end
 end
 
+-- Open Cloud's place publishing doesn't update these classes, so after changing one, publish from
+-- Studio. Unions are PartOperations; WrapLayer, WrapTarget and WrapDeformer are BaseWraps.
+local UNPUBLISHABLE = { "PartOperation", "BaseWrap", "SurfaceAppearance", "EditableImage", "EditableMesh" }
+for _, descendant in game:GetDescendants() do
+	for _, class in UNPUBLISHABLE do
+		if descendant:IsA(class) then
+			print(
+				`! {descendant:GetFullName()} is a {descendant.ClassName}: Open Cloud's place publishing doesn't update these, so after changing it, publish from Studio (create.roblox.com/docs/cloud/guides/usage-place-publishing).`
+			)
+			break
+		end
+	end
+end
+
 if #problems > 0 then
 	for _, problem in problems do
 		print(problem)
 	end
 	print(`\n{#problems} of {checked} imports don't resolve in {placePath}`)
+end
+if #problems > 0 then
 	process.exit(1)
 end
 
