@@ -43,3 +43,6 @@ sourcemap.json
 /.claude/settings.local.json
 # Written by scripts/setup.ts, named for this clone
 /.claude/plugins/.claude-plugin/
+
+# Roblox's types for luau-lsp, fetched by scripts/luau.ts
+/.luau-lsp

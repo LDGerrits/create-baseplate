@@ -118,6 +118,10 @@ The compiler and ESLint catch most differences (`null`, `.length`, truthiness, `
 - Packages come from the `@rbxts` scope; a plain npm package won't run in Roblox.
 - Check Roblox values with `typeIs(value, "Vector3")` and `classIs(instance, "Part")`. To check an instance and its children, let Flamework build the check from a type: `Flamework.createGuard<Model & { Humanoid: Humanoid }>()`.
 
+## Luau in a TypeScript game
+
+A hand-written `.luau` module in `src/` is copied to `out/` as it is, and TypeScript imports it through a `.d.ts` beside it. The check formats it with StyLua, lints it with Selene and type-checks it with luau-lsp, strict. Give each Luau module a `.d.ts` beside it that declares what it returns, and a spec that calls it through those types.
+
 ## Packages
 
 Add one with `pnpm add <name>` (`-D` for build tools). pnpm installs only versions published at least two weeks ago; when it refuses one, pick an older version. If the package's scope is new, such as `@rbxts-js`, mount it under `ReplicatedStorage.rbxts_include.node_modules` in `default.rogen.json`, like the existing scopes. Keep `@rbxts/ripple` on 0.9: `@rbxts/pretty-react-hooks` is built for it, and the game loads one copy.

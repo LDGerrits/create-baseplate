@@ -33,11 +33,20 @@ interface Step {
 const steps: Step[] = [
 	// Writes the generated files each later step reads, after installing the locked packages.
 	{ name: "generate", command: "mise run --quiet generate", needs: [] },
+	// The Luau beside the TypeScript (scripts/luau.ts; nothing to do in a game without any), formatted
+	// before the format step, which the others wait for.
+	{
+		name: "stylua",
+		command: "node scripts/luau.ts stylua",
+		fixCommand: "node scripts/luau.ts stylua --fix",
+		needs: ["generate"],
+		format: true,
+	},
 	{
 		name: "format",
 		command: "biome ci .",
 		fixCommand: "biome check --write --no-errors-on-unmatched .",
-		needs: ["generate"],
+		needs: ["generate", "stylua"],
 		format: true,
 	},
 	{ name: "compile", command: "mise run --quiet --skip-deps compile", needs: ["format"] },
@@ -61,6 +70,8 @@ const steps: Step[] = [
 	},
 	// Rogen checks the compiled Luau too: without out/ it reports every source folder as empty.
 	{ name: "rogen", command: 'node scripts/each-place.ts --parallel "rogen check"', needs: ["compile"] },
+	{ name: "luau-lsp", command: "node scripts/luau.ts analyze", needs: ["format"] },
+	{ name: "selene", command: "node scripts/luau.ts selene", needs: ["format"] },
 	// No --cache: type-aware rules depend on other files, which the cache doesn't track.
 	{ name: "lint", command: "eslint --max-warnings 0 --no-error-on-unmatched-pattern src projects", needs: ["format"] },
 	{
