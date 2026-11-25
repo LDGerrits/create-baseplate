@@ -28,12 +28,6 @@ runs:
         # pnpm hard-links from its store, so the store sits beside the games, which are created under
         # the runner's temp folder, on the same drive. The CLI's pnpm install inherits the variable.
         echo "pnpm_config_store_dir=$RUNNER_TEMP/pnpm-store" >> "$GITHUB_ENV"
-        if [ "$MISE" = true ]; then
-          # Where jdx/mise-action and mise install tools, so those of later steps are cached too.
-          echo "MISE_DATA_DIR=$RUNNER_TEMP/mise" >> "$GITHUB_ENV"
-        fi
-      env:
-        MISE: ${{ inputs.mise }}
     - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ runner.temp }}/pnpm-store
@@ -46,7 +40,9 @@ runs:
     - if: inputs.mise == 'true'
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: ${{ runner.temp }}/mise
+        # mise's own data dir: jdx/mise-action moves mise's binary into it from the system drive, which
+        # fails across drives on Windows, where the runner's temp folder is on another.
+        path: ${{ runner.os == 'Windows' && '~/AppData/Local/mise' || '~/.local/share/mise' }}
         key:
           mise-${{ runner.os }}-${{ inputs.name }}-${{ inputs.language }}-${{ steps.period.outputs.month }}-${{ hashFiles('mise.toml', 'mise.lock',
           format('cli/template/{0}/base/mise.toml', inputs.language),
