@@ -11,16 +11,16 @@ Models know roblox-ts, Flamework and Rogen poorly, and the Roblox API changes fa
 
 ## The check
 
-`mise run check` formats, compiles, lints, builds the place, verifies every import in it resolves, runs the tests and renders the UI stories, in about ten seconds. The agent runs it after each change.
+`mise run check` formats, compiles, lints, builds the place, verifies every import in it resolves, runs the tests and renders the UI stories, in about three seconds. The agent runs it after each change. The steps that don't need each other's result run at the same time (in a multi-place game, the places too), and only a failed step's output is printed. The tooling's own type-check and tests (of `scripts/` and `.agents/hooks/`) run when those files changed since they last passed, and always on CI.
 
 ## Hooks
 
 The same hooks are set up for Claude Code, Codex, Cursor, GitHub Copilot (its cloud agent and CLI) and Gemini CLI:
 
-- **Before the agent ends its turn**, the check runs; a failure goes back to the agent to fix, once. When nothing changed since the last pass, the check is skipped. In Cursor it runs only when the turn finished, not when you pressed Stop.
+- **Before the agent ends its turn**, the check runs; a failure goes back to the agent to fix, once. The check records the files it passed on, so when they are the same as at the last pass, whether the agent or the hook ran it, the check is skipped. In Cursor it runs only when the turn finished, not when you pressed Stop.
 - **Before a command or an edit**, a guard blocks what agents get wrong in this project, and says what to do instead: editing generated files (and, in a Luau game, Wally's package folders), skipping the commit hook, npm, yarn or npx in place of pnpm (or, in a Luau game, Wally), printing `.env`, and publishing or touching the live game's data, from the shell or through Studio's MCP server (`open_cloud_invoke`, and `execute_luau` that reaches DataStores or HTTP).
-- **After each file edit**, Biome formats the file and ESLint applies its fixes to it, then the lint problems left go back to the agent at once, in a few seconds, instead of at the end of the turn. Fixes that would undo what the agent is still writing are reported but not applied: removing an import not used yet, `let` to `const`, an import made type-only. Only the edited file is linted and the compiler doesn't run; the check at the end of the turn covers the rest. Cursor doesn't show the agent what this hook says, so there it only applies the fixes. In a Luau game, StyLua formats the file and Selene lints it.
-- **Each commit** runs `mise run ci`, the check without its fixes, on exactly what is being committed, whoever commits.
+- **After each file edit**, Biome formats the file and ESLint applies its fixes to it, then the lint problems left go back to the agent at once, instead of at the end of the turn. In a TypeScript game the first edit starts a small server that keeps ESLint loaded (it stops after ten idle minutes, and restarts when anything but the edited file changed), so each edit after it takes about a fifth of a second; if the server can't be used, the hook lints in its own process. Set `BASEPLATE_ESLINT_SERVER=0` to never start it. Fixes that would undo what the agent is still writing are reported but not applied: removing an import not used yet, `let` to `const`, an import made type-only. Only the edited file is linted and the compiler doesn't run; the check at the end of the turn covers the rest. Cursor doesn't show the agent what this hook says, so there it only applies the fixes. In a Luau game, StyLua formats the file and Selene lints it.
+- **Each commit** runs `mise run ci`, the check without its fixes, on exactly what is being committed, whoever commits. It skips the check when it already passed on exactly the staged files, and when only Markdown is staged.
 
 Each tool's config runs the same scripts in `.agents/hooks/`:
 

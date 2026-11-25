@@ -17,7 +17,7 @@ Before you change something, look at what's there: the code that calls it, where
 
 ## Checking your work
 
-`mise run check` is the check: it formats (StyLua), type-checks (luau-lsp), lints (Selene), builds the place, runs the tests and renders the UI stories, in about ten seconds. Run it after each change and fix what it reports until it passes. In Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI, a hook formats and lints each file you edit and, outside Cursor, hands back the lint problems left; another runs the check when you stop and hands back any failure; in any tool, the commit hook runs it on what you commit.
+`mise run check` is the check: it formats (StyLua), type-checks (luau-lsp), lints (Selene), builds the place, runs the tests and renders the UI stories, in about three seconds, and prints only what failed. Run it after each change and fix what it reports until it passes. In Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI, a hook formats and lints each file you edit and, outside Cursor, hands back the lint problems left; another runs the check when you stop and hands back any failure; in any tool, the commit hook runs it on what you commit. The stop hook and the commit hook skip it when it already passed on exactly those files.
 
 - While iterating, narrower loops are faster: `mise run analyze` for type errors, `mise run test` for the tests, `mise run ui -- --filter <name>` for one story's picture.
 - When a Selene rule is wrong for one line, allow it on the line above with a comment saying why: `-- selene: allow(global_usage) -- <why>`. Don't silence the type checker with `:: any`; fix the type.

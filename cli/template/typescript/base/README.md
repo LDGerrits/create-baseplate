@@ -4,7 +4,7 @@ A Roblox game in roblox-ts, set up for coding agents: one command checks everyth
 
 ## What it gives an agent
 
-- **One command checks everything.** `mise run check` formats, compiles, type-checks, lints, builds the place, verifies every import in it resolves, runs the tests and renders the UI stories, in about ten seconds.
+- **One command checks everything.** `mise run check` formats, compiles, type-checks, lints, builds the place, verifies every import in it resolves, runs the tests and renders the UI stories, in about three seconds.
 - **Tests run without Studio.** Jest specs and end-to-end tests, with the real server and a client talking through remotes, run in [ree](https://github.com/Anime-Vanguards/roblox-engine-emulator), an emulated Roblox engine, in a few seconds. The same specs run in real Studio or Open Cloud through [jest-roblox](https://github.com/christopher-buss/jest-roblox-cli) (`mise run test:engine`).
 - **It can see the UI.** `mise run ui` renders every story offline with [rur](https://github.com/Anime-Vanguards/roblox-ui-renderer) and prints where each picture is.
 - **roblox-ts mistakes fail early.** Strict TypeScript, typed networking and ESLint's roblox-ts rules catch the JavaScript habits agents bring (`.length`, `null`, truthiness) and server code imported on the client.
@@ -46,7 +46,7 @@ Keys and local paths go in `.env`: copy `.env.example`, which lists each one.
 
 - **Editor:** open the folder in VS Code and install the recommended extensions. The mise extension gives VS Code the pinned Node and tools; Biome formats on save and ESLint fixes what it can; the roblox-ts extension shows compile errors as you type.
 - **Other editors:** `.editorconfig` sets tabs and line endings, and any TypeScript language server works with `tsconfig.json`. Run `mise run check` to format.
-- **The commit hook** formats the staged files and runs `mise run ci` on exactly what you commit: lint-staged sets unstaged changes and untracked files aside first, so `git add -p` works. It takes a few seconds. To commit work in progress anyway, `git commit --no-verify`.
+- **The commit hook** formats the staged files and runs `mise run ci` on exactly what you commit: lint-staged sets unstaged changes and untracked files aside first, so `git add -p` works. It takes a few seconds, and none when the check just passed on exactly what you commit, or when only Markdown is staged. To commit work in progress anyway, `git commit --no-verify`.
 - **React DevTools:** once the UI is mounted as AGENTS.md's UI section shows, run `mise x -- pnpm dlx react-devtools` in your own terminal, set the attribute `ReactDevTools` to true on Workspace in Studio, and play: the app shows the UI's component tree, props and state. React logs one harmless telemetry error when it connects.
 - **Tooling in TypeScript:** scripts, hooks and configs are `.ts`. Node runs them directly, ESLint loads its config through jiti, and `tsconfig.node.json` type-checks them in `mise run check`.
 - **Snippets:** in VS Code, type `service` or `controller` in a new file for a Flamework skeleton named after the file.

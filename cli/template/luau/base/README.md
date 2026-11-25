@@ -4,7 +4,7 @@ A Roblox game in Luau, set up for coding agents: one command checks everything, 
 
 ## What it gives an agent
 
-- **One command checks everything.** `mise run check` formats, type-checks, lints, builds the place, checks that client code never reaches for the server's, runs the tests and renders the UI stories, in about ten seconds.
+- **One command checks everything.** `mise run check` formats, type-checks, lints, builds the place, checks that client code never reaches for the server's, runs the tests and renders the UI stories, in about three seconds.
 - **Strict types for the whole game.** Every file is `--!strict`, and [luau-lsp](https://github.com/JohnnyMorganz/luau-lsp) type-checks it against every instance in the game, world included, and the packages' own types: `require(ReplicatedStorage.Shared.features.shop.ShopNetwork)` and `workspace.SpawnLocation` are typed, and a wrong name fails the check.
 - **Tests run without Studio.** Jest specs and end-to-end tests, with the real server and a client talking through remotes, run in [ree](https://github.com/Anime-Vanguards/roblox-engine-emulator), an emulated Roblox engine, in a few seconds; a failure points at the file and line. The same specs run in real Studio or Open Cloud through [jest-roblox](https://github.com/christopher-buss/jest-roblox-cli) (`mise run test:engine`).
 - **It can see the UI.** `mise run ui` renders every story offline with [rur](https://github.com/Anime-Vanguards/roblox-ui-renderer) and prints where each picture is.
@@ -48,7 +48,7 @@ Keys and local paths go in `.env`: copy `.env.example`, which lists each one.
 
 - **Editor:** open the folder in VS Code and install the recommended extensions. The mise extension gives VS Code the pinned tools; luau-lsp reads `.vscode/settings.json` (the check reads it too) and types the game from `sourcemap.json`; StyLua formats on save and Selene underlines lint problems.
 - **Other editors:** `.editorconfig` sets tabs and line endings, and any editor with luau-lsp works: give it `.vscode/settings.json` as its settings. Run `mise run check` to format.
-- **The commit hook** formats the staged files and runs `mise run ci` on exactly what you commit: lint-staged sets unstaged changes and untracked files aside first, so `git add -p` works. It takes a few seconds. To commit work in progress anyway, `git commit --no-verify`.
+- **The commit hook** formats the staged files and runs `mise run ci` on exactly what you commit: lint-staged sets unstaged changes and untracked files aside first, so `git add -p` works. It takes a few seconds, and none when the check just passed on exactly what you commit, or when only Markdown is staged. To commit work in progress anyway, `git commit --no-verify`.
 - **Tooling in TypeScript:** scripts, hooks and configs are `.ts`, which Node runs directly; `tsconfig.node.json` type-checks them in `mise run check`.
 - **Snippets:** in VS Code, type `service` or `controller` in a new file for a skeleton named after the file.
 - **Tasks:** `mise tasks` lists every task with what it does.

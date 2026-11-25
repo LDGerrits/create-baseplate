@@ -9,7 +9,7 @@ Coding agents write good roblox-ts and Luau when the project tells them, fast, w
 
 ### Agents first
 
-Everything an agent needs to know whether its change works is one command, `mise run check`, which runs in about ten seconds and prints what to fix. Hooks run it before the agent ends its turn and block what agents get wrong here, such as editing generated files; the commit hook runs it on every commit, whoever commits. `AGENTS.md` and the skills hold what the code can't show. The CLI itself takes every answer as a flag, and `--json` prints one result, so an agent creates a game in one command.
+Everything an agent needs to know whether its change works is one command, `mise run check`, which runs in about three seconds and prints what to fix. Hooks run it before the agent ends its turn and block what agents get wrong here, such as editing generated files; the commit hook runs it on every commit, whoever commits. `AGENTS.md` and the skills hold what the code can't show. The CLI itself takes every answer as a flag, and `--json` prints one result, so an agent creates a game in one command.
 
 ### None is a choice
 
