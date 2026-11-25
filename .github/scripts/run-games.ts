@@ -8,9 +8,12 @@
 //   node .github/scripts/run-games.ts engine    run the prepared games' specs in real Roblox.
 //
 // CLI is the create-baseplate entry file to run, GAMES_DIR the folder the games are made in.
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import net from "node:net";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
+import { pathToFileURL } from "node:url";
 import { type Outcome, run as runCommand } from "../../scripts/run.ts";
 import type { Batch } from "./generate-matrix.ts";
 
@@ -124,6 +127,32 @@ export interface Steps {
 	mise(args: string[], dir: string): Promise<number | null>;
 	/** The game's `core.hooksPath`. */
 	hooksPath(dir: string): Promise<string>;
+	/** Calls a TypeScript game's edit hook twice on a file with a lint problem; see `editHookFailure`. */
+	probeEditHook?(dir: string): Promise<EditHookProbe>;
+}
+
+/** What calling a game's edit hook twice, on the same edited file, printed, and whether its ESLint server was up after. */
+export interface EditHookProbe {
+	first: string;
+	second: string;
+	listening: boolean;
+}
+
+/** The problem the probe file has, as ESLint names it: a `let` nothing reassigns. */
+export const PROBE_RULE = "prefer-const";
+
+/**
+ * Why a probe of the edit hook shows it isn't working, or undefined when it is: both calls must report
+ * the lint problem the file has, and the server the first one started must still be listening (it is
+ * what the second call asks, a named pipe on Windows).
+ */
+export function editHookFailure({ first, second, listening }: EditHookProbe): string | undefined {
+	if (!first.includes(PROBE_RULE))
+		return `the edit hook didn't report the lint problem on the first call: ${first.trim() || "(no output)"}`;
+	if (!listening) return "the edit hook's ESLint server wasn't listening after the first call";
+	if (!second.includes(PROBE_RULE))
+		return `the edit hook didn't report the lint problem on the second call: ${second.trim() || "(no output)"}`;
+	return undefined;
 }
 
 /** The last line of `stdout` that is a JSON object: what `--json` printed. */
@@ -186,6 +215,8 @@ export async function checkGame(
 	return { note };
 }
 
+const isTypeScript = (flags: string) => !flags.split(" ").includes("luau");
+
 /** A batch: its template's check first, then each game. Returns the job's exit code. */
 export async function runBatch(batch: Batch, gamesDir: string, steps: Steps, templateDir: string): Promise<number> {
 	const rows: Row[] = [];
@@ -204,10 +235,26 @@ export async function runBatch(batch: Batch, gamesDir: string, steps: Steps, tem
 			),
 		);
 	}
+	// The first TypeScript game's edit hook is run for real too: its ESLint server listens on a named
+	// pipe on Windows, a socket elsewhere, and the hook's tests alone don't show it works in a game.
+	let probed = false;
 	for (const [index, flags] of batch.games.entries()) {
 		const name = flags === "" ? "(no add-ons)" : flags;
 		const dir = path.join(gamesDir, String(index), "coin-rush");
-		rows.push(await group(name, () => timed(name, () => checkGame(flags, dir, steps))));
+		const probe = steps.probeEditHook !== undefined && !probed && isTypeScript(flags);
+		if (probe) probed = true;
+		rows.push(
+			await group(name, () =>
+				timed(name, async () => {
+					const checked = await checkGame(flags, dir, steps);
+					if (checked.failure !== undefined || !probe) return checked;
+					const failure = editHookFailure(
+						(await steps.probeEditHook?.(dir)) ?? { first: "", second: "", listening: false },
+					);
+					return failure === undefined ? { note: `${checked.note}; edit hook ran` } : { failure };
+				}),
+			),
+		);
 	}
 	return report(`Games in ${batch.name}`, rows);
 }
@@ -278,6 +325,45 @@ export async function runEngine(
 	return report("Games in real Roblox", rows);
 }
 
+/** Calls the game's edit hook twice, as an agent tool does after a write, on a file with a lint problem. */
+async function probeEditHook(dir: string): Promise<EditHookProbe> {
+	const folder = fs.existsSync(path.join(dir, "projects", "common", "src"))
+		? "projects/common/src/probe"
+		: "src/game/probe";
+	const file = `${folder}/probe.ts`;
+	const full = path.join(dir, file);
+	fs.mkdirSync(path.dirname(full), { recursive: true });
+	fs.writeFileSync(full, "export const value = 1;\nlet total = 2;\nexport const sum = total + value;\n");
+	const payload = JSON.stringify({ tool_name: "Write", tool_input: { file_path: file }, cwd: dir });
+	const call = () =>
+		spawnSync("mise", ["exec", "--", "node", ".agents/hooks/edited.ts", "claude"], {
+			cwd: dir,
+			input: payload,
+			encoding: "utf8",
+			timeout: 120_000,
+		}).stdout;
+	try {
+		const first = call();
+		const { socketPath } = (await import(
+			pathToFileURL(path.join(dir, ".agents", "hooks", "eslint-server.ts")).href
+		)) as {
+			socketPath(root: string): string;
+		};
+		const listening = await new Promise<boolean>((resolve) => {
+			const connection = net.connect(socketPath(dir));
+			connection.setTimeout(3000, () => connection.destroy());
+			connection.on("connect", () => {
+				connection.destroy();
+				resolve(true);
+			});
+			connection.on("error", () => resolve(false));
+		});
+		return { first, second: call(), listening };
+	} finally {
+		fs.rmSync(path.dirname(full), { recursive: true, force: true });
+	}
+}
+
 function need(name: string): string {
 	const value = process.env[name];
 	if (value === undefined || value === "") throw new Error(`${name} isn't set`);
@@ -309,6 +395,7 @@ if (import.meta.main) {
 		create,
 		mise: async (args, dir) => (await run("mise", args, dir)).code,
 		hooksPath: async (dir) => (await run("git", ["config", "core.hooksPath"], dir, { quiet: true })).stdout.trim(),
+		probeEditHook,
 	};
 	if (mode === "check") {
 		process.exitCode = await runBatch(JSON.parse(need("GAMES")) as Batch, gamesDir, steps, templateDir);

@@ -5,6 +5,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
 	checkGame,
+	type EditHookProbe,
+	editHookFailure,
 	isInfrastructureFailure,
 	lastJson,
 	type Outcome,
@@ -257,4 +259,39 @@ test("when Roblox fails twice, the run stops spending its quota on the games aft
 	assert.equal(ran.length, 2, "one game, twice");
 	assert.match(log, /Roblox's side failed twice \(exit 3\)/);
 	assert.match(log, /not run: Roblox's side failed on the game before/);
+});
+
+const probed = {
+	first: "x.ts:2 prefer-const: never reassigned",
+	second: "x.ts:2 prefer-const: never reassigned",
+	listening: true,
+};
+
+test("the edit hook works when both calls report the lint problem and the server it started is up", () => {
+	assert.equal(editHookFailure(probed), undefined);
+});
+
+test("the edit hook fails when a call says nothing, or the server isn't there for the second call", () => {
+	assert.match(editHookFailure({ ...probed, first: "" }) ?? "", /first call/);
+	assert.match(editHookFailure({ ...probed, listening: false }) ?? "", /server wasn't listening/);
+	assert.match(editHookFailure({ ...probed, second: "" }) ?? "", /second call/);
+});
+
+test("a batch runs the edit hook for its first TypeScript game only, and fails that game when it doesn't work", async () => {
+	const probes: string[] = [];
+	const steps = (result: EditHookProbe): Steps => ({
+		...fakeSteps({}),
+		probeEditHook: async (dir) => {
+			probes.push(dir.split("/").slice(-2).join("/"));
+			return result;
+		},
+	});
+	const mixed = { ...batch(["--language luau", "", "--ui vide"]) };
+	const ok = await quietly(() => runBatch(mixed, "/g", steps(probed), "/t"));
+	assert.equal(ok.result, 0);
+	assert.deepEqual(probes, ["1/coin-rush"]);
+	assert.match(ok.log, /edit hook ran/);
+	const bad = await quietly(() => runBatch(batch([""]), "/g", steps({ ...probed, first: "" }), "/t"));
+	assert.equal(bad.result, 1);
+	assert.match(bad.log, /first call/);
 });
