@@ -63,7 +63,11 @@ export default defineConfig(
 			"import-x/no-cycle": "error",
 			"import-x/no-self-import": "error",
 
-			// roblox-ts has no `null` and treats `0`, `""` and `NaN` as truthy in Luau; be explicit.
+			// roblox-ts keeps JavaScript's rule that `0`, `""` and `NaN` are falsy by adding checks to the Luau
+			// (`if n ~= 0 and n == n and n`), where Luau itself treats them as truthy. Compare numbers and
+			// strings explicitly instead. This rule covers every case roblox-ts/lua-truthiness reports (the
+			// two flag the same lines), so that one is off: its message tells agents to turn the rule off.
+			"roblox-ts/lua-truthiness": "off",
 			"@typescript-eslint/strict-boolean-expressions": [
 				"error",
 				{ allowString: false, allowNumber: false, allowNullableObject: true },
