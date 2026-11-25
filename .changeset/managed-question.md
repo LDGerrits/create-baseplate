@@ -1,5 +1,0 @@
----
-"create-baseplate": minor
----
-
-A new question, `--managed full|partial`, asks whether Rojo manages the whole place or only the code, after the places question and in both languages. `full`, the default, is as before: the map and lighting are files in `world/`, and the game builds and publishes from git. `partial` follows Roblox's partially managed workflow: Studio owns the place and its world, and files hold only the code. The game has no `world/`, `mise run sync`, `edit-world` skill, world types, `scripts/publish.ts`, `mise run publish` or publish workflow, and its `AGENTS.md` and `release` skill say that instances in the workspace aren't typed, that agents reach them with `WaitForChild` and look at or change the map through the Studio MCP, and that the user publishes from Studio. `mise run dev` compiles on save and serves the code with Rogen, and opens no Studio: open your place and connect the Rojo plugin. The check and the tests run on a place made of the code alone; with `--entities jecs` or `components`, the spinner's end-to-end test makes its own part. `create-baseplate sync` keeps a partially managed game without the world's files.
