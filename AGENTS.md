@@ -18,8 +18,9 @@ The build copies the template into `cli/dist/template`, only the files git track
 - At the root, for the CLI and the docs site: `mise run check` (format, lint, build, type-check, test).
 - In `cli/template/<language>/base`: its own `mise run check`, as its `AGENTS.md` says.
 - To see what a user gets: `pnpm --filter create-baseplate build`, then `node cli/dist/index.js <folder> --json` (with `--language luau` for a Luau game), and `mise run check` in that folder.
-- In Claude Code, a Stop hook (`.claude/hooks/check.ts`) runs the root `mise run check` when files changed and hands a failure back before the agent stops.
-- The commit hook (`.githooks/pre-commit`) runs the root's `mise run ci` on every commit, and a template's check when a commit touches its `cli/template/<language>/base`. Turn it on in a new clone with `git config core.hooksPath .githooks`.
+- In Claude Code, a Stop hook (`.claude/hooks/check.ts`) runs the root check when files changed, and a template's check (`mise run check` in its `base`) for each template whose code changed, then hands back only what failed, shortened to its end. Both skip a check that already passed on exactly these files (a tree id recorded in the worktree's git folder, as in a created game; `scripts/repo-check.ts`).
+- The commit hook (`.githooks/pre-commit`, `scripts/pre-commit.ts`) checks what is staged, not the working tree: a template's own hook for a template's code, and the root check only as far as the commit reaches (docs and `www/` run the docs site's tasks and the CLI's tests of the docs; Markdown nothing reads runs nothing). When the disk differs from the index, the root check runs on a copy of the index, without stashing (a template's hook sets the other changes aside, as in a game). It says nothing about what passes. Turn it on in a new clone with `git config core.hooksPath .githooks`.
+- `mise run check` streams everything, as CI does. `node scripts/check.ts --quiet` (what the hooks run) prints only what failed; `--scope docs` runs the docs part alone.
 
 ## Releases
 

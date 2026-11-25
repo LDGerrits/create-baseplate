@@ -1,20 +1,4 @@
 #!/bin/sh
-# The repo's commit hook.
-# - cli/template/<language>/base: its own full check on exactly what is being committed
-#   (scripts/pre-commit.ts), for each template the commit touches.
-# - Every commit: `mise run ci` at the root, for the CLI and the docs site. A change to the template or
-#   an add-on can break the CLI's tests (add-ons edit the template's files by their text), and turbo
-#   replays what didn't change from its cache, so this costs little.
+# The repo's commit hook: scripts/pre-commit.ts checks what is staged, scoped to what it touches.
 # `git config core.hooksPath .githooks` turns this folder on.
-set -e
-root="$(git rev-parse --show-toplevel)"
-staged="$(git diff --cached --name-only --diff-filter=ACMRD)"
-for base in "$root"/cli/template/*/base; do
-	relative="${base#"$root"/}"
-	if echo "$staged" | grep -q "^$relative/"; then
-		(cd "$base" && mise exec -- node scripts/pre-commit.ts)
-	fi
-done
-if [ -n "$staged" ]; then
-	(cd "$root" && mise run ci)
-fi
+exec mise exec -- node "$(git rev-parse --show-toplevel)/scripts/pre-commit.ts"

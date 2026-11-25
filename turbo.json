@@ -1,5 +1,6 @@
 {
 	"$schema": "https://turbo.build/schema.json",
+	"globalPassThroughEnv": ["NODE_OPTIONS", "NO_COLOR", "FORCE_COLOR"],
 	"tasks": {
 		"build": {
 			"dependsOn": ["^build"],
