@@ -16,6 +16,7 @@ You don't publish: a hook stops `mise run publish` and Studio's live tools, and 
    - `prod`: a tag (the same one, after stable), once a reviewer approves the `prod` environment.
 
    A tag publishes only a commit whose CI passed on main, so tag a commit that has merged (every push to main gets its own CI run, so an older commit still has its result).
-5. **Say what changed for players**, in a few lines, for the tag or the release notes: what they will see and do differently, and anything that resets or migrates their data.
+5. **After a publish to the dev experience, look at its errors.** `mise run errors -- <version>` lists the errors first seen in that place version or later, most frequent first, with stack traces; the version is in the publish job's log (`Published ... as version 42`), and `mise run errors -- --hours 6` takes the last hours instead. It only reads, with a key of its own (`ROBLOX_ERRORS_API_KEY`, see `.env.example`); if the key isn't set, say so and don't ask for it in the chat. Fix what is new, let the user publish again, and run it again: the count of a fixed error stops growing. Roblox's data lags by minutes, so an empty list right after a publish isn't proof.
+6. **Say what changed for players**, in a few lines, for the tag or the release notes: what they will see and do differently, and anything that resets or migrates their data.
 
 When asked to deploy and the keys aren't set up, point to `mise run doc publishing` and `.env.example`; don't ask for a key in the chat or put one in a file.

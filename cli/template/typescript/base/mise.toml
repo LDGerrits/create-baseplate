@@ -116,6 +116,11 @@ depends = ["build"]
 env = { _.file = ".env" }
 run = 'node scripts/each-place.ts "node {root}/scripts/publish.ts build/game.rbxl"'
 
+[tasks.errors]
+description = "Read-only: the errors first seen in a place version, with stack traces, from Open Cloud's Error Reporting API (the key, ROBLOX_ERRORS_API_KEY, in .env.example): mise run errors -- 42, or -- --hours 6"
+env = { _.file = ".env" }
+run = 'node scripts/each-place.ts "node {root}/scripts/errors.ts" --'
+
 [tasks.feature]
 description = "Start a feature: its network file, service with a spec, controller and the entry-script imports. In a multi-place game it goes in the shared code, or in one place when you name it: mise run feature shop lobby"
 usage = '''

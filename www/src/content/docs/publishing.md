@@ -41,6 +41,10 @@ Keep this key apart from the test key the CI uses (`ROBLOX_OPEN_CLOUD_API_KEY`, 
 
 Agents don't publish: a hook stops them running `mise run publish` or publishing through Studio's MCP server, and they tell you when a change is ready. Open Cloud's place publishing doesn't update unions, `SurfaceAppearance`, wrap layers or editable images and meshes, so the check warns about each: after changing one, publish from Studio.
 
+## Read the errors of a version
+
+After a version reaches the dev experience, `mise run errors -- <version>` lists the errors first seen in that place version or later, most frequent first, with their stack traces; the version number is in the publish job's log (`Published ... as version 42`). `mise run errors -- --hours 6` lists those first seen in the last hours instead, and `--json` prints them as JSON. Run it again after a fix: the count of a fixed error stops growing. It reads from Roblox's [Error Reporting](https://create.roblox.com/docs/cloud/guides/error-reporting) and [Analytics](https://create.roblox.com/docs/cloud/guides/analytics) APIs with a key of its own, `ROBLOX_ERRORS_API_KEY`, which holds only `universe.analytics:read`: it can't publish or change anything, so an agent may run it. Roblox's data lags by a few minutes.
+
 ## Publish from CI
 
 Every published version should come from a commit, so you can publish any of them again. `.github/workflows/publish.yml` publishes to up to three targets, each in its own experience:
