@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { test } from "node:test";
+import { after, test } from "node:test";
 import { addImport, createFeature } from "./feature.ts";
 
 const SERVER = `import { Flamework } from "@flamework/core";
@@ -18,8 +18,15 @@ const CLIENT = `import { Flamework } from "@flamework/core";
 Flamework.ignite();
 `;
 
+// Each test's folder, removed when the file's tests end.
+const temps: string[] = [];
+after(() => {
+	for (const dir of temps) fs.rmSync(dir, { recursive: true, force: true });
+});
+
 function game(files: Record<string, string>) {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "feature-"));
+	temps.push(dir);
 	for (const [file, text] of Object.entries(files)) {
 		fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
 		fs.writeFileSync(path.join(dir, file), text);

@@ -113,8 +113,6 @@ async function lint(files: string[], formatted: Promise<unknown>): Promise<ESLin
 }
 
 if (import.meta.main) {
-	// Most of the time goes to loading ESLint's plugins; V8's compile cache shortens that on later edits.
-	module.enableCompileCache?.();
 	let payload: Payload = {};
 	try {
 		payload = JSON.parse(fs.readFileSync(0, "utf8")) as Payload;
@@ -125,6 +123,10 @@ if (import.meta.main) {
 	const files = filesToCheck(editedFiles(payload), root, start).filter((file) => fs.existsSync(path.join(root, file)));
 	if (files.length === 0) process.exit(0);
 	process.chdir(root);
+	// Most of the time goes to loading ESLint's plugins; V8's compile cache shortens that on later edits
+	// by about 0.2s. It lives in node_modules, so deleting that removes it: Node's default folder in
+	// the temp folder grows with every checkout and is never cleaned.
+	module.enableCompileCache?.(path.join(root, "node_modules/.cache/node-compile-cache"));
 
 	// Biome formats while ESLint loads its config and plugins, which takes most of the time; ESLint
 	// reads the files only once Biome is done with them.
