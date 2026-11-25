@@ -1,6 +1,6 @@
 {
 	"name": "create-baseplate",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Create a Roblox game, in roblox-ts or Luau, set up for coding agents",
 	"keywords": [
 		"roblox-ts",
