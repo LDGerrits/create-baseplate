@@ -47,12 +47,7 @@
 			"to": ""
 		},
 		{
-			"file": "mise.toml",
-			"from": "so it can't lean on one place's map.",
-			"to": "so it can't import one place's own code."
-		},
-		{
-			"file": "mise.toml",
+			"file": "scripts/check.ts",
 			"from": "so it can't lean on one place's map.",
 			"to": "so it can't import one place's own code."
 		},

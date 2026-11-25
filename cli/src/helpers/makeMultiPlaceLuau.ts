@@ -108,7 +108,10 @@ export function makeMultiPlaceLuau(dir: string, name: string, managed: Managed) 
 
 	fs.appendFileSync(at(".gitignore"), gitignore(managed));
 	fs.appendFileSync(at(".styluaignore"), "/projects/*/build\n");
-	fs.writeFileSync(at("mise.toml"), replaceIn(read("mise.toml"), '"selene src tests"', '"selene projects"'));
+	fs.writeFileSync(
+		at("scripts/check.ts"),
+		replaceIn(read("scripts/check.ts"), '"selene src tests"', '"selene projects"'),
+	);
 	// Asphalt, from the root, writes the assets' IDs into the shared code.
 	if (fs.existsSync(at("asphalt.toml"))) {
 		fs.writeFileSync(
