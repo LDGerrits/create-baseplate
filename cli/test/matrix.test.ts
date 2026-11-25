@@ -1,6 +1,7 @@
 // CI's sets of created games (.github/scripts/generate-matrix.ts) cover what they promise, in each language,
 // and what a run of each event takes of them, in batches.
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { test } from "node:test";
 import {
 	type Answers,
@@ -10,6 +11,7 @@ import {
 	docsOnly,
 	events,
 	generators,
+	MIN_NODE,
 	outputsOf,
 	plan,
 } from "../../.github/scripts/generate-matrix.ts";
@@ -180,9 +182,44 @@ test("a pull request creates the pull sets, in batches of one language each, wit
 test("a push to main, the nightly run and a run by hand create the full sets and run the engine", () => {
 	for (const event of ["push", "schedule", "workflow_dispatch"] as const) {
 		const { create, windows, engine } = plan({ event, headRef: "" });
-		assert.deepEqual(games(create).sort(), [...allMatrices.full].sort(), event);
+		assert.deepEqual(
+			games(create.filter((batch) => batch.node === undefined)).sort(),
+			[...allMatrices.full].sort(),
+			event,
+		);
 		assert.deepEqual(games(windows).sort(), [...allMatrices.windows].sort(), event);
 		assert.deepEqual(engine, allMatrices.engine, event);
+	}
+});
+
+test("only the nightly run and a run by hand add the macOS games and the minimum Node", () => {
+	const minimum = (
+		JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { engines: { node: string } }
+	).engines.node.replace(">=", "");
+	assert.match(MIN_NODE, /^\d+\.\d+\.\d+$/);
+	assert.ok(MIN_NODE.startsWith(minimum), "the minimum is what the CLI's engines say");
+	for (const event of ["schedule", "workflow_dispatch"] as const) {
+		const { create, macos } = plan({ event, headRef: "" });
+		assert.deepEqual(games(macos).sort(), ["", "--language luau"], event);
+		assert.deepEqual(
+			macos.map((batch) => batch.language).sort(),
+			["luau", "typescript"],
+			"a game of each language, checked as a game",
+		);
+		assert.ok(macos.every((batch) => !batch.template && batch.node === undefined));
+		const old = create.filter((batch) => batch.node !== undefined);
+		assert.deepEqual(old, [
+			{ name: `node ${MIN_NODE}`, language: "typescript", games: [""], template: false, node: MIN_NODE },
+		]);
+		assert.deepEqual(games(create.filter((batch) => batch.node === undefined)).sort(), [...allMatrices.full].sort());
+	}
+	for (const event of ["push", "pull_request"] as const) {
+		const { create, macos } = plan({ event, headRef: "feature", changedFiles: ["cli/src/index.ts"] });
+		assert.deepEqual(macos, [], event);
+		assert.ok(
+			create.every((batch) => batch.node === undefined),
+			event,
+		);
 	}
 });
 
@@ -208,6 +245,7 @@ test("a pull request that changes only the docs creates no game", () => {
 		assert.deepEqual(plan({ event: "pull_request", headRef, changedFiles: changed }), {
 			create: [],
 			windows: [],
+			macos: [],
 			engine: [],
 		});
 	}
@@ -232,15 +270,22 @@ test("only the docs site and Markdown files outside the templates are docs", () 
 
 test("the plan's outputs say which jobs run, so a pull request of only docs still ends in CI passed", () => {
 	const none = outputsOf(plan({ event: "pull_request", changedFiles: ["README.md"] }));
-	assert.deepEqual([none["run-create"], none["run-windows"], none["run-engine"]], ["false", "false", "false"]);
+	assert.deepEqual(
+		[none["run-create"], none["run-windows"], none["run-macos"], none["run-engine"]],
+		["false", "false", "false", "false"],
+	);
 	assert.deepEqual(JSON.parse(none.create ?? ""), { include: [] });
 	const main = outputsOf(plan({ event: "push" }));
-	assert.deepEqual([main["run-create"], main["run-windows"], main["run-engine"]], ["true", "true", "true"]);
+	assert.deepEqual(
+		[main["run-create"], main["run-windows"], main["run-macos"], main["run-engine"]],
+		["true", "true", "false", "true"],
+	);
+	assert.equal(outputsOf(plan({ event: "schedule" }))["run-macos"], "true");
 	const batch = (
 		JSON.parse(main.create ?? "") as {
 			include: { name: string; language: string; games: string[]; template: boolean }[];
 		}
 	).include[0];
-	assert.deepEqual(Object.keys(batch ?? {}).sort(), ["games", "language", "name", "template"]);
+	assert.deepEqual(Object.keys(batch ?? {}).sort(), ["games", "language", "name", "template"], "no node on a push");
 	assert.deepEqual(events.length, 4);
 });

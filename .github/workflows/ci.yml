@@ -2,8 +2,9 @@ name: CI
 
 # A pull request creates the games that cover every two add-ons together, and the engine job (real Roblox)
 # runs on it only for Renovate's updates. The games that make each add-on alone and the engine are what
-# a push to main, the nightly run and a run by hand add; the Windows games run on every event
-# (.github/scripts/generate-matrix.ts).
+# a push to main, the nightly run and a run by hand add; the Windows games run on every event. The
+# nightly run and a run by hand also create a game on macOS, and one under the oldest Node the CLI
+# supports, with the CLI's tests (.github/scripts/generate-matrix.ts).
 on:
   push:
     branches: [main]
@@ -68,9 +69,11 @@ jobs:
     outputs:
       create: ${{ steps.generate.outputs.create }}
       windows: ${{ steps.generate.outputs.windows }}
+      macos: ${{ steps.generate.outputs.macos }}
       engine: ${{ steps.generate.outputs.engine }}
       run-create: ${{ steps.generate.outputs.run-create }}
       run-windows: ${{ steps.generate.outputs.run-windows }}
+      run-macos: ${{ steps.generate.outputs.run-macos }}
       run-engine: ${{ steps.generate.outputs.run-engine }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -127,6 +130,20 @@ jobs:
       # The package as npm would publish it: packing builds it (prepack), from this clean checkout, and
       # its dependencies come from npm, as for someone running `pnpm create baseplate`.
       - run: pnpm install --frozen-lockfile && pnpm --filter create-baseplate pack --pack-destination "$RUNNER_TEMP"
+      # The batch for the oldest Node the CLI supports runs the CLI's tests and creates its game under
+      # it. Node 22 before 22.18 strips types only with a flag, which the tests and scripts need.
+      - name: Use the oldest supported Node
+        if: matrix.node != ''
+        run: |
+          mise install "node@$MIN_NODE"
+          echo "$(mise where "node@$MIN_NODE")/bin" >> "$GITHUB_PATH"
+          echo "NODE_OPTIONS=--experimental-strip-types --disable-warning=ExperimentalWarning" >> "$GITHUB_ENV"
+        env:
+          MIN_NODE: ${{ matrix.node }}
+      - name: CLI tests on the oldest supported Node
+        if: matrix.node != ''
+        run: node --version && node --test --test-reporter=spec test/*.test.ts
+        working-directory: cli
       - run: npm install --no-audit --no-fund --prefix "$RUNNER_TEMP/cli" "$RUNNER_TEMP"/create-baseplate-*.tgz
       - run: sh .github/scripts/mesa.sh wait
       - run: node .github/scripts/run-games.ts check
@@ -151,6 +168,36 @@ jobs:
     defaults:
       run:
         shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        with:
+          version: 2026.11.8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: pnpm install --frozen-lockfile && pnpm --filter create-baseplate pack --pack-destination "$RUNNER_TEMP"
+      - run: npm install --no-audit --no-fund --prefix "$RUNNER_TEMP/cli" "$RUNNER_TEMP"/create-baseplate-*.tgz
+      - run: node .github/scripts/run-games.ts check
+        env:
+          GAMES: ${{ toJSON(matrix) }}
+          CLI: ${{ runner.temp }}/cli/node_modules/create-baseplate/dist/index.js
+          GAMES_DIR: ${{ runner.temp }}/games
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  macos:
+    # A created game on macOS, where mise and the tools come from other builds than on Linux: the
+    # defaults of each language. The nightly run and a run by hand only; like the engine job, it shows
+    # its own red and isn't one of the jobs CI passed waits for.
+    name: Games on macOS (${{ matrix.name }})
+    needs: plan
+    if: needs.plan.outputs.run-macos == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.macos) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
