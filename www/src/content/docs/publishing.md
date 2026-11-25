@@ -51,6 +51,8 @@ Every published version should come from a commit, so you can publish any of the
 | stable (optional) | a version tag, `git tag v1.2.0 && git push origin v1.2.0` | testers playing the release before players do |
 | prod | the same tag, after stable if you use it, once someone approves it | the game players join |
 
+A tag publishes only a commit whose CI passed on main: the workflow waits for that commit's run if it is still going, and stops when there is none or it failed. Tag a commit that has merged to main.
+
 Most games need only dev and prod. Add stable when other people test releases, such as a QA group or trusted players: they play the exact build prod will get, while dev keeps moving. Each experience has its own DataStores, and its own developer products, game passes and badges, with their own IDs, so every target is one more set of these to keep in step.
 
 Set up each target you use:

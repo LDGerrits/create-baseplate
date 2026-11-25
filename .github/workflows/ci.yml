@@ -230,3 +230,21 @@ jobs:
           ROBLOX_OPEN_CLOUD_API_KEY: ${{ secrets.ROBLOX_OPEN_CLOUD_API_KEY }}
           ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
           ROBLOX_PLACE_ID: ${{ vars.ROBLOX_PLACE_ID }}
+
+  passed:
+    # The one check a branch ruleset requires on main, and what the release waits for. The jobs
+    # above have names that change with the add-on sets, so a ruleset can't name them. A skipped job
+    # (the engine job without its variables, the changeset job on main) is fine; a failed or
+    # cancelled one is not.
+    name: CI passed
+    if: always()
+    needs: [template, cli, changeset, matrix, create, windows, engine]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail when a job failed or was cancelled
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$NEEDS" | jq -e 'all(.[]; .result == "success" or .result == "skipped")' > /dev/null
+        env:
+          NEEDS: ${{ toJSON(needs) }}

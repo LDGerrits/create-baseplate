@@ -23,7 +23,7 @@ The build copies the template into `cli/dist/template`, only the files git track
 
 ## Releases
 
-A change to `create-baseplate` (the CLI, the template or an add-on) comes with a changeset: `pnpm changeset`, then pick the bump and say what changed for someone creating a game. On main, `.github/workflows/release.yml` keeps a "Version packages" pull request open with the next version and `cli/CHANGELOG.md`; merging it publishes to npm with provenance, once the repository variable `NPM_PUBLISH` is `true` and the workflow is a trusted publisher of `create-baseplate` on npmjs.com. The version PR's CI runs only when the repository's GitHub App opens it (secrets `BOT_APP_CLIENT_ID` and `BOT_APP_PRIVATE_KEY`, Contents and Pull requests: read and write); the mise lock workflow pushes as the same app. Renovate's updates carry no changeset; the next release takes them along.
+A change to `create-baseplate` (the CLI, the template or an add-on) comes with a changeset: `pnpm changeset`, then pick the bump and say what changed for someone creating a game. On main, `.github/workflows/release.yml` keeps a "Version packages" pull request open with the next version and `cli/CHANGELOG.md`; merging it publishes to npm with provenance, but only when CI passed on that commit (the release workflow starts when CI finishes on main), once the repository variable `NPM_PUBLISH` is `true` and the workflow is a trusted publisher of `create-baseplate` on npmjs.com. The version PR's CI runs only when the repository's GitHub App opens it (secrets `BOT_APP_CLIENT_ID` and `BOT_APP_PRIVATE_KEY`, Contents and Pull requests: read and write); the mise lock workflow pushes as the same app. Renovate's updates carry no changeset; the next release takes them along.
 
 ## Updates
 

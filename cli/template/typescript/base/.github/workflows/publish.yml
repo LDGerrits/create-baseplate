@@ -5,6 +5,8 @@ name: Publish
 # - dev: main, each time CI passes on it.
 # - stable (optional): a version tag (`git tag v1.2.0 && git push origin v1.2.0`), for testers.
 # - prod: the same tag, after stable if it is set up, once someone approves it.
+# A tag publishes only a commit whose CI passed on main (the verify job waits for a run that is
+# still going), so tag a commit of main, after it has merged.
 #
 # Each target is a GitHub environment (Settings > Environments) holding the secret
 # ROBLOX_PUBLISH_API_KEY, a key with universe-places:write on that target's experience only (prod's
@@ -27,6 +29,38 @@ permissions:
   contents: read
 
 jobs:
+  verify:
+    name: CI passed on the tagged commit
+    if: >-
+      github.event_name == 'push' &&
+      (vars.ROBLOX_STABLE_PLACE_ID != '' || vars.ROBLOX_PROD_PLACE_ID != '')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+    steps:
+      - run: |
+          run=$(gh run list --repo "$REPO" --workflow ci.yml --branch main --event push --commit "$SHA" \
+            --limit 1 --json databaseId,status,conclusion --jq '.[0] // empty')
+          if [ -z "$run" ]; then
+            echo "::error::No CI run on main for $SHA. Tag a commit that has merged to main, and wait for its CI."
+            exit 1
+          fi
+          if [ "$(jq -r .status <<< "$run")" != completed ]; then
+            gh run watch "$(jq -r .databaseId <<< "$run")" --repo "$REPO" > /dev/null || true
+            run=$(gh run list --repo "$REPO" --workflow ci.yml --branch main --event push --commit "$SHA" \
+              --limit 1 --json databaseId,status,conclusion --jq '.[0]')
+          fi
+          conclusion=$(jq -r .conclusion <<< "$run")
+          if [ "$conclusion" != success ]; then
+            echo "::error::CI on main for $SHA ended as '$conclusion'. Fix it, or re-run it, before publishing this tag."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+
   dev:
     name: Publish main to dev
     if: >-
@@ -59,6 +93,7 @@ jobs:
 
   stable:
     name: Publish the tag to stable
+    needs: verify
     if: github.event_name == 'push' && vars.ROBLOX_STABLE_PLACE_ID != ''
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -84,11 +119,11 @@ jobs:
 
   prod:
     name: Publish the tag to prod
-    needs: stable
+    needs: [verify, stable]
     # After stable when it's set up; stable is optional, so a skipped stable doesn't hold prod back.
     if: >-
-      !cancelled() && github.event_name == 'push' && needs.stable.result != 'failure' &&
-      vars.ROBLOX_PROD_PLACE_ID != ''
+      !cancelled() && github.event_name == 'push' && needs.verify.result == 'success' &&
+      needs.stable.result != 'failure' && vars.ROBLOX_PROD_PLACE_ID != ''
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Waits here for the environment's required reviewers.
