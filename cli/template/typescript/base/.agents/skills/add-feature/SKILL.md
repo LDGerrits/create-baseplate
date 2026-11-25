@@ -5,6 +5,8 @@ description: Add a feature to the game: a service, its network events, a control
 
 # Add a feature
 
+Is it a feature? If the game could ship without it, yes; if other code would break without it (currency, the player's data, the one receipt handler), it's a system: make `game/<system>/` by hand with `server/`, `client/` and `shared/` as it needs them, and let features import it. `game/` never imports a feature: for many contributors to one owner, have the feature register with a registry in `game/`; for a fact others react to, export a typed signal from the emitter.
+
 Run `mise run feature <name>` with the name in kebab-case (`daily-reward`). In a multi-place game the feature goes in the shared code and every place imports it; `mise run feature <name> <place>` keeps it to one place. It writes, under `features/<name>/`:
 
 - `shared/<name>-network.ts`: the events between client and server.

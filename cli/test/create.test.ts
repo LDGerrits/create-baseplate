@@ -351,14 +351,14 @@ test("applies the chosen add-ons", () => {
 	for (const name of ["@rbxts/charm", "@rbxts/react-charm", "@rbxts/lapis", "@rbxts/jecs"]) {
 		assert.ok(dependencies[name] !== undefined, `${name} is a dependency`);
 	}
-	assert.ok(fs.existsSync(path.join(dir, "src/features/player-data/server/player-data-service.ts")));
+	assert.ok(fs.existsSync(path.join(dir, "src/game/player-data/server/player-data-service.ts")));
 	assert.ok(fs.existsSync(path.join(dir, "tests/e2e/spinner.luau")));
 	assert.ok(!fs.existsSync(path.join(dir, "src/features/clicker")), "no example feature");
 
 	const main = read("src/app/server/main.server.ts");
 	assert.match(
 		main,
-		/import "\.\.\/\.\.\/features\/player-data\/server\/player-data-service";\n[\s\S]*Flamework\.ignite\(\)/,
+		/import "\.\.\/\.\.\/game\/player-data\/server\/player-data-service";\n[\s\S]*Flamework\.ignite\(\)/,
 	);
 	assert.match(main, /features\/spinner\/server\/spinner-service/);
 
@@ -383,7 +383,7 @@ test("takes Reflex and no other add-ons by default", () => {
 	});
 	const mise = fs.readFileSync(path.join(cwd, "my-game/mise.toml"), "utf8");
 	assert.doesNotMatch(mise, /asphalt|darklua/);
-	assert.ok(!fs.existsSync(path.join(cwd, "my-game/src/features/player-data")));
+	assert.ok(!fs.existsSync(path.join(cwd, "my-game/src/game/player-data")));
 });
 
 test("creates a Luau game from the Luau template", () => {
@@ -459,9 +459,9 @@ test("applies Luau add-ons: Wally packages, files and the services they start", 
 	const main = read("src/app/server/Main.server.luau");
 	assert.match(
 		main,
-		/local ServerScriptService = game:GetService\("ServerScriptService"\)\n\nlocal services: .* = \{\n\trequire\(ServerScriptService\.features\.playerdata\.PlayerDataService\),\n\trequire\(ServerScriptService\.features\.spinner\.SpinnerService\),\n\}/,
+		/local ServerScriptService = game:GetService\("ServerScriptService"\)\n\nlocal services: .* = \{\n\trequire\(ServerScriptService\.game\.playerdata\.PlayerDataService\),\n\trequire\(ServerScriptService\.features\.spinner\.SpinnerService\),\n\}/,
 	);
-	assert.ok(fs.existsSync(path.join(dir, "src/features/playerdata/server/PlayerDataService.spec.luau")));
+	assert.ok(fs.existsSync(path.join(dir, "src/game/playerdata/server/PlayerDataService.spec.luau")));
 	assert.ok(fs.existsSync(path.join(dir, "tests/e2e/spinner.luau")));
 
 	const agents = read("AGENTS.md");
@@ -499,7 +499,7 @@ test("adds the Luau tools: Asphalt's Luau module and Darklua's release", () => {
 	assert.match(mise, /darklua/);
 	assert.match(mise, /\[tasks\.release\]/);
 	assert.match(mise, /\[tasks\.assets\]/);
-	assert.match(read("asphalt.toml"), /src\/shared/);
+	assert.match(read("asphalt.toml"), /src\/game\/assets\/shared/);
 	assert.ok(fs.existsSync(path.join(dir, ".darklua.json")));
 	assert.match(read(".gitignore"), /^\/dist$/m);
 	assert.doesNotMatch(read(".github/workflows/ci.yml"), /mise run release/);
@@ -525,7 +525,7 @@ test("lays out a multi-place Luau game as Rogen prescribes for Luau", () => {
 	assert.ok(exists("projects/lobby/tests/e2e/.gitkeep"));
 	for (const gone of ["src", "world", "tests", "default.rogen.json"]) assert.ok(!exists(gone), `${gone} moved`);
 	assert.ok(exists("wally.toml"), "the packages stay shared at the root");
-	assert.match(read("asphalt.toml"), /output_path = "projects\/common\/src\/shared"/);
+	assert.match(read("asphalt.toml"), /output_path = "projects\/common\/src\/game\/assets\/shared"/);
 	assert.match(read("AGENTS.md"), /projects\/common\/src/);
 });
 
@@ -609,7 +609,7 @@ test("lays out a multi-place game in projects/", () => {
 	for (const gone of ["src", "world", "tests", "default.rogen.json", "rbx-forge.config.ts", "jest.config.ts"]) {
 		assert.ok(!exists(gone), `${gone} moved into the places`);
 	}
-	assert.ok(exists("projects/common/src/features/player-data/server/player-data-service.ts"), "add-ons are shared");
+	assert.ok(exists("projects/common/src/game/player-data/server/player-data-service.ts"), "add-ons are shared");
 	assert.match(read("tsconfig.json"), /"include": \["projects\/common\/src", "projects\/common\/shared\.d\.ts"\]/);
 
 	for (const place of ["lobby", "game"]) {
@@ -641,7 +641,7 @@ test("lays out a multi-place game in projects/", () => {
 	]);
 	const agents = read("AGENTS.md");
 	assert.match(agents, /## Where code goes\n\nThis game has several places/);
-	assert.match(agents, /`projects\/common\/src\/features\/player-data\/server\/`/, "add-on notes name shared paths");
+	assert.match(agents, /`projects\/common\/src\/game\/player-data\/server\/`/, "add-on notes name shared paths");
 	assert.doesNotMatch(agents, /`(src\/features|world\/Workspace|tests\/e2e\/<feature>)/, "no single-place paths left");
 	assert.match(read(".agents/skills/edit-world/SKILL.md"), /^# .+\n\n> This game has several places/m);
 	assert.match(read("README.md"), /mise run dev lobby/);
@@ -665,15 +665,15 @@ test("uploads assets with Asphalt", () => {
 
 	// The game's developer names the creator; the template leaves the ID unset.
 	assert.match(read("asphalt.toml"), /\[creator\]\ntype = "user"\nid = 0\n/);
-	assert.match(read("asphalt.toml"), /output_path = "src\/shared"/);
+	assert.match(read("asphalt.toml"), /output_path = "src\/game\/assets\/shared"/);
 	assert.ok(fs.existsSync(path.join(dir, "assets")));
 	const mise = read("mise.toml");
 	assert.match(mise, /\[tools\][^[]*"github:jackTabsCode\/asphalt" = "\d[^"]*"\n/, "the tool joins [tools]");
 	assert.match(mise, /\n\[tasks\.assets\]\n/);
 	// check and ci fail on assets that aren't uploaded yet.
 	assert.equal(mise.match(/asphalt sync cloud --dry-run/g)?.length, 2);
-	assert.match(read("biome.json"), /src\/shared\/assets\.d\.ts/, "Biome leaves Asphalt's code alone");
-	assert.match(read("eslint.config.ts"), /src\/shared\/assets\.d\.ts/);
+	assert.match(read("biome.json"), /src\/game\/assets\/shared\/assets\.d\.ts/, "Biome leaves Asphalt's code alone");
+	assert.match(read("eslint.config.ts"), /src\/game\/assets\/shared\/assets\.d\.ts/);
 	assert.match(read(".env.example"), /^ASPHALT_API_KEY=$/m);
 	assert.match(read(".gitignore"), /^\/\.asphalt-debug$/m);
 	assert.match(read("AGENTS.md"), /## Assets/);
@@ -710,8 +710,8 @@ test("Asphalt writes its code into the shared code of a multi-place game", () =>
 	const run = create(cwd, "my-game", "--no-git", "--places", "multi", "--assets", "asphalt", "--release", "darklua");
 	assert.equal(run.status, 0, run.stderr);
 	const read = (file: string) => fs.readFileSync(path.join(cwd, "my-game", file), "utf8");
-	assert.match(read("asphalt.toml"), /output_path = "projects\/common\/src\/shared"/);
-	assert.match(read("AGENTS.md"), /`projects\/common\/src\/shared\/assets\.luau`/);
+	assert.match(read("asphalt.toml"), /output_path = "projects\/common\/src\/game\/assets\/shared"/);
+	assert.match(read("AGENTS.md"), /`projects\/common\/src\/game\/assets\/shared\/assets\.luau`/);
 });
 
 for (const language of ["typescript", "luau"]) {
@@ -808,5 +808,46 @@ for (const language of ["typescript", "luau"]) {
 		assert.doesNotMatch(read("README.md"), /mise run sync/);
 		assert.doesNotMatch(read(".gitignore"), /world/);
 		assert.match(read(".agents/skills/release/SKILL.md"), /^# .+\n\n> This game has several places/m);
+	});
+}
+
+// The layers (app, features, game, platform) hold for every file the template and its add-ons write.
+for (const [label, args] of [
+	["a roblox-ts game", ["--data", "lapis", "--entities", "jecs", "--assets", "asphalt"]],
+	[
+		"a multi-place roblox-ts game",
+		["--places", "multi", "--data", "profilestore", "--entities", "components", "--assets", "asphalt"],
+	],
+	["a Luau game", ["--language", "luau", "--data", "lapis", "--entities", "jecs", "--assets", "asphalt"]],
+	[
+		"a multi-place Luau game",
+		["--language", "luau", "--places", "multi", "--data", "profilestore", "--assets", "asphalt"],
+	],
+] as const) {
+	test(`keeps every file of ${label} inside the layers`, () => {
+		const cwd = tempDir();
+		const run = create(cwd, "my-game", "--no-git", ...args);
+		assert.equal(run.status, 0, run.stderr);
+		const dir = path.join(cwd, "my-game");
+		const script = `
+			import fs from "node:fs";
+			import path from "node:path";
+			import { structureErrors } from "./scripts/layers.ts";
+			const multi = fs.existsSync("projects");
+			const roots = multi
+				? ["projects/common/src", ...fs.readdirSync("projects").filter((p) => fs.existsSync("projects/" + p + "/src")).map((p) => "projects/" + p + "/src")]
+				: ["src"];
+			const files = (dir) => !fs.existsSync(dir) ? [] : fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? files(path.posix.join(dir, e.name)) : /\\.(tsx?|luau?)$/.test(e.name) && !e.name.endsWith(".d.ts") ? [path.posix.join(dir, e.name)] : []);
+			console.log(JSON.stringify(structureErrors(roots.flatMap(files), [...new Set(roots)])));
+		`;
+		const check = spawnSync("node", ["--input-type=module", "-e", script], { cwd: dir, encoding: "utf8" });
+		assert.equal(check.status, 0, check.stderr);
+		assert.deepEqual(JSON.parse(check.stdout), []);
+		for (const layer of ["Where code goes"])
+			assert.match(fs.readFileSync(path.join(dir, "AGENTS.md"), "utf8"), new RegExp(`## ${layer}`));
+		assert.match(
+			fs.readFileSync(path.join(dir, "AGENTS.md"), "utf8"),
+			/`app`, then `features`, then `game`, then `platform`|app`, then `features`/,
+		);
 	});
 }

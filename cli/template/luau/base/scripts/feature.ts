@@ -183,7 +183,7 @@ export function createFeature(cwd: string, name: string, place?: string): string
 			addEntry(
 				fs.readFileSync(path.join(cwd, server), "utf8"),
 				`\trequire(ServerScriptService.features.${name}.${Name}Service),`,
-				/^\trequire\(ServerScriptService\.features\..*\),$/,
+				/^\trequire\(ServerScriptService\.(?:features|game|platform)\..*\),$/,
 				/^local services\b/,
 				'local ServerScriptService = game:GetService("ServerScriptService")',
 			),
@@ -195,7 +195,7 @@ export function createFeature(cwd: string, name: string, place?: string): string
 			addEntry(
 				fs.readFileSync(path.join(cwd, client), "utf8"),
 				`\trequire(features.${name}.${Name}Controller),`,
-				/^\trequire\(features\..*\),$/,
+				/^\trequire\((?:features|game|platform)\..*\),$/,
 				/^local controllers\b/,
 				"-- Client code is cloned into each player at runtime, so it reaches other client code from `script`.\nlocal features = script.Parent.Parent.features",
 			),

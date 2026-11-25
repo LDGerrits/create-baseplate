@@ -8,10 +8,14 @@
 //   (*Controller.luau routed to the client) from src/app/client/Start.luau;
 // - a remote the server takes directly instead of through Remo, with no validators or throttle
 //   (see unguarded-remotes.ts).
+// - code outside the four layers (app, features, game, platform), a side folder at the wrong depth, a
+//   layer that requires one above it, and a cycle between feature folders (see layers.ts); the
+//   requires are read through the sourcemap `mise run generate` writes.
 // `mise run check` runs it. In a multi-place game, a place's entry scripts start its own code and
 // the shared code; shared code passes when one place lists it.
 import fs from "node:fs";
 import path from "node:path";
+import { cycleErrors, layerErrors, requireEdges, type SourcemapNode, structureErrors } from "./layers.ts";
 import { unguardedRemotes } from "./unguarded-remotes.ts";
 
 const SERVER_ENTRY = "app/server/Main.server.luau";
@@ -128,6 +132,28 @@ for (const file of sources) {
 		`${file}: a ${kind} no entry script lists, so it never starts. Add its require to the ${kind === "service" ? "services" : "controllers"} in ${root}/${where}.`,
 	);
 }
+
+errors.push(...structureErrors(sources, sourceRoots));
+
+// The requires between the game's files, as each place's sourcemap resolves them.
+const sourceSet = new Set(sources);
+const edgeKeys = new Set<string>();
+const edges: [string, string][] = [];
+for (const place of places) {
+	const dir = multi ? `projects/${place}` : ".";
+	const sourcemap = path.posix.join(dir, "sourcemap.json");
+	if (!fs.existsSync(sourcemap)) {
+		errors.push(`${sourcemap} is missing, and the layers are checked through it: run \`mise run generate\`.`);
+		continue;
+	}
+	const tree = JSON.parse(fs.readFileSync(sourcemap, "utf8")) as SourcemapNode;
+	for (const edge of requireEdges(tree, dir, sourceSet, (file) => fs.readFileSync(file, "utf8"))) {
+		if (edgeKeys.has(edge.join(">"))) continue;
+		edgeKeys.add(edge.join(">"));
+		edges.push(edge);
+	}
+}
+errors.push(...layerErrors(edges, sourceRoots), ...cycleErrors(edges, sourceRoots));
 
 errors.push(...unguardedRemotes(new Map(sources.map((file) => [file, fs.readFileSync(file, "utf8")]))));
 

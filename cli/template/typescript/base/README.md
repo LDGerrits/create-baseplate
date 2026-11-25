@@ -66,6 +66,8 @@ Keys and local paths go in `.env`: copy `.env.example`, which lists each one.
 src/
   app/                 entry scripts: start Flamework
   features/            one folder per feature, started by `mise run feature <name>`
+  game/                the always-on systems features build on, one folder each
+  platform/            game-agnostic code that would move unchanged to another game
 tests/e2e/             end-to-end tests
 world/                 the map and lighting, edited in Studio and synced back
 ```

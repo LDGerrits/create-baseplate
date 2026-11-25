@@ -28,7 +28,7 @@ mise pins every tool and locks its checksums. The scripts, hooks and Rogen, rbx-
 
 ## Where code goes
 
-The same shape as a roblox-ts game, in Luau's naming: `src/features/<feature>/` with lowercase `server/`, `client/` and `shared/` folders that Rogen routes, and PascalCase files. Modules are required by instance path, as `rogen where <file>` prints it; client code reaches other client code from `script`, since each player gets a copy of it.
+The same four layers as a roblox-ts game (see [the project's shape](/project/)), in Luau's naming: `src/features/<feature>/`, `src/game/<system>/` and `src/platform/<module>/`, each with lowercase `server/`, `client/` and `shared/` folders that Rogen routes, lowercase letters and digits in folder names, and PascalCase files. Modules are required by instance path, as `rogen where <file>` prints it; client code reaches other client code from `script`, since each player gets a copy of it. The check reads every `require` through `sourcemap.json`, so a `game/` module that requires a feature, or two features that require each other, fail it however the path is written.
 
 Services and controllers are plain modules with a `start()` function. `src/app/server/Main.server.luau` lists every service and starts each; `src/app/client/Start.luau` does the same for controllers, and both lists start with only what the add-ons bring: `mise run feature <name>` writes a feature's files and adds its service and controller. The game has no UI root yet; the UI section of its `AGENTS.md` says how to mount one. The check fails on a `*Service.luau` or `*Controller.luau` neither lists.
 

@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { defineConfig } from "eslint/config";
 import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
 import importX from "eslint-plugin-import-x";
@@ -6,9 +7,16 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactX from "eslint-plugin-react-x";
 import roblox from "eslint-plugin-roblox-ts";
 import tseslint from "typescript-eslint";
+import { layerZones } from "./scripts/layers.ts";
+
+// The source roots: src, or in a multi-place game the shared code's and each place's.
+const places = fs.existsSync("projects")
+	? fs.readdirSync("projects").filter((place) => place !== "common" && fs.existsSync(`projects/${place}/src`))
+	: [];
+const roots = places.length > 0 ? ["projects/common/src", ...places.map((place) => `projects/${place}/src`)] : ["src"];
 
 /** Where code runs. Rogen sends `server/` to the server only and `shared/` to both sides. */
-const zones = [
+const sideZones = [
 	{
 		target: "./**/shared/**",
 		from: ["./**/server/**", "./**/client/**"],
@@ -25,6 +33,9 @@ const zones = [
 		message: "Server code can't import client code.",
 	},
 ];
+
+/** Which layer may import which: app, then features, game and platform; see scripts/layers.ts. */
+const zones = [...sideZones, ...layerZones(roots, places)];
 
 export default defineConfig(
 	{ ignores: ["**/out/", "**/include/", "**/build/", "node_modules/", "**/*.config.ts", ".agents/", "**/world.d.ts"] },

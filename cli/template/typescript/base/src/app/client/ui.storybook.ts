@@ -1,10 +1,13 @@
 import { type Storybook } from "@rbxts/ui-labs";
 
-// Lists this game's stories in the UI Labs plugin. Every feature's client folder ends up under
-// StarterPlayerScripts.features, beside this script's folder.
-const features = script.Parent?.Parent?.FindFirstChild("features");
+// Lists this game's stories in the UI Labs plugin. The client folders of the features, game systems
+// and platform modules end up under StarterPlayerScripts.features, .game and .platform, beside this
+// script's folder.
+const roots = ["features", "game", "platform"]
+	.map((layer) => script.Parent?.Parent?.FindFirstChild(layer))
+	.filterUndefined();
 
 export = {
 	name: "my-game",
-	storyRoots: features ? [features] : [],
+	storyRoots: roots,
 } satisfies Storybook;

@@ -28,17 +28,26 @@ Before you change something, look at what's there: the code that calls it, where
 
 ## Where code goes
 
-Each feature is a folder, `src/features/<feature>/`, which `mise run feature <name>` creates; the game starts with none. Inside it, the folder a file sits in decides where it runs:
+Code in `src/` sits in four layers, and a module requires only down: `app`, then `features`, then `game`, then `platform`. The check reads every `require` through `sourcemap.json` and fails on anything else.
+
+- `app/`: the entry scripts: `app/server/Main.server.luau` lists every service and starts each, `app/client/Start.luau` (which `Main.client.luau` runs) does the same for controllers. Both lists start with only the services and controllers the add-ons bring, and the game has no UI root yet: see UI to add one. It may require every layer.
+- `features/<feature>/`: what the game could ship without: a shop, quests, a season. `mise run feature <name>` creates one. It may require `game`, `platform` and other features, but the features never require each other in a cycle.
+- `game/<system>/`: the always-on systems: platform singletons (the one `ProcessReceipt`, the player's saved data), what features build on (currency, teams) and concepts several features write. It never requires a feature or `app`.
+- `platform/<module>/`: game-agnostic Roblox code that would move unchanged to another game: network middleware, sound playback, UI primitives. It requires none of the other layers.
+
+A feature or a system? Delete the folder: if the game still works, it's a feature; if other code breaks, it belongs in `game/`. The children of `game/` and `platform/` are folders named for what they hold: no loose files there, and no `utils`, `helpers`, `common`, `misc`, `shared` or `lib`. Folder names are lowercase letters and digits, since they are parts of a require path.
+
+Inside a feature or module, and in `app/`, the folder a file sits in decides where it runs, and its path in the game: `ServerScriptService.<layer>.<name>`:
 
 - `server/`: only on the server, never sent to clients: `ServerScriptService.features.<feature>`. Rules, validation and secrets go here.
 - `client/`: only on the player's device: `StarterPlayerScripts.features.<feature>`, copied into each player.
 - `shared/`: both: `ReplicatedStorage.Shared.features.<feature>`. It can't require `server/` or `client/` code: the server's folders are empty on clients, and the check fails on client-visible code that reaches for `ServerScriptService` or `ServerStorage`.
 
-A file outside these three folders isn't placed in the game, and the check fails on it: there's no default side, so server code can't reach clients by mistake.
+Side folders sit only at `app/<side>/` and `<layer>/<module>/<side>/`, and a file outside one isn't placed in the game: there's no default side, so server code can't reach clients by mistake. Files are PascalCase, named after what they hold: `InventoryService.luau`.
 
-Require by instance path, the way `rogen where <file>` prints it: `require(ReplicatedStorage.Shared.features.shop.ShopNetwork)`, `require(ServerScriptService.features.shop.ShopService)`. Client code is copied into each player at runtime, so it reaches other client code from `script`, as the lines `mise run feature` adds to `src/app/client/Start.luau` do: `script.Parent.Parent.features.shop.ShopController`.
+Require by instance path, the way `rogen where <file>` prints it: `require(ReplicatedStorage.Shared.features.shop.ShopNetwork)`, `require(ServerScriptService.game.bank.Bank)`. Client code is copied into each player at runtime, so it reaches other client code from `script`, as the lines `mise run feature` adds to `src/app/client/Start.luau` do: `script.Parent.Parent.features.shop.ShopController`.
 
-`src/app/` holds the entry scripts: `app/server/Main.server.luau` lists every service and starts each, `app/client/Start.luau` (which `Main.client.luau` runs) does the same for controllers. Both lists start with only the services and controllers the add-ons bring (none, in a game without add-ons), and the game has no UI root yet: see UI to add one. Files are PascalCase, named after what they hold: `InventoryService.luau`.
+Code meets in three ways. Require directly by default: a feature requires the service it needs. When one owner has many contributors, put a registry in `game/`: the one `ProcessReceipt` handler lives there, and each feature registers its product handlers with it, so `game/` never requires a feature. For a fact that others react to, the emitter exports a typed signal that listeners subscribe to. Never a string-keyed event bus.
 
 ## Adding a feature
 

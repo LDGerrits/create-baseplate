@@ -4,7 +4,7 @@
 	},
 	"imports": {
 		"src/app/server/main.server.ts": [
-			"../../features/player-data/server/player-data-service"
+			"../../game/player-data/server/player-data-service"
 		]
 	}
 }

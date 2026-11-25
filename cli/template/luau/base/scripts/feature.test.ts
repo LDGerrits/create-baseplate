@@ -93,3 +93,20 @@ test("refuses a bad name, a place that isn't there and a feature that exists", (
 	createFeature(dir, "shop");
 	assert.throws(() => createFeature(dir, "shop"), /already exists/);
 });
+
+test("lists a feature after a game system's service, such as the player data add-on's", () => {
+	const dir = game({
+		"src/app/server/Main.server.luau": `local ServerScriptService = game:GetService("ServerScriptService")
+
+local services: { { start: () -> () } } = {
+	require(ServerScriptService.game.playerdata.PlayerDataService),
+}
+`,
+		"src/app/client/Start.luau": CLIENT,
+	});
+	createFeature(dir, "shop");
+	assert.match(
+		read(dir, "src/app/server/Main.server.luau"),
+		/PlayerDataService\),\n\trequire\(ServerScriptService\.features\.shop\.ShopService\),\n\}/,
+	);
+});

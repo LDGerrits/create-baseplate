@@ -16,7 +16,7 @@ strip_extensions = true
 
 [inputs.assets]
 path = "assets/**/*"
-output_path = "src/shared"
+output_path = "src/game/assets/shared"
 
 # Assets already on Roblox, by their path under assets/, to use in code like the uploaded ones:
 # [inputs.assets.web]

@@ -43,21 +43,21 @@ To remove it, `pnpm remove @rbxts/charm @rbxts/react-charm` (`@rbxts/vide-charm`
 
 ## State: Reflex
 
-`--state reflex` adds [Reflex](https://github.com/littensy/reflex), one store for the client made of a slice per feature. Controllers change it through its actions, and UI reads it with `useSelector` inside a `ReflexProvider`. Packages: `@rbxts/reflex`, `@rbxts/react-reflex`. It adds no files, only its section of `AGENTS.md`, which shows how to write the store (`src/store/client/client-store.ts`) with the first slice. Reflex has no Vide binding, so a Vide game takes Charm by default.
+`--state reflex` adds [Reflex](https://github.com/littensy/reflex), one store for the client made of a slice per game system. Controllers change it through its actions, and UI reads it with `useSelector` inside a `ReflexProvider`. Packages: `@rbxts/reflex`, `@rbxts/react-reflex`. It adds no files, only its section of `AGENTS.md`, which shows how to write the store (`src/game/store/client/client-store.ts`) with the first slice. Reflex has no Vide binding, so a Vide game takes Charm by default.
 
-To remove it, delete `src/store/` if you wrote it and its section of `AGENTS.md`, and `pnpm remove @rbxts/reflex @rbxts/react-reflex`.
+To remove it, delete `src/game/store/` if you wrote it and its section of `AGENTS.md`, and `pnpm remove @rbxts/reflex @rbxts/react-reflex`.
 
 ## Player data: ProfileStore
 
-`--data profilestore` adds `PlayerDataService` in `src/features/player-data/server/`: it loads each player's data with [ProfileStore](https://github.com/MadStudioRoblox/ProfileStore) when they join and saves it when they leave, with session locking (another server taking the session kicks the player to rejoin). Other services use `get(userId)` and `update(userId, fn)`. New fields go in `player-data.ts`; `Reconcile` gives old saves the new defaults. Studio and the specs use ProfileStore's mock store. Package: `@rbxts/profile-store`; the service is imported in `main.server.ts`.
+`--data profilestore` adds `PlayerDataService` in `src/game/player-data/server/`: it loads each player's data with [ProfileStore](https://github.com/MadStudioRoblox/ProfileStore) when they join and saves it when they leave, with session locking (another server taking the session kicks the player to rejoin). Other services use `get(userId)` and `update(userId, fn)`. New fields go in `player-data.ts`; `Reconcile` gives old saves the new defaults. Studio and the specs use ProfileStore's mock store. Package: `@rbxts/profile-store`; the service is imported in `main.server.ts`.
 
-To remove it, delete `src/features/player-data/`, its import in `main.server.ts`, and `pnpm remove @rbxts/profile-store`.
+To remove it, delete `src/game/player-data/`, its import in `main.server.ts`, and `pnpm remove @rbxts/profile-store`.
 
 ## Player data: Lapis
 
 `--data lapis` adds the same `PlayerDataService`, on [Lapis](https://github.com/nezuo/lapis): validated documents, with migrations for data saved before a field existed. Lapis rejects data `validate` doesn't accept. Studio and the specs use `@rbxts/lapis-mockdatastore`; specs that load data skip in an Open Cloud session, where Lapis doesn't move without physics. Packages: `@rbxts/lapis`, `@rbxts/lapis-mockdatastore`.
 
-To remove it, delete `src/features/player-data/`, its import in `main.server.ts`, and `pnpm remove @rbxts/lapis @rbxts/lapis-mockdatastore`.
+To remove it, delete `src/game/player-data/`, its import in `main.server.ts`, and `pnpm remove @rbxts/lapis @rbxts/lapis-mockdatastore`.
 
 ## Entities: Flamework Components
 
@@ -73,7 +73,7 @@ To remove it, delete `src/features/spinner/`, the model, the end-to-end test and
 
 ## Assets: Asphalt
 
-`--assets asphalt` adds [Asphalt](https://github.com/jackTabsCode/asphalt): files in `assets/` upload to Roblox with `mise run assets`, which writes their IDs to `src/shared/assets.luau`, typed by `assets.d.ts`: `assets.icons.coin` for `assets/icons/coin.png`. You set who owns the uploads, your account or a group, in `asphalt.toml`, and the key `ASPHALT_API_KEY` in `.env`. `mise run check` fails while a file isn't uploaded, so a commit can't ship an asset the game can't load. Files: `asphalt.toml`, `assets/`, `scripts/assets.ts`; the tool and the `assets` task in `mise.toml`, and a step in `check` and `ci`.
+`--assets asphalt` adds [Asphalt](https://github.com/jackTabsCode/asphalt): files in `assets/` upload to Roblox with `mise run assets`, which writes their IDs to `src/game/assets/shared/assets.luau`, typed by `assets.d.ts`: `assets.icons.coin` for `assets/icons/coin.png`. You set who owns the uploads, your account or a group, in `asphalt.toml`, and the key `ASPHALT_API_KEY` in `.env`. `mise run check` fails while a file isn't uploaded, so a commit can't ship an asset the game can't load. Files: `asphalt.toml`, `assets/`, `scripts/assets.ts`; the tool and the `assets` task in `mise.toml`, and a step in `check` and `ci`.
 
 To remove it, delete those files and the generated ones, the Asphalt lines in `mise.toml` (then `mise lock`), the key in `.env.example`, and the generated files' entries in `biome.json`, `eslint.config.ts` and `.gitignore`.
 
@@ -93,10 +93,10 @@ A [Luau game](/luau/) asks the same questions, with what Luau games use, and eac
 | `--places multi` | | Rogen's Luau layout: `<place>.rogen.json` at the root, shared code in `projects/common/src`, each place in `projects/<place>/` (see [Luau games](/luau/#several-places)) |
 | `--ui vide` | `centau/vide`, `littensy/vide-ripple`, in place of react-lua | Vide's section in `AGENTS.md` (mounting a root, `CreateVideStory`); the game starts without a UI |
 | `--state charm` | `littensy/charm`, with `littensy/react-charm` or `littensy/vide-charm` | Charm's section in `AGENTS.md`: a controller keeps a signal, and the UI reads it |
-| `--data profilestore` | `lm-loleris/profilestore`, a server package | `src/features/playerdata/server/`: `PlayerData.luau`, `PlayerDataService.luau` and its spec |
+| `--data profilestore` | `lm-loleris/profilestore`, a server package | `src/game/playerdata/server/`: `PlayerData.luau`, `PlayerDataService.luau` and its spec |
 | `--data lapis` | `nezuo/lapis`, `nezuo/data-store-service-mock`, server packages | the same three files, on Lapis |
 | `--entities jecs` | `ukendio/jecs` | `src/features/spinner/server/`: `SpinnerSystem.luau` and its spec, `SpinnerService.luau`; the world part and `tests/e2e/spinner.luau` |
-| `--assets asphalt` | | `assets/`, `asphalt.toml`, `scripts/assets.ts`; uploads write `src/shared/Assets.luau`, which luau-lsp types from its table |
+| `--assets asphalt` | | `assets/`, `asphalt.toml`, `scripts/assets.ts`; uploads write `src/game/assets/shared/Assets.luau`, which luau-lsp types from its table |
 | `--release darklua` | | `.darklua.json`, `scripts/darklua.ts`, `scripts/release-project.ts`; `mise run release` processes `src/` and the packages into `dist/` |
 
 A Luau add-on's packages are in `wally.toml`; to remove one, delete its lines there and run `mise run install`. Services an add-on starts are listed in `src/app/server/Main.server.luau`. Reflex and Flamework Components are roblox-ts choices.

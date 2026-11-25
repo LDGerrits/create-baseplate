@@ -115,13 +115,16 @@ export function makeMultiPlaceLuau(dir: string, name: string, managed: Managed) 
 			at("asphalt.toml"),
 			replaceIn(
 				read("asphalt.toml"),
-				'output_path = "src/shared"',
-				'output_path = "projects/common/src/shared"',
-			).replaceAll("src/shared/Assets.luau", "projects/common/src/shared/Assets.luau"),
+				'output_path = "src/game/assets/shared"',
+				'output_path = "projects/common/src/game/assets/shared"',
+			).replaceAll("src/game/assets/shared/Assets.luau", "projects/common/src/game/assets/shared/Assets.luau"),
 		);
 		fs.writeFileSync(
 			at("mise.toml"),
-			read("mise.toml").replaceAll("src/shared/Assets.luau", "projects/common/src/shared/Assets.luau"),
+			read("mise.toml").replaceAll(
+				"src/game/assets/shared/Assets.luau",
+				"projects/common/src/game/assets/shared/Assets.luau",
+			),
 		);
 	}
 

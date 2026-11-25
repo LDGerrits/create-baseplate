@@ -5,6 +5,6 @@
 		"Lapis": "nezuo/lapis@=0.3.4"
 	},
 	"imports": {
-		"src/app/server/Main.server.luau": ["ServerScriptService.features.playerdata.PlayerDataService"]
+		"src/app/server/Main.server.luau": ["ServerScriptService.game.playerdata.PlayerDataService"]
 	}
 }

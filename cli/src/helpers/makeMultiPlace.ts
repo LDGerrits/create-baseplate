@@ -160,7 +160,11 @@ function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 	if (fs.existsSync(at("asphalt.toml"))) {
 		fs.writeFileSync(
 			at("asphalt.toml"),
-			replaceIn(read("asphalt.toml"), 'output_path = "src/shared"', 'output_path = "projects/common/src/shared"'),
+			replaceIn(
+				read("asphalt.toml"),
+				'output_path = "src/game/assets/shared"',
+				'output_path = "projects/common/src/game/assets/shared"',
+			),
 		);
 	}
 
@@ -214,9 +218,8 @@ function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 /** Single-place paths in add-on notes, and where they are in a multi-place game. */
 const PATHS: [string, string][] = [
 	["`src/features/", "`projects/common/src/features/"],
-	["`src/network/", "`projects/common/src/network/"],
-	["`src/store/", "`projects/common/src/store/"],
-	["`src/shared/", "`projects/common/src/shared/"],
+	["`src/game/", "`projects/common/src/game/"],
+	["`src/platform/", "`projects/common/src/platform/"],
 	["`world/Workspace/", "`projects/<place>/world/Workspace/"],
 	["`tests/e2e/spinner.luau`", `\`projects/${SHARED_TESTS_PLACE}/tests/e2e/spinner.luau\``],
 	["`src/app/client/app.tsx`", "each place's `src/app/client/app.tsx`"],

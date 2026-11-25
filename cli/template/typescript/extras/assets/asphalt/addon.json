@@ -15,12 +15,12 @@
 		{
 			"file": "biome.json",
 			"from": "\"!**/*.md\"\n\t\t]",
-			"to": "\"!**/*.md\",\n\t\t\t\"!**/src/shared/assets.d.ts\"\n\t\t]"
+			"to": "\"!**/*.md\",\n\t\t\t\"!**/src/game/assets/shared/assets.d.ts\"\n\t\t]"
 		},
 		{
 			"file": "eslint.config.ts",
 			"from": "\"**/world.d.ts\"]",
-			"to": "\"**/world.d.ts\", \"**/src/shared/assets.d.ts\"]"
+			"to": "\"**/world.d.ts\", \"**/src/game/assets/shared/assets.d.ts\"]"
 		},
 		{
 			"file": ".env.example",

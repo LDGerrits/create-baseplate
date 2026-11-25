@@ -28,15 +28,24 @@ Before you change something, look at what's there: the code that calls it, where
 
 ## Where code goes
 
-Each feature is a folder, `src/features/<feature>/`, which `mise run feature <name>` creates. Inside it, the folder a file sits in decides where it runs:
+Code in `src/` sits in four layers, and imports only go down: `app`, then `features`, then `game`, then `platform`. The check fails on anything else.
+
+- `app/`: the entry scripts (`app/server/main.server.ts` and `app/client/main.client.ts` import every service and controller and start Flamework) and the UI root. It may import every layer.
+- `features/<feature>/`: what the game could ship without: a shop, quests, a season. `mise run feature <name>` creates one. It may import `game`, `platform` and other features, but the features never import each other in a cycle.
+- `game/<system>/`: the always-on systems: platform singletons (the one `ProcessReceipt`, the player's saved data), what features build on (currency, teams) and concepts several features write. It never imports a feature or `app`.
+- `platform/<module>/`: game-agnostic Roblox code that would move unchanged to another game: network middleware, sound playback, UI primitives. It imports none of the other layers.
+
+A feature or a system? Delete the folder: if the game still works, it's a feature; if other code breaks, it belongs in `game/`. The children of `game/` and `platform/` are folders named for what they hold: no loose files there, and no `utils`, `helpers`, `common`, `misc`, `shared` or `lib`.
+
+Inside a feature or module, and in `app/`, the folder a file sits in decides where it runs:
 
 - `server/`: only on the server, never sent to clients. Rules, validation and secrets go here.
 - `client/`: only on the player's device.
 - `shared/`: both. It can't import `server/` or `client/` code; ESLint enforces the sides.
 
-A file outside these three folders isn't placed in the game, and the check fails on it: there's no default side, so server code can't reach clients by mistake.
+Side folders sit only at `app/<side>/` and `<layer>/<module>/<side>/`, and a file outside one isn't placed in the game: there's no default side, so server code can't reach clients by mistake. Files are kebab-case, named after what they hold: `inventory-service.ts`.
 
-`src/app/` holds the entry scripts: `app/server/main.server.ts` and `app/client/main.client.ts` import every service and controller and start Flamework. Files are kebab-case, named after what they hold: `inventory-service.ts`.
+Code meets in three ways. Import directly by default: a feature imports the service it needs. When one owner has many contributors, put a registry in `game/`: the one `ProcessReceipt` handler lives there, and each feature registers its product handlers with it, so `game/` never imports a feature. For a fact that others react to, the emitter exports a typed signal that listeners subscribe to. Never a string-keyed event bus.
 
 ## Adding a feature
 
