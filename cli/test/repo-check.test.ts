@@ -6,7 +6,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { after, test } from "node:test";
-import { exportIndex, scopeOf, shorten, templatesOf } from "../../scripts/repo-check.ts";
+import { exportIndex, scopeOf, shorten, templatesOf, withoutGitEnv } from "../../scripts/repo-check.ts";
+import { stagedFiles, stateId } from "../../scripts/state.ts";
+import { stateId as templateStateId } from "../template/typescript/base/.agents/hooks/fingerprint.ts";
 
 const temps: string[] = [];
 const tempDir = () => {
@@ -114,4 +116,40 @@ test("a staged change to what decides the installed packages is installed again,
 	fs.writeFileSync(path.join(repo, "package.json"), '{"name":"x"}\n');
 	const { installed } = exportIndex(repo, path.join(tempDir(), "staged"));
 	assert.equal(installed, false);
+});
+
+test("a state has the id a created game's fingerprint gives it, since the Stop hook reads that record", () => {
+	const repo = tempDir();
+	const git = (...args: string[]) => spawnSync("git", args, { cwd: repo, encoding: "utf8" });
+	git("init", "--quiet");
+	fs.writeFileSync(path.join(repo, "a.txt"), "one\n");
+	git("add", "-A");
+	fs.writeFileSync(path.join(repo, "b.txt"), "two\n");
+	assert.ok(stateId(repo, "files"));
+	assert.equal(stateId(repo, "files"), templateStateId(repo, "files"));
+	assert.equal(stateId(repo, "index"), templateStateId(repo, "index"));
+	assert.notEqual(stateId(repo, "files"), stateId(repo, "index"));
+	assert.deepEqual(stagedFiles(repo), ["a.txt"]);
+});
+
+test("the copy of the staged files is its own repository even when a hook's git variables are set", () => {
+	const repo = tempDir();
+	const git = (...args: string[]) => spawnSync("git", args, { cwd: repo, encoding: "utf8" });
+	git("init", "--quiet");
+	fs.writeFileSync(path.join(repo, "a.txt"), "x\n");
+	git("add", "-A");
+	const dir = path.join(tempDir(), "staged");
+	const saved = { GIT_DIR: process.env.GIT_DIR, GIT_INDEX_FILE: process.env.GIT_INDEX_FILE };
+	process.env.GIT_DIR = path.join(repo, ".git");
+	process.env.GIT_INDEX_FILE = path.join(repo, ".git", "index");
+	try {
+		exportIndex(repo, dir);
+	} finally {
+		for (const [name, value] of Object.entries(saved)) {
+			if (value === undefined) delete process.env[name];
+			else process.env[name] = value;
+		}
+	}
+	const top = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd: dir, encoding: "utf8", env: withoutGitEnv() });
+	assert.equal(fs.realpathSync(top.stdout.trim()), fs.realpathSync(dir));
 });

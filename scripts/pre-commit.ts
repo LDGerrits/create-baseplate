@@ -8,30 +8,16 @@
 // It is skipped when it already passed on exactly the staged files (the Stop hook's pass counts).
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import {
-	DOCS_RECORD,
-	exportIndex,
-	ROOT_RECORD,
-	readRecord,
-	recordFile,
-	scopeOf,
-	shorten,
-	stateId,
-	templatesOf,
-	writeRecord,
-} from "./repo-check.ts";
+import { DOCS_RECORD, exportIndex, ROOT_RECORD, scopeOf, shorten, templatesOf, withoutGitEnv } from "./repo-check.ts";
+import { readRecord, recordFile, stagedFiles, stateId, writeRecord } from "./state.ts";
 
 const git = (...args: string[]) => spawnSync("git", args, { encoding: "utf8" });
-const staged = () =>
-	git("diff", "--cached", "--no-renames", "--name-only", "-z", "--relative")
-		.stdout.split("\0")
-		.filter((file) => file !== "");
 
 const top = git("rev-parse", "--show-toplevel").stdout.trim();
 if (top === "") process.exit(0);
 process.chdir(top);
 
-for (const base of templatesOf(staged())) {
+for (const base of templatesOf(stagedFiles(top))) {
 	const run = spawnSync("mise", ["exec", "--", "node", "scripts/pre-commit.ts"], {
 		cwd: path.join(top, base),
 		encoding: "utf8",
@@ -44,7 +30,7 @@ for (const base of templatesOf(staged())) {
 }
 
 // The template's hook may have formatted and re-staged files.
-const files = staged();
+const files = stagedFiles(top);
 const scope = scopeOf(files);
 if (scope === "none") {
 	console.log("pre-commit: nothing staged that the check reads.");
@@ -68,6 +54,7 @@ if (onDisk || index === undefined || copy === undefined) {
 const { installed } = exportIndex(top, copy);
 const run = spawnSync(process.execPath, [...args, "--no-record", ...(installed ? ["--no-install"] : [])], {
 	cwd: copy,
+	env: withoutGitEnv(),
 	stdio: "inherit",
 });
 if (run.status === 0) writeRecord(top, scope === "docs" ? DOCS_RECORD : ROOT_RECORD, index);

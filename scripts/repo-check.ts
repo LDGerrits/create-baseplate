@@ -1,26 +1,15 @@
 // What the repository's own local loop shares: which checks a set of changed files needs, where a
-// pass is recorded, and how a failure is shortened. The pieces are used by the check (scripts/check.ts),
-// the commit hook (scripts/pre-commit.ts) and Claude Code's Stop hook (.claude/hooks/check.ts).
-//
-// A pass is recorded the way a created game's check does it (the template's .agents/hooks/fingerprint.ts):
-// the git tree it passed on, in this worktree's git folder, so a later run on the same state is skipped.
+// pass is recorded, and how a failure is shortened.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { stripVTControlCharacters } from "node:util";
-import { docsOnly } from "../.github/scripts/generate-matrix.ts";
-
-export {
-	alreadyPassed,
-	CHECK_RECORD,
-	readRecord,
-	recordFile,
-	stateId,
-	writeRecord,
-} from "../cli/template/typescript/base/.agents/hooks/fingerprint.ts";
+import { docsOnly, isMarkdown } from "../.github/scripts/generate-matrix.ts";
 
 /** The whole root check (the CLI and the docs site) last passed on this tree. */
 export const ROOT_RECORD = "root-check-passed";
+/** What a template's own check writes when it passes (in its folder's git record), read by the Stop hook. */
+export const TEMPLATE_RECORD = "check-passed";
 /** The docs-scoped check last passed on this tree: not a pass of the whole one. */
 export const DOCS_RECORD = "root-docs-passed";
 
@@ -35,7 +24,7 @@ const readByChecks = (file: string) => file === "README.md" || file === "cli/REA
 
 export function scopeOf(files: string[]): Scope {
 	if (files.length === 0) return "none";
-	if (files.every((file) => /\.md$/i.test(file) && !file.startsWith("cli/template/") && !readByChecks(file)))
+	if (files.every((file) => isMarkdown(file) && !file.startsWith("cli/template/") && !readByChecks(file)))
 		return "none";
 	return docsOnly(files) ? "docs" : "full";
 }
@@ -48,7 +37,7 @@ export function templatesOf(files: string[]): string[] {
 	const bases = new Map<string, boolean>();
 	for (const file of files) {
 		const base = /^(cli\/template\/[^/]+\/base)\//.exec(file)?.[1];
-		if (base !== undefined) bases.set(base, bases.get(base) === true || !/\.md$/i.test(file));
+		if (base !== undefined) bases.set(base, bases.get(base) === true || !isMarkdown(file));
 	}
 	return [...bases].filter(([, code]) => code).map(([base]) => base);
 }
@@ -67,6 +56,11 @@ export function shorten(output: string, limit = 2400): string {
 	return text.length <= limit ? text : `...\n${text.slice(-limit).replace(/^[^\n]*\n/, "")}`;
 }
 
+/** This process's environment without the variables git sets for a hook (GIT_DIR, GIT_INDEX_FILE, ...), which would point a command run in another folder at this repository. */
+export function withoutGitEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+	return Object.fromEntries(Object.entries(env).filter(([name]) => !name.startsWith("GIT_")));
+}
+
 /** The files that decide what a dependency install gives. */
 const INSTALL_FILES = ["package.json", "cli/package.json", "www/package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml"];
 
@@ -83,12 +77,13 @@ export function exportIndex(root: string, dir: string): { installed: boolean } {
 	const exported = run(["checkout-index", "--all", `--prefix=${dir}${path.sep}`]);
 	if (exported.status !== 0) throw new Error(`git checkout-index failed: ${exported.stderr}`);
 	// The ignore rules of the index's own .gitignore, for tools that ask git.
-	spawnSync("git", ["init", "--quiet"], { cwd: dir });
+	spawnSync("git", ["init", "--quiet"], { cwd: dir, env: withoutGitEnv() });
 	const same = run(["diff", "--quiet", "--", ...INSTALL_FILES]).status === 0;
 	if (!same) return { installed: false };
 	for (const modules of ["node_modules", "cli/node_modules", "www/node_modules"]) {
 		if (fs.existsSync(path.join(root, modules)))
-			fs.symlinkSync(path.join(root, modules), path.join(dir, modules), "dir");
+			// A junction needs no privilege on Windows (a directory symlink needs Developer Mode); elsewhere it is a symlink.
+			fs.symlinkSync(path.join(root, modules), path.join(dir, modules), "junction");
 	}
 	return { installed: true };
 }

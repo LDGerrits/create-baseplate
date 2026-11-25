@@ -272,6 +272,9 @@ export function batchesOf(
 export type Event = "pull_request" | "push" | "schedule" | "workflow_dispatch";
 export const events: Event[] = ["pull_request", "push", "schedule", "workflow_dispatch"];
 
+/** Whether a path is a Markdown file: the repository's one definition (the local check scopes by it too). */
+export const isMarkdown = (file: string) => /\.md$/i.test(file);
+
 /**
  * Whether `files` (a pull request's changed paths) are all the docs site (`www/`) or Markdown files
  * outside the templates (a template's Markdown files ship in every game). No files, or none known,
@@ -282,7 +285,7 @@ export function docsOnly(files: string[]): boolean {
 		files.length > 0 &&
 		files.every((file) => {
 			if (file.startsWith("cli/template/")) return false;
-			return file.startsWith("www/") || file.endsWith(".md");
+			return file.startsWith("www/") || isMarkdown(file);
 		})
 	);
 }

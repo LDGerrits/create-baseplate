@@ -8,48 +8,21 @@
 //   node .github/scripts/run-games.ts engine    run the prepared games' specs in real Roblox.
 //
 // CLI is the create-baseplate entry file to run, GAMES_DIR the folder the games are made in.
-import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
+import { type Outcome, run as runCommand } from "../../scripts/run.ts";
 import type { Batch } from "./generate-matrix.ts";
 
-export interface Outcome {
-	code: number | null;
-	/** Standard output. */
-	stdout: string;
-	/** Standard output and error, as printed. */
-	output: string;
-}
+export type { Outcome };
 
 /** Runs a command, printing what it prints as it prints it (the standard output too, unless `quiet`). */
-export function run(
+export const run = (
 	command: string,
 	args: string[],
 	cwd: string,
-	{ env = process.env, quiet = false }: { env?: NodeJS.ProcessEnv; quiet?: boolean } = {},
-): Promise<Outcome> {
-	return new Promise((resolve) => {
-		let stdout = "";
-		let output = "";
-		const child = spawn(command, args, { cwd, env, stdio: ["ignore", "pipe", "pipe"] });
-		child.stdout.on("data", (chunk: Buffer) => {
-			if (!quiet) process.stdout.write(chunk);
-			stdout += chunk.toString();
-			output += chunk.toString();
-		});
-		child.stderr.on("data", (chunk: Buffer) => {
-			process.stderr.write(chunk);
-			output += chunk.toString();
-		});
-		child.on("error", (error) => {
-			output += `${error.message}\n`;
-			console.error(`Couldn't run ${command}: ${error.message}`);
-			resolve({ code: null, stdout, output });
-		});
-		child.on("close", (code) => resolve({ code, stdout, output }));
-	});
-}
+	{ env, quiet = false }: { env?: NodeJS.ProcessEnv; quiet?: boolean } = {},
+) => runCommand(command, args, cwd, { env, echo: quiet ? "stderr" : "all" });
 
 const ESC = String.fromCharCode(27);
 const stripAnsi = (text: string) => text.replace(new RegExp(`${ESC}\\[[0-9;]*m`, "g"), "");

@@ -1,18 +1,12 @@
-// The check for the CLI and the docs site: `mise run check` (formats), `mise run ci` (`--ci`: fails on
-// unformatted code instead), and what the hooks run.
-//
+// The check for the CLI and the docs site, as `mise run check` (fixes formatting) and `mise run ci`
+// (`--ci`: fails on unformatted code) run it, and as the hooks do.
 //   node scripts/check.ts [--ci] [--quiet] [--scope full|docs] [--no-install] [--no-record]
-//
-// --quiet prints nothing for what passes, and for what fails only the failing task's output and a
-// line saying how it went, which is what the hooks hand back to a person or an agent. Without it
-// everything streams, as on CI.
-// --scope docs is for a change to the docs only: the docs site's own tasks and the CLI's tests that
-// read the docs, not the rest of the CLI's tests.
-// When the whole check passes it records the tree of the files it passed on (scripts/repo-check.ts),
-// which the Stop hook and the commit hook read to skip a check that already passed on this state.
-// --no-install and --no-record are for a copy of what is staged, whose packages are linked in.
-import { spawn } from "node:child_process";
-import { DOCS_RECORD, ROOT_RECORD, type Scope, shorten, stateId, writeRecord } from "./repo-check.ts";
+// --quiet prints only a failure; --scope docs runs the docs site's tasks and the CLI's tests that
+// read the docs; --no-install and --no-record are for a copy of the staged files with its packages
+// linked in. A pass of the whole check is recorded (scripts/state.ts).
+import { DOCS_RECORD, ROOT_RECORD, type Scope, shorten } from "./repo-check.ts";
+import { run } from "./run.ts";
+import { stateId, writeRecord } from "./state.ts";
 
 const flag = (name: string) => process.argv.includes(`--${name}`);
 const ci = flag("ci");
@@ -48,32 +42,16 @@ const afterFormat: { command: string[]; cwd?: string }[] =
 			]
 		: [{ command: turbo("build", "typecheck", "test") }];
 
-function run({ command, cwd }: { command: string[]; cwd?: string }): Promise<{ ok: boolean; output: string }> {
-	return new Promise((resolve) => {
-		const [file = "", ...args] = command;
-		const child = spawn(file, args, {
-			cwd: cwd === undefined ? root : `${root}/${cwd}`,
-			env,
-			stdio: quiet ? ["ignore", "pipe", "pipe"] : "inherit",
-		});
-		let output = "";
-		child.stdout?.on("data", (chunk: Buffer) => {
-			output += chunk.toString("utf8");
-		});
-		child.stderr?.on("data", (chunk: Buffer) => {
-			output += chunk.toString("utf8");
-		});
-		child.on("error", (error) => resolve({ ok: false, output: `${file}: ${error.message}` }));
-		child.on("close", (code) => resolve({ ok: code === 0, output }));
-	});
-}
-
 const name = ci ? "ci" : "check";
 const seconds = () => ((performance.now() - started) / 1000).toFixed(1);
 let formatted: string | undefined;
 for (const [index, step] of [...commands, ...afterFormat].entries()) {
-	const result = await run(step);
-	if (!result.ok) {
+	const [file = "", ...args] = step.command;
+	const result = await run(file, args, step.cwd === undefined ? root : `${root}/${step.cwd}`, {
+		env,
+		echo: quiet ? "none" : "inherit",
+	});
+	if (result.code !== 0) {
 		if (quiet) console.log(`$ ${step.command.join(" ")}\n${shorten(result.output)}`);
 		console.log(
 			`✗ ${name} failed in ${seconds()}s: ${step.command.filter((word) => !word.startsWith("--output") && !word.startsWith("--log")).join(" ")}`,

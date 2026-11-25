@@ -1,14 +1,14 @@
 // Claude Code's Stop hook for this repo: when files changed, run the root check (the CLI and the docs
 // site) and, for each template whose code changed (cli/template/<language>/base), that template's
 // check, and hand a failure back to the agent before it ends its turn, as a created game's hook does.
-// A check that already passed on exactly these files is skipped (scripts/repo-check.ts). Only what
-// fails is handed back, shortened to its end. If the agent already had its chance in this stop, it may
-// stop, so the hook can't loop, and the user is told the check fails.
+// A check that already passed on exactly these files is skipped. Only what fails is handed back,
+// shortened to its end; if the agent already had its chance in this stop, it may stop, so the hook
+// can't loop, and the user is told the check fails.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { alreadyPassed } from "../../cli/template/typescript/base/.agents/hooks/fingerprint.ts";
-import { ROOT_RECORD, readRecord, scopeOf, shorten, stateId, templatesOf } from "../../scripts/repo-check.ts";
+import { ROOT_RECORD, scopeOf, shorten, TEMPLATE_RECORD, templatesOf } from "../../scripts/repo-check.ts";
+import { readRecord, stateId } from "../../scripts/state.ts";
 
 let payload: { cwd?: string; stop_hook_active?: boolean } = {};
 try {
@@ -51,12 +51,14 @@ if (scopeOf(changed) !== "none") {
 }
 for (const base of templatesOf(changed)) {
 	const dir = path.join(root, base);
-	if (!alreadyPassed(dir, "files")) run(`mise run check in ${base}`, "mise", ["run", "--quiet", "check"], dir);
+	const state = stateId(dir, "files");
+	if (state === undefined || readRecord(dir, TEMPLATE_RECORD) !== state)
+		run(`mise run check in ${base}`, "mise", ["run", "--quiet", "check"], dir);
 }
 if (failures.length === 0) process.exit(0);
 
-const each = Math.floor(2400 / failures.length);
-const output = failures.map(({ name, output }) => `${name}:\n${shorten(output, each)}`).join("\n\n");
+const perFailure = Math.floor(2400 / failures.length);
+const output = failures.map(({ name, output }) => `${name}:\n${shorten(output, perFailure)}`).join("\n\n");
 const names = failures.map(({ name }) => `\`${name}\``).join(" and ");
 if (payload.stop_hook_active === true) {
 	console.log(JSON.stringify({ systemMessage: `The agent stopped, but ${names} still fails:\n${output}` }));
