@@ -17,7 +17,8 @@ local CONFIG = [[return {
 	testPathIgnorePatterns = { "\\.engine\\.spec$" },
 }]]
 
-return function()
+-- `filter` holds the testPathPattern and testNamePattern that `mise run test -- ...` was given, if any.
+return function(filter)
 	for _, root in roots do
 		local config = Instance.new("ModuleScript")
 		config.Name = "jest.config"
@@ -26,17 +27,25 @@ return function()
 	end
 
 	local Jest = require(ReplicatedStorage.rbxts_include.node_modules["@rbxts-js"].Jest)
-	local ok, result = Jest.runCLI(ReplicatedStorage, { ci = true, verbose = true, passWithNoTests = true }, roots):await()
+	local ok, result = Jest.runCLI(ReplicatedStorage, {
+		ci = true,
+		verbose = true,
+		passWithNoTests = true,
+		testPathPattern = filter.testPathPattern,
+		testNamePattern = filter.testNamePattern,
+	}, roots):await()
 	if not ok then
 		error(tostring(result), 0)
 	end
 
 	local results = result.results
-	print(("@jest %d passed, %d failed, %d total"):format(
-		results.numPassedTests,
-		results.numFailedTests,
-		results.numTotalTests
-	))
+	print(
+		("@jest %d passed, %d failed, %d total"):format(
+			results.numPassedTests,
+			results.numFailedTests,
+			results.numTotalTests
+		)
+	)
 	if not results.success then
 		error("Jest: tests failed", 0)
 	end

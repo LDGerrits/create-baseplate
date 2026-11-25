@@ -17,7 +17,8 @@ local CONFIG = [[return {
 	testPathIgnorePatterns = { "\\.engine\\.spec$", "ServerPackages" },
 }]]
 
-return function()
+-- `filter` holds the testPathPattern and testNamePattern that `mise run test -- ...` was given, if any.
+return function(filter)
 	for _, root in roots do
 		local config = Instance.new("ModuleScript")
 		config.Name = "jest.config"
@@ -26,8 +27,13 @@ return function()
 	end
 
 	local Jest = require(ReplicatedStorage.DevPackages.Jest)
-	local ok, result = Jest.runCLI(ReplicatedStorage, { ci = true, verbose = true, passWithNoTests = true }, roots)
-		:await()
+	local ok, result = Jest.runCLI(ReplicatedStorage, {
+		ci = true,
+		verbose = true,
+		passWithNoTests = true,
+		testPathPattern = filter.testPathPattern,
+		testNamePattern = filter.testNamePattern,
+	}, roots):await()
 	if not ok then
 		error(tostring(result), 0)
 	end

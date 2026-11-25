@@ -82,3 +82,11 @@ test("the cache key names the package and the runner image", () => {
 	});
 	assert.equal(key.stdout.trim(), "key=mesa-vulkan-drivers-ubuntu24-20261101.1");
 });
+
+test("each template's scripts/mesa.sh is this repository's, so the games' CI caches the driver the same way", () => {
+	const mine = fs.readFileSync(script, "utf8");
+	for (const language of ["typescript", "luau"]) {
+		const copy = new URL(`../template/${language}/base/scripts/mesa.sh`, import.meta.url);
+		assert.equal(fs.readFileSync(copy, "utf8"), mine, language);
+	}
+});

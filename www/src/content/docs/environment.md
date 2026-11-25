@@ -18,6 +18,9 @@ None of these is needed for `mise run check`, nor for agents in the cloud, which
 | `ROBLOX_PUBLISH_API_KEY` | `mise run publish` (not with `--managed partial`) | A key with `universe-places:write` on the experience you publish to. Keep it apart from the test key. |
 | `ROBLOX_PUBLISH_UNIVERSE_ID` | `mise run publish` | That experience's ID. |
 | `ROBLOX_PUBLISH_PLACE_ID` | `mise run publish` | The place's ID; in a multi-place game, each place's: `lobby=123,game=456`. |
+| `ROBLOX_ERRORS_API_KEY` | `mise run errors` | A key with only `universe.analytics:read` (in the `universe-analytics` system too) on the experience you publish dev builds to, whose owner has analytics access to it. Read-only, and apart from the publish key. |
+| `ROBLOX_ERRORS_UNIVERSE_ID` | `mise run errors` | That experience's ID. |
+| `ROBLOX_ERRORS_PLACE_ID` | `mise run errors` | The dev place's ID; in a multi-place game, each place's: `lobby=123,game=456`. |
 | `ASPHALT_API_KEY` | `mise run assets` | With the assets add-on: a key with `asset:read` and `asset:write`, owned by the creator in `asphalt.toml`. |
 
 ## In GitHub

@@ -19,7 +19,7 @@ Before you change something, look at what's there: the code that calls it, where
 
 `mise run check` is the check: it formats (StyLua), type-checks (luau-lsp), lints (Selene), builds the place, runs the tests and renders the UI stories, in about three seconds, and prints only what failed. Run it after each change and fix what it reports until it passes. In Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI, a hook formats and lints each file you edit and, outside Cursor, hands back the lint problems left; another runs the check when you stop and hands back any failure; in any tool, the commit hook runs it on what you commit. The stop hook and the commit hook skip it when it already passed on exactly those files.
 
-- While iterating, narrower loops are faster: `mise run analyze` for type errors, `mise run test` for the tests, `mise run ui -- --filter <name>` for one story's picture.
+- While iterating, narrower loops are faster: `mise run analyze` for type errors, `mise run test` for the tests (`mise run test -- shop` for the specs and end-to-end tests whose path matches, `-t <name>` for one test by name), `mise run ui -- --filter <name>` for one story's picture.
 - When a Selene rule is wrong for one line, allow it on the line above with a comment saying why: `-- selene: allow(global_usage) -- <why>`. Don't silence the type checker with `:: any`; fix the type.
 - Every file is `--!strict` (`.luaurc`), and luau-lsp knows every instance in the game, world included: `ReplicatedStorage.Shared.features.shop.ShopNetwork` (once a `shop` feature has one) and `workspace.SpawnLocation` are typed, and a wrong name fails the check.
 - The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `wally`, `stylua`, `selene`, `luau-lsp`, `lune` and the rest are on the PATH only where your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills. To change a tool's pin in `mise.toml`, run `mise lock` after it: `mise install` refuses a tool that `mise.lock` doesn't list with its checksums.
@@ -135,7 +135,7 @@ The game's Roblox packages come from Wally: add one to `wally.toml` under `[depe
 
 ## Releases and updates
 
-You make a release ready and the user ships it: a hook stops `mise run publish`, Studio's Open Cloud tools and Luau run in Studio that reaches the live game's data. Read `.agents/skills/release/SKILL.md` to prepare one. For a Renovate update, a `*.baseplate-new` file or a failing `agent-files` check, read `.agents/skills/upgrade/SKILL.md`.
+You make a release ready and the user ships it: a hook stops `mise run publish`, Studio's Open Cloud tools and Luau run in Studio that reaches the live game's data. Read `.agents/skills/release/SKILL.md` to prepare one. After the user has published to dev, `mise run errors -- <version>` reads the new errors, with stack traces, with a read-only key. For a Renovate update, a `*.baseplate-new` file or a failing `agent-files` check, read `.agents/skills/upgrade/SKILL.md`.
 
 ## Writing for people
 

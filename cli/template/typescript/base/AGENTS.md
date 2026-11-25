@@ -20,7 +20,7 @@ Before you change something, look at what's there: the code that calls it, where
 
 `mise run check` is the check: it formats, compiles, lints, builds the place, runs the tests and renders the UI stories, in about three seconds, and prints only what failed. Run it after each change and fix what it reports until it passes. In Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI, a hook formats and lints each file you edit and, outside Cursor, hands back the lint problems left; another runs the check when you stop and hands back any failure; in any tool, the commit hook runs it on what you commit. The stop hook and the commit hook skip it when it already passed on exactly those files.
 
-- While iterating, narrower loops are faster: `mise run compile` for type errors, `mise run test` for the tests, `mise run ui -- --filter <name>` for one story's picture.
+- While iterating, narrower loops are faster: `mise run compile` for type errors, `mise run test` for the tests (`mise run test -- shop` for the specs and end-to-end tests whose path matches, `-t <name>` for one test by name), `mise run ui -- --filter <name>` for one story's picture.
 - When a lint rule is wrong for one line, disable it on that line with a comment saying why.
 - The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `lune` and the rest are on the PATH only where your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills. To change a tool's pin in `mise.toml`, run `mise lock` after it: `mise install` refuses a tool that `mise.lock` doesn't list with its checksums.
 - `mise run dev` serves the code to Studio: it is the "serve script" that Rogen's section below refers to.
@@ -118,13 +118,17 @@ The compiler and ESLint catch most differences (`null`, `.length`, truthiness, `
 - Packages come from the `@rbxts` scope; a plain npm package won't run in Roblox.
 - Check Roblox values with `typeIs(value, "Vector3")` and `classIs(instance, "Part")`. To check an instance and its children, let Flamework build the check from a type: `Flamework.createGuard<Model & { Humanoid: Humanoid }>()`.
 
+## Luau in a TypeScript game
+
+A hand-written `.luau` module in `src/` is copied to `out/` as it is, and TypeScript imports it through a `.d.ts` beside it. The check formats it with StyLua, lints it with Selene and type-checks it with luau-lsp, strict. Give each Luau module a `.d.ts` beside it that declares what it returns, and a spec that calls it through those types.
+
 ## Packages
 
 Add one with `pnpm add <name>` (`-D` for build tools). pnpm installs only versions published at least two weeks ago; when it refuses one, pick an older version. If the package's scope is new, such as `@rbxts-js`, mount it under `ReplicatedStorage.rbxts_include.node_modules` in `default.rogen.json`, like the existing scopes. Keep `@rbxts/ripple` on 0.9: `@rbxts/pretty-react-hooks` is built for it, and the game loads one copy.
 
 ## Releases and updates
 
-You make a release ready and the user ships it: a hook stops `mise run publish`, Studio's Open Cloud tools and Luau run in Studio that reaches the live game's data. Read `.agents/skills/release/SKILL.md` to prepare one. For a Renovate update, a `*.baseplate-new` file or a failing `agent-files` check, read `.agents/skills/upgrade/SKILL.md`.
+You make a release ready and the user ships it: a hook stops `mise run publish`, Studio's Open Cloud tools and Luau run in Studio that reaches the live game's data. Read `.agents/skills/release/SKILL.md` to prepare one. After the user has published to dev, `mise run errors -- <version>` reads the new errors, with stack traces, with a read-only key. For a Renovate update, a `*.baseplate-new` file or a failing `agent-files` check, read `.agents/skills/upgrade/SKILL.md`.
 
 ## Writing for people
 

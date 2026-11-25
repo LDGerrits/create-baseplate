@@ -1,0 +1,3 @@
+# Selene lints the game's Luau in `mise run check`. `roblox` knows Roblox's globals and API; Selene
+# downloads it the first time.
+std = "roblox"

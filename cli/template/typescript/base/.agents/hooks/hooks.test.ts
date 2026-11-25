@@ -302,3 +302,31 @@ test("no agent tool starts Rogen's stop hook beside the check", () => {
 	}
 	assert.match(fs.readFileSync(path.join(folder, "scripts/check.ts"), "utf8"), /rogen check/);
 });
+
+// Claude Code's own deny rules for reading keys, beside the guard: the guard blocks every `.env`
+// variant but `.env.example`, and permission rules take no exceptions, so each variant is listed.
+test("Claude Code's deny rules cover every .env variant the guard blocks, and not .env.example", () => {
+	const settings = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "../../.claude/settings.json"), "utf8"));
+	const globs = (settings.permissions.deny as string[])
+		.map((rule) => /^Read\(\.\/(.+)\)$/.exec(rule)?.[1])
+		.filter((glob): glob is string => glob !== undefined)
+		.map((glob) => new RegExp(`^${glob.replace(/[.+^${}()|\\]/g, "\\$&").replaceAll("*", "[^/]*")}$`));
+	const denied = (file: string) => globs.some((glob) => glob.test(file));
+	const variants = [".env", ".env.local", ".env.development", ".env.production", ".env.staging", ".env.test"];
+	variants.push(".env.dev", ".env.prod", ".env.development.local", ".env.production.local");
+	for (const file of variants) {
+		assert.equal(denied(file), true, `${file} is denied`);
+		assert.match(
+			reason({ tool_name: "Read", tool_input: { file_path: file } }) ?? "",
+			/secret/,
+			`the guard blocks ${file}`,
+		);
+	}
+	assert.equal(denied(".env.example"), false);
+});
+
+test("lets the read-only errors task run", () => {
+	const run = (command: string) => reason({ tool_name: "Bash", tool_input: { command } });
+	assert.equal(run("mise run errors -- 42"), undefined);
+	assert.equal(run("mise run errors -- --hours 6 --json"), undefined);
+});

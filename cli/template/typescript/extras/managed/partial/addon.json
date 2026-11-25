@@ -53,8 +53,8 @@
 		},
 		{
 			"file": ".env.example",
-			"from": "(test:engine, ui, publish and, with Asphalt, assets)",
-			"to": "(test:engine, ui and, with Asphalt, assets)"
+			"from": "(test:engine, ui, publish, errors and, with Asphalt, assets)",
+			"to": "(test:engine, ui, errors and, with Asphalt, assets)"
 		},
 		{
 			"file": ".gitignore",

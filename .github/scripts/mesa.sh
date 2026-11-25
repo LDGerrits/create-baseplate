@@ -9,9 +9,10 @@
 # which the workflow caches by runner image version (`key` prints the cache key). With them present the
 # install uses them and needs no download; when they're missing, or don't install, it's the plain
 # install above, which then fills the folder for the next run.
-#   sh .github/scripts/mesa.sh key >> "$GITHUB_OUTPUT"
-#   sh .github/scripts/mesa.sh start
-#   sh .github/scripts/mesa.sh wait
+#   sh mesa.sh key >> "$GITHUB_OUTPUT"
+#   sh mesa.sh start
+#   sh mesa.sh wait
+# Baseplate's own workflows and the games' (scripts/mesa.sh in each template) use this same file.
 set -u
 dir="${RUNNER_TEMP:-${TMPDIR:-/tmp}}"
 status="$dir/mesa.status"

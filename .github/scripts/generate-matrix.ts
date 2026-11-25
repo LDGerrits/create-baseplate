@@ -7,11 +7,13 @@
 // - full: no add-ons, each choice alone, every question answered together and the pairwise games: what
 //   a pull request runs, and each choice alone besides.
 // - windows: no add-ons, and every question answered together.
+// - macos: no add-ons, a game of each language, on macOS: nightly and by hand only.
 // - engine: no add-ons, and as few games as it takes for each choice to run once in a real Roblox
 //   server; the runs share one test place and go one at a time, in one job.
 // Which sets a run takes depends on the event (`plan`): a pull request creates `pull`, a push to main,
 // the nightly run and a run by hand create `full`; the engine runs on those, and on Renovate's pull
-// requests, not on the others. A pull request that changes only the docs site and Markdown files
+// requests, not on the others. The nightly run and a run by hand also create the defaults on macOS, and
+// one game, with the CLI's tests, under the oldest Node the CLI supports (its `engines`). A pull request that changes only the docs site and Markdown files
 // creates no game. The games are grouped into batches, about BATCH_SIZE to a job, by language, so a job
 // installs the tools once and creates and checks each game in turn (run-games.ts).
 // `node .github/scripts/generate-matrix.ts` prints the plan of every event; `--event <name>` prints one
@@ -183,6 +185,7 @@ export function generatorFor(language: Language) {
 		pull,
 		full: unique(cover(unique([none, ...alone, ...everything]), allPairs(), pairsOf)),
 		windows: unique([none, everything.at(-1) ?? none]),
+		macos: [none],
 		engine: unique(
 			cover(
 				[none],
@@ -209,11 +212,11 @@ export const generators = Object.fromEntries(
 	languages.map((language) => [language.value, generatorFor(language.value)]),
 ) as Record<Language, ReturnType<typeof generatorFor>>;
 
-export type Job = "pull" | "full" | "windows" | "engine";
+export type Job = "pull" | "full" | "windows" | "macos" | "engine";
 
 /** The sets of every language together, as the flags that create each game. */
 export const allMatrices = Object.fromEntries(
-	(["pull", "full", "windows", "engine"] as const).map((job) => [
+	(["pull", "full", "windows", "macos", "engine"] as const).map((job) => [
 		job,
 		Object.values(generators).flatMap((generator) => generator.matrices[job].map(generator.flagsOf)),
 	]),
@@ -221,6 +224,17 @@ export const allMatrices = Object.fromEntries(
 
 /** The most games one job creates and checks. */
 export const BATCH_SIZE = 6;
+
+/** The oldest Node the CLI supports, as a full version: the CLI's `engines`, rounded to its first release. */
+export const MIN_NODE = (() => {
+	const range = (
+		JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, "../../cli/package.json"), "utf8")) as {
+			engines: { node: string };
+		}
+	).engines.node;
+	const version = range.replace(/^>=\s*/, "");
+	return version.split(".").length === 2 ? `${version}.0` : version;
+})();
 
 /** What a job needs: the games to create and check, one after another, and a template to check first. */
 export interface Batch {
@@ -231,6 +245,8 @@ export interface Batch {
 	games: string[];
 	/** Whether the job checks the language's template (cli/template/<language>/base) too. */
 	template: boolean;
+	/** The Node this batch runs the CLI under, when it isn't the default one. */
+	node?: string;
 }
 
 /**
@@ -295,6 +311,8 @@ export interface Plan {
 	create: Batch[];
 	/** The batches of games to create and check on Windows. */
 	windows: Batch[];
+	/** The batches of games to create and check on macOS: the nightly run and a run by hand only. */
+	macos: Batch[];
 	/** The flags of the games the engine job creates and runs in real Roblox. */
 	engine: string[];
 }
@@ -315,9 +333,10 @@ export function plan({
 	changedFiles?: string[];
 }): Plan {
 	const pullRequest = event === "pull_request";
-	if (pullRequest && docsOnly(changedFiles)) return { create: [], windows: [], engine: [] };
+	if (pullRequest && docsOnly(changedFiles)) return { create: [], windows: [], macos: [], engine: [] };
+	const extra = event === "schedule" || event === "workflow_dispatch";
 	const create = pullRequest ? "pull" : "full";
-	const batches = (job: "pull" | "full" | "windows", template: boolean) =>
+	const batches = (job: "pull" | "full" | "windows" | "macos", template: boolean) =>
 		Object.entries(generators).flatMap(([language, generator]) =>
 			batchesOf(
 				language as Language,
@@ -325,9 +344,21 @@ export function plan({
 				{ template },
 			),
 		);
+	const oldNode: Batch[] = extra
+		? [
+				{
+					name: `node ${MIN_NODE}`,
+					language: DEFAULT_LANGUAGE,
+					games: generators[DEFAULT_LANGUAGE].matrices.macos.map(generators[DEFAULT_LANGUAGE].flagsOf),
+					template: false,
+					node: MIN_NODE,
+				},
+			]
+		: [];
 	return {
-		create: batches(create, true),
+		create: [...batches(create, true), ...oldNode],
 		windows: batches("windows", false),
+		macos: extra ? batches("macos", false) : [],
 		engine: !pullRequest || headRef.startsWith("renovate/") ? allMatrices.engine : [],
 	};
 }
@@ -337,9 +368,11 @@ export function outputsOf(result: Plan): Record<string, string> {
 	return {
 		create: JSON.stringify({ include: result.create }),
 		windows: JSON.stringify({ include: result.windows }),
+		macos: JSON.stringify({ include: result.macos }),
 		engine: JSON.stringify(result.engine),
 		"run-create": String(result.create.length > 0),
 		"run-windows": String(result.windows.length > 0),
+		"run-macos": String(result.macos.length > 0),
 		"run-engine": String(result.engine.length > 0),
 	};
 }
@@ -349,6 +382,7 @@ function describe(event: string, result: Plan): string {
 	for (const [job, batches] of [
 		["create", result.create],
 		["windows", result.windows],
+		["macos", result.macos],
 	] as const) {
 		const games = batches.reduce((sum, batch) => sum + batch.games.length, 0);
 		lines.push(`  ${job}: ${games} games in ${batches.length} jobs`);
