@@ -22,10 +22,8 @@ interface Step {
 	name: string;
 	command: string;
 	needs: string[];
-	/** Runs only when the check can fix files, not in `mise run ci`. */
-	fix?: boolean;
-	/** Runs only in `mise run ci`. */
-	ci?: boolean;
+	/** What `mise run check` runs instead of `command` (`mise run ci` runs `command`): the step's fixing form. */
+	fixCommand?: string;
 	/** Formats files: once these are done, the files are as the check will leave them. */
 	format?: boolean;
 	/** The tooling's: skipped while its files are as they were when it last passed. */
@@ -37,12 +35,11 @@ const steps: Step[] = [
 	{ name: "generate", command: "mise run --quiet generate", needs: [] },
 	{
 		name: "format",
-		command: "biome check --write --no-errors-on-unmatched .",
+		command: "biome ci .",
+		fixCommand: "biome check --write --no-errors-on-unmatched .",
 		needs: ["generate"],
-		fix: true,
 		format: true,
 	},
-	{ name: "format", command: "biome ci .", needs: ["generate"], ci: true, format: true },
 	{ name: "compile", command: "mise run --quiet --skip-deps compile", needs: ["format"] },
 	// Tests named so they never run, and services nothing starts.
 	{ name: "sources", command: "node scripts/check-sources.ts", needs: ["format"] },
@@ -121,7 +118,7 @@ const ci = process.argv.includes("--ci");
 const verbose = process.argv.includes("--verbose");
 const everything = process.argv.includes("--all") || (process.env.CI ?? "") !== "";
 const started = performance.now();
-const list = steps.filter((step) => (ci ? step.fix !== true : step.ci !== true));
+const list = steps.map((step) => ({ ...step, command: (!ci && step.fixCommand) || step.command }));
 
 const outcomes = new Map<string, Outcome>();
 const running = new Map<string, Promise<void>>();

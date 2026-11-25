@@ -8,7 +8,7 @@
 // on later stops until a file changes again, whether the agent ran the check itself or the hook did.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
-import { alreadyPassed, CHECK_RECORD, readRecord, stateId, writeRecord } from "./fingerprint.ts";
+import { alreadyPassed, CHECK_RECORD, isMarkdown, readRecord, stateId, writeRecord } from "./fingerprint.ts";
 import { type Format, formatArg, projectRoot } from "./project.ts";
 
 export interface StopPayload {
@@ -57,7 +57,7 @@ export function changedFiles(): string[] {
 	return [
 		...git("diff", "-z", "--name-only", "--relative", "HEAD").toString("utf8").split("\0"),
 		...untracked(),
-	].filter((file) => file !== "" && !/\.md$/i.test(file));
+	].filter((file) => file !== "" && !isMarkdown(file));
 }
 
 const untracked = () =>

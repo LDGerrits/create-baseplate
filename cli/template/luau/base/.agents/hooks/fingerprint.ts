@@ -99,9 +99,12 @@ export function alreadyPassed(cwd: string, source: "files" | "index"): boolean {
 	return id !== undefined && id === readRecord(cwd, CHECK_RECORD);
 }
 
-/** Whether every one of these changed files is Markdown, which nothing in the check reads. */
+/** Whether a file is Markdown, which nothing in the check reads. */
+export const isMarkdown = (file: string) => /\.md$/i.test(file);
+
+/** Whether every one of these changed files is Markdown. */
 export function markdownOnly(files: string[]): boolean {
-	return files.length > 0 && files.every((file) => /\.md$/i.test(file));
+	return files.length > 0 && files.every(isMarkdown);
 }
 
 /** The paths staged for the commit being made (a rename counts as the old path and the new one). */
