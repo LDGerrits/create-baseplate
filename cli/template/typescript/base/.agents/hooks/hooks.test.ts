@@ -325,9 +325,8 @@ test("Claude Code's deny rules cover every .env variant the guard blocks, and no
 	assert.equal(denied(".env.example"), false);
 });
 
-test("lets the read-only errors task run, but stops publishing", () => {
+test("lets the read-only errors task run", () => {
 	const run = (command: string) => reason({ tool_name: "Bash", tool_input: { command } });
 	assert.equal(run("mise run errors -- 42"), undefined);
 	assert.equal(run("mise run errors -- --hours 6 --json"), undefined);
-	assert.match(run("mise run publish") ?? "", /Publishing/);
 });

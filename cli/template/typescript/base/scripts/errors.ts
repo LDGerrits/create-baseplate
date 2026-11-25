@@ -17,7 +17,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
-import { placeIdFor } from "./publish.ts";
 
 const API = "https://apis.roblox.com";
 /** Roblox keeps performance metrics, such as the error count, for 28 days; the details default to 7. */
@@ -70,6 +69,25 @@ interface Detail {
 	stacktrace?: string;
 	firstSeenUtc?: string | null;
 	firstSeenPlaceVersion?: number | null;
+}
+
+/** The place ID for `place` from ROBLOX_ERRORS_PLACE_ID: a bare ID, or `<place>=<id>` pairs. */
+export function placeIdFor(setting: string, place: string, multi: boolean): string {
+	const variable = "ROBLOX_ERRORS_PLACE_ID";
+	const value = setting.trim();
+	if (value === "") throw new Error(`Set ${variable} to the ID of the place.`);
+	if (!value.includes("=")) {
+		if (multi) throw new Error(`Each place needs its ID: set ${variable} to ${place}=<id>,...`);
+		if (!/^\d+$/.test(value)) throw new Error(`${variable} is not a place ID: ${value}`);
+		return value;
+	}
+	const id = value
+		.split(",")
+		.map((pair) => pair.split("=").map((part) => part.trim()))
+		.find(([name]) => name === place)?.[1];
+	if (id === undefined) throw new Error(`${variable} has no ID for the place "${place}".`);
+	if (!/^\d+$/.test(id)) throw new Error(`${variable}'s ID for "${place}" is not a number: ${id}`);
+	return id;
 }
 
 export function parseErrorsArgs(args: string[]): { version?: number; hours?: number; json?: boolean } {
@@ -207,7 +225,6 @@ if (import.meta.main) {
 			process.env.ROBLOX_ERRORS_PLACE_ID ?? "",
 			process.env.PLACE ?? "",
 			fs.existsSync(path.join(process.env.ROOT ?? process.cwd(), "projects")),
-			"ROBLOX_ERRORS_PLACE_ID",
 		);
 		const errors = await readErrors({ key, universe, place, now: new Date(), ...window });
 		const when =

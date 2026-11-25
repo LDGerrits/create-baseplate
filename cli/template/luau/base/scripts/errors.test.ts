@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { type Fetch, formatErrors, parseErrorsArgs, readErrors } from "./errors.ts";
+import { type Fetch, formatErrors, parseErrorsArgs, placeIdFor, readErrors } from "./errors.ts";
 
 const NOW = new Date("2026-11-10T12:00:00Z");
 const KEY = "read-only-key";
@@ -202,4 +202,12 @@ test("takes a place version or a number of hours", () => {
 	assert.deepEqual(parseErrorsArgs([]), { hours: 24 });
 	assert.throws(() => parseErrorsArgs(["--hours", "x"]), /number/);
 	assert.throws(() => parseErrorsArgs(["--publish"]), /Unknown option/);
+});
+
+test("takes the place's ID from a bare ID or its pair, and says which variable is wrong", () => {
+	assert.equal(placeIdFor(" 12 ", "game", false), "12");
+	assert.equal(placeIdFor("lobby=1,game=2", "game", true), "2");
+	assert.throws(() => placeIdFor("", "game", false), /Set ROBLOX_ERRORS_PLACE_ID/);
+	assert.throws(() => placeIdFor("12", "game", true), /Each place needs its ID/);
+	assert.throws(() => placeIdFor("lobby=1", "game", true), /no ID for the place "game"/);
 });

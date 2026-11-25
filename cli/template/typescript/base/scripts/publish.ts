@@ -8,24 +8,19 @@
 import fs from "node:fs";
 import path from "node:path";
 
-/** The place ID for `place` from `variable` (ROBLOX_PUBLISH_PLACE_ID): a bare ID, or `<place>=<id>` pairs. */
-export function placeIdFor(
-	setting: string,
-	place: string,
-	multi: boolean,
-	variable = "ROBLOX_PUBLISH_PLACE_ID",
-): string {
+/** The place ID for `place` from ROBLOX_PUBLISH_PLACE_ID: a bare ID, or `<place>=<id>` pairs. */
+export function placeIdFor(setting: string, place: string, multi: boolean): string {
 	const value = setting.trim();
-	if (value === "") throw new Error(`Set ${variable} to the ID of the place.`);
+	if (value === "") throw new Error("Set ROBLOX_PUBLISH_PLACE_ID to the ID of the place to publish to.");
 	if (!value.includes("=")) {
-		if (multi) throw new Error(`Each place needs its ID: set ${variable} to ${place}=<id>,...`);
-		if (!/^\d+$/.test(value)) throw new Error(`${variable} is not a place ID: ${value}`);
+		if (multi) throw new Error(`Each place needs its ID: set ROBLOX_PUBLISH_PLACE_ID to ${place}=<id>,...`);
+		if (!/^\d+$/.test(value)) throw new Error(`ROBLOX_PUBLISH_PLACE_ID is not a place ID: ${value}`);
 		return value;
 	}
 	const pairs = value.split(",").map((pair) => pair.split("=").map((part) => part.trim()));
 	const id = pairs.find(([name]) => name === place)?.[1];
-	if (id === undefined) throw new Error(`${variable} has no ID for the place "${place}".`);
-	if (!/^\d+$/.test(id)) throw new Error(`${variable}'s ID for "${place}" is not a number: ${id}`);
+	if (id === undefined) throw new Error(`ROBLOX_PUBLISH_PLACE_ID has no ID for the place "${place}".`);
+	if (!/^\d+$/.test(id)) throw new Error(`ROBLOX_PUBLISH_PLACE_ID's ID for "${place}" is not a number: ${id}`);
 	return id;
 }
 
