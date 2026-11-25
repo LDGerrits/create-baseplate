@@ -18,16 +18,20 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # rur renders the stories in the check; the agent's machine has no GPU, so give it Mesa's
-      # software Vulkan driver.
-      # The runner's package lists are usually fresh enough; `apt-get update` takes most of this
-      # step, so it runs only when the install fails without it.
-      - run: |
-          sudo apt-get install -y -q --no-install-recommends mesa-vulkan-drivers ||
-            { sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends mesa-vulkan-drivers; }
+      # rur renders the stories in the check; the agent's machine has no GPU, so it needs Mesa's
+      # Mesa's software Vulkan driver, installed while the rest sets up; `wait` is before the check.
+      # Its .deb files are cached by runner image version, so most runs need no download.
+      - id: mesa
+        run: sh scripts/mesa.sh key >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/mesa-debs
+          key: ${{ steps.mesa.outputs.key }}
+      - run: sh scripts/mesa.sh start
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
           version: 2026.11.8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mise run install
+      - run: sh scripts/mesa.sh wait
