@@ -5,6 +5,11 @@
 # its tools and creates the first game, and `wait` (before that check) blocks until it is done.
 # The runner's package lists are usually fresh enough; `apt-get update` takes most of an install, so
 # it runs only when the install fails without it.
+# The downloaded .deb files are kept in $MESA_DEBS (default: mesa-debs in the runner's temp folder),
+# which the workflow caches by runner image version (`key` prints the cache key). With them present the
+# install uses them and needs no download; when they're missing, or don't install, it's the plain
+# install above, which then fills the folder for the next run.
+#   sh .github/scripts/mesa.sh key >> "$GITHUB_OUTPUT"
 #   sh .github/scripts/mesa.sh start
 #   sh .github/scripts/mesa.sh wait
 set -u
@@ -12,13 +17,38 @@ dir="${RUNNER_TEMP:-${TMPDIR:-/tmp}}"
 status="$dir/mesa.status"
 pidfile="$dir/mesa.pid"
 log="$dir/mesa.log"
+debs="${MESA_DEBS:-$dir/mesa-debs}"
+package=mesa-vulkan-drivers
+archives="${MESA_APT_ARCHIVES:-/var/cache/apt/archives}"
+
+install_from_network() {
+	sudo apt-get install -y -q --no-install-recommends "$package" ||
+		{ sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends "$package"; }
+}
+
+# What the network install downloaded is in apt's archive: keep it for the cache.
+keep_debs() {
+	mkdir -p "$debs" &&
+		sudo find "$archives" -maxdepth 1 -name '*.deb' -exec cp -t "$debs" {} + &&
+		sudo chown -R "$(id -u):$(id -g)" "$debs"
+	rmdir "$debs" 2>/dev/null
+	return 0
+}
 
 install() {
-	sudo apt-get install -y -q --no-install-recommends mesa-vulkan-drivers ||
-		{ sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends mesa-vulkan-drivers; }
+	if ls "$debs"/*.deb > /dev/null 2>&1; then
+		sudo apt-get install -y -q --no-install-recommends "$debs"/*.deb && return 0
+		echo "The cached packages didn't install; installing from the network."
+	fi
+	install_from_network || return 1
+	[ -n "$(ls "$debs" 2>/dev/null)" ] || keep_debs
+	return 0
 }
 
 case "${1:-}" in
+key)
+	echo "key=$package-${ImageOS:-unknown}-${ImageVersion:-unknown}"
+	;;
 install)
 	install
 	;;

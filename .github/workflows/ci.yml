@@ -111,6 +111,13 @@ jobs:
         with:
           persist-credentials: false
       # Mesa's software Vulkan driver, installed while the rest sets up; `wait` is before the first check.
+      # Its .deb files are cached by runner image version, so most runs need no download.
+      - id: mesa
+        run: sh .github/scripts/mesa.sh key >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/mesa-debs
+          key: ${{ steps.mesa.outputs.key }}
       - run: sh .github/scripts/mesa.sh start
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
