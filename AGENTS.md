@@ -15,7 +15,7 @@ The build copies the template into `cli/dist/template`, only the files git track
 
 ## Checking your work
 
-- At the root, for the CLI and the docs site: `mise run check` (format, lint, build, type-check, test).
+- At the root, for the CLI and the docs site: `mise run check` (format, lint, build, type-check, test, and actionlint over the repo's own and the templates' workflows).
 - In `cli/template/<language>/base`: its own `mise run check`, as its `AGENTS.md` says.
 - To see what a user gets: `pnpm --filter create-baseplate build`, then `node cli/dist/index.js <folder> --json` (with `--language luau` for a Luau game), and `mise run check` in that folder.
 - In Claude Code, a Stop hook (`.claude/hooks/check.ts`) runs the root check when files changed, and a template's check (`mise run check` in its `base`) for each template whose code changed, then hands back only what failed, shortened to its end. Both skip a check that already passed on exactly these files (a tree id recorded in the worktree's git folder, as in a created game; `scripts/state.ts`).

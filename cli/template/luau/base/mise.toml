@@ -14,6 +14,8 @@ pnpm = "12.18.0"
 # From aqua, which marks the binary executable; the GitHub release zip doesn't.
 "aqua:Kampfkarren/selene" = "0.32.0"
 "github:lune-org/lune" = "0.11.1"
+# Lints the workflows in .github/workflows.
+"aqua:rhysd/actionlint" = "1.7.12"
 # ree runs the game offline for tests, rur renders UI, ror renders 3D. Anime-Vanguards tools.
 "github:Anime-Vanguards/roblox-engine-emulator" = { version = "0.8.0", bin = "ree" }
 "github:Anime-Vanguards/roblox-ui-renderer" = { version = "0.9.0", bin = "rur-native" }

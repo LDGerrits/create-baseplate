@@ -47,6 +47,8 @@ const steps: Step[] = [
 	// The agent files at the create-baseplate version package.json pins, and no clash left unmerged.
 	{ name: "agent-files", command: "node scripts/agent-files.ts --check", needs: FORMATTED },
 	{ name: "tooling-types", command: "tsc -p tsconfig.node.json", needs: FORMATTED, tooling: true },
+	// The workflows in .github/workflows: expressions, job and step names, the actions' inputs.
+	{ name: "workflows", command: "actionlint", needs: FORMATTED, tooling: true },
 	// The agent hooks' and scripts' own tests.
 	{
 		name: "tooling-tests",
@@ -77,7 +79,7 @@ const steps: Step[] = [
 
 /** The files the tooling's type-check and tests read, as paths from the project's root. */
 const toolingFile = (file: string) =>
-	!file.includes("/") || /^(scripts|\.agents|\.claude|\.codex|\.cursor|\.gemini)\//.test(file);
+	!file.includes("/") || /^(scripts|\.agents|\.claude|\.codex|\.cursor|\.gemini|\.github\/workflows)\//.test(file);
 const TOOLING_RECORD = "check-tooling-passed";
 
 const words = (command: string) => [...command.matchAll(/"([^"]*)"|(\S+)/g)].map((match) => match[1] ?? match[2] ?? "");
