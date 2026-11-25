@@ -11,9 +11,13 @@ name: Release
 # one the mise lock workflow uses; it needs Contents and Pull requests: read and write), the PR is
 # opened as the app and its CI runs.
 #
-# The workflow starts when CI has finished on a push to main, and only goes on when CI passed (its
-# "CI passed" job) and the commit is still main's tip: nothing untested reaches npm, and a stale run
-# can't version or publish over a newer commit. It checks out the commit CI tested.
+# The workflow starts when CI has finished on a push to main, and only goes on when CI's "CI passed"
+# job succeeded (not the run's conclusion: the engine job can be red on main without it, since a
+# Roblox outage mustn't stop a release) and the commit is still main's tip: nothing untested reaches
+# npm, and a stale run can't version or publish over a newer commit. It checks out the commit CI
+# tested, and looks at main's tip once more right before the changesets step. The changesets action
+# reads the workflow's own sha (main's tip when this run started, which GitHub doesn't let a step
+# override), so that second look is what keeps it from acting on a commit whose CI didn't pass.
 
 on:
   workflow_run:
@@ -31,14 +35,24 @@ concurrency:
 jobs:
   gate:
     name: CI passed on main's tip
-    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'
+    if: github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
     outputs:
       go: ${{ steps.tip.outputs.go }}
     steps:
       - id: tip
         run: |
+          passed=$(gh api "repos/$REPO/actions/runs/$RUN_ID/jobs?per_page=100" \
+            --jq '[.jobs[] | select(.name == "CI passed") | .conclusion] | first // ""')
+          if [ "$passed" != success ]; then
+            echo "::notice::CI's \"CI passed\" job ended as '${passed:-missing}' for $SHA; nothing to release from it."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           tip=$(gh api "repos/$REPO/commits/main" --jq .sha)
           if [ "$tip" = "$SHA" ]; then
             echo "go=true" >> "$GITHUB_OUTPUT"
@@ -50,6 +64,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
 
   release:
     name: Version or publish
@@ -80,7 +95,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: pnpm install --frozen-lockfile
-      - uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+      # The install took a while: main may have moved on since the gate looked.
+      - id: still
+        run: |
+          tip=$(gh api "repos/$REPO/commits/main" --jq .sha)
+          if [ "$tip" = "$SHA" ]; then
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::$SHA is no longer main's tip ($tip); its release waits for that commit's CI."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+      - if: steps.still.outputs.go == 'true'
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           version-script: pnpm changeset version
           # Empty until publishing is switched on: the action then only versions.

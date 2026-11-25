@@ -1,8 +1,9 @@
 name: CI
 
 # A pull request creates the games that cover every two add-ons together, and the engine job (real Roblox)
-# runs on it only for Renovate's updates. The games that make each add-on alone, the engine, and the
-# Windows games are what a push to main, the nightly run and a run by hand add (.github/scripts/generate-matrix.ts).
+# runs on it only for Renovate's updates. The games that make each add-on alone and the engine are what
+# a push to main, the nightly run and a run by hand add; the Windows games run on every event
+# (.github/scripts/generate-matrix.ts).
 on:
   push:
     branches: [main]
@@ -208,19 +209,25 @@ jobs:
           ROBLOX_PLACE_ID: ${{ vars.ROBLOX_PLACE_ID }}
 
   passed:
-    # The one check a branch ruleset requires on main, and what the release waits for. The jobs
-    # above have names that change with the add-on sets, so a ruleset can't name them. A skipped job
-    # (the games on a pull request of only docs, the engine job off pull requests or without its
-    # variables) is fine; a failed or cancelled one is not.
+    # The one check a branch ruleset requires on main, and what the release waits for (its own job,
+    # not the run's conclusion). The jobs above have names that change with the add-on sets, so a
+    # ruleset can't name them. A skipped job (the games on a pull request of only docs, the engine job
+    # off pull requests or without its variables) is fine; a failed or cancelled one is not. The engine
+    # job counts only on pull requests (.github/scripts/ci-passed.jq): elsewhere it shows red on its own.
     name: CI passed
     if: always()
     needs: [cli, plan, create, windows, engine]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
       - name: Fail when a job failed or was cancelled
         run: |
           echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
-          echo "$NEEDS" | jq -e 'all(.[]; .result == "success" or .result == "skipped")' > /dev/null
+          echo "$NEEDS" | jq -e --arg event "$EVENT" -f .github/scripts/ci-passed.jq > /dev/null
         env:
           NEEDS: ${{ toJSON(needs) }}
+          EVENT: ${{ github.event_name }}
