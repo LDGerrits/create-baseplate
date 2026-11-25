@@ -8,6 +8,7 @@ description: What goes wrong when setting up or running a game, and how to fix i
 - **`npm create` ignores the flags.** npm reads flags before a `--` as its own. Put them after it: `npm create baseplate@latest my-game -- --yes`. With pnpm, no `--` is needed.
 - **"The game is inside the git repo at …".** A folder above the game is a git repository, often a home folder someone ran `git init` in. Create the game elsewhere, or run `git init` in the game's folder yourself.
 - **"The first commit failed: Please tell me who you are".** git has no name and email yet: `git config --global user.name "…"` and `git config --global user.email "…"`, then commit.
+- **The CLI exits with 1 and says the first commit failed.** The game is created but uncommitted: the commit hook ran the game's check and it failed. Read what the CLI printed, fix it, and run `git add --all && git commit --message "Initial commit from create-baseplate"` in the game's folder (`mise run check` shows the failure again).
 - **"mise isn't installed".** Install it from [mise.jdx.dev](https://mise.jdx.dev/getting-started.html), then run the next steps the CLI printed.
 
 ## Tools and packages

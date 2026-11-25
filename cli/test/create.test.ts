@@ -198,6 +198,61 @@ test("creates into a freshly cloned repo, and commits there", () => {
 	assert.match(git("log", "--oneline").stdout, /Initial commit from create-baseplate\n.*Initial commit\n/);
 });
 
+test("exits non-zero when the first commit fails, leaving the game uncommitted", () => {
+	const cwd = tempDir();
+	// A commit hook that refuses, as a game's does when its check fails.
+	const hooks = path.join(cwd, "hooks");
+	fs.mkdirSync(hooks);
+	fs.writeFileSync(
+		path.join(hooks, "pre-commit"),
+		"#!/bin/sh\necho 'check failed: lint error in src/a.ts' >&2\nexit 1\n",
+		{
+			mode: 0o755,
+		},
+	);
+	const env = {
+		...process.env,
+		...GIT_IDENTITY,
+		GIT_CONFIG_COUNT: "1",
+		GIT_CONFIG_KEY_0: "core.hooksPath",
+		GIT_CONFIG_VALUE_0: hooks,
+	};
+
+	const json = spawnSync("node", [CLI, "coin-rush", "--json", "--no-install", "--state", "none"], {
+		cwd,
+		encoding: "utf8",
+		env,
+	});
+	assert.equal(json.status, 1);
+	const result = JSON.parse(json.stdout) as {
+		ok: boolean;
+		created: boolean;
+		committed: boolean;
+		dir: string;
+		error: string;
+		nextSteps: string[];
+	};
+	assert.equal(result.ok, false);
+	assert.equal(result.created, true);
+	assert.equal(result.committed, false);
+	assert.match(result.error, /first commit failed/);
+	assert.match(result.error, /lint error in src\/a\.ts/);
+	assert.ok(result.nextSteps.includes('git add --all && git commit --message "Initial commit from create-baseplate"'));
+	assert.ok(fs.existsSync(path.join(result.dir, "AGENTS.md")), "the game stays");
+	assert.notEqual(spawnSync("git", ["log"], { cwd: result.dir }).status, 0, "no commit");
+
+	const text = spawnSync("node", [CLI, "second", "--yes", "--no-install", "--state", "none"], {
+		cwd,
+		encoding: "utf8",
+		env,
+	});
+	assert.equal(text.status, 1);
+	assert.match(
+		stripVTControlCharacters(text.stderr + text.stdout),
+		/first commit failed[\s\S]*git add --all && git commit/,
+	);
+});
+
 test("names the game apart from its folder with --name", () => {
 	const cwd = tempDir();
 	const run = create(cwd, "Coin Rush", "--name", "coin-rush", "--no-git");
