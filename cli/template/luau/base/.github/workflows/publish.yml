@@ -49,6 +49,14 @@ jobs:
           version: 2026.11.8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # pnpm's packages, kept between runs so the install downloads only what changed; each month starts afresh.
+      - id: period
+        run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ runner.os }}-${{ steps.period.outputs.month }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-${{ steps.period.outputs.month }}-
       - run: mise run install
       - run: mise run publish
         env:
@@ -75,6 +83,14 @@ jobs:
           version: 2026.11.8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # pnpm's packages, kept between runs so the install downloads only what changed; each month starts afresh.
+      - id: period
+        run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ runner.os }}-${{ steps.period.outputs.month }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-${{ steps.period.outputs.month }}-
       - run: mise run install
       - run: mise run publish
         env:
@@ -105,6 +121,14 @@ jobs:
           version: 2026.11.8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # pnpm's packages, kept between runs so the install downloads only what changed; each month starts afresh.
+      - id: period
+        run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ runner.os }}-${{ steps.period.outputs.month }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-${{ steps.period.outputs.month }}-
       - run: mise run install
       # Before players get the new version, so their data as it stands now stays restorable for 30
       # days if the release corrupts it (scripts/snapshot.ts).

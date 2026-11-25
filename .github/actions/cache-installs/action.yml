@@ -1,0 +1,55 @@
+name: Cache installs
+description: Restores pnpm's store, and mise's tools when asked, and saves them when the job passes.
+
+# Created games run their own pnpm install and mise install inside the job, so both reuse what a
+# restored cache holds. Caches are kept per branch: a pull request reads main's and writes its own,
+# which main never reads, so a fork's pull request can't plant one for main. The month in the keys
+# starts the caches afresh monthly, so stale packages and tool versions don't pile up through
+# restore-keys.
+
+inputs:
+  name:
+    description: The kind of job, such as cli or game. Jobs that install different things must not share one, or the first to save would hide what the others need.
+    required: true
+  language:
+    description: The language of the game template the job installs, typescript or luau; empty for a job that only installs the CLI's and docs site's packages.
+    default: ""
+  mise:
+    description: Cache mise's tools too, including those a game installs later, which jdx/mise-action's own cache (saved right after its install) misses. Set cache false on that action.
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - id: period
+      shell: bash
+      run: |
+        echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+        # pnpm hard-links from its store, so the store sits beside the games, which are created under
+        # the runner's temp folder, on the same drive. The CLI's pnpm install inherits the variable.
+        echo "pnpm_config_store_dir=$RUNNER_TEMP/pnpm-store" >> "$GITHUB_ENV"
+        if [ "$MISE" = true ]; then
+          # Where jdx/mise-action and mise install tools, so those of later steps are cached too.
+          echo "MISE_DATA_DIR=$RUNNER_TEMP/mise" >> "$GITHUB_ENV"
+        fi
+      env:
+        MISE: ${{ inputs.mise }}
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/pnpm-store
+        key:
+          pnpm-${{ runner.os }}-${{ inputs.name }}-${{ inputs.language }}-${{ steps.period.outputs.month }}-${{ hashFiles('pnpm-lock.yaml',
+          format('cli/template/{0}/base/pnpm-lock.yaml', inputs.language),
+          format('cli/template/{0}/base/package.json', inputs.language),
+          format('cli/template/{0}/extras/**/addon.json', inputs.language)) }}
+        restore-keys: pnpm-${{ runner.os }}-${{ inputs.name }}-${{ inputs.language }}-${{ steps.period.outputs.month }}-
+    - if: inputs.mise == 'true'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/mise
+        key:
+          mise-${{ runner.os }}-${{ inputs.name }}-${{ inputs.language }}-${{ steps.period.outputs.month }}-${{ hashFiles('mise.toml', 'mise.lock',
+          format('cli/template/{0}/base/mise.toml', inputs.language),
+          format('cli/template/{0}/base/mise.lock', inputs.language),
+          format('cli/template/{0}/extras/**/mise.toml', inputs.language)) }}
+        restore-keys: mise-${{ runner.os }}-${{ inputs.name }}-${{ inputs.language }}-${{ steps.period.outputs.month }}-
