@@ -33,6 +33,11 @@ export function stateId(cwd: string, source: "files" | "index"): string | undefi
 	try {
 		try {
 			fs.copyFileSync(path.resolve(cwd, real), copy);
+			// Git re-reads a file whose time isn't older than its index's, to catch a change made in the same
+			// instant as the last `git add`. The copy keeps the index's time (less a millisecond), or it
+			// would look newer and a same-size edit made just after that add would go unseen.
+			const at = fs.statSync(path.resolve(cwd, real)).mtimeMs / 1000 - 0.001;
+			fs.utimesSync(copy, at, at);
 		} catch {
 			// No index yet, as in a repo without a commit: start from an empty one.
 		}
