@@ -1,5 +1,20 @@
 # create-baseplate
 
+## 0.3.0
+
+### Minor Changes
+
+- 720ec53: A game's check lints its workflows in `.github/workflows` with actionlint, pinned in `mise.toml`. Like the tooling's other checks it runs when the workflow files change, and always on CI.
+- d40ac8a: A TypeScript game's check now covers the Luau it keeps beside its TypeScript: `.luau` files in `src/` and the end-to-end tests in `tests/e2e` are formatted with StyLua, linted with Selene and type-checked with luau-lsp. The steps do nothing in a game without Luau files.
+- 53a6c90: `mise run errors -- <version>` lists the errors first seen in a place version, most frequent first and with stack traces, from Roblox's Error Reporting API; `-- --hours 6` takes the last hours instead. It only reads, with a key of its own (`ROBLOX_ERRORS_API_KEY`, with only `universe.analytics:read`), and the release skill tells agents to run it after a publish to dev.
+- 39ab60e: `mise run test -- shop` runs only the specs and end-to-end tests whose path matches, and `mise run test -- -t "refuses"` only the tests whose name matches, in both templates.
+
+### Patch Changes
+
+- 5f8a04c: Claude Code's deny rules in a game now cover `.env.development`, `.env.production`, `.env.staging`, `.env.test`, `.env.dev`, `.env.prod` and `.env.*.local` as well as `.env` and `.env.local`; only `.env.example` stays readable. The guard hook already blocked every variant for all tools.
+- 064ff00: A game's CI installs Mesa's Vulkan driver in the background and caches its packages by runner image, so the story pictures cost the check a few seconds instead of up to a minute on a slow mirror. The game's `scripts/mesa.sh` does it, for `ci.yml` and `copilot-setup-steps.yml`.
+- 7a27a15: A game's `mise.lock` now lists the tools' builds for Intel Macs and Windows on ARM too, so mise installs the tools that ship for them. ree and ror, which run the tests and render 3D, have no build for those platforms, nor for Linux on ARM: `mise run test` can't run there.
+
 ## 0.2.0
 
 ### Minor Changes
