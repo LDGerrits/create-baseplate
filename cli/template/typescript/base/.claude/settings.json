@@ -71,10 +71,6 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "mise exec -C \"$CLAUDE_PROJECT_DIR\" -- node \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/rogen-check.mjs"
-					},
-					{
-						"type": "command",
 						"command": "sh \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/run check.ts claude",
 						"timeout": 180
 					}

@@ -19,9 +19,6 @@
 		],
 		"stop": [
 			{
-				"command": "mise exec -- node .agents/hooks/rogen-check.mjs cursor"
-			},
-			{
 				"command": "sh .agents/hooks/run check.ts cursor",
 				"timeout": 180
 			}
