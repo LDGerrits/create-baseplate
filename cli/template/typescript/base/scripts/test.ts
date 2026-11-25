@@ -1,12 +1,14 @@
 // Runs the tests offline in ree, the Roblox engine emulator: the Jest specs, then every end-to-end
 // harness in tests/e2e. Run it through `mise run test`, which compiles first. It runs the game of
-// game.project.json, or of the project file given: `node scripts/test.ts <project.json>`.
+// game.project.json, or of the project file given: `node scripts/test.ts <project.json>`. Arguments
+// after `--` pick what runs (scripts/test-filter.ts): `mise run test -- shop`, `mise run test -- -t "adds"`.
 // A run fails on a non-zero exit, on any script error (ree counts errors from scripts other than the
 // harness without failing the run), on reaching an engine member ree doesn't emulate, and, for an
 // end-to-end test, when it never prints "@done".
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { e2eSelected, parseTestArgs } from "./test-filter.ts";
 
 interface Run {
 	name: string;
@@ -41,7 +43,8 @@ const collectMounts = (node: unknown) => {
 		else mounts.push(typeof value === "string" ? value : (value as { optional: string }).optional);
 	}
 };
-const project = process.argv[2] ?? "game.project.json";
+const filter = parseTestArgs(process.argv.slice(2));
+const project = filter.project ?? "game.project.json";
 collectMounts(JSON.parse(fs.readFileSync(project, "utf8")));
 // Only the game's code: packages in node_modules carry specs of their own.
 const hasSpecs = mounts.some(
@@ -60,12 +63,12 @@ const runs: Run[] = [
 				{
 					name: "jest",
 					harness: path.join(import.meta.dirname, "test/jest.luau"),
-					args: ["--run-context", "server", "--seconds", "60"],
+					args: ["--run-context", "server", "--seconds", "60", "--context", JSON.stringify(filter)],
 				},
 			]
 		: []),
 	...(fs.existsSync("tests/e2e") ? fs.readdirSync("tests/e2e") : [])
-		.filter((file) => file.endsWith(".luau"))
+		.filter((file) => file.endsWith(".luau") && e2eSelected(`tests/e2e/${file}`, filter))
 		.sort()
 		.map((file) => ({
 			name: `e2e/${path.basename(file, ".luau")}`,

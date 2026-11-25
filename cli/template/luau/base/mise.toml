@@ -80,9 +80,9 @@ description = "check, without writing fixes: fails on unformatted code. On CI, a
 run = "node scripts/check.ts --ci"
 
 [tasks.test]
-description = "Run the tests offline in ree: Jest specs, except *.engine.spec, then tests/e2e"
+description = "Run the tests offline in ree: Jest specs, except *.engine.spec, then tests/e2e. Pass a path regex to run some of them (mise run test -- shop), or -t <name regex>"
 depends = ["generate"]
-run = 'node scripts/each-place.ts "node {root}/scripts/test.ts"'
+run = 'node scripts/each-place.ts "node {root}/scripts/test.ts" --'
 
 [tasks."test:engine"]
 description = "Run every Jest spec, *.engine.spec included, in Roblox Studio or Open Cloud through jest-roblox"

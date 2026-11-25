@@ -20,7 +20,7 @@ Before you change something, look at what's there: the code that calls it, where
 
 `mise run check` is the check: it formats, compiles, lints, builds the place, runs the tests and renders the UI stories, in about three seconds, and prints only what failed. Run it after each change and fix what it reports until it passes. In Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI, a hook formats and lints each file you edit and, outside Cursor, hands back the lint problems left; another runs the check when you stop and hands back any failure; in any tool, the commit hook runs it on what you commit. The stop hook and the commit hook skip it when it already passed on exactly those files.
 
-- While iterating, narrower loops are faster: `mise run compile` for type errors, `mise run test` for the tests, `mise run ui -- --filter <name>` for one story's picture.
+- While iterating, narrower loops are faster: `mise run compile` for type errors, `mise run test` for the tests (`mise run test -- shop` for the specs and end-to-end tests whose path matches, `-t <name>` for one test by name), `mise run ui -- --filter <name>` for one story's picture.
 - When a lint rule is wrong for one line, disable it on that line with a comment saying why.
 - The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `lune` and the rest are on the PATH only where your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills. To change a tool's pin in `mise.toml`, run `mise lock` after it: `mise install` refuses a tool that `mise.lock` doesn't list with its checksums.
 - `mise run dev` serves the code to Studio: it is the "serve script" that Rogen's section below refers to.
