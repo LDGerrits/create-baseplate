@@ -266,6 +266,16 @@ test("without mise, the guard still blocks Studio's live tools and publishing, a
 		assert.equal(JSON.parse(guard("copilot", live).stdout).permissionDecision, "deny");
 		assert.equal(JSON.parse(guard("gemini", live).stdout).decision, "deny");
 		assert.equal(JSON.parse(guard("cursor", live).stdout).permission, "deny");
+		// Cursor reads a deny from the JSON on stdout of an exit 0, and fails open on any other exit.
+		const cursorLive = guard("cursor", live);
+		assert.equal(cursorLive.status, 0);
+		assert.equal(JSON.parse(cursorLive.stdout).permission, "deny");
+		assert.match(JSON.parse(cursorLive.stdout).agent_message, /blocked/);
+		const cursorPublish = guard("cursor", { tool_name: "Shell", tool_input: { command: "mise run publish" } });
+		assert.equal(JSON.parse(cursorPublish.stdout).permission, "deny");
+		const cursorStudio = guard("cursor", { command: "mise run publish", cwd: "/game" });
+		assert.equal(JSON.parse(cursorStudio.stdout).permission, "deny");
+		assert.equal(guard("cursor", { tool_name: "Shell", tool_input: { command: "ls" } }).stdout, "");
 		const publish = guard("claude", { tool_name: "Bash", tool_input: { command: "mise run publish" } });
 		assert.equal(JSON.parse(publish.stdout).hookSpecificOutput.permissionDecision, "deny");
 		assert.equal(guard("claude", { tool_name: "Bash", tool_input: { command: "ls" } }).stdout, "");
@@ -279,5 +289,18 @@ test("without mise, the guard still blocks Studio's live tools and publishing, a
 		assert.equal(guard("claude", edit).stdout, "");
 	} finally {
 		fs.rmSync(home, { recursive: true, force: true });
+	}
+});
+
+test("Cursor's hooks go through .agents/hooks/run, so the guard fails closed without mise", () => {
+	const hooks = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "../../.cursor/hooks.json"), "utf8")) as {
+		hooks: Record<string, { command: string }[]>;
+	};
+	for (const [event, list] of Object.entries(hooks.hooks)) {
+		for (const { command } of list) {
+			// Rogen's own stop hook is taken as it is.
+			if (command.includes("rogen-check")) continue;
+			assert.match(command, /^sh \.agents\/hooks\/run \w+\.ts cursor$/, event);
+		}
 	}
 });
