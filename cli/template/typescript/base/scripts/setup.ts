@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { restoreLink } from "./restore-link.ts";
+import { canonical, mainCheckout } from "./worktree.ts";
 
 const run = (command: string, args: string[]) =>
 	spawnSync(command, args, { encoding: "utf8", shell: process.platform === "win32" });
@@ -32,13 +33,20 @@ if (restored !== undefined) {
 }
 
 // The language server is a plugin in .claude/plugins/roblox-ts, which Claude Code installs from a
-// marketplace. Each clone and worktree registers its own, named after its path: with one shared
-// name, every clone would load the plugin from whichever clone ran setup last, and break when that
-// clone is deleted.
-const marketplace = `baseplate-${createHash("sha256").update(process.cwd()).digest("hex").slice(0, 8)}`;
-fs.mkdirSync(".claude/plugins/.claude-plugin", { recursive: true });
+// marketplace named after the clone's path, so deleting one clone can't break another's. In a git
+// worktree, Claude Code reads the main checkout's .claude/settings.local.json, so a worktree
+// registers the main checkout's plugin rather than one of its own that would outlive it.
+const root = mainCheckout(".") ?? canonical(".");
+if (!fs.existsSync(path.join(root, ".claude/plugins/roblox-ts"))) {
+	console.warn(
+		`No language server for Claude Code: ${root} has no .claude/plugins/roblox-ts; run \`mise run install\` there.`,
+	);
+	process.exit(0);
+}
+const marketplace = `baseplate-${createHash("sha256").update(root).digest("hex").slice(0, 8)}`;
+fs.mkdirSync(path.join(root, ".claude/plugins/.claude-plugin"), { recursive: true });
 fs.writeFileSync(
-	".claude/plugins/.claude-plugin/marketplace.json",
+	path.join(root, ".claude/plugins/.claude-plugin/marketplace.json"),
 	`${JSON.stringify(
 		{ name: marketplace, owner: { name: "baseplate" }, plugins: [{ name: "roblox-ts", source: "./roblox-ts" }] },
 		undefined,
@@ -47,14 +55,36 @@ fs.writeFileSync(
 );
 
 if (run("claude", ["--version"]).status !== 0) process.exit(0);
+const claude = (args: string[]) =>
+	spawnSync("claude", args, { cwd: root, encoding: "utf8", shell: process.platform === "win32" });
+// Other names in this checkout's settings: from worktrees before they shared this one, or from
+// where the folder was before it moved.
+for (const name of staleMarketplaces(root, marketplace)) {
+	claude(["plugin", "uninstall", `roblox-ts@${name}`, "--scope", "local"]);
+	claude(["plugin", "marketplace", "remove", name]);
+}
 for (const args of [
 	["plugin", "marketplace", "add", "./.claude/plugins", "--scope", "local"],
 	["plugin", "install", `roblox-ts@${marketplace}`, "--scope", "local"],
 ]) {
-	const result = run("claude", args);
+	const result = claude(args);
 	if (result.status !== 0) {
 		console.warn(`Couldn't set up Claude Code's language server (claude ${args.join(" ")}):`);
 		console.warn(`${result.stdout}${result.stderr}`.trim());
 		process.exit(0);
+	}
+}
+
+/** The baseplate marketplaces `root`'s local settings declare besides `current`. */
+function staleMarketplaces(root: string, current: string): string[] {
+	const file = path.join(root, ".claude/settings.local.json");
+	if (!fs.existsSync(file)) return [];
+	try {
+		const settings = JSON.parse(fs.readFileSync(file, "utf8")) as { extraKnownMarketplaces?: Record<string, unknown> };
+		return Object.keys(settings.extraKnownMarketplaces ?? {}).filter(
+			(name) => name.startsWith("baseplate-") && name !== current,
+		);
+	} catch {
+		return [];
 	}
 }

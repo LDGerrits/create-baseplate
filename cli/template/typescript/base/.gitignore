@@ -46,3 +46,7 @@ sourcemap.json
 
 # Roblox's types for luau-lsp, fetched by scripts/luau.ts
 /.luau-lsp
+
+# Agent tools' worktrees inside the game (Claude Code, Gemini CLI): checkouts of their own
+/.claude/worktrees/
+/.gemini/worktrees/

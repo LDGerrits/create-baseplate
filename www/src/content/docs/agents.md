@@ -55,7 +55,8 @@ In Claude Code, `mise run install` adds the project's language server, so the ag
 
 ## Parallel and cloud agents
 
-- `.worktreeinclude` copies `.env` into new git worktrees.
+Each agent can work in its own git worktree, whichever tool made it. The check installs the locked packages before it starts, so a new worktree needs no setup, and a worktree without a `.env` of its own reads the main checkout's. Worktrees that Claude Code and Gemini CLI put inside the game, under `.claude/worktrees/` and `.gemini/worktrees/`, are gitignored, so the main checkout's check leaves them alone. rbx-forge gives each worktree its own Studio session.
+
 `.agents/hooks/cloud-setup.sh` installs mise, the tools and the packages on a fresh Linux machine:
 
 - Claude Code's cloud sessions run it as a startup hook.
