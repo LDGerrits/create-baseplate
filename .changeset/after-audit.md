@@ -12,3 +12,4 @@ Fixes from running games end to end with each agent tool:
 - Test failures come without terminal colour codes, so agents read them as plain text.
 - `mise run doc` and the version update say what they need when they can't fetch create-baseplate.
 - The Gemini CLI guard also covers `read_many_files`.
+- `mise run dev` and the other per-place tasks pass a SIGTERM on to what they run, so stopping a background `dev` stops forge rather than leaving it running.
