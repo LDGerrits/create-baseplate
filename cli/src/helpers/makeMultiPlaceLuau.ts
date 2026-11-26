@@ -146,19 +146,6 @@ export function makeMultiPlaceLuau(dir: string, name: string, managed: Managed) 
 	if (settings["luau-lsp.sourcemap.generatorCommand"] === undefined) {
 		throw new Error("places: the template's .vscode/settings.json no longer has luau-lsp.sourcemap.rojoProjectFile");
 	}
-	const nesting = settings["explorer.fileNesting.patterns"] as Record<string, string> | undefined;
-	if (nesting?.["mise.toml"] !== undefined) nesting["mise.toml"] = "*.rogen.json";
-	const exclude = settings["search.exclude"] as Record<string, boolean> | undefined;
-	if (exclude !== undefined) {
-		for (const glob of [
-			"*.project.json",
-			"projects/*/build",
-			"projects/*/*.project.json",
-			"projects/*/sourcemap.json",
-		]) {
-			exclude[glob] = true;
-		}
-	}
 	fs.writeFileSync(at(".vscode", "settings.json"), json(settings));
 
 	let agents = read("AGENTS.md");

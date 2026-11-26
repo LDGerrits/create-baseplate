@@ -54,7 +54,8 @@ export const GENERATED: [RegExp, string][] = [
 
 // `.env` and its variants hold keys; `.env.example` only lists their names.
 const SECRET_IN_COMMAND = /(^|[\s/'"<=])\.env(\.(?!example\b)[\w.-]+)?(?=$|[\s'"\\;|&)])/;
-const isSecretFile = (file: string) => /(^|[/\\])\.env(\.(?!example$)[\w.-]+)?$/.test(file);
+// A glob counts too, as Gemini's read_many_files takes: `.env*` or `.env.*` reaches the keys.
+const isSecretFile = (file: string) => /(^|[/\\])\.env(\.(?!example$)[\w.*-]+|\*+)?$/.test(file);
 const SECRET =
 	".env holds secret keys: don't print it. .env.example lists the names it can hold; ask the user which are set.";
 
@@ -131,7 +132,7 @@ export const patched = (patch: string) =>
 const READS = /read|grep|glob|search|list|^ls$|view|fetch/i;
 // The argument that names the file, across the tools' edit and read tools: file_path (Claude Code,
 // Gemini CLI), path (Copilot), notebook_path (Claude Code), target_file (Cursor's own tools).
-const PATH_KEYS = new Set(["file_path", "path", "notebook_path", "target_file", "filePath"]);
+const PATH_KEYS = new Set(["file_path", "path", "paths", "include", "notebook_path", "target_file", "filePath"]);
 
 export function toolInput(payload: Payload): Record<string, unknown> {
 	let input = payload.tool_input ?? payload.toolArgs;
@@ -149,9 +150,11 @@ export function toolInput(payload: Payload): Record<string, unknown> {
 export function namedFiles(payload: Payload, input = toolInput(payload)): string[] {
 	return [
 		payload.file_path,
+		// Gemini's read_many_files takes a list.
 		...Object.entries(input)
-			.filter(([key, value]) => PATH_KEYS.has(key) && typeof value === "string")
-			.map(([, value]) => value as string),
+			.filter(([key]) => PATH_KEYS.has(key))
+			.flatMap(([, value]) => (Array.isArray(value) ? value : [value]))
+			.filter((value): value is string => typeof value === "string"),
 	].filter((file): file is string => file !== undefined && file !== "");
 }
 

@@ -7,6 +7,9 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
+// Paths are printed from the repo root, so a place's pictures read projects/<place>/build/....
+const shown = (file: string) => path.relative(process.env.ROOT ?? process.cwd(), path.resolve(file));
+
 const OUT = "build/ui";
 
 // rur draws text with Roblox Studio's fonts. From WSL it can't find Studio, so point it at the newest
@@ -77,7 +80,7 @@ if (story !== -1) {
 	});
 	if (diff) {
 		console.log(`${run.stdout}${run.stderr}`.trim());
-		console.log(`Pictures: ${dir}/before, ${dir}/after, ${dir}/diff.png`);
+		console.log(`Pictures: ${shown(dir)}/before, ${shown(dir)}/after, ${shown(dir)}/diff.png`);
 		process.exit(run.status ?? 1);
 	}
 	if (run.status !== 0) {
@@ -85,13 +88,25 @@ if (story !== -1) {
 		process.exit(1);
 	}
 	const scene = JSON.parse(fs.readFileSync(path.join(dir, "scene.json"), "utf8")) as {
-		diagnostics: { output?: { kind: string; message: string; time: number }[] };
+		diagnostics: { output?: { kind: string; message: string; time: number }[] | Record<string, never> };
+		nodes?: { class: string; name: string; path: string }[];
 	};
-	for (const line of scene.diagnostics.output ?? []) {
-		console.log(`[${line.time.toFixed(2)}s] ${line.kind === "print" ? "" : `${line.kind}: `}${line.message}`);
+	// rur writes an empty object, not an empty list, when the story printed nothing.
+	const output = scene.diagnostics.output;
+	const lines = Array.isArray(output) ? output : [];
+	for (const line of lines) {
+		// rur's hint names a tool of its own repo; the node list below says the same here.
+		const message = line.message.replace(/; `node cli\/inspect\.mjs tree <render dir>` lists the node paths$/, "");
+		console.log(`[${line.time.toFixed(2)}s] ${line.kind === "print" ? "" : `${line.kind}: `}${message}`);
 	}
-	console.log(`Picture: ${path.join(dir, "render.png")}`);
-	process.exit(0);
+	console.log(`Picture: ${shown(path.join(dir, "render.png"))}`);
+	const failedAction = lines.some((line) => line.kind === "error" && line.message.includes("--actions"));
+	if (failedAction) {
+		// A node is named after its React key, or its Name; the story's own frames come first.
+		const nodes = (scene.nodes ?? []).filter((node) => !["RURStory", "StoryTarget"].includes(node.name));
+		console.log(`Nodes an action can name: ${nodes.map((node) => `${node.name} (${node.class})`).join(", ")}`);
+	}
+	process.exit(lines.some((line) => line.kind === "error") ? 1 : 0);
 }
 
 fs.rmSync(OUT, { recursive: true, force: true });
@@ -109,6 +124,11 @@ try {
 }
 
 if (report.records.length === 0) {
+	const filtered = args.some((arg) => arg === "--filter" || arg.startsWith("--filter="));
+	if (filtered && !fs.existsSync(path.join(process.env.ROOT ?? ".", "projects"))) {
+		say("No story matches the filter; `mise run ui` renders them all.");
+		process.exit(1);
+	}
 	say("No stories found. Add a `<component>.story.tsx` beside a component (see UI in AGENTS.md).");
 	process.exit(0);
 }
@@ -138,7 +158,7 @@ for (const record of report.records) {
 	// Without Studio, stories render without fonts; only a story that breaks fails then.
 	const missingFonts = check || noStudio ? [] : (record.missingFonts ?? []);
 	if (record.clean && missingFonts.length === 0) {
-		say(`✓ ${name}: ${picture}${noStudio ? " (no text)" : ""}`);
+		say(`✓ ${name}: ${shown(picture)}${noStudio ? " (no text)" : ""}`);
 		continue;
 	}
 	failed++;
@@ -148,8 +168,8 @@ for (const record of report.records) {
 	// scheduler's trace around it.
 	for (const message of record.warningMessages ?? []) console.log(`  ${String(message).replaceAll("\n", "\n  ")}`);
 	for (const error of record.errors ?? []) console.log(`  ${String(error).replaceAll("\n", "\n  ")}`);
-	if (fs.existsSync(picture)) console.log(`  picture: ${picture}`);
+	if (fs.existsSync(picture)) console.log(`  picture: ${shown(picture)}`);
 }
 if (check && failed > 0) console.log("Render one story to see it: mise run ui -- --story <path>.story.tsx");
-if (!check || failed > 0) console.log(`Full report: ${path.join(OUT, "summary.md")}`);
+if (!check || failed > 0) console.log(`Full report: ${shown(path.join(OUT, "summary.md"))}`);
 process.exit(failed > 0 ? 1 : 0);

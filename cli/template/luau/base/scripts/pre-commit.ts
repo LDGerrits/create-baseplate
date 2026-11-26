@@ -1,5 +1,8 @@
-// The pre-commit hook (.githooks/pre-commit): runs lint-staged.config.ts on exactly what is being
-// committed. `--hide-all` sets unstaged changes and untracked files aside while the check runs.
+// The pre-commit hook (.githooks/pre-commit): runs lint-staged on exactly what is being committed,
+// with unstaged changes and untracked files set aside, so the check sees only the commit. StyLua
+// formats the staged Luau and Biome the other files, and lint-staged re-stages them; then the whole
+// check runs once, because type errors and failing tests reach past the staged files. Deleted files
+// count, so a commit that only deletes is checked too.
 // It skips the check when only Markdown is staged, or when the check already passed on exactly the
 // files being committed (the index, not what else is on disk); see .agents/hooks/fingerprint.ts.
 //
@@ -11,6 +14,21 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { commitSkip, stagedFiles } from "../.agents/hooks/fingerprint.ts";
+
+const quoted = (files: string[]) => files.map((file) => JSON.stringify(file)).join(" ");
+
+/** The format commands for the staged files still on disk. */
+function format(files: readonly string[]) {
+	const present = files.filter((file) => fs.existsSync(file));
+	const luau = present.filter((file) => /\.luau?$/.test(file));
+	const other = present.filter((file) => !/\.luau?$/.test(file));
+	return [
+		...(luau.length === 0 ? [] : [`stylua ${quoted(luau)}`]),
+		...(other.length === 0
+			? []
+			: [`biome check --write --no-errors-on-unmatched --files-ignore-unknown=true ${quoted(other)}`]),
+	];
+}
 
 const skip = commitSkip(process.cwd(), stagedFiles(process.cwd()));
 if (skip !== undefined) {
@@ -29,14 +47,20 @@ for (const file of kept) {
 	fs.copyFileSync(file, path.join(backup, file));
 }
 
-// ACMRD: deleted files count, or a commit that only deletes would skip the check.
-const lintStaged = spawnSync("lint-staged", ["--hide-all", "--diff-filter=ACMRD"], {
-	stdio: "inherit",
-	shell: process.platform === "win32",
-});
-if (lintStaged.error !== undefined) {
-	console.error(`pre-commit: couldn't run lint-staged (${lintStaged.error.message}). Run \`mise run install\` first.`);
-}
+const lintStaged = await import("lint-staged").then(
+	(module) => module.default,
+	(error: Error) => {
+		console.error(`pre-commit: couldn't load lint-staged (${error.message}). Run \`mise run install\` first.`);
+	},
+);
+const passed =
+	lintStaged !== undefined &&
+	(await lintStaged({ config: { "*": [format, () => "mise run ci"] }, hideAll: true, diffFilter: "ACMRD" }).catch(
+		(error: Error) => {
+			console.error("pre-commit: lint-staged couldn't run:", error);
+			return false;
+		},
+	));
 
 for (const file of kept) {
 	if (!fs.existsSync(file)) {
@@ -45,4 +69,4 @@ for (const file of kept) {
 	}
 }
 fs.rmSync(backup, { recursive: true, force: true });
-process.exit(lintStaged.status ?? 1);
+process.exit(passed ? 0 : 1);

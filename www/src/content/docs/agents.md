@@ -5,7 +5,7 @@ description: AGENTS.md, the check, the hooks, the skills and the language server
 
 ## AGENTS.md
 
-Every game has an `AGENTS.md`, which Claude Code (through `CLAUDE.md`), Codex, Cursor, Copilot and Gemini CLI (through `.gemini/settings.json`) read. It holds what the code can't show: where code goes and why, the rules the code follows, which test fits what, and what roblox-ts does differently from JavaScript.
+Every game has an `AGENTS.md`, which Claude Code (through `.claude/CLAUDE.md`), Codex, Cursor, Copilot and Gemini CLI (through `.gemini/settings.json`) read. It holds what the code can't show: where code goes and why, the rules the code follows, which test fits what, and what roblox-ts does differently from JavaScript.
 
 Models know roblox-ts, Flamework and Rogen poorly, and the Roblox API changes faster than their training. So `AGENTS.md` opens by telling the agent to look things up rather than recall them, and where: the doc comments in `@rbxts/types` (each with a link to Roblox's docs, which serve Markdown), the `.d.ts` files and READMEs of the installed packages, `rogen doc`, and `mise run doc`, these docs as the game's create-baseplate version ships them. All of these match the versions the game has installed. Each add-on adds its own line, such as Charm's README, which is its full API. Agents follow docs that sit in `AGENTS.md` far more reliably than ones they'd have to decide to look for.
 
@@ -51,11 +51,12 @@ Skills in `.agents/skills/` cover what only some tasks need. `AGENTS.md` says wh
 
 ## Type errors as it edits
 
-In Claude Code, `mise run install` adds the project's language server, so the agent gets type errors and go-to-definition: TypeScript's, with the roblox-ts types, or in a Luau game luau-lsp, with the game's instances and Roblox's API typed.
+In Claude Code, `mise run install` adds the project's language server, so the agent gets type errors and go-to-definition: TypeScript's, with the roblox-ts types, or in a Luau game luau-lsp, with the game's instances and Roblox's API typed. In a Luau game, the edit hook writes `sourcemap.json` again when an edit adds a module or changes the world, and luau-lsp reads it at once, so a new module or part is typed during the session, not only in the next one.
 
 ## Parallel and cloud agents
 
-- `.worktreeinclude` copies `.env` into new git worktrees.
+Each agent can work in its own git worktree, whichever tool made it. The check installs the locked packages before it starts, so a new worktree needs no setup, and a worktree without a `.env` of its own reads the main checkout's. Worktrees that Claude Code and Gemini CLI put inside the game, under `.claude/worktrees/` and `.gemini/worktrees/`, are gitignored, so the main checkout's check leaves them alone. rbx-forge gives each worktree its own Studio session.
+
 `.agents/hooks/cloud-setup.sh` installs mise, the tools and the packages on a fresh Linux machine:
 
 - Claude Code's cloud sessions run it as a startup hook.

@@ -6,21 +6,32 @@
 	"typescript.tsdk": "node_modules/typescript/lib",
 	"typescript.enablePromptUseWorkspaceTsdk": true,
 	"explorer.fileNesting.enabled": true,
+	"explorer.fileNesting.expand": false,
 	"explorer.fileNesting.patterns": {
 		"*.ts": "${capture}.spec.ts, ${capture}.engine.spec.ts",
 		"*.tsx": "${capture}.story.tsx, ${capture}.spec.ts, ${capture}.spec.tsx",
 		"package.json": "pnpm-lock.yaml, pnpm-workspace.yaml",
-		"tsconfig.json": "eslint.config.ts, biome.json, jest.config.ts",
-		".env.example": ".env",
-		"mise.toml": "rotor.toml, rbx-forge.config.ts, default.rogen.json"
+		"tsconfig.json": "tsconfig.*.json, rotor.toml, eslint.config.ts, biome.json, jest.config.ts",
+		"*.rogen.json": "${capture}.project.json, test.${capture}.project.json, game.project.json, test.project.json",
+		"mise.toml": "mise.lock, rbx-forge.config.ts, asphalt.toml, .darklua.json, *.rbxlx, *.rbxlx.lock, *.rbxl.lock",
+		"selene.toml": "stylua.toml, .luaurc",
+		".gitignore": ".gitattributes, .editorconfig",
+		".env.example": ".env, .env.*"
+	},
+	"files.exclude": {
+		".rotor": true,
+		"include": true,
+		"flamework.build": true,
+		"**/.eslintcache": true,
+		"**/.forge": true,
+		"**/.jest-roblox": true
 	},
 	"search.exclude": {
 		"out": true,
-		"include": true,
 		"build": true,
-		".rotor": true,
-		"flamework.build": true,
-		"default.project.json": true,
-		"game.project.json": true
+		"dist": true,
+		"projects/*/build": true,
+		"*.project.json": true,
+		"projects/*/*.project.json": true
 	}
 }

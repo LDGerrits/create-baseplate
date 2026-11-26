@@ -66,7 +66,19 @@ if (pin !== undefined && pin !== version) {
 		});
 		findClashes();
 		// A clash fails below, from the files it left; any other failure here.
-		if (sync.error !== undefined || (sync.status !== 0 && clashes.length === 0)) failed = true;
+		if (sync.error !== undefined || (sync.status !== 0 && clashes.length === 0)) {
+			// create-baseplate's own refusals say why themselves; this is for when pnpm couldn't fetch it.
+			const fetchable =
+				spawnSync("pnpm", ["view", `create-baseplate@${pin}`, "version"], {
+					stdio: "ignore",
+					shell: process.platform === "win32",
+				}).status === 0;
+			if (!fetchable)
+				console.log(
+					`✗ Couldn't run create-baseplate@${pin}: pnpm needs the network the first time, and that version published on npm.`,
+				);
+			failed = true;
+		}
 	}
 }
 for (const clash of clashes) {

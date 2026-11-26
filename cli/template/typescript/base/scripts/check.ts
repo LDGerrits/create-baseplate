@@ -13,11 +13,27 @@
 // stop hook and the commit hook read to skip a check that already passed on exactly this state.
 // The tooling's own type-check and tests run only when the tooling changed since they last passed;
 // on CI (the CI variable is set) and with --all, they always run.
+
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import spawn from "cross-spawn";
 import { CHECK_RECORD, partId, readRecord, stateId, writeRecord } from "../.agents/hooks/fingerprint.ts";
+
+// The locked packages first, before this script or any step loads one: a new clone or worktree has
+// none yet, and another branch's lockfile may differ. Instant when they already match.
+const deps = spawnSync("mise", ["run", "--quiet", "deps"], {
+	cwd: path.resolve(import.meta.dirname, ".."),
+	encoding: "utf8",
+	stdio: process.argv.includes("--quiet") ? "pipe" : "inherit",
+	shell: process.platform === "win32",
+});
+if (deps.status !== 0) {
+	console.error(
+		`✗ deps: mise run deps failed\n${deps.error?.message ?? ""}${deps.stdout ?? ""}${deps.stderr ?? ""}`.trim(),
+	);
+	process.exit(1);
+}
+const { default: spawn } = await import("cross-spawn");
 
 interface Step {
 	name: string;
@@ -36,9 +52,16 @@ interface Step {
 	warm?: boolean;
 }
 
+/** The workflow files, as quoted paths from the project's root. */
+function workflows() {
+	const folder = path.join(import.meta.dirname, "..", ".github", "workflows");
+	const names = fs.existsSync(folder) ? fs.readdirSync(folder).filter((name) => /\.ya?ml$/.test(name)) : [];
+	return names.map((name) => `".github/workflows/${name}"`).join(" ");
+}
+
 const steps: Step[] = [
-	// Writes the generated files each later step reads, after installing the locked packages.
-	{ name: "generate", command: "mise run --quiet generate", needs: [] },
+	// Writes the generated files each later step reads; the packages are installed above.
+	{ name: "generate", command: "mise run --quiet --skip-deps generate", needs: [] },
 	// The Luau beside the TypeScript (scripts/luau.ts; nothing to do in a game without any), formatted
 	// before the format step, which the others wait for.
 	{
@@ -61,8 +84,9 @@ const steps: Step[] = [
 	// The agent files at the create-baseplate version package.json pins, and no clash left unmerged.
 	{ name: "agent-files", command: "node scripts/agent-files.ts --check", needs: ["format"] },
 	{ name: "tooling-types", command: "tsc -p tsconfig.node.json", needs: ["format"], tooling: true },
-	// The workflows in .github/workflows: expressions, job and step names, the actions' inputs.
-	{ name: "workflows", command: "actionlint", needs: ["format"], tooling: true },
+	// The workflows in .github/workflows: expressions, job and step names, the actions' inputs. Named
+	// one by one: with none named, actionlint looks for them through git, and the game may not be a repo.
+	{ name: "workflows", command: `actionlint ${workflows()}`, needs: ["format"], tooling: true },
 	// The agent hooks' and scripts' own tests.
 	{
 		name: "tooling-tests",

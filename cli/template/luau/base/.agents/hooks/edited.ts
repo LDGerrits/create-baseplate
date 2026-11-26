@@ -6,8 +6,10 @@
 // Codex's), cursor, copilot or gemini. Cursor shows nothing of what a hook prints after an edit, so
 // there the formatting applies silently.
 
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { GENERATED, namedFiles, type Payload, patched, toolInput } from "./guard.ts";
 import { type Format, formatArg, projectRoot } from "./project.ts";
@@ -15,6 +17,10 @@ import { type Format, formatArg, projectRoot } from "./project.ts";
 // What StyLua formats; Selene lints those under src/, projects/ or tests/, as the check does.
 const LUAU = /\.luau?$/;
 const LINTS = /^(src|projects|tests)\/.+\.luau?$/;
+// What changes the instances the sourcemaps map: a place's code (Luau and Rojo's JSON files), its
+// world, and the *.rogen.json files that route the code.
+const MAPPED = /^(projects\/[^/]+\/)?src\/.+\.(luau?|json)$/;
+const RESHAPES = /^(projects\/[^/]+\/)?(world\/|[^/]+\.rogen\.json$)/;
 // What Biome formats.
 const BIOME = /\.(ts|js|mjs|cjs|json|jsonc)$/;
 
@@ -40,6 +46,67 @@ export function filesToCheck(files: string[], root: string, start: string): stri
 			(LUAU.test(file) || BIOME.test(file)) &&
 			!GENERATED.some(([pattern]) => pattern.test(file)),
 	);
+}
+
+/** The files a sourcemap at `from` (a folder, from the project root) lists, from the project root. */
+export function sourcemapFiles(sourcemap: unknown, from: string): string[] {
+	const files: string[] = [];
+	const visit = (node: { filePaths?: string[]; children?: unknown[] }) => {
+		for (const file of node.filePaths ?? []) {
+			const at = path.posix.join(from, file.replaceAll("\\", "/"));
+			files.push(path.isAbsolute(file) ? file.replaceAll("\\", "/") : at);
+		}
+		for (const child of node.children ?? []) visit(child as typeof node);
+	};
+	visit(sourcemap as Parameters<typeof visit>[0]);
+	return files;
+}
+
+/**
+ * Whether the edited files (from the project root) change what the sourcemaps map: a code file none
+ * of them lists, the world, or the routes. luau-lsp types every instance from sourcemap.json, so
+ * until it's written again a new module or part is "not found" there. `known` holds the files the
+ * sourcemaps list, from the project root or absolute; with none, there's nothing to keep current yet.
+ */
+export function sourcemapStale(files: string[], known: Set<string>, root: string): boolean {
+	if (known.size === 0) return false;
+	const listed = (file: string) => known.has(file) || known.has(path.posix.join(root.replaceAll("\\", "/"), file));
+	return files.some((file) => RESHAPES.test(file) || (MAPPED.test(file) && !listed(file)));
+}
+
+/**
+ * Writes the sourcemaps again, in the background, so the edit's reply doesn't wait: one run at a
+ * time per project, and once more after it when another edit asked meanwhile.
+ */
+export function regenerate(root: string) {
+	const lock = path.join(
+		os.tmpdir(),
+		`baseplate-generate-${createHash("sha256").update(root).digest("hex").slice(0, 8)}`,
+	);
+	fs.writeFileSync(`${lock}.again`, "");
+	for (;;) {
+		try {
+			fs.mkdirSync(lock);
+		} catch {
+			// Another run holds it and will see the request, unless it died long ago.
+			if (Date.now() - (fs.statSync(lock, { throwIfNoEntry: false })?.mtimeMs ?? 0) < 60_000) return;
+			fs.rmSync(lock, { recursive: true, force: true });
+			continue;
+		}
+		try {
+			while (fs.existsSync(`${lock}.again`)) {
+				fs.rmSync(`${lock}.again`, { force: true });
+				spawnSync("mise", ["run", "--quiet", "--skip-deps", "generate"], {
+					cwd: root,
+					stdio: "ignore",
+					shell: process.platform === "win32",
+				});
+			}
+		} finally {
+			fs.rmSync(lock, { recursive: true, force: true });
+		}
+		if (!fs.existsSync(`${lock}.again`)) return;
+	}
 }
 
 /** What to print for the tool, given the problems left after the fixes, or undefined to print nothing. */
@@ -119,7 +186,9 @@ function output(command: string, args: string[], stream: "stdout" | "stderr" | "
 	});
 }
 
-if (import.meta.main) {
+if (import.meta.main && process.argv[2] === "--regenerate") {
+	regenerate(process.argv[3] ?? process.cwd());
+} else if (import.meta.main) {
 	let payload: Payload = {};
 	try {
 		payload = JSON.parse(fs.readFileSync(0, "utf8")) as Payload;
@@ -160,6 +229,20 @@ if (import.meta.main) {
 		problems.push(
 			...seleneProblems(await output("selene", ["--display-style=json2", "--no-summary", ...linted], "stdout")),
 		);
+	}
+	// The language server reads the sourcemap again when it changes (.agents/hooks/luau-lsp.ts).
+	const known = new Set<string>();
+	for (const from of [
+		".",
+		...(fs.existsSync("projects") ? fs.readdirSync("projects").map((p) => `projects/${p}`) : []),
+	]) {
+		try {
+			const sourcemap: unknown = JSON.parse(fs.readFileSync(path.join(from, "sourcemap.json"), "utf8"));
+			for (const file of sourcemapFiles(sourcemap, from === "." ? "" : from)) known.add(file);
+		} catch {}
+	}
+	if (sourcemapStale(files, known, root)) {
+		spawn(process.execPath, [import.meta.filename, "--regenerate", root], { detached: true, stdio: "ignore" }).unref();
 	}
 	const reply = editedOutput(formatArg(process.argv[2]), problems);
 	if (reply !== undefined) console.log(JSON.stringify(reply));

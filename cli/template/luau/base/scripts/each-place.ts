@@ -46,7 +46,9 @@ if (args[0] === "--one") {
 	only = args[1] === "" ? undefined : args[1];
 	args = args.slice(2);
 	if (multi && only === undefined) {
-		console.error(`Name the place: ${places.join(", ")}. For example: mise run dev ${places[0] ?? "<place>"}`);
+		console.error(
+			`Name the place: ${places.join(", ")}. For example: mise run ${process.env.MISE_TASK_NAME ?? "dev"} ${places[0] ?? "<place>"}`,
+		);
 		process.exit(1);
 	}
 	if (!multi && only !== undefined) {
@@ -82,6 +84,17 @@ const placeTarget = (place: string): Target => ({ dir: path.join(ROOT, "projects
 const perPlace = multi && !ifMulti;
 const targets = perPlace ? places.filter((place) => only === undefined || place === only).map(placeTarget) : [root];
 
+// A signal sent to this process alone, as `timeout` or an agent stopping a background task sends,
+// goes on to the running steps, so a long-running one such as `forge start` shuts down itself
+// rather than being left running. Ctrl+C reaches them already, through the terminal.
+const running = new Set<ReturnType<typeof spawn>>();
+for (const signal of ["SIGTERM", "SIGHUP"] as const) {
+	process.on(signal, () => {
+		for (const child of running) child.kill(signal);
+		if (running.size === 0) process.exit(1);
+	});
+}
+
 /** Runs the steps in one place, writing what they print through `write`; the code to exit with, or 0. */
 async function runTarget(target: Target, write: (text: string) => void, inherit: boolean): Promise<number> {
 	const placeholders: Record<string, string> = { root: ROOT, ...target };
@@ -108,7 +121,11 @@ async function runTarget(target: Target, write: (text: string) => void, inherit:
 				write(`${command}: ${error.message}\n`);
 				resolve(1);
 			});
-			child.on("close", (status) => resolve(status ?? 1));
+			running.add(child);
+			child.on("close", (status) => {
+				running.delete(child);
+				resolve(status ?? 1);
+			});
 		});
 		if (code !== 0) return code;
 	}

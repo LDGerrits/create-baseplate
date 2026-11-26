@@ -6,7 +6,16 @@ import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { changedFiles, failureOutput, wantsCheck } from "./check.ts";
-import { biomeProblems, editedFiles, editedOutput, filesToCheck, seleneProblems, styluaProblems } from "./edited.ts";
+import {
+	biomeProblems,
+	editedFiles,
+	editedOutput,
+	filesToCheck,
+	seleneProblems,
+	sourcemapFiles,
+	sourcemapStale,
+	styluaProblems,
+} from "./edited.ts";
 import { guardOutput, guardReason, type Payload } from "./guard.ts";
 
 const root = "/game";
@@ -356,6 +365,46 @@ test("the guard judges each command of a chain on its own for .env, keeping pipe
 	assert.match(bash("cat \\\n.env") ?? "", /secret/);
 });
 
+test("the Claude copy of a hook stands down when Cursor or Copilot runs it, and the hooks find mise by name", {
+	skip: process.platform === "win32",
+}, () => {
+	const home = fs.mkdtempSync(path.join(os.tmpdir(), "run-"));
+	const bin = path.join(home, "bin");
+	fs.mkdirSync(bin);
+	for (const tool of ["sh", "cat", "dirname", "grep"]) {
+		const found = spawnSync("sh", ["-c", `command -v ${tool}`], { encoding: "utf8" }).stdout.trim();
+		fs.symlinkSync(found, path.join(bin, tool));
+	}
+	// A mise only where its installer puts it, which reports where the hook finds `mise` by name.
+	fs.mkdirSync(path.join(home, ".local/bin"), { recursive: true });
+	fs.writeFileSync(path.join(home, ".local/bin/mise"), "#!/bin/sh\ncommand -v mise\n", { mode: 0o755 });
+	const run = (format: string, payload: object) =>
+		spawnSync(path.join(bin, "sh"), [path.join(import.meta.dirname, "run"), "check.ts", format], {
+			input: JSON.stringify(payload),
+			encoding: "utf8",
+			env: { PATH: bin, HOME: home },
+		});
+	try {
+		assert.equal(run("claude", { hook_event_name: "Stop" }).stdout.trim(), path.join(home, ".local/bin/mise"));
+		assert.equal(run("claude", { status: "aborted", loop_count: 4, cursor_version: "2.1" }).stdout, "", "Cursor");
+		assert.equal(run("claude", { toolName: "bash", toolArgs: "{}" }).stdout, "", "Copilot");
+		assert.equal(run("claude", { timestamp: 1764000000000, cwd: "/game" }).stdout, "", "Copilot's agentStop");
+		assert.notEqual(run("cursor", { status: "completed", loop_count: 0, cursor_version: "2.1" }).stdout, "");
+	} finally {
+		fs.rmSync(home, { recursive: true, force: true });
+	}
+});
+
+test("the guard reads a list of files, as Gemini's read_many_files takes", () => {
+	assert.match(reason({ tool_name: "read_many_files", tool_input: { paths: ["src", ".env"] } }) ?? "", /secret/);
+	assert.equal(reason({ tool_name: "read_many_files", tool_input: { paths: ["src", ".env.example"] } }), undefined);
+	assert.match(reason({ tool_name: "read_many_files", tool_input: { paths: [".env*"] } }) ?? "", /secret/);
+	assert.match(
+		reason({ tool_name: "read_many_files", tool_input: { paths: ["src"], include: [".env.*"] } }) ?? "",
+		/secret/,
+	);
+});
+
 // The check runs `rogen check`, so Rogen's own stop hook (rogen-check.mjs, which stays as Rogen writes it)
 // would run it a second time at every stop.
 test("no agent tool starts Rogen's stop hook beside the check", () => {
@@ -392,4 +441,34 @@ test("lets the read-only errors task run", () => {
 	const run = (command: string) => reason({ tool_name: "Bash", tool_input: { command } });
 	assert.equal(run("mise run errors -- 42"), undefined);
 	assert.equal(run("mise run errors -- --hours 6 --json"), undefined);
+});
+
+test("the sourcemap is stale after an edit that adds code, changes the world or the routes", () => {
+	const sourcemap = {
+		name: "game",
+		filePaths: ["game.project.json"],
+		children: [
+			{ name: "Shop", filePaths: ["src/features/shop/server/Shop.luau"] },
+			{ name: "Ui", filePaths: ["src\\app\\client\\Ui.luau"] },
+			{ name: "Lobby", filePaths: ["/game/projects/lobby/src/app/server/Main.server.luau"] },
+			{ name: "Pkg", filePaths: ["DevPackages/_Index/x/src/Controls/Util.luau"] },
+		],
+	};
+	const known = new Set([
+		...sourcemapFiles(sourcemap, ""),
+		...sourcemapFiles({ filePaths: ["src/Place.luau"] }, "projects/lobby"),
+	]);
+	const stale = (...files: string[]) => sourcemapStale(files, known, "/game");
+	assert.equal(stale("src/features/shop/server/Shop.luau"), false, "a file it lists");
+	assert.equal(stale("src/app/client/Ui.luau"), false, "written on Windows");
+	assert.equal(stale("projects/lobby/src/app/server/Main.server.luau"), false, "listed by its absolute path");
+	assert.equal(stale("projects/lobby/src/Place.luau"), false, "listed by a place's own sourcemap");
+	assert.equal(stale("src/features/shop/server/New.luau"), true, "a new module");
+	assert.equal(stale("src/Controls/Util.luau"), true, "a new module whose path ends a package's");
+	assert.equal(stale("src/features/shop/shared/Config.model.json"), true, "a new Rojo model");
+	assert.equal(stale("world/Workspace/Part.model.json"), true);
+	assert.equal(stale("projects/lobby/world/Workspace/Part.model.json"), true);
+	assert.equal(stale("default.rogen.json"), true, "the routes");
+	assert.equal(stale("tests/e2e/shop.luau", "scripts/x.ts", "biome.json"), false, "outside the game's instances");
+	assert.equal(sourcemapStale(["src/New.luau"], new Set(), "/game"), false, "no sourcemap to update yet");
 });

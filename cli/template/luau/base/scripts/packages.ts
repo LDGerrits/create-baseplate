@@ -31,6 +31,25 @@ const run = (command: string, args: string[]) => {
 	if (result.status !== 0) process.exit(result.status ?? 1);
 };
 
+/** Like `run`, for a tool that logs every file it touches on stdout: that shows only when it fails. */
+const runQuiet = (command: string, args: string[]) => {
+	// Its warnings, on stderr, still show.
+	const result = spawnSync(command, args, {
+		encoding: "utf8",
+		stdio: ["ignore", "pipe", "inherit"],
+		shell: process.platform === "win32",
+		maxBuffer: 64 * 1024 * 1024,
+	});
+	if (result.error) {
+		console.error(`${command}: ${result.error.message}`);
+		process.exit(1);
+	}
+	if (result.status !== 0) {
+		console.error(result.stdout.trim());
+		process.exit(result.status ?? 1);
+	}
+};
+
 const read = (file: string) => (fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "");
 
 // jsdotlua/jest 3.10, the last jest-lua release under that name, reports a run's `success` inverted:
@@ -115,7 +134,7 @@ if (!process.argv.includes("--types")) {
 	// `require(ReplicatedStorage.Packages.React)` is typed. It reads the instance paths from the sourcemap.
 	if (fs.existsSync(UNTYPED)) {
 		for (const folder of FOLDERS) {
-			if (fs.existsSync(folder)) run("wally-package-types", ["--sourcemap", "sourcemap.json", `${folder}/`]);
+			if (fs.existsSync(folder)) runQuiet("wally-package-types", ["--sourcemap", "sourcemap.json", `${folder}/`]);
 		}
 		fs.rmSync(UNTYPED);
 	}

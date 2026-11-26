@@ -27,7 +27,10 @@ const problem = (file: string): Linted => ({
 	messages: [{ line: 1, ruleId: "x/y", message: "no" }],
 });
 
-/** Starts a server with a counting linter; `stopped` settles when it exits. */
+/**
+ * Starts a server with a counting linter; `stopped` settles when it exits. A test that makes
+ * several requests needs an idle time that outlasts a slow CI runner between them.
+ */
 function start(root: string, idleMs = 60_000) {
 	const calls: string[][] = [];
 	const linter = async (files: string[]) => {
@@ -44,7 +47,7 @@ function start(root: string, idleMs = 60_000) {
 
 test("answers requests from one linter, so ESLint loads once", async () => {
 	await inProject(async (root) => {
-		const server = start(root, 200);
+		const server = start(root, 1000);
 		await server.up;
 		const first = await ask(root, ["src/a.ts"]);
 		const second = await ask(root, ["src/b.ts"]);
@@ -57,7 +60,7 @@ test("answers requests from one linter, so ESLint loads once", async () => {
 
 test("an edit to the requested file, even one the lint itself fixed, is no reason to restart", async () => {
 	await inProject(async (root) => {
-		const server = start(root, 200);
+		const server = start(root, 1000);
 		await server.up;
 		fs.writeFileSync(path.join(root, "src/a.ts"), "22");
 		assert.ok("results" in ((await ask(root, ["src/a.ts"])) ?? {}));

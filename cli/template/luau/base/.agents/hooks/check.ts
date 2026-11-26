@@ -7,7 +7,10 @@
 // The check records the state of the files it passed on (fingerprint.ts), and the hook skips the check
 // on later stops until a file changes again, whether the agent ran the check itself or the hook did.
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { alreadyPassed, CHECK_RECORD, isMarkdown, readRecord, stateId, writeRecord } from "./fingerprint.ts";
 import { type Format, formatArg, projectRoot } from "./project.ts";
 
@@ -52,8 +55,43 @@ const git = (...args: string[]) => {
 	return run.status === 0 ? run.stdout : Buffer.alloc(0);
 };
 
-/** The files this hook would check, relative to the current folder; Markdown changes need no check. */
+// Outside git, when this hook last ran the check: it runs again only after a file changed since.
+const lastRun = (root: string) =>
+	path.join(os.tmpdir(), `baseplate-check-${createHash("sha256").update(root).digest("hex").slice(0, 8)}`);
+// Folders of installed, generated or cached files, which the check itself writes.
+const SKIPPED = new Set([
+	"node_modules",
+	"out",
+	"include",
+	"build",
+	"dist",
+	"Packages",
+	"ServerPackages",
+	"DevPackages",
+]);
+
+/** Outside git: a file under `root` changed since `since` (ms), skipping dot folders and SKIPPED. */
+export function changedSince(root: string, since: number): boolean {
+	for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+		const at = path.join(root, entry.name);
+		if (entry.isDirectory()) {
+			if (!entry.name.startsWith(".") && !SKIPPED.has(entry.name) && changedSince(at, since)) return true;
+		} else if (!isMarkdown(entry.name) && fs.statSync(at).mtimeMs > since) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * The files this hook would check, relative to the current folder; Markdown changes need no check.
+ * Outside git, ["."] when anything changed since the hook last ran the check.
+ */
 export function changedFiles(): string[] {
+	if (git("rev-parse", "--is-inside-work-tree").toString("utf8").trim() !== "true") {
+		const since = fs.statSync(lastRun(process.cwd()), { throwIfNoEntry: false })?.mtimeMs ?? 0;
+		return changedSince(process.cwd(), since) ? ["."] : [];
+	}
 	return [
 		...git("diff", "-z", "--name-only", "--relative", "HEAD").toString("utf8").split("\0"),
 		...untracked(),
@@ -92,6 +130,8 @@ if (import.meta.main) {
 		maxBuffer: 64 * 1024 * 1024,
 	});
 	if (check.error !== undefined) process.exit(0);
+	// After the check, so the files it writes don't count as changes.
+	fs.writeFileSync(lastRun(root), "");
 	if (check.status === 0) {
 		// The check records its own pass; this covers a game whose check predates the record.
 		const state = stateId(root, "files");

@@ -24,7 +24,19 @@ failed() {
 	exit 0
 }
 
+# Cursor and Copilot also run Claude Code's hooks (.claude/settings.json) besides their own, with
+# their own payload (Cursor's fields, or Copilot's numeric timestamp): the Claude copy stands down, or every hook would run twice and the stop check
+# would ignore Cursor's limit on follow-ups.
+if [ "$1" = claude ] && printf '%s' "$input" | grep -Eq '"(cursor_version|loop_count|toolArgs)" *:|"timestamp" *: *[0-9]'; then
+	exit 0
+fi
+
 cd "$(dirname "$0")/../.." 2>/dev/null || failed "$@"
-mise=$(command -v mise 2>/dev/null) || mise="$HOME/.local/bin/mise"
+if ! mise=$(command -v mise 2>/dev/null); then
+	mise="$HOME/.local/bin/mise"
+	# The hooks start mise's tools, and mise itself, by name.
+	PATH="$PATH:$HOME/.local/bin"
+	export PATH
+fi
 [ -x "$mise" ] || failed "$@"
 printf '%s' "$input" | "$mise" exec --quiet -- node ".agents/hooks/$hook" "$@" || failed "$@"

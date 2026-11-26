@@ -84,14 +84,24 @@ if (story !== -1) {
 	}
 	const scene = JSON.parse(fs.readFileSync(path.join(dir, "scene.json"), "utf8")) as {
 		diagnostics: { output?: { kind: string; message: string; time: number }[] | Record<string, never> };
+		nodes?: { class: string; name: string; path: string }[];
 	};
 	// rur writes an empty object, not an empty list, when the story printed nothing.
 	const output = scene.diagnostics.output;
-	for (const line of Array.isArray(output) ? output : []) {
-		console.log(`[${line.time.toFixed(2)}s] ${line.kind === "print" ? "" : `${line.kind}: `}${line.message}`);
+	const lines = Array.isArray(output) ? output : [];
+	for (const line of lines) {
+		// rur's hint names a tool of its own repo; the node list below says the same here.
+		const message = line.message.replace(/; `node cli\/inspect\.mjs tree <render dir>` lists the node paths$/, "");
+		console.log(`[${line.time.toFixed(2)}s] ${line.kind === "print" ? "" : `${line.kind}: `}${message}`);
 	}
 	console.log(`Picture: ${shown(path.join(dir, "render.png"))}`);
-	process.exit(0);
+	const failedAction = lines.some((line) => line.kind === "error" && line.message.includes("--actions"));
+	if (failedAction) {
+		// A node is named after its React key, or its Name; the story's own frames come first.
+		const nodes = (scene.nodes ?? []).filter((node) => !["RURStory", "StoryTarget"].includes(node.name));
+		console.log(`Nodes an action can name: ${nodes.map((node) => `${node.name} (${node.class})`).join(", ")}`);
+	}
+	process.exit(lines.some((line) => line.kind === "error") ? 1 : 0);
 }
 
 fs.rmSync(OUT, { recursive: true, force: true });
@@ -109,6 +119,11 @@ try {
 }
 
 if (report.records.length === 0) {
+	const filtered = args.some((arg) => arg === "--filter" || arg.startsWith("--filter="));
+	if (filtered && !fs.existsSync(path.join(process.env.ROOT ?? ".", "projects"))) {
+		say("No story matches the filter; `mise run ui` renders them all.");
+		process.exit(1);
+	}
 	say("No stories found. Add a `<Component>.story.luau` beside a component (see UI in AGENTS.md).");
 	process.exit(0);
 }
