@@ -4,7 +4,8 @@
 // (.vscode/settings.json, which holds no comments: luau-lsp can't read them), so the check and the
 // editor agree: types for every instance (`luau-lsp.diagnostics.strictDatamodelTypes`; without it,
 // `game`, `script` and `workspace` are untyped). Reports problems in the game's own
-// code; the packages' are theirs. Runs in a place's folder, as `mise run check` runs it.
+// code; the packages' are theirs. Runs in a place's folder, as `mise run check` runs it. Given
+// files, it type-checks only those, as the edit hook asks after a shell command.
 import fs from "node:fs";
 import path from "node:path";
 // cross-spawn finds luau-lsp on Windows without a shell, which would split paths with spaces.
@@ -17,7 +18,20 @@ if (!fs.existsSync(definitions)) {
 	process.exit(1);
 }
 // The place's code; in a multi-place game, the shared code too, as this place sees it.
-const sources = ["src", path.join(ROOT, "projects", "common", "src")].filter((dir) => fs.existsSync(dir));
+const placeSources = ["src", path.join(ROOT, "projects", "common", "src")].filter((dir) => fs.existsSync(dir));
+// Given files (from the repo root, as the edit hook passes them), only those of them in this place.
+const given = process.argv.slice(2).map((file) => path.resolve(ROOT, file));
+const sources =
+	given.length === 0
+		? placeSources
+		: given
+				.filter(
+					(file) =>
+						fs.existsSync(file) && placeSources.some((dir) => !path.relative(path.resolve(dir), file).startsWith("..")),
+				)
+				// From the place's folder, as its project file's ignore globs are.
+				.map((file) => path.relative(process.cwd(), file));
+if (sources.length === 0) process.exit(0);
 // What the place's project file leaves out (its `globIgnorePaths`, such as the shared code's specs in
 // the places that don't run them) isn't in its sourcemap, so it's type-checked in another place.
 const project = JSON.parse(fs.readFileSync("game.project.json", "utf8")) as { globIgnorePaths?: string[] };

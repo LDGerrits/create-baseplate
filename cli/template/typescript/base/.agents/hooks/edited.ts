@@ -1,7 +1,8 @@
-// Run after each file edit, for every agent tool that runs hooks: formats the edited file with Biome,
-// applies ESLint's fixes to it and hands what's left to the agent at once, so a lint error surfaces
-// while the agent is in that file, not only at the stop check. It never runs the compiler or lints
-// other files: the stop check does. ESLint stays loaded in a server between edits (eslint-server.ts),
+// Run after each file edit, and after each shell command, for every agent tool that runs hooks:
+// formats the written files with Biome, applies ESLint's fixes to them and hands what's left to the
+// agent at once, so a problem surfaces while the agent is in those files, not only at the stop check.
+// When no language server saw the write (a shell command wrote the files, or the tool has none), it
+// also type-checks the game, type errors first. It never lints other files: the stop check does. ESLint stays loaded in a server between edits (eslint-server.ts),
 // so an edit takes a fraction of a second after the first. `.agents/hooks/run` starts it, with the
 // tool's reply format as the argument: claude (also Codex's), cursor, copilot or gemini. Cursor shows
 // nothing of what a hook prints after an edit, so there the fixes apply silently.
@@ -13,6 +14,7 @@ import path from "node:path";
 import { type Linted, lintViaServer, UNFIXED } from "./eslint-server.ts";
 import { GENERATED, namedFiles, type Payload, patched, toolInput } from "./guard.ts";
 import { type Format, formatArg, projectRoot } from "./project.ts";
+import { isShell, movesFiles, runsTask, shellStarted, writtenSince } from "./written.ts";
 
 // What Biome formats; ESLint lints the TypeScript among them under src/ or projects/, as the check does.
 const FORMATS = /\.(ts|tsx|js|mjs|cjs|json|jsonc)$/;
@@ -47,7 +49,7 @@ export function editedOutput(format: Format, problems: string[]): object | undef
 	if (problems.length === 0 || format === "cursor") return undefined;
 	const shown = problems.slice(0, MAX_PROBLEMS);
 	if (problems.length > MAX_PROBLEMS) shown.push(`...and ${problems.length - MAX_PROBLEMS} more`);
-	const message = `Lint problems left in what you just edited (formatting and safe fixes are applied):\n${shown.join("\n")}`;
+	const message = `Problems left in what you just wrote (its formatting and safe fixes are applied):\n${shown.join("\n")}`;
 	switch (format) {
 		case "copilot":
 			return { additionalContext: message };
@@ -112,6 +114,40 @@ async function lint(files: string[], root: string, formatted: Promise<unknown>):
 	return results;
 }
 
+/** The compiler's type errors, one line each: `src/a.ts:3 TS2322: Type 'string' is not assignable…`. */
+export function compilerProblems(output: string): string[] {
+	const lines = output.split(/\r?\n/);
+	return lines.flatMap((line, index) => {
+		const error = /^error ([\w-]+): (.*)$/.exec(line);
+		if (error === null) return [];
+		const at = /-->\s+(\S+?):(\d+):\d+/.exec(lines[index + 1] ?? "");
+		return [`${at === null ? "" : `${at[1]}:${at[2]} `}${error[1]}: ${error[2]}`];
+	});
+}
+
+/** Compiles the game, after writing what new folders and the world change, and returns its type errors. */
+function typeCheck(): Promise<string[]> {
+	return new Promise((resolve) => {
+		const child = spawn("mise", ["run", "--quiet", "compile"], {
+			shell: process.platform === "win32",
+			stdio: ["ignore", "pipe", "pipe"],
+		});
+		let text = "";
+		child.stdout.setEncoding("utf8").on("data", (chunk: string) => {
+			text += chunk;
+		});
+		child.stderr.setEncoding("utf8").on("data", (chunk: string) => {
+			text += chunk;
+		});
+		child.on("error", () => resolve([]));
+		child.on("close", (code) => {
+			const problems = compilerProblems(text);
+			// A failure the parser can't read still says something: its last lines.
+			resolve(code === 0 ? [] : problems.length > 0 ? problems : [text.trim().split("\n").slice(-5).join("\n")]);
+		});
+	});
+}
+
 if (import.meta.main) {
 	let payload: Payload = {};
 	try {
@@ -120,8 +156,29 @@ if (import.meta.main) {
 	const start = payload.cwd ?? payload.workspace_roots?.[0] ?? process.cwd();
 	const root = projectRoot(start);
 	if (root === undefined) process.exit(0);
-	const files = filesToCheck(editedFiles(payload), root, start).filter((file) => fs.existsSync(path.join(root, file)));
-	if (files.length === 0) process.exit(0);
+	const replyFormat = formatArg(process.argv[2]);
+	const shell = isShell(payload);
+	let written: string[];
+	let moved = false;
+	if (shell) {
+		const input = toolInput(payload);
+		const command = typeof input.command === "string" ? input.command : (payload.command ?? "");
+		const since = shellStarted(root);
+		if (since === undefined || runsTask(command)) process.exit(0);
+		written = filesToCheck(writtenSince(root, since), root, root);
+		moved = movesFiles(command);
+	} else {
+		written = filesToCheck(editedFiles(payload), root, start);
+	}
+	// Who type-checks a write: Claude Code's language server sees what its edit tools write; nothing
+	// does for a shell command, Codex's apply_patch or the other tools' edits. Cursor shows the agent
+	// nothing a hook says, so a type check there would only cost time.
+	const noServer = shell || replyFormat !== "claude" || (payload.tool_name ?? payload.toolName) === "apply_patch";
+	const wantsTypes = noServer && replyFormat !== "cursor";
+	const files = written.filter((file) => fs.existsSync(path.join(root, file)));
+	// A move or a delete leaves no new file, but can break the imports of others: type-check then too.
+	if (files.length === 0 && !(moved && wantsTypes)) process.exit(0);
+	const typeChecks = wantsTypes && (moved || files.some((file) => LINTS.test(file)));
 	process.chdir(root);
 	// mise.toml's NODE_COMPILE_CACHE keeps the compiled ESLint and plugins; a game whose mise.toml
 	// predates it gets the same cache here.
@@ -143,6 +200,7 @@ if (import.meta.main) {
 	} catch {
 		problems.push(...(await formatted));
 	}
-	const output = editedOutput(formatArg(process.argv[2]), problems);
+	if (typeChecks) problems.unshift(...(await typeCheck()));
+	const output = editedOutput(replyFormat, problems);
 	if (output !== undefined) console.log(JSON.stringify(output));
 }

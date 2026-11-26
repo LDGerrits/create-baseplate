@@ -22,6 +22,12 @@
 				"command": "sh .agents/hooks/run check.ts cursor",
 				"timeout": 180
 			}
+		],
+		"afterShellExecution": [
+			{
+				"command": "sh .agents/hooks/run edited.ts cursor",
+				"timeout": 30
+			}
 		]
 	}
 }
