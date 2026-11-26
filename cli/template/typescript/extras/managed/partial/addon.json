@@ -214,6 +214,11 @@
 			"file": "README.md",
 			"from": "1. Run `mise run dev` (with the place's name, in a game with several places) and press Play in Studio.",
 			"to": "1. Run `mise run dev` (with the place's name, in a game with several places), open your place in Studio, press Connect in Rojo's plugin, and press Play."
+		},
+		{
+			"file": "AGENTS.md",
+			"from": "- `edit-world`: the map, lighting or placed models in `world/`: looking at them, changing them, syncing Studio's edits back.\n",
+			"to": ""
 		}
 	]
 }

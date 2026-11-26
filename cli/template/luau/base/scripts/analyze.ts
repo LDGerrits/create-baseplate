@@ -38,6 +38,29 @@ const project = JSON.parse(fs.readFileSync("game.project.json", "utf8")) as { gl
 // luau-lsp matches its globs against paths from here, as the project file's are.
 const ignored = (project.globIgnorePaths ?? []).map((glob) => `--ignore=${glob}`);
 
+// The fix for the type errors agents meet most, said once per run after the problems (in a
+// multi-place game, once per place; the edit hook shows each once).
+const HINTS: [RegExp, string][] = [
+	[
+		/not found in external type 'StarterPlayer'/,
+		"client code is copied into StarterPlayerScripts, so drop one `.Parent`: from `src/app/client/`, a feature's client code is `script.Parent.Parent.features.<feature>`, there once the feature has client code (`mise run feature` writes some).",
+	],
+	[
+		/Unknown require/,
+		"`rogen where <file>` prints the require path of the module the file holds; client code reaches other client code from `script`.",
+	],
+	[
+		/could be nil|got '\w+\?'|Instance\?/,
+		'check the value before using it: `if part and part:IsA("BasePart") then`, or `local x = maybe or default`.',
+	],
+	[
+		/got '[^']*\b(true|false)\b[^']*'/,
+		"an `a and b and c` chain keeps every operand's type: narrow with `if` statements instead.",
+	],
+];
+const hints = (lines: string[]) =>
+	HINTS.filter(([pattern]) => lines.some((line) => pattern.test(line))).map(([, hint]) => hint);
+
 const run = spawn.sync(
 	"luau-lsp",
 	[
@@ -74,5 +97,6 @@ const problems = [
 	),
 ];
 for (const problem of problems) console.log(problem);
+for (const hint of hints(problems)) console.log(`Hint: ${hint}`);
 // luau-lsp exits 0 when it can't read its settings; any line left is a problem.
 process.exit(problems.length > 0 ? 1 : (run.status ?? 1));

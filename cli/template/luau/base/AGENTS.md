@@ -17,7 +17,7 @@ Before you change something, look at what's there: the code that calls it, where
 
 ## Checking your work
 
-`mise run check` is the check: it formats (StyLua), type-checks (luau-lsp), lints (Selene), builds the place, runs the tests and renders the UI stories, in about three seconds, and prints only what failed. Run it after each change and fix what it reports until it passes. In Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI, a hook formats and lints each file you write, with your edit tools or from the shell, type-checks it when no language server saw the write, and, outside Cursor, hands back the problems left; another runs the check when you stop and hands back any failure; in any tool, the commit hook runs it on what you commit. The stop hook and the commit hook skip it when it already passed on exactly those files.
+`mise run check` is the check: it formats (StyLua), type-checks (luau-lsp), lints (Selene), builds the place, runs the tests and renders the UI stories, in about three seconds, and prints only what failed. Run it after each change and fix what it reports until it passes. Hooks help: after each file you write, from an edit tool or the shell, the problems left come back to you (not in Cursor, which shows hooks' output to no one); the check runs again when you stop, and on each commit. In a tool without hooks, run the check yourself.
 
 - While iterating, narrower loops are faster: `mise run analyze` for type errors, `mise run test` for the tests (`mise run test -- shop` for the specs and end-to-end tests whose path matches, `-t <name>` for one test by name), `mise run ui -- --filter <name>` for one story's picture.
 - When a Selene rule is wrong for one line, allow it on the line above with a comment saying why: `-- selene: allow(global_usage) -- <why>`. Don't silence the type checker with `:: any`; fix the type.
@@ -25,6 +25,18 @@ Before you change something, look at what's there: the code that calls it, where
 - The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `wally`, `stylua`, `selene`, `luau-lsp`, `lune` and the rest are on the PATH in Claude Code's shell (a hook adds them when the session starts) and wherever your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills. To change a tool's pin in `mise.toml`, run `mise lock` after it: `mise install` refuses a tool that `mise.lock` doesn't list with its checksums.
 - `mise run dev` serves the code to Studio: it is the "serve script" that Rogen's section below refers to.
 - Generated files change through their generator, and a hook blocks direct edits: `Packages/`, `ServerPackages/`, `DevPackages/` and `wally.lock` (Wally, from `wally.toml`), `build/` (builds), `default.project.json` (Rogen), `game.project.json`, `test.project.json` and `sourcemap.json` (`mise run generate`, from the code and `world/`), `.luau-lsp/` (Roblox's types for the pinned luau-lsp).
+
+## Skills
+
+Before the work a skill covers, read it: `.agents/skills/<name>/SKILL.md`.
+
+- `add-feature`: a new mechanic, system or screen (a shop, a quest, a daily reward).
+- `write-tests`: a spec, an end-to-end test or an engine spec, or a test that fails.
+- `build-ui`: a component, a screen or the UI root; restyling; UI that looks wrong.
+- `edit-world`: the map, lighting or placed models in `world/`: looking at them, changing them, syncing Studio's edits back.
+- `drive-studio`: playing the game in real Studio: characters, physics, its output, a screenshot.
+- `release`: preparing a release or a publish.
+- `upgrade`: a Renovate update, a `*.baseplate-new` file, a failing `agent-files` check, a tool or package update.
 
 ## Where code goes
 
