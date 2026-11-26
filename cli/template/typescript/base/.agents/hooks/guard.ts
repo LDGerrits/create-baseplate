@@ -95,10 +95,15 @@ function checkCommand(command: string): string | undefined {
 	if (/(^|[\s;&|(])(npx|bunx|rbxtsc|pnpm dlx|bun x)\s/.test(command)) {
 		return "Run tools through the project: `mise run check` compiles with Sloptor; other tools with `mise x -- <tool>`, which finds both the npm ones and the mise ones.";
 	}
-	const reads =
-		/\b(cat|less|more|head|tail|grep|rg|sed|awk|bat|xxd|od|strings|base64|source|node|python3?)\b/.test(command) ||
-		/<\s*\S*\.env/.test(command);
-	if (reads && SECRET_IN_COMMAND.test(command)) return SECRET;
+	// Each command of a plain chain on its own, so `ls .env && cat package.json` passes; a pipe stays
+	// whole, as `ls .env | xargs cat` reads it. Quotes, variables, escapes or an inline script
+	// (`python3 -c "…"`) can hide what a part reads, so such a command is judged whole.
+	const reads = (part: string) =>
+		/\b(cat|less|more|head|tail|grep|rg|sed|awk|bat|xxd|od|strings|base64|source|node|python3?)\b/.test(part) ||
+		/<\s*\S*\.env/.test(part);
+	const plain = !/["'`$\\]|\b(python3?|node|bun|deno|ruby|perl|sh|bash|zsh|pwsh)(\s+-\w+)*\s+-[ce]\b/.test(command);
+	const parts = plain ? command.split(/;|&&|\|\||\n/) : [command];
+	if (parts.some((part) => reads(part) && SECRET_IN_COMMAND.test(part))) return SECRET;
 	return undefined;
 }
 

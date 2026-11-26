@@ -13,6 +13,7 @@
 // stop hook and the commit hook read to skip a check that already passed on exactly this state.
 // The tooling's own type-check and tests run only when the tooling changed since they last passed;
 // on CI (the CI variable is set) and with --all, they always run.
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import spawn from "cross-spawn";
@@ -81,7 +82,13 @@ const steps: Step[] = [
 	{ name: "selene", command: "node scripts/luau.ts selene", needs: ["format"] },
 	// No --cache: type-aware rules depend on other files, which the cache doesn't track.
 	// ESLint loads its config and plugins while the files are generated and formatted (scripts/lint.ts).
-	{ name: "lint", command: "node scripts/lint.ts --wait", needs: ["format"], warm: true },
+	{
+		name: "lint",
+		command: "node scripts/lint.ts --wait",
+		fixCommand: "node scripts/lint.ts --wait --fix",
+		needs: ["format"],
+		warm: true,
+	},
 	{
 		name: "place",
 		command:
@@ -210,6 +217,18 @@ await new Promise<void>((finish) => {
 	settle();
 });
 
+// ESLint's fixes land while the other steps read the files as they were: check the fixed files once more.
+const lint = outcomes.get("lint");
+if (lint?.output.includes("@eslint-fixed") === true) {
+	lint.output = lint.output.replace("@eslint-fixed\n", "");
+	if (!ci && process.env.BASEPLATE_CHECK_AGAIN === undefined) {
+		const again = spawnSync(process.execPath, process.argv.slice(1), {
+			stdio: "inherit",
+			env: { ...process.env, BASEPLATE_CHECK_AGAIN: "1" },
+		});
+		process.exit(again.status ?? 1);
+	}
+}
 const failed = list.filter((step) => outcomes.get(step.name)?.ok !== true);
 const seconds = ((performance.now() - started) / 1000).toFixed(1);
 for (const step of list) {

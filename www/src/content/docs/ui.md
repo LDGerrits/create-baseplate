@@ -8,6 +8,7 @@ UI is React from `@rbxts/react`, or [Vide](#vide) with `--ui vide`. A new game m
 - `mise run ui` renders every story to a picture, offline, and prints each picture's path.
 - `mise run ui -- --story <path>.story.tsx --actions '<json>'` (`.story.luau` in a Luau game) clicks or types into a story and prints what it printed, to check a component responds.
 - `mise run ui -- diff HEAD --story <path>.story.tsx` (`.story.luau` in a Luau game) renders a story before and after your change, with a picture of the difference.
+- Add `--viewport 320x240`, or any size, to any of these to render on a smaller or larger screen.
 
 Animation uses `useMotion` from `@rbxts/pretty-react-hooks`, with Ripple; a Luau game uses Ripple's own React hooks. To inspect components live in Studio, a TypeScript game can connect React DevTools.
 

@@ -18,7 +18,7 @@ Before you change something, look at what's there: the code that calls it, where
 
 ## Checking your work
 
-`mise run check` is the check: it formats, compiles, lints, builds the place, runs the tests and renders the UI stories, in about three seconds, and prints only what failed. Run it after each change and fix what it reports until it passes. In Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI, a hook formats and lints each file you edit and, outside Cursor, hands back the lint problems left; another runs the check when you stop and hands back any failure; in any tool, the commit hook runs it on what you commit. The stop hook and the commit hook skip it when it already passed on exactly those files.
+`mise run check` is the check: it formats, compiles, lints (applying the fixes ESLint can make), builds the place, runs the tests and renders the UI stories, in about three seconds, and prints only what failed. Run it after each change and fix what it reports until it passes. In Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI, a hook formats and lints each file you edit and, outside Cursor, hands back the lint problems left; another runs the check when you stop and hands back any failure; in any tool, the commit hook runs it on what you commit. The stop hook and the commit hook skip it when it already passed on exactly those files.
 
 - While iterating, narrower loops are faster: `mise run compile` for type errors, `mise run test` for the tests (`mise run test -- shop` for the specs and end-to-end tests whose path matches, `-t <name>` for one test by name), `mise run ui -- --filter <name>` for one story's picture.
 - When a lint rule is wrong for one line, disable it on that line with a comment saying why.
@@ -100,7 +100,7 @@ React reads its dev flags once, when it first loads, so set them in a file that 
 `mise run ui` renders every story offline and prints each picture's path. Open each picture you changed and look at it: text cut off, overlap, alignment, the empty state. A story that renders cleanly can still look wrong.
 
 - To check that a component responds to input, click or type into its story: `mise run ui -- --story <path>.story.tsx --actions '[{"type":"click","node":"TextButton","t":0.2}]'` prints what the story printed and the picture's path. Actions also take `key`, `text`, `drag` and `wheel`, aimed at a node name or `x`, `y`.
-- To see what your change did to a component: `mise run ui -- diff HEAD --story <path>.story.tsx` renders it before and after, and writes `diff.png`.
+- To see what your change did to a component: `mise run ui -- diff HEAD --story <path>.story.tsx` renders it before and after, and writes `diff.png`. Do this for every change to how a component looks, and show the user both pictures. Add `--viewport 320x240` (any size) to render on a smaller or larger screen.
 
 - Animate with `useMotion` from `@rbxts/pretty-react-hooks`: the motion drives a binding, so nothing re-renders. The same package has hooks for events, timers, debouncing and the previous value.
 - A story renders inside a `Frame`, so a component whose root is a `ScreenGui` draws nothing.
@@ -116,6 +116,7 @@ The compiler and ESLint catch most differences (`null`, `.length`, truthiness, `
 
 - There's no Node, DOM or npm runtime. Use Roblox's APIs: `HttpService:JSONEncode` for `JSON`, `task.delay` for `setTimeout`, `print` for `console`, `string.match` for regex. For `Object.keys`, `values`, `entries`, `assign` and `deepCopy`, import `Object` from `@rbxts/object-utils`.
 - Packages come from the `@rbxts` scope; a plain npm package won't run in Roblox.
+- To stub an interface's method in a spec, write a method (`{ getBalance() { return 0; } }`), not an arrow function in a property: roblox-ts compiles the two differently and refuses the arrow (`expectedMethodGotFunction`).
 - Check Roblox values with `typeIs(value, "Vector3")` and `classIs(instance, "Part")`. To check an instance and its children, let Flamework build the check from a type: `Flamework.createGuard<Model & { Humanoid: Humanoid }>()`.
 
 ## Luau in a TypeScript game
