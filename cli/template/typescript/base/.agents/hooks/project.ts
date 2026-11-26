@@ -15,8 +15,15 @@ export function projectRoot(sessionDir: string): string | undefined {
 	const here = fs.realpathSync(path.resolve(import.meta.dirname, "../.."));
 	const hereTop = toplevel(here);
 	const sessionTop = toplevel(sessionDir);
-	if (hereTop === undefined || sessionTop === undefined) return undefined;
-	return path.join(sessionTop, path.relative(hereTop, here));
+	if (hereTop !== undefined && sessionTop !== undefined) return path.join(sessionTop, path.relative(hereTop, here));
+	if (hereTop !== undefined) return undefined;
+	// Outside git, the project holding these hooks, when the session is in it.
+	try {
+		const inside = path.relative(here, fs.realpathSync(path.resolve(sessionDir)));
+		return inside.startsWith("..") || path.isAbsolute(inside) ? undefined : here;
+	} catch {
+		return undefined;
+	}
 }
 
 // The reply format a hook speaks, from its first argument: each agent tool reads its own. Codex

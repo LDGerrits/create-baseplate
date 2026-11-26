@@ -352,6 +352,46 @@ test("Cursor's hooks go through .agents/hooks/run, so the guard fails closed wit
 	}
 });
 
+test("the Claude copy of a hook stands down when Cursor or Copilot runs it, and the hooks find mise by name", {
+	skip: process.platform === "win32",
+}, () => {
+	const home = fs.mkdtempSync(path.join(os.tmpdir(), "run-"));
+	const bin = path.join(home, "bin");
+	fs.mkdirSync(bin);
+	for (const tool of ["sh", "cat", "dirname", "grep"]) {
+		const found = spawnSync("sh", ["-c", `command -v ${tool}`], { encoding: "utf8" }).stdout.trim();
+		fs.symlinkSync(found, path.join(bin, tool));
+	}
+	// A mise only where its installer puts it, which reports where the hook finds `mise` by name.
+	fs.mkdirSync(path.join(home, ".local/bin"), { recursive: true });
+	fs.writeFileSync(path.join(home, ".local/bin/mise"), "#!/bin/sh\ncommand -v mise\n", { mode: 0o755 });
+	const run = (format: string, payload: object) =>
+		spawnSync(path.join(bin, "sh"), [path.join(import.meta.dirname, "run"), "check.ts", format], {
+			input: JSON.stringify(payload),
+			encoding: "utf8",
+			env: { PATH: bin, HOME: home },
+		});
+	try {
+		assert.equal(run("claude", { hook_event_name: "Stop" }).stdout.trim(), path.join(home, ".local/bin/mise"));
+		assert.equal(run("claude", { status: "aborted", loop_count: 4, cursor_version: "2.1" }).stdout, "", "Cursor");
+		assert.equal(run("claude", { toolName: "bash", toolArgs: "{}" }).stdout, "", "Copilot");
+		assert.equal(run("claude", { timestamp: 1764000000000, cwd: "/game" }).stdout, "", "Copilot's agentStop");
+		assert.notEqual(run("cursor", { status: "completed", loop_count: 0, cursor_version: "2.1" }).stdout, "");
+	} finally {
+		fs.rmSync(home, { recursive: true, force: true });
+	}
+});
+
+test("the guard reads a list of files, as Gemini's read_many_files takes", () => {
+	assert.match(reason({ tool_name: "read_many_files", tool_input: { paths: ["src", ".env"] } }) ?? "", /secret/);
+	assert.equal(reason({ tool_name: "read_many_files", tool_input: { paths: ["src", ".env.example"] } }), undefined);
+	assert.match(reason({ tool_name: "read_many_files", tool_input: { paths: [".env*"] } }) ?? "", /secret/);
+	assert.match(
+		reason({ tool_name: "read_many_files", tool_input: { paths: ["src"], include: [".env.*"] } }) ?? "",
+		/secret/,
+	);
+});
+
 // The check runs `rogen check`, so Rogen's own stop hook (rogen-check.mjs, which stays as Rogen writes it)
 // would run it a second time at every stop.
 test("no agent tool starts Rogen's stop hook beside the check", () => {

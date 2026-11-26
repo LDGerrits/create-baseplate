@@ -154,7 +154,11 @@ const withSources = (text: string) =>
 		return source ? `${frame} → ${source}` : frame;
 	});
 
+// Jest colours its report; the reader here is often an agent, or a log.
+const plain = (text: string) => text.replace(/\x1b\[[0-9;]*m/g, "");
+
 let failed = 0;
+let ran = 0;
 for (const run of runs) {
 	const started = performance.now();
 	const ree = spawnSync("ree", ["run", "--rojo", project, "--load-string", "--harness", run.harness, ...run.args], {
@@ -168,7 +172,11 @@ for (const run of runs) {
 		summary = JSON.parse(ree.stdout);
 	} catch {
 		failed++;
-		console.log(`✗ ${run.name}: ree printed no summary (exit ${ree.status})\n${ree.stderr.trim()}`);
+		console.log(
+			ree.error === undefined
+				? `✗ ${run.name}: ree printed no summary (exit ${ree.status})\n${ree.stderr.trim()}`
+				: `✗ ${run.name}: couldn't start ree (${ree.error.message}); run the tests through mise: \`mise run test\``,
+		);
 		continue;
 	}
 
@@ -185,6 +193,9 @@ for (const run of runs) {
 
 	const jestLine = output.find((line) => line.message.startsWith("@jest "));
 	const detail = jestLine ? jestLine.message.slice("@jest ".length) : "passed";
+	// Tests a name filter leaves out count as skipped in the total, so count what ran.
+	const counts = jestLine ? /(\d+) passed, (\d+) failed/.exec(jestLine.message) : null;
+	ran += counts ? Number(counts[1]) + Number(counts[2]) : 1;
 	if (problems.length === 0) {
 		console.log(`✓ ${run.name}: ${detail} (${seconds}s)`);
 		continue;
@@ -196,9 +207,17 @@ for (const run of runs) {
 		if (line.message === "@done" || line.message.startsWith("@jest ")) continue;
 		const side = line.side ? `[${line.side}] ` : "";
 		const kind = line.kind === "print" ? "" : `${line.kind}: `;
-		console.log(`  ${side}${kind}${withSources(line.message).replaceAll("\n", "\n  ")}`);
-		if (line.trace) console.log(`    ${withSources(line.trace.trim()).replaceAll("\n", "\n    ")}`);
+		console.log(`  ${side}${kind}${withSources(plain(line.message)).replaceAll("\n", "\n  ")}`);
+		if (line.trace) console.log(`    ${withSources(plain(line.trace).trim()).replaceAll("\n", "\n    ")}`);
 	}
 }
 
+// A filter that matches nothing is a typo more often than a pass. In a multi-place game a test lives
+// in one place, so another place matching nothing is fine.
+const multiPlace = fs.existsSync(path.join(process.env.ROOT ?? ".", "projects"));
+const filtered = filter.testPathPattern !== undefined || filter.testNamePattern !== undefined;
+if (failed === 0 && ran === 0 && filtered && !multiPlace) {
+	console.log("✗ No spec or end-to-end test matches the filter; `mise run test` runs them all.");
+	process.exit(1);
+}
 process.exit(failed > 0 ? 1 : 0);

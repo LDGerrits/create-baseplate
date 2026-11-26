@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # rur renders the stories in the check; the agent's machine has no GPU, so it needs Mesa's
-      # Mesa's software Vulkan driver, installed while the rest sets up; `wait` is before the check.
+      # software Vulkan driver, installed while the rest sets up; `wait` is before the check.
       # Its .deb files are cached by runner image version, so most runs need no download.
       - id: mesa
         run: sh scripts/mesa.sh key >> "$GITHUB_OUTPUT"
