@@ -7,7 +7,7 @@ import spawn from "cross-spawn";
 
 if (process.argv.includes("--check")) {
 	const dry = spawn.sync("asphalt", ["sync", "cloud", "--dry-run", "--quiet"], { encoding: "utf8" });
-	if (dry.error !== undefined) {
+	if (dry.error) {
 		console.log(`asphalt: ${dry.error.message}; run \`mise install\`, or the check through mise.`);
 		process.exit(1);
 	}
