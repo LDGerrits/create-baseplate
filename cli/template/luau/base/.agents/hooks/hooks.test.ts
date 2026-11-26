@@ -17,6 +17,7 @@ import {
 	styluaProblems,
 } from "./edited.ts";
 import { guardOutput, guardReason, type Payload } from "./guard.ts";
+import { isShell, movesFiles, runsTask, writtenSince } from "./written.ts";
 
 const root = "/game";
 const reason = (payload: Payload) => guardReason(payload, root, root);
@@ -403,6 +404,50 @@ test("the guard reads a list of files, as Gemini's read_many_files takes", () =>
 		reason({ tool_name: "read_many_files", tool_input: { paths: ["src"], include: [".env.*"] } }) ?? "",
 		/secret/,
 	);
+});
+
+test("finds the game's files a shell command wrote, not installed or built ones", async () => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "written-"));
+	try {
+		for (const file of [
+			"src/a.ts",
+			"src/deep/b.luau",
+			"node_modules/x/c.ts",
+			"src/out/d.ts",
+			"README.md",
+			"world/e.json",
+		]) {
+			fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+			fs.writeFileSync(path.join(root, file), "old");
+		}
+		// Apart from the start by more than a coarse filesystem's clock tick, on either side.
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		const since = Date.now();
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		for (const file of ["src/deep/b.luau", "node_modules/x/c.ts", "src/out/d.ts", "README.md", "world/e.json"]) {
+			fs.writeFileSync(path.join(root, file), "new");
+		}
+		assert.deepEqual(writtenSince(root, since).sort(), ["README.md", "src/deep/b.luau", "world/e.json"]);
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("knows each tool's shell, and leaves commands that run a mise task to the task", () => {
+	for (const tool_name of ["Bash", "run_shell_command", "Shell"]) assert.equal(isShell({ tool_name }), true, tool_name);
+	assert.equal(isShell({ toolName: "bash" }), true);
+	assert.equal(isShell({ tool_name: "Edit" }), false);
+	assert.equal(runsTask("cat > src/a.ts <<'EOF'\nx\nEOF\nmise run check"), true);
+	assert.equal(runsTask("mise r test -- shop"), true);
+	assert.equal(runsTask("sed -i 's/a/b/' src/a.ts"), false);
+	assert.equal(
+		runsTask("cat > scripts/x.ts <<'EOF'\n// run `mise run check` first\nEOF"),
+		false,
+		"mise run inside written text",
+	);
+	assert.equal(movesFiles("git mv src/a.ts src/b.ts"), true);
+	assert.equal(movesFiles("mkdir -p x && rm -r src/old"), true);
+	assert.equal(movesFiles("cat > src/a.ts"), false);
 });
 
 // The check runs `rogen check`, so Rogen's own stop hook (rogen-check.mjs, which stays as Rogen writes it)

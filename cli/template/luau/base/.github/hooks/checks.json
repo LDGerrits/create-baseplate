@@ -14,7 +14,7 @@
 		"postToolUse": [
 			{
 				"type": "command",
-				"matcher": "edit|create",
+				"matcher": "edit|create|bash|powershell",
 				"bash": "sh .agents/hooks/run edited.ts copilot",
 				"powershell": "if (Get-Command mise -ErrorAction SilentlyContinue) { mise exec --quiet -- node .agents/hooks/edited.ts copilot }; exit 0",
 				"cwd": ".",

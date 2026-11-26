@@ -5,6 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { type Format, formatArg, projectRoot } from "./project.ts";
+import { isShell, stampShell } from "./written.ts";
 
 export interface Payload {
 	cwd?: string;
@@ -245,6 +246,9 @@ if (import.meta.main) {
 	const payload = readPayload();
 	const start = payload.cwd ?? payload.workspace_roots?.[0] ?? process.cwd();
 	const root = projectRoot(start) ?? start;
-	const output = guardOutput(formatArg(process.argv[2]), guardReason(payload, root, start));
+	const reason = guardReason(payload, root, start);
+	// What an allowed shell command writes, the edit hook checks after it (written.ts).
+	if (reason === undefined && isShell(payload)) stampShell(root);
+	const output = guardOutput(formatArg(process.argv[2]), reason);
 	if (output !== undefined) console.log(JSON.stringify(output));
 }

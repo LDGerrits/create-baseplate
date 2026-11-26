@@ -1,7 +1,9 @@
-// Run after each file edit, for every agent tool that runs hooks: formats the edited file (StyLua for
-// Luau, Biome for JSON and the TypeScript tooling), lints edited Luau with Selene and hands what's
-// left to the agent at once, so a lint error surfaces while the agent is in that file, not only at
-// the stop check. It never runs the type checker or lints other files: the stop check does.
+// Run after each file edit, and after each shell command, for every agent tool that runs hooks:
+// formats the written files (StyLua for Luau, Biome for JSON and the TypeScript tooling), lints the
+// Luau with Selene and hands what's left to the agent at once, so a problem surfaces while the agent
+// is in those files, not only at the stop check. When no language server saw the write (a shell
+// command wrote the files, or the tool has none), it also type-checks the written Luau with luau-lsp,
+// type errors first. It never lints other files: the stop check does.
 // `.agents/hooks/run` starts it, with the tool's reply format as the argument: claude (also
 // Codex's), cursor, copilot or gemini. Cursor shows nothing of what a hook prints after an edit, so
 // there the formatting applies silently.
@@ -13,6 +15,7 @@ import os from "node:os";
 import path from "node:path";
 import { GENERATED, namedFiles, type Payload, patched, toolInput } from "./guard.ts";
 import { type Format, formatArg, projectRoot } from "./project.ts";
+import { isShell, movesFiles, runsTask, shellStarted, writtenSince } from "./written.ts";
 
 // What StyLua formats; Selene lints those under src/, projects/ or tests/, as the check does.
 const LUAU = /\.luau?$/;
@@ -78,11 +81,21 @@ export function sourcemapStale(files: string[], known: Set<string>, root: string
  * Writes the sourcemaps again, in the background, so the edit's reply doesn't wait: one run at a
  * time per project, and once more after it when another edit asked meanwhile.
  */
+/** Where the regeneration for `root` keeps its lock. */
+const regenerateLock = (root: string) =>
+	path.join(os.tmpdir(), `baseplate-generate-${createHash("sha256").update(root).digest("hex").slice(0, 8)}`);
+
+/** Waits, up to ten seconds, until no regeneration of `root` runs or is asked for. */
+export async function regenerated(root: string) {
+	const lock = regenerateLock(root);
+	for (const until = Date.now() + 10_000; Date.now() < until; ) {
+		if (!fs.existsSync(lock) && !fs.existsSync(`${lock}.again`)) return;
+		await new Promise((resolve) => setTimeout(resolve, 100));
+	}
+}
+
 export function regenerate(root: string) {
-	const lock = path.join(
-		os.tmpdir(),
-		`baseplate-generate-${createHash("sha256").update(root).digest("hex").slice(0, 8)}`,
-	);
+	const lock = regenerateLock(root);
 	fs.writeFileSync(`${lock}.again`, "");
 	for (;;) {
 		try {
@@ -114,7 +127,7 @@ export function editedOutput(format: Format, problems: string[]): object | undef
 	if (problems.length === 0 || format === "cursor") return undefined;
 	const shown = problems.slice(0, MAX_PROBLEMS);
 	if (problems.length > MAX_PROBLEMS) shown.push(`...and ${problems.length - MAX_PROBLEMS} more`);
-	const message = `Lint problems left in what you just edited (its formatting is fixed already):\n${shown.join("\n")}`;
+	const message = `Problems left in what you just wrote (its formatting is fixed already):\n${shown.join("\n")}`;
 	switch (format) {
 		case "copilot":
 			return { additionalContext: message };
@@ -196,8 +209,35 @@ if (import.meta.main && process.argv[2] === "--regenerate") {
 	const start = payload.cwd ?? payload.workspace_roots?.[0] ?? process.cwd();
 	const root = projectRoot(start);
 	if (root === undefined) process.exit(0);
-	const files = filesToCheck(editedFiles(payload), root, start).filter((file) => fs.existsSync(path.join(root, file)));
-	if (files.length === 0) process.exit(0);
+	const replyFormat = formatArg(process.argv[2]);
+	const shell = isShell(payload);
+	let written: string[];
+	let moved = false;
+	if (shell) {
+		const input = toolInput(payload);
+		const command = typeof input.command === "string" ? input.command : (payload.command ?? "");
+		const since = shellStarted(root);
+		if (since === undefined || runsTask(command)) process.exit(0);
+		written = filesToCheck(writtenSince(root, since), root, root);
+		moved = movesFiles(command);
+	} else {
+		written = filesToCheck(editedFiles(payload), root, start);
+	}
+	// Who type-checks a write: Claude Code's language server sees what its edit tools write; nothing
+	// does for a shell command, Codex's apply_patch or the other tools' edits. Cursor shows the agent
+	// nothing a hook says, so a type check there would only cost time.
+	const noServer = shell || replyFormat !== "claude" || (payload.tool_name ?? payload.toolName) === "apply_patch";
+	const wantsTypes = noServer && replyFormat !== "cursor";
+	const files = written.filter((file) => fs.existsSync(path.join(root, file)));
+	if (files.length === 0) {
+		// A move or a delete changes what the sourcemap maps, though it leaves no new file.
+		if (moved)
+			spawn(process.execPath, [import.meta.filename, "--regenerate", root], {
+				detached: true,
+				stdio: "ignore",
+			}).unref();
+		process.exit(0);
+	}
 	process.chdir(root);
 
 	const luau = files.filter((file) => LUAU.test(file));
@@ -241,9 +281,25 @@ if (import.meta.main && process.argv[2] === "--regenerate") {
 			for (const file of sourcemapFiles(sourcemap, from === "." ? "" : from)) known.add(file);
 		} catch {}
 	}
-	if (sourcemapStale(files, known, root)) {
+	// Claude Code's language server type-checks what its edit tools write; nothing does for the rest.
+	if (linted.length > 0 && wantsTypes) {
+		// luau-lsp needs the sourcemap to know a new module, so it's written first, here; and when
+		// another run is writing it, this waits for that one.
+		if (sourcemapStale(files, known, root)) regenerate(root);
+		await regenerated(root);
+		// --parallel: every place reports, not only the first that fails.
+		const analyzed = await output(
+			"node",
+			["scripts/each-place.ts", "--parallel", "node {root}/scripts/analyze.ts", "--", ...linted],
+			"both",
+		);
+		// Shared code is checked in every place, which report its problems alike: each once.
+		problems.unshift(
+			...new Set(analyzed.split(/\r?\n/).filter((line) => line.trim() !== "" && !line.startsWith("──"))),
+		);
+	} else if (sourcemapStale(files, known, root)) {
 		spawn(process.execPath, [import.meta.filename, "--regenerate", root], { detached: true, stdio: "ignore" }).unref();
 	}
-	const reply = editedOutput(formatArg(process.argv[2]), problems);
+	const reply = editedOutput(replyFormat, problems);
 	if (reply !== undefined) console.log(JSON.stringify(reply));
 }
