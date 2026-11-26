@@ -42,6 +42,8 @@ test("blocks commands that skip the rules, from each tool's shell", () => {
 		{ tool_name: "Bash", tool_input: { command: "mise tasks run publish" } },
 		{ tool_name: "Bash", tool_input: { command: "cd scripts && node publish.ts ../build/game.rbxl" } },
 		{ tool_name: "Bash", tool_input: { command: 'sh -c "mise run publish"' } },
+		{ tool_name: "Bash", tool_input: { command: "mise run 'publish'" } },
+		{ tool_name: "Bash", tool_input: { command: 'mise run "publi*"' } },
 	];
 	for (const payload of commands) assert.notEqual(reason(payload), undefined, JSON.stringify(payload));
 	assert.equal(reason({ tool_name: "Bash", tool_input: { command: 'git commit -m "no -n here"' } }), undefined);
@@ -49,6 +51,16 @@ test("blocks commands that skip the rules, from each tool's shell", () => {
 	assert.equal(reason({ tool_name: "Bash", tool_input: { command: "git diff scripts/publish.ts" } }), undefined);
 	assert.equal(reason({ tool_name: "Bash", tool_input: { command: 'git commit -m "mise run publish"' } }), undefined);
 	assert.equal(reason({ tool_name: "Bash", tool_input: { command: "mise run feature publish-button" } }), undefined);
+	assert.equal(
+		reason({ tool_name: "Bash", tool_input: { command: 'git commit -am "Fix mise run publish"' } }),
+		undefined,
+	);
+	assert.equal(reason({ tool_name: "Bash", tool_input: { command: "mise run test -- -t publish" } }), undefined);
+	assert.match(
+		reason({ tool_name: "Bash", tool_input: { command: "node scripts/with-env.ts ROBLOX_PUBLISH_* -- printenv" } }) ??
+			"",
+		/hands \.env's keys/,
+	);
 });
 
 test("blocks Studio's MCP from acting on the live game", () => {

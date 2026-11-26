@@ -58,10 +58,29 @@ const isSecretFile = (file: string) => /(^|[/\\])\.env(\.(?!example$)[\w.-]+)?$/
 const SECRET =
 	".env holds secret keys: don't print it. .env.example lists the names it can hold; ask the user which are set.";
 
-// Publishing: the task however mise is asked to run it (`mise run -q publish`, `mise r publish`,
-// `mise publish`), its script under any runtime, and Rojo's own upload.
-const PUBLISH =
-	/\bmise\b[^|;&\n]*\spublish(?=$|[\s;&|)"'])|\b(node|bun|deno|tsx)\b[^|;&\n]*publish\.ts\b|\brojo\s+upload\b/;
+// Publishing: the publish script under any runtime, and Rojo's own upload.
+const PUBLISH_SCRIPT = /\b(node|bun|deno|tsx)\b[^|;&\n]*publish\.ts\b|\brojo\s+upload\b/;
+
+/**
+ * Whether a command publishes: the script, or the task however mise is asked to run it
+ * (`mise run -q publish`, `mise r 'publish'`, `mise publish`, a pattern such as `publi*`). Only
+ * mise's own arguments count, not those after `--`, which go to the task.
+ */
+function publishes(command: string): boolean {
+	if (PUBLISH_SCRIPT.test(command)) return true;
+	for (const [, args = ""] of command.matchAll(/\bmise\b([^|;&\n]*)/g)) {
+		const words = (args.split(/\s--(?=\s|$)/)[0] ?? "").split(/\s+/).map((word) => word.replace(/^["']+|["']+$/g, ""));
+		const matches = (word: string) =>
+			new RegExp(
+				`^${word
+					.replace(/[.+^${}()|[\]\\]/g, "\\$&")
+					.replaceAll("*", ".*")
+					.replaceAll("?", ".")}$`,
+			).test("publish");
+		if (words.some((word) => word === "publish" || (/[*?]/.test(word) && matches(word)))) return true;
+	}
+	return false;
+}
 
 function checkCommand(command: string): string | undefined {
 	// Quoted text, such as a commit message, isn't flags.
@@ -70,9 +89,12 @@ function checkCommand(command: string): string | undefined {
 		return "The commit hook runs the check on what you commit; commit without --no-verify, and fix what it reports.";
 	}
 	// Quoted text counts here, as in `sh -c "mise run publish"`; only a commit message doesn't.
-	const unmessaged = command.replace(/(\s(?:-m|--message)(?:=|\s+))("(?:[^"\\]|\\.)*"|'[^']*')/g, '$1""');
-	if (PUBLISH.test(unmessaged)) {
+	const unmessaged = command.replace(/(\s(?:-[A-Za-z]*m\s*|--message(?:=|\s+)))("(?:[^"\\]|\\.)*"|'[^']*')/g, '$1""');
+	if (publishes(unmessaged)) {
 		return "Publishing replaces the game players join. Only a person publishes, with `mise run publish` or a tag (see `mise run doc publishing`): tell the user it's ready.";
+	}
+	if (/\b(node|bun|deno|tsx)\b[^|;&\n]*with-env\.ts\b/.test(command)) {
+		return "scripts/with-env.ts hands .env's keys to the command after it; only mise's tasks run it. Run the task that needs them (`mise run test:engine`, `ui`, `errors`), or ask the user.";
 	}
 	if (/core\.hooksPath|HUSKY=0|LINT_STAGED/.test(command)) {
 		return "Leave the commit hook on; commit normally and fix what it reports.";

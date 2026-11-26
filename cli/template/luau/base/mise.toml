@@ -31,9 +31,9 @@ lockfile_platforms = ["linux-x64", "linux-arm64", "macos-arm64", "macos-x64", "w
 
 [env]
 _.path = ["{{config_root}}/node_modules/.bin"]
-# Node keeps the compiled code of the tools it loads (ESLint and its plugins take a second to load
-# without it), so every check, hook and task after the first starts faster. Only a cache: Node
-# checks each file against it, and deleting node_modules removes it.
+# Node keeps the compiled code of the tools and scripts it loads, such as Rogen's, so every check,
+# hook and task after the first starts faster. Only a cache: Node checks each file against it, and
+# deleting node_modules removes it.
 NODE_COMPILE_CACHE = "{{config_root}}/node_modules/.cache/node-compile-cache"
 # Syncback writes each new world instance as a readable .model.json instead of a binary .rbxm.
 # Set for every task so forge's sync on save gets it too. It's Rojo's undocumented debug switch

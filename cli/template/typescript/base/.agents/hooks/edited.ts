@@ -8,6 +8,7 @@
 
 import { spawn } from "node:child_process";
 import fs from "node:fs";
+import module from "node:module";
 import path from "node:path";
 import { type Linted, lintViaServer, UNFIXED } from "./eslint-server.ts";
 import { GENERATED, namedFiles, type Payload, patched, toolInput } from "./guard.ts";
@@ -122,6 +123,11 @@ if (import.meta.main) {
 	const files = filesToCheck(editedFiles(payload), root, start).filter((file) => fs.existsSync(path.join(root, file)));
 	if (files.length === 0) process.exit(0);
 	process.chdir(root);
+	// mise.toml's NODE_COMPILE_CACHE keeps the compiled ESLint and plugins; a game whose mise.toml
+	// predates it gets the same cache here.
+	if (process.env.NODE_COMPILE_CACHE === undefined) {
+		module.enableCompileCache?.(path.join(root, "node_modules/.cache/node-compile-cache"));
+	}
 
 	// ESLint reads the files only once Biome is done with them; when this process has to load ESLint
 	// itself, which takes most of the time, Biome formats meanwhile.
