@@ -105,6 +105,12 @@ const indexMount = (mount: string, names: string[]) => {
 	}
 };
 indexTree(JSON.parse(fs.readFileSync(project, "utf8")).tree, []);
+// ree loads each end-to-end test, Luau as written, as ReplicatedStorage.RURFixtures.<name>.
+const fixtures = new Map(
+	runs
+		.filter((run) => run.name.startsWith("e2e/"))
+		.map((run) => [`ReplicatedStorage.RURFixtures.${run.name.slice(4)}`, run.harness]),
+);
 
 const BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 /** The source file and 1-based line a compiled line comes from, through `<file>.map`. */
@@ -149,7 +155,10 @@ function sourceOf(compiled: string, line: number): string | undefined {
 /** Adds the TypeScript location after each frame in the game's own code. */
 const withSources = (text: string) =>
 	text.replace(/[\w@-]+(?:\.[\w@-]+)+:(\d+)/g, (frame, line: string) => {
-		const compiled = compiledFiles.get(frame.slice(0, frame.lastIndexOf(":")));
+		const name = frame.slice(0, frame.lastIndexOf(":"));
+		const fixture = fixtures.get(name);
+		if (fixture) return `${frame} → ${path.relative(process.env.ROOT ?? process.cwd(), path.resolve(fixture))}:${line}`;
+		const compiled = compiledFiles.get(name);
 		const source = compiled && sourceOf(compiled, Number(line));
 		return source ? `${frame} → ${source}` : frame;
 	});

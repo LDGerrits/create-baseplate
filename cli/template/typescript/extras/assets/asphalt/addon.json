@@ -3,7 +3,7 @@
 		{
 			"file": "scripts/check.ts",
 			"from": "\t{ name: \"sources\", command: \"node scripts/check-sources.ts\", needs: [\"format\"] },\n",
-			"to": "\t{ name: \"sources\", command: \"node scripts/check-sources.ts\", needs: [\"format\"] },\n\t// Fails on a file in assets/ that isn't uploaded yet: `mise run assets` uploads it.\n\t{ name: \"assets\", command: \"asphalt sync cloud --dry-run --quiet\", needs: [\"format\"] },\n"
+			"to": "\t{ name: \"sources\", command: \"node scripts/check-sources.ts\", needs: [\"format\"] },\n\t// Fails on a file in assets/ that isn't uploaded yet: `mise run assets` uploads it.\n\t{ name: \"assets\", command: \"node scripts/assets.ts --check\", needs: [\"format\"] },\n"
 		},
 		{
 			"file": "biome.json",
