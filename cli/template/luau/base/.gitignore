@@ -37,3 +37,7 @@ sourcemap.json
 /.claude/settings.local.json
 # Written by scripts/setup.ts, named for this clone
 /.claude/plugins/.claude-plugin/
+
+# Agent tools' worktrees inside the game (Claude Code, Gemini CLI): checkouts of their own
+/.claude/worktrees/
+/.gemini/worktrees/
