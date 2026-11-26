@@ -15,7 +15,7 @@
 		"*.rogen.json": "${capture}.project.json, test.${capture}.project.json, game.project.json, test.project.json",
 		"mise.toml": "mise.lock, rbx-forge.config.ts, asphalt.toml, .darklua.json, *.rbxlx, *.rbxlx.lock, *.rbxl.lock",
 		"selene.toml": "stylua.toml, .luaurc",
-		".gitignore": ".gitattributes, .editorconfig, .worktreeinclude",
+		".gitignore": ".gitattributes, .editorconfig",
 		".env.example": ".env, .env.*"
 	},
 	"files.exclude": {
@@ -29,6 +29,7 @@
 	"search.exclude": {
 		"out": true,
 		"build": true,
+		"dist": true,
 		"projects/*/build": true,
 		"*.project.json": true,
 		"projects/*/*.project.json": true
