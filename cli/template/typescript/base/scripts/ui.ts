@@ -28,6 +28,10 @@ if (!process.env.RUR_ROBLOX_CONTENT && fs.existsSync("/mnt/c/Users")) {
 
 const check = process.argv.includes("--check");
 const args = process.argv.slice(2).filter((arg) => arg !== "--check");
+// A story renders on an 800x600 screen unless the caller names one: `--viewport 320x240`.
+const viewport = args.some((arg) => arg === "--viewport" || arg.startsWith("--viewport="))
+	? []
+	: ["--viewport", "800x600"];
 /** What a person reads at `mise run ui`; the check prints only what fails. */
 const say = check ? () => {} : (line: string) => console.log(line);
 
@@ -60,13 +64,17 @@ if (story !== -1) {
 		".story.luau",
 	);
 	const rest = args.filter((_, i) => i !== story && i !== story + 1);
-	const diff = rest[0] === "diff";
+	// `diff <git ref>` may sit anywhere among the other arguments, such as after `--viewport 320x240`.
+	const at = rest.indexOf("diff");
+	const diff = at !== -1;
+	const ref = diff ? (rest[at + 1] ?? "HEAD") : "";
+	const others = diff ? rest.filter((_, i) => i !== at && i !== at + 1) : rest;
 	const dir = `build/ui-${diff ? "diff" : "try"}/${name}`;
 	fs.rmSync(dir, { recursive: true, force: true });
 	const command = diff
-		? ["diff", "--git-ref", rest[1] ?? "HEAD", "--story", compiled, "--out", dir, ...rest.slice(2)]
-		: ["render", "--story", compiled, "--dir", dir, "--time", "1", ...rest];
-	const run = spawnSync("rur-native", [...command, "--rojo", "game.project.json", "--viewport", "800x600"], {
+		? ["diff", "--git-ref", ref, "--story", compiled, "--out", dir, ...others]
+		: ["render", "--story", compiled, "--dir", dir, "--time", "1", ...others];
+	const run = spawnSync("rur-native", [...command, "--rojo", "game.project.json", ...viewport], {
 		encoding: "utf8",
 		maxBuffer: 64 * 1024 * 1024,
 	});
@@ -102,11 +110,10 @@ if (story !== -1) {
 }
 
 fs.rmSync(OUT, { recursive: true, force: true });
-const sweep = spawnSync(
-	"rur-native",
-	["sweep", "--rojo", "game.project.json", "--out", OUT, "--viewport", "800x600", ...args],
-	{ encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
-);
+const sweep = spawnSync("rur-native", ["sweep", "--rojo", "game.project.json", "--out", OUT, ...viewport, ...args], {
+	encoding: "utf8",
+	maxBuffer: 64 * 1024 * 1024,
+});
 
 let report;
 try {

@@ -127,6 +127,17 @@ const withSources = (text: string) =>
 // Jest colours its report; the reader here is often an agent, or a log.
 const plain = (text: string) => text.replace(/\x1b\[[0-9;]*m/g, "");
 
+// Jest's report and traces run through its own code, the packages' and the test harness's; only the
+// game's lines say where the failure is.
+const NOT_OURS = /rbxts_include|node_modules|_Index|DevPackages|\brur\.\w+:|RURFixtures\.jest\b/;
+// Only a frame line goes, never a message, which can name a package's file too.
+const FRAME = /^\s*\S+:\d+(\s|$)/;
+const ownLines = (text: string) =>
+	text
+		.split("\n")
+		.filter((line, index) => index === 0 || !(FRAME.test(line) && NOT_OURS.test(line)))
+		.join("\n");
+
 let failed = 0;
 let ran = 0;
 for (const run of runs) {
@@ -174,11 +185,22 @@ for (const run of runs) {
 	failed++;
 	console.log(`✗ ${run.name}: ${problems.join("; ")}`);
 	for (const line of output) {
-		if (line.message === "@done" || line.message.startsWith("@jest ")) continue;
+		// The harness's own "Jest: tests failed" repeats the report above it.
+		if (line.message === "@done" || line.message.startsWith("@jest ") || line.message === "Jest: tests failed")
+			continue;
 		const side = line.side ? `[${line.side}] ` : "";
 		const kind = line.kind === "print" ? "" : `${line.kind}: `;
-		console.log(`  ${side}${kind}${withSources(plain(line.message)).replaceAll("\n", "\n  ")}`);
-		if (line.trace) console.log(`    ${withSources(plain(line.trace).trim()).replaceAll("\n", "\n    ")}`);
+		console.log(`  ${side}${kind}${withSources(ownLines(plain(line.message))).replaceAll("\n", "\n  ")}`);
+		if (line.trace) console.log(`    ${withSources(ownLines(plain(line.trace)).trim()).replaceAll("\n", "\n    ")}`);
+	}
+	// A test that waited for something that never came: it timed out, or ran out its seconds.
+	const timedOut =
+		output.some((line) => line.kind !== "print" && /timed out/i.test(line.message)) ||
+		(summary.errors === 0 && problems.some((problem) => String(problem).includes("@done")));
+	if (run.name.startsWith("e2e/") && timedOut) {
+		console.log(
+			"  If it waits on a touch, physics or a character: ree doesn't emulate them. Test that in an *.engine.spec, run in Roblox by `mise run test:engine`.",
+		);
 	}
 }
 

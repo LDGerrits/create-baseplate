@@ -55,7 +55,7 @@ Code meets in three ways. Require directly by default: a feature requires the se
 
 Run `mise run feature <name>` to start one, and read `.agents/skills/add-feature/SKILL.md`: it writes steps 1 and 2 below and the service's spec. By hand:
 
-1. Remotes in `shared/<Feature>Network.luau`, made with [Remo](https://github.com/littensy/remo) (`ReplicatedStorage.Packages.Remo`) in a namespace named after the feature, with a `Remotes` type that gives their arguments (`Remo.ClientToServer<number>`, `Remo.ServerToClient<number>`, `Remo.ServerAsync<(number), (string)>`), as the `<Feature>Network.luau` that `mise run feature` writes does. Each argument a client sends gets a `t` validator (`Remo.remote(t.integer, t.string)`), and each client-to-server remote `.middleware(Remo.throttleMiddleware(<seconds>))`. A request the server answers (`ServerAsync`) declares what it returns: `Remo.remote(t.number).returns(t.string)`; the service connects with `Network.name:onRequest(function(player, id) return "..." end)` (the callback may return a Promise instead), and the client asks with `Network.name:request(id)`, a Promise of the answer, which Remo checks against `.returns`.
+1. Remotes in `shared/<Feature>Network.luau`, made with [Remo](https://github.com/littensy/remo) (`ReplicatedStorage.Packages.Remo`) in a namespace named after the feature, with a `Remotes` type that gives their arguments (`Remo.ClientToServer<number>`, `Remo.ServerToClient<number>`, `Remo.ServerAsync<(number), (string)>`), as the `<Feature>Network.luau` that `mise run feature` writes does. Each argument a client sends gets a `t` validator (`Remo.remote(t.integer, t.string)`), and each client-to-server remote `.middleware(Remo.throttleMiddleware(<seconds>))`. A request the server answers (`ServerAsync`) declares what it returns: `Remo.remote(t.number).returns(t.string)`; the service connects with `Network.name:onRequest(function(player: Player, id: number) return "..." end)` (the callback may return a Promise instead), and the client asks with `Network.name:request(id)`, a Promise of the answer, which Remo checks against `.returns`. Remo has no README: its API and types are in `Packages/_Index/littensy_remo@*/remo/src/types.luau`.
 2. A service in `server/<Feature>Service.luau` and, if the client takes part, a controller in `client/<Feature>Controller.luau`: a module with a `start()` that connects its remotes and events. Add each to the list in `src/app/server/Main.server.luau` or `src/app/client/Start.luau`, or it never starts; the check fails on one that isn't.
 3. UI as a component in `client/` with a story, rendered from the root component (see UI).
 4. Tests: a spec for the service, and an end-to-end test for each request a client sends.
@@ -109,7 +109,7 @@ end)
 `mise run ui` renders every story offline and prints each picture's path. Open each picture you changed and look at it: text cut off, overlap, alignment, the empty state. A story that renders cleanly can still look wrong.
 
 - To check that a component responds to input, click or type into its story: `mise run ui -- --story <path>.story.luau --actions '[{"type":"click","node":"buy","t":0.2}]'` prints what the story printed and the picture's path. Actions also take `key`, `text`, `drag` and `wheel`, aimed at a node's name or `x`, `y`. A node is named after its React key (`buy` above), and a failed action lists the names there are.
-- To see what your change did to a component: `mise run ui -- diff HEAD --story <path>.story.luau` renders it before and after, and writes `diff.png`.
+- To see what your change did to a component: `mise run ui -- diff HEAD --story <path>.story.luau` renders it before and after, and writes `diff.png`. Do this for every change to how a component looks, and show the user both pictures. Add `--viewport 320x240` (any size) to render on a smaller or larger screen.
 
 - Animate with `useSpring` or `useMotion` from `ReplicatedStorage.Packages.ReactRipple`: the animation drives a binding, so nothing re-renders.
 - A story renders inside a `Frame`, so a component whose root is a `ScreenGui` draws nothing.
@@ -125,8 +125,10 @@ luau-lsp and Selene catch most mistakes. These they don't explain:
 
 - Arrays start at 1, `#` counts only up to the first `nil`, and `nil` in a table removes the key. Use `table.insert`, `table.remove` and `table.clear`; iterate with `for i, v in list do`.
 - Only `nil` and `false` are falsy: `0` and `""` are true.
-- Instances from `FindFirstChild` and `WaitForChild` can be `nil` or of any class to the type checker; check with `if part and part:IsA("BasePart") then`, rather than casting with `::`.
+- Instances from `FindFirstChild`, `WaitForChild` and `.Parent` can be `nil` or of any class to the type checker; check with `if part and part:IsA("BasePart") then`, rather than casting with `::`.
 - luau-lsp knows only the instances in the project and `world/`. What appears at runtime, such as a player's `Character` and its `Humanoid`, a `ScreenGui` your code mounts in `PlayerGui`, or a part a script creates, isn't typed: `character.Humanoid` fails the check. Reach it with `WaitForChild` or `FindFirstChildOfClass` and check its class.
+- An `and` chain's type joins its operands': `player and part:IsA("BasePart") and award(player)` can be `false`, `nil` or a boolean as well as the result. Narrow with `if` statements instead.
+- A function passed to `pcall` must return the same types on every path; `pcall` returns `ok`, then those values or the error.
 - Yielding functions (`task.wait`, `WaitForChild`, `InvokeServer`, DataStore calls) pause the thread: never call them where the order of events matters without saying so, and use `task.spawn` or `task.defer` to run something alongside.
 
 ## Packages

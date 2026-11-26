@@ -352,6 +352,19 @@ test("Cursor's hooks go through .agents/hooks/run, so the guard fails closed wit
 	}
 });
 
+test("the guard judges each command of a chain on its own for .env, keeping pipes together", () => {
+	const bash = (command: string) => reason({ tool_name: "Bash", tool_input: { command } });
+	assert.equal(bash("ls .env .env.example && cat package.json"), undefined);
+	assert.equal(bash("test -e .env; grep -rn shop src"), undefined);
+	assert.match(bash("ls && cat .env") ?? "", /secret/);
+	assert.match(bash("ls .env | xargs cat") ?? "", /secret/);
+	assert.match(bash("grep KEY .env || true") ?? "", /secret/);
+	assert.match(bash(`python3 -c "import os;print(open('.env').read())"`) ?? "", /secret/);
+	assert.match(bash(`node -e "console.log(require('fs').readFileSync('.env','utf8'))"`) ?? "", /secret/);
+	assert.match(bash("f=.env; cat $f") ?? "", /secret/);
+	assert.match(bash("cat \\\n.env") ?? "", /secret/);
+});
+
 test("the Claude copy of a hook stands down when Cursor or Copilot runs it, and the hooks find mise by name", {
 	skip: process.platform === "win32",
 }, () => {

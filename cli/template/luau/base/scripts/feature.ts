@@ -62,7 +62,7 @@ end
 -- Main.server.luau calls this once, after every service has loaded.
 function ${Name}Service.start()
 	-- The remote's throttle drops floods; the service still checks each request.
-	${Name}Network.request:connect(function(player)
+	${Name}Network.request:connect(function(player: Player)
 		${Name}Network.changed:fire(player, ${Name}Service.getValue(player.UserId))
 	end)
 end
