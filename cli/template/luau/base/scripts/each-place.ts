@@ -46,7 +46,9 @@ if (args[0] === "--one") {
 	only = args[1] === "" ? undefined : args[1];
 	args = args.slice(2);
 	if (multi && only === undefined) {
-		console.error(`Name the place: ${places.join(", ")}. For example: mise run dev ${places[0] ?? "<place>"}`);
+		console.error(
+			`Name the place: ${places.join(", ")}. For example: mise run ${process.env.MISE_TASK_NAME ?? "dev"} ${places[0] ?? "<place>"}`,
+		);
 		process.exit(1);
 	}
 	if (!multi && only !== undefined) {

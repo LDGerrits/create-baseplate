@@ -5,7 +5,7 @@
 	"hooks": {
 		"BeforeTool": [
 			{
-				"matcher": "run_shell_command|write_file|replace|read_file|.*(open_cloud_invoke|execute_luau)",
+				"matcher": "run_shell_command|write_file|replace|read_file|read_many_files|.*(open_cloud_invoke|execute_luau)",
 				"hooks": [
 					{
 						"name": "guard",
