@@ -46,7 +46,13 @@ if (versions.size > 1) {
 }
 const [version] = [...versions.keys()];
 if (version !== undefined && sums.length > 0) {
-	const response = await fetch(`https://github.com/jdx/mise/releases/download/v${version}/SHASUMS256.txt`);
+	// GitHub's release downloads answer 5xx now and then; a few tries ride that out.
+	const url = `https://github.com/jdx/mise/releases/download/v${version}/SHASUMS256.txt`;
+	let response = await fetch(url);
+	for (let attempt = 1; attempt < 4 && response.status >= 500; attempt++) {
+		await new Promise((resolve) => setTimeout(resolve, attempt * 5000));
+		response = await fetch(url);
+	}
 	if (!response.ok) throw new Error(`mise v${version}'s SHASUMS256.txt: HTTP ${response.status}`);
 	const published = await response.text();
 	for (const { file, arch, sum } of sums) {
