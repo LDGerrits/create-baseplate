@@ -66,9 +66,12 @@ description = "Install packages, write the generated files, set up this clone, a
 run = ["pnpm install --frozen-lockfile", "mise run generate", "mise run setup", "node scripts/agent-files.ts"]
 
 [tasks.doc]
-description = "Print a page of Baseplate's docs, for the create-baseplate version package.json pins: mise run doc testing. Without a topic, lists them"
-usage = 'arg "[topic]" help="The page, such as testing, ui or publishing"'
-run = 'node scripts/doc.ts {{usage.topic}}'
+description = "Print a page of Baseplate's docs, for this game's create-baseplate version, offline: mise run doc testing. Without a topic, lists them"
+usage = '''
+arg "[topic]" help="The page, such as testing, ui or publishing"
+flag "--json" help="Print it as JSON, for tools"
+'''
+run = 'node scripts/doc.ts {{usage.topic}} {% if usage.json %}--json{% endif %}'
 
 [tasks.setup]
 description = "Run the check before each commit, restore the .claude/skills link on Windows clones without symbolic links, and give Claude Code the Luau language server; safe to rerun"

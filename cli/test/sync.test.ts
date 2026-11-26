@@ -112,6 +112,7 @@ test("a new game records its agent files as the template made them", () => {
 		/^agent-files\.json$/m,
 		"searches skip the record",
 	);
+	assert.ok(fs.existsSync(path.join(dir, ".baseplate/docs/topics.json")), "this version's docs, for mise run doc");
 	const check = sync(dir, "--check");
 	assert.equal(check.status, 0, check.stdout + check.stderr);
 });

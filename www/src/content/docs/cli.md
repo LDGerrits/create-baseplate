@@ -73,4 +73,4 @@ pnpm dlx create-baseplate@<version> doc testing    # print one page as Markdown
 pnpm dlx create-baseplate@<version> doc --json     # { "ok": true, "topics": [...] } or { "ok": true, "topic", "text" }
 ```
 
-`doc` prints the pages of this site as that version ships them, so an agent reads the docs for the version a game came from. In a game, `mise run doc <topic>` runs it at the version `package.json`'s `baseplate.version` pins. An unknown topic exits with 1 and names the closest one. To create a game in a folder named `doc`, write `./doc`.
+`doc` prints the pages of this site as that version ships them, so an agent reads the docs for the version a game came from. In a game, `mise run doc <topic>` prints the copy the CLI keeps in `.baseplate/docs` when it creates the game and on each sync, so it works offline; a game without that copy runs `doc` at the version `package.json`'s `baseplate.version` pins. An unknown topic exits with 1 and names the closest one. To create a game in a folder named `doc`, write `./doc`.

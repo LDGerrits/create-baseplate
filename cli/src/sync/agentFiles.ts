@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { DOCS_DIR } from "../consts.ts";
 
 /** Files by path from the game's root, with `/` between folders. */
 export type Files = Record<string, string>;
@@ -109,8 +110,15 @@ export function writeBase(dir: string, base: Base) {
 	// it) skip it, so a search for a rule finds AGENTS.md once.
 	fs.writeFileSync(
 		path.join(dir, path.dirname(BASE_FILE), ".ignore"),
-		`# What create-baseplate sync merges against; not for searching.\n${path.basename(BASE_FILE)}\n`,
+		`# What create-baseplate sync merges against, and this version's docs (\`mise run doc\` reads them);\n# not for searching.\n${path.basename(BASE_FILE)}\ndocs/\n`,
 	);
+	// This version's docs, for `mise run doc` (the game's scripts/doc.ts) to read without the network.
+	const docs = path.join(dir, path.dirname(BASE_FILE), "docs");
+	// A CLI without its built docs (run from source) leaves the game's copy as it is.
+	if (fs.existsSync(DOCS_DIR)) {
+		fs.rmSync(docs, { recursive: true, force: true });
+		fs.cpSync(DOCS_DIR, docs, { recursive: true });
+	}
 }
 
 /** A line-based three-way merge (git's), or undefined when the two sides change the same lines. */

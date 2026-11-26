@@ -54,6 +54,8 @@ fs.writeFileSync(
 	)}\n`,
 );
 
+// BASEPLATE_NO_CLAUDE_PLUGIN=1, for a game made only to try something, leaves Claude Code's settings alone.
+if (process.env.BASEPLATE_NO_CLAUDE_PLUGIN === "1") process.exit(0);
 if (run("claude", ["--version"]).status !== 0) process.exit(0);
 const claude = (args: string[]) =>
 	spawnSync("claude", args, { cwd: root, encoding: "utf8", shell: process.platform === "win32" });
