@@ -267,16 +267,16 @@ export function flagProblem(language: Language, given: Partial<AddOnChoices>): s
 interface Manifest {
 	/**
 	 * Packages to add, pinned: npm packages for package.json in TypeScript, Wally packages for
-	 * wally.toml's [dependencies] in Luau (`{ "Charm": "littensy/charm@0.11.1" }`).
+	 * wally.toml's [dependencies] in Luau (`{ "Charm": "littensy/charm@=0.11.1" }`).
 	 */
-	dependencies: Record<string, string>;
+	dependencies?: Record<string, string>;
 	/** Luau: Wally packages only the server loads, for wally.toml's [server-dependencies]. */
 	serverDependencies?: Record<string, string>;
 	/**
 	 * What a main file starts. TypeScript: side-effect imports, so Flamework starts what they define.
 	 * Luau: require expressions added to the main script's list of services or controllers.
 	 */
-	imports: Record<string, string[]>;
+	imports?: Record<string, string[]>;
 	/** Tasks of the game's mise.toml the choice removes, whatever other add-ons have done to them. */
 	removeMiseTasks?: string[];
 	/** Packages the choice replaces, from dependencies or devDependencies (by alias, in wally.toml). */
@@ -287,16 +287,8 @@ interface Manifest {
 	replaceAgentsSection?: string;
 	/** Exact text to replace in the game's files. */
 	replaceText?: { file: string; from: string; to: string }[];
-	/** What changes with another question's choice: `{ vide: { dependencies, files, agents } }` under the UI. */
-	byUi?: Record<
-		string,
-		{
-			dependencies?: Record<string, string>;
-			serverDependencies?: Record<string, string>;
-			files?: string;
-			agents?: string;
-		}
-	>;
+	/** What changes with the UI choice: `{ vide: { dependencies, agents } }`. */
+	byUi?: Record<string, { dependencies?: Record<string, string>; agents?: string }>;
 	/**
 	 * What changes with the managed question's choice: `{ partial: { files, agents } }` copies that
 	 * folder over `files/` and uses that file in place of `AGENTS.md` when Rojo manages only the code.
@@ -341,21 +333,21 @@ export function installAddOns(dir: string, language: Language, chosen: AddOnChoi
 		const managedVariant = manifest.byManaged?.[chosen.managed ?? ""];
 
 		for (const file of manifest.removeFiles ?? []) fs.rmSync(path.join(dir, file), { force: true, recursive: true });
-		const files = path.join(from, variant?.files ?? "files");
+		const files = path.join(from, "files");
 		if (fs.existsSync(files)) fs.cpSync(files, dir, { recursive: true });
 		if (managedVariant?.files !== undefined) fs.cpSync(path.join(from, managedVariant.files), dir, { recursive: true });
 		for (const task of manifest.removeMiseTasks ?? []) removeMiseTask(dir, task);
 		const remove = manifest.removeDependencies ?? [];
 		if (language === "luau") {
-			editWally(dir, "dependencies", variant?.dependencies ?? manifest.dependencies, remove);
-			editWally(dir, "server-dependencies", variant?.serverDependencies ?? manifest.serverDependencies ?? {}, remove);
+			editWally(dir, "dependencies", variant?.dependencies ?? manifest.dependencies ?? {}, remove);
+			editWally(dir, "server-dependencies", manifest.serverDependencies ?? {}, remove);
 			editWally(dir, "dev-dependencies", {}, remove);
 		} else {
-			editPackage(dir, variant?.dependencies ?? manifest.dependencies, remove);
+			editPackage(dir, variant?.dependencies ?? manifest.dependencies ?? {}, remove);
 		}
 		const mise = path.join(from, "mise.toml");
 		if (fs.existsSync(mise)) addMise(dir, fs.readFileSync(mise, "utf8"));
-		for (const [file, imports] of Object.entries(manifest.imports)) addImports(path.join(dir, file), imports);
+		for (const [file, imports] of Object.entries(manifest.imports ?? {})) addImports(path.join(dir, file), imports);
 		const agents = fs.readFileSync(path.join(from, managedVariant?.agents ?? variant?.agents ?? "AGENTS.md"), "utf8");
 		if (manifest.replaceAgentsSection === undefined) addAgentsSection(dir, agents);
 		else replaceAgentsSection(dir, manifest.replaceAgentsSection, agents);
@@ -419,7 +411,7 @@ function addImports(file: string, imports: string[]) {
 }
 
 /**
- * Adds packages to a table of wally.toml (`Charm = "littensy/charm@0.11.1"`), sorted by alias, and
+ * Adds packages to a table of wally.toml (`Charm = "littensy/charm@=0.11.1"`), sorted by alias, and
  * drops the aliases in `remove`. Adds the table when it's missing and has something to hold.
  */
 function editWally(dir: string, table: string, add: Record<string, string>, remove: string[]) {

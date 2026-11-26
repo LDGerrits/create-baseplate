@@ -24,15 +24,15 @@ A new question, or a choice of an existing one, also goes in its language's list
 
 | Field | Required | What |
 | --- | --- | --- |
-| `dependencies` | yes | Packages to add, pinned to exact versions. TypeScript: npm packages for `package.json`'s `dependencies`, `{ "@rbxts/charm": "0.11.1" }`. Luau: Wally packages for `wally.toml`'s `[dependencies]`, by alias, `{ "Charm": "littensy/charm@=0.11.1" }`. `{}` for none. |
+| `dependencies` | no | Packages to add, pinned to exact versions. TypeScript: npm packages for `package.json`'s `dependencies`, `{ "@rbxts/charm": "0.11.1" }`. Luau: Wally packages for `wally.toml`'s `[dependencies]`, by alias, `{ "Charm": "littensy/charm@=0.11.1" }`. |
 | `serverDependencies` | no | Luau: Wally packages only the server loads, for `wally.toml`'s `[server-dependencies]`, such as ProfileStore. |
-| `imports` | yes | What a main file starts. TypeScript: side-effect imports to add after its last import, so Flamework starts what they define: `{ "src/app/server/main.server.ts": ["../../features/spinner/server/spinner-service"] }`. Luau: require expressions added to its list of services or controllers: `{ "src/app/server/Main.server.luau": ["ServerScriptService.features.spinner.SpinnerService"] }`. `{}` for none. |
+| `imports` | no | What a main file starts. TypeScript: side-effect imports to add after its last import, so Flamework starts what they define: `{ "src/app/server/main.server.ts": ["../../features/spinner/server/spinner-service"] }`. Luau: require expressions added to its list of services or controllers: `{ "src/app/server/Main.server.luau": ["ServerScriptService.features.spinner.SpinnerService"] }`. |
 | `removeDependencies` | no | Packages the choice replaces, removed from `dependencies` or `devDependencies` (in Luau, by alias from any table of `wally.toml`). |
 | `removeFiles` | no | Base files or folders the choice replaces or drops, deleted before `files/` is copied. |
 | `removeMiseTasks` | no | Tasks of the game's `mise.toml` the choice removes, by name (`["sync", "publish"]`), whatever other add-ons have done to them. |
 | `replaceAgentsSection` | no | The heading of the game's `AGENTS.md` section that this choice's `AGENTS.md` replaces (`"UI"`), instead of adding a section. |
 | `replaceText` | no | Exact edits to the game's files: `[{ "file": "mise.toml", "from": "…", "to": "…" }]`. The CLI fails if `from` isn't there, so a template change can't silently skip an edit. |
-| `byUi` | no | What changes with the UI choice: `{ "vide": { "dependencies": {…}, "files": "files-vide", "agents": "AGENTS.vide.md" } }` uses those dependencies, that folder in place of `files/`, and that file in place of `AGENTS.md` when the game uses Vide. |
+| `byUi` | no | What changes with the UI choice: `{ "vide": { "dependencies": {…}, "agents": "AGENTS.vide.md" } }` uses those dependencies in place of `dependencies`, and that file in place of `AGENTS.md`, when the game uses Vide. |
 | `byManaged` | no | What changes with the managed question: `{ "partial": { "files": "files-partial", "agents": "AGENTS.partial.md" } }` copies that folder over `files/` and uses that file in place of `AGENTS.md` when Rojo manages only the code. |
 | `conflicts` | no | Choices of other questions this one can't go with, and why: `{ "ui": { "vide": "Reflex has no Vide binding: with --ui vide, choose --state charm or none." } }`. The CLI refuses the pair with that message, the prompts hide it, and CI leaves it out. |
 

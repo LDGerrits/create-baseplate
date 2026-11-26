@@ -1,6 +1,4 @@
 {
-	"dependencies": {},
-	"imports": {},
 	"removeFiles": [
 		"world",
 		"scripts/world-types.ts",

@@ -1,10 +1,11 @@
 {
-	"dependencies": {},
 	"serverDependencies": {
 		"DataStoreServiceMock": "nezuo/data-store-service-mock@=0.3.8",
 		"Lapis": "nezuo/lapis@=0.3.4"
 	},
 	"imports": {
-		"src/app/server/Main.server.luau": ["ServerScriptService.game.playerdata.PlayerDataService"]
+		"src/app/server/Main.server.luau": [
+			"ServerScriptService.game.playerdata.PlayerDataService"
+		]
 	}
 }

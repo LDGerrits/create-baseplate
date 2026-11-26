@@ -1,6 +1,4 @@
 {
-	"dependencies": {},
-	"imports": {},
 	"replaceText": [
 		{
 			"file": ".gitignore",

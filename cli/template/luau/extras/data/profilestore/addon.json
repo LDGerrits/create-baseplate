@@ -1,9 +1,10 @@
 {
-	"dependencies": {},
 	"serverDependencies": {
 		"ProfileStore": "lm-loleris/profilestore@=1.0.3"
 	},
 	"imports": {
-		"src/app/server/Main.server.luau": ["ServerScriptService.game.playerdata.PlayerDataService"]
+		"src/app/server/Main.server.luau": [
+			"ServerScriptService.game.playerdata.PlayerDataService"
+		]
 	}
 }
