@@ -113,14 +113,22 @@ for (const started = Date.now(); ; ) {
 		const age = Date.now() - (fs.statSync(LOCK, { throwIfNoEntry: false })?.mtimeMs ?? 0);
 		// A lock without its owner's pid yet is being taken right now, unless it's old.
 		if ((owner > 0 && !alive(owner)) || (!(owner > 0) && age > 10_000)) {
-			fs.rmSync(LOCK, { recursive: true, force: true });
+			// Moved aside in one step, so of two runs that both found it stale, only one takes it over.
+			const aside = `${LOCK}.stale-${process.pid}`;
+			try {
+				fs.renameSync(LOCK, aside);
+				fs.rmSync(aside, { recursive: true, force: true });
+			} catch {}
 		} else if (Date.now() - started > 5 * 60_000) {
 			console.error(`Another install holds ${LOCK} (process ${owner}); if none is running, delete it.`);
 			process.exit(1);
 		} else await new Promise((resolve) => setTimeout(resolve, 200));
 	}
 }
-const release = () => fs.rmSync(LOCK, { recursive: true, force: true });
+// Only this run's own lock: one that a run took over meanwhile belongs to that run.
+const release = () => {
+	if (read(OWNER) === String(process.pid)) fs.rmSync(LOCK, { recursive: true, force: true });
+};
 process.on("exit", release);
 for (const [signal, code] of [
 	["SIGINT", 130],
@@ -153,10 +161,27 @@ function install() {
 		);
 		process.exit(1);
 	}
-	for (const folder of FOLDERS) {
-		fs.rmSync(folder, { recursive: true, force: true });
-		if (fs.existsSync(path.join(staging, folder))) fs.renameSync(path.join(staging, folder), folder);
+	// The old folders go aside first and come back if a new one can't take their place (on Windows,
+	// a file luau-lsp or Studio holds open), so the game is never left without packages.
+	const old = path.join(CACHE, "previous");
+	fs.rmSync(old, { recursive: true, force: true });
+	fs.mkdirSync(old, { recursive: true });
+	try {
+		for (const folder of FOLDERS) if (fs.existsSync(folder)) fs.renameSync(folder, path.join(old, folder));
+		for (const folder of FOLDERS) {
+			if (fs.existsSync(path.join(staging, folder))) fs.renameSync(path.join(staging, folder), folder);
+		}
+	} catch (error) {
+		for (const folder of FOLDERS) {
+			if (fs.existsSync(path.join(old, folder))) {
+				fs.rmSync(folder, { recursive: true, force: true });
+				fs.renameSync(path.join(old, folder), folder);
+			}
+		}
+		console.error(`Couldn't put the new packages in place (${(error as Error).message}); the old ones are back.`);
+		process.exit(1);
 	}
+	fs.rmSync(old, { recursive: true, force: true });
 	if (fs.existsSync(path.join(staging, "wally.lock"))) fs.copyFileSync(path.join(staging, "wally.lock"), "wally.lock");
 	fs.rmSync(staging, { recursive: true, force: true });
 }

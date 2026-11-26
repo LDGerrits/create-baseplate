@@ -85,6 +85,18 @@ test("replies stale and stops when anything but the requested files changed", as
 	}
 });
 
+test("a folder asked for covers the changes in it, not the config", async () => {
+	await inProject(async (root) => {
+		const server = start(root, 1000);
+		await server.up;
+		fs.writeFileSync(path.join(root, "src/b.ts"), "changed, and longer");
+		assert.ok("results" in ((await ask(root, ["src"])) ?? {}), "a change under src/");
+		fs.writeFileSync(path.join(root, "eslint.config.ts"), "changed, and longer");
+		assert.deepEqual(await ask(root, ["src"]), { stale: true }, "the config");
+		await server.stopped;
+	});
+});
+
 test("stops after idle, leaving no socket behind", async () => {
 	await inProject(async (root) => {
 		const server = start(root, 100);

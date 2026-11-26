@@ -22,7 +22,7 @@ Before you change something, look at what's there: the code that calls it, where
 - While iterating, narrower loops are faster: `mise run analyze` for type errors, `mise run test` for the tests (`mise run test -- shop` for the specs and end-to-end tests whose path matches, `-t <name>` for one test by name), `mise run ui -- --filter <name>` for one story's picture.
 - When a Selene rule is wrong for one line, allow it on the line above with a comment saying why: `-- selene: allow(global_usage) -- <why>`. Don't silence the type checker with `:: any`; fix the type.
 - Every file is `--!strict` (`.luaurc`), and luau-lsp knows every instance in the game, world included: `ReplicatedStorage.Shared.features.shop.ShopNetwork` (once a `shop` feature has one) and `workspace.SpawnLocation` are typed, and a wrong name fails the check.
-- The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `wally`, `stylua`, `selene`, `luau-lsp`, `lune` and the rest are on the PATH only where your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills. To change a tool's pin in `mise.toml`, run `mise lock` after it: `mise install` refuses a tool that `mise.lock` doesn't list with its checksums.
+- The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `wally`, `stylua`, `selene`, `luau-lsp`, `lune` and the rest are on the PATH in Claude Code's shell (a hook adds them when the session starts) and wherever your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills. To change a tool's pin in `mise.toml`, run `mise lock` after it: `mise install` refuses a tool that `mise.lock` doesn't list with its checksums.
 - `mise run dev` serves the code to Studio: it is the "serve script" that Rogen's section below refers to.
 - Generated files change through their generator, and a hook blocks direct edits: `Packages/`, `ServerPackages/`, `DevPackages/` and `wally.lock` (Wally, from `wally.toml`), `build/` (builds), `default.project.json` (Rogen), `game.project.json`, `test.project.json` and `sourcemap.json` (`mise run generate`, from the code and `world/`), `.luau-lsp/` (Roblox's types for the pinned luau-lsp).
 
@@ -30,7 +30,7 @@ Before you change something, look at what's there: the code that calls it, where
 
 Code in `src/` sits in four layers, and a module requires only down: `app`, then `features`, then `game`, then `platform`. The check reads every `require` through `sourcemap.json` and fails on anything else.
 
-- `app/`: the entry scripts: `app/server/Main.server.luau` lists every service and starts each, `app/client/Start.luau` (which `Main.client.luau` runs) does the same for controllers. Both lists start with only the services and controllers the add-ons bring, and the game has no UI root yet: see UI to add one. It may require every layer.
+- `app/`: the entry scripts: `app/server/Main.server.luau` lists every service and starts each, `app/client/Start.luau` (which `Main.client.luau` runs) does the same for controllers. Both lists start with only the services and controllers the add-ons bring, and the game has no UI root yet: `.agents/skills/build-ui/SKILL.md` shows how to add one. It may require every layer.
 - `features/<feature>/`: what the game could ship without: a shop, quests, a season. `mise run feature <name>` creates one. It may require `game`, `platform` and other features, but the features never require each other in a cycle.
 - `game/<system>/`: the always-on systems: platform singletons (the one `ProcessReceipt`, the player's saved data), what features build on (currency, teams) and concepts several features write. It never requires a feature or `app`.
 - `platform/<module>/`: game-agnostic Roblox code that would move unchanged to another game: network middleware, sound playback, UI primitives. It requires none of the other layers.
@@ -57,7 +57,7 @@ Run `mise run feature <name>` to start one, and read `.agents/skills/add-feature
 
 1. Remotes in `shared/<Feature>Network.luau`, made with [Remo](https://github.com/littensy/remo) (`ReplicatedStorage.Packages.Remo`) in a namespace named after the feature, with a `Remotes` type that gives their arguments (`Remo.ClientToServer<number>`, `Remo.ServerToClient<number>`, `Remo.ServerAsync<(number), (string)>`), as the `<Feature>Network.luau` that `mise run feature` writes does. Each argument a client sends gets a `t` validator (`Remo.remote(t.integer, t.string)`), and each client-to-server remote `.middleware(Remo.throttleMiddleware(<seconds>))`. A request the server answers (`ServerAsync`) declares what it returns: `Remo.remote(t.number).returns(t.string)`; the service connects with `Network.name:onRequest(function(player: Player, id: number) return "..." end)` (the callback may return a Promise instead), and the client asks with `Network.name:request(id)`, a Promise of the answer, which Remo checks against `.returns`. Remo has no README: its API and types are in `Packages/_Index/littensy_remo@*/remo/src/types.luau`.
 2. A service in `server/<Feature>Service.luau` and, if the client takes part, a controller in `client/<Feature>Controller.luau`: a module with a `start()` that connects its remotes and events. Add each to the list in `src/app/server/Main.server.luau` or `src/app/client/Start.luau`, or it never starts; the check fails on one that isn't.
-3. UI as a component in `client/` with a story, rendered from the root component (see UI).
+3. UI as a component in `client/` with a story, rendered from the root component (see `.agents/skills/build-ui/SKILL.md`).
 4. Tests: a spec for the service, and an end-to-end test for each request a client sends.
 
 The rules the code follows:
@@ -78,45 +78,7 @@ A failing test's trace names the instance and the file: `ServerScriptService.fea
 
 ## UI
 
-React from `ReplicatedStorage.Packages.React` (react-lua), written with `React.createElement`. Give each component worth looking at a story beside it, `<Component>.story.luau`, made with `CreateReactStory` from `ReplicatedStorage.DevPackages.UILabs`. A story renders the component alone, so pass in through props what comes from controllers.
-
-The game starts without a UI. To add one, write a root component in `src/app/client/App.luau` (a `ScreenGui` holding the screens) and mount it from `Start.start()` in `src/app/client/Start.luau`, after the controllers start:
-
-App.luau reaches a feature's client components the way `Start.luau` reaches its controllers: `require(script.Parent.Parent.features.shop.ShopPanel)`.
-
-```lua
--- At the top of Start.luau: React reads this flag once, when it first loads. In Studio, React checks
--- hooks and keys and gives readable errors; live servers skip that cost.
--- selene: allow(global_usage) -- react-lua reads its dev flag from _G
-_G.__DEV__ = RunService:IsStudio()
-
--- In Start.start(), after the controllers:
-local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
-local root = ReactRoblox.createRoot(Instance.new("Folder"))
-root:render(React.createElement(React.StrictMode, nil, ReactRoblox.createPortal(React.createElement(App), playerGui)))
-```
-
-A story is a module that returns `CreateReactStory` with its controls and a function that renders the component:
-
-```lua
-return UILabs.CreateReactStory({
-	react = React,
-	reactRoblox = ReactRoblox,
-	controls = { count = UILabs.Number(0, 0) },
-}, function(props)
-	return React.createElement(Counter, { count = props.controls.count })
-end)
-```
-
-`mise run ui` renders every story offline and prints each picture's path. Open each picture you changed and look at it: text cut off, overlap, alignment, the empty state. A story that renders cleanly can still look wrong.
-
-- To check that a component responds to input, click or type into its story: `mise run ui -- --story <path>.story.luau --actions '[{"type":"click","node":"buy","t":0.2}]'` prints what the story printed and the picture's path. Actions also take `key`, `text`, `drag` and `wheel`, aimed at a node's name or `x`, `y`. A node is named after its React key (`buy` above), and a failed action lists the names there are.
-- To render a story in another state, set its controls: `mise run ui -- --story <path>.story.luau --controls '{"count":0}'`, rather than editing the story. `mise run ui -- --help` lists every option.
-- To see what your change did to a component: `mise run ui -- diff HEAD --story <path>.story.luau` renders it before and after, and writes `diff.png`. Do this for every change to how a component looks, and show the user both pictures. Add `--viewport 320x240` (any size) to render on a smaller or larger screen.
-
-- Animate with `useSpring` or `useMotion` from `ReplicatedStorage.Packages.ReactRipple`: the animation drives a binding, so nothing re-renders.
-- A story renders inside a `Frame`, so a component whose root is a `ScreenGui` draws nothing.
-- rur needs Roblox Studio's fonts to draw text; outside Windows and WSL, set `RUR_ROBLOX_CONTENT` (see `.env.example`). Without them, as in a cloud session, the pictures have no text: judge layout, size and overlap.
+React from `ReplicatedStorage.Packages.React` (react-lua). Give each component worth looking at a story beside it, `<Component>.story.luau`, and look at its picture: `mise run ui` renders every story offline. Before you build, restyle or check UI, read `.agents/skills/build-ui/SKILL.md`: mounting the UI root, writing stories, looking at their pictures on any screen size, clicking into them, and before and after.
 
 ## World and Studio
 

@@ -3,7 +3,7 @@ title: UI
 description: React or Vide components, stories, and checking them as pictures without Studio.
 ---
 
-UI is React from `@rbxts/react`, or [Vide](#vide) with `--ui vide`. A new game mounts no UI: `AGENTS.md`'s UI section shows how to mount a root. Each component worth looking at has a story beside it, `<component>.story.tsx`, in UI Labs' format, so it shows in the UI Labs plugin in Studio too. In a [Luau game](/luau/), React is react-lua from Wally, written with `React.createElement`, and stories are `<Component>.story.luau`; the commands below are the same.
+UI is React from `@rbxts/react`, or [Vide](#vide) with `--ui vide`. A new game mounts no UI: the `build-ui` skill (`.agents/skills/build-ui/SKILL.md`) shows how to mount a root. Each component worth looking at has a story beside it, `<component>.story.tsx`, in UI Labs' format, so it shows in the UI Labs plugin in Studio too. In a [Luau game](/luau/), React is react-lua from Wally, written with `React.createElement`, and stories are `<Component>.story.luau`; the commands below are the same.
 
 - `mise run ui` renders every story to a picture, offline, and prints each picture's path.
 - `mise run ui -- --story <path>.story.tsx --actions '<json>'` (`.story.luau` in a Luau game) clicks or types into a story and prints what it printed, to check a component responds.

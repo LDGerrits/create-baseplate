@@ -34,6 +34,11 @@
 			"description": "Never merged without a person: the tools above come in on release day, before any wait could catch a hijacked release, and CI's engine job runs them with the Open Cloud key once a commit reaches main; and a Rojo update needs a check that CI can't make, that rbx-forge supports its Studio plugin",
 			"matchPackageNames": ["rbx-forge", "@rbx-forge/**", "@ldgerrits/rogen", "rojo-rbx/rojo", "github:rojo-rbx/rojo"],
 			"automerge": false
+		},
+		{
+			"description": "ree, rur and ror (Anime-Vanguards' engine emulator and renderers) release together and often: one update for the three, so the tests, the pictures and the renders move as one",
+			"matchPackageNames": ["/^Anime-Vanguards\\//"],
+			"groupName": "ree, rur and ror"
 		}
 	],
 	"description": "Updates for this game. Its CI runs the full check on each update, so an update merges only when the game still builds and passes its tests.",

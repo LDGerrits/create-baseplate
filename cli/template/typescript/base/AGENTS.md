@@ -22,7 +22,7 @@ Before you change something, look at what's there: the code that calls it, where
 
 - While iterating, narrower loops are faster: `mise run compile` for type errors, `mise run test` for the tests (`mise run test -- shop` for the specs and end-to-end tests whose path matches, `-t <name>` for one test by name), `mise run ui -- --filter <name>` for one story's picture.
 - When a lint rule is wrong for one line, disable it on that line with a comment saying why.
-- The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `lune` and the rest are on the PATH only where your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills. To change a tool's pin in `mise.toml`, run `mise lock` after it: `mise install` refuses a tool that `mise.lock` doesn't list with its checksums.
+- The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `lune` and the rest are on the PATH in Claude Code's shell (a hook adds them when the session starts) and wherever your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills. To change a tool's pin in `mise.toml`, run `mise lock` after it: `mise install` refuses a tool that `mise.lock` doesn't list with its checksums.
 - `mise run dev` serves the code to Studio: it is the "serve script" that Rogen's section below refers to.
 - Generated files change through their generator, and a hook blocks direct edits: `out/` and `include/` (the compiler), `build/` (builds), `default.project.json` (Rogen), `game.project.json`, `test.project.json` and `src/world.d.ts` (`mise run check`, from the code and `world/`).
 
@@ -55,7 +55,7 @@ Run `mise run feature <name>` to start one, and read `.agents/skills/add-feature
 
 1. Network events in `shared/<feature>-network.ts`, with `Networking.createEvent<ClientToServer, ServerToClient>()`.
 2. A service in `server/` and, if the client takes part, a controller in `client/`. Import each in `src/app/server/main.server.ts` or `src/app/client/main.client.ts`, or Flamework never starts it; the check fails on one that isn't.
-3. UI as a component in `client/` with a story, rendered from the root component (see UI below).
+3. UI as a component in `client/` with a story, rendered from the root component (see `.agents/skills/build-ui/SKILL.md`).
 4. Tests: a spec for the service, and an end-to-end test for each request a client sends.
 
 The rules the code follows:
@@ -76,36 +76,7 @@ Before writing a test or debugging a failing one, read `.agents/skills/write-tes
 
 ## UI
 
-React from `@rbxts/react`. The game starts with no UI mounted. To add one, write the root component (`src/app/client/app.tsx`, a `<screengui>` holding your components) and mount it from a controller that `main.client.ts` imports:
-
-```tsx
-// src/app/client/ui-controller.tsx
-import { Controller, type OnStart } from "@flamework/core";
-import React, { StrictMode } from "@rbxts/react";
-import { createPortal, createRoot } from "@rbxts/react-roblox";
-import { Players } from "@rbxts/services";
-import { App } from "./app";
-
-@Controller()
-export class UiController implements OnStart {
-	onStart() {
-		const root = createRoot(new Instance("Folder"));
-		root.render(<StrictMode>{createPortal(<App />, Players.LocalPlayer.WaitForChild("PlayerGui"))}</StrictMode>);
-	}
-}
-```
-
-React reads its dev flags once, when it first loads, so set them in a file that `main.client.ts` imports before anything that loads React: `ReactGlobals.__DEV__ = RunService.IsStudio()`, with `ReactGlobals` from `@rbxts/react-globals`. For React DevTools, see the README. Give each component worth looking at a story beside it, `<component>.story.tsx`, made with `CreateReactStory` from `@rbxts/ui-labs`. A story renders the component alone, so pass in through props what comes from controllers.
-
-`mise run ui` renders every story offline and prints each picture's path. Open each picture you changed and look at it: text cut off, overlap, alignment, the empty state. A story that renders cleanly can still look wrong.
-
-- To check that a component responds to input, click or type into its story: `mise run ui -- --story <path>.story.tsx --actions '[{"type":"click","node":"buy","t":0.2}]'` prints what the story printed and the picture's path. Actions also take `key`, `text`, `drag` and `wheel`, aimed at a node's name or `x`, `y`. A node is named after its React key (`buy` above), and a failed action lists the names there are.
-- To render a story in another state, set its controls: `mise run ui -- --story <path>.story.tsx --controls '{"count":0}'`, rather than editing the story. `mise run ui -- --help` lists every option.
-- To see what your change did to a component: `mise run ui -- diff HEAD --story <path>.story.tsx` renders it before and after, and writes `diff.png`. Do this for every change to how a component looks, and show the user both pictures. Add `--viewport 320x240` (any size) to render on a smaller or larger screen.
-
-- Animate with `useMotion` from `@rbxts/pretty-react-hooks`: the motion drives a binding, so nothing re-renders. The same package has hooks for events, timers, debouncing and the previous value.
-- A story renders inside a `Frame`, so a component whose root is a `ScreenGui` draws nothing.
-- rur needs Roblox Studio's fonts to draw text; outside Windows and WSL, set `RUR_ROBLOX_CONTENT` (see `.env.example`). Without them, as in a cloud session, the pictures have no text: judge layout, size and overlap.
+React from `@rbxts/react`. Give each component worth looking at a story beside it, `<component>.story.tsx`, and look at its picture: `mise run ui` renders every story offline. Before you build, restyle or check UI, read `.agents/skills/build-ui/SKILL.md`: mounting the UI root, writing stories, looking at their pictures on any screen size, clicking into them, and before and after.
 
 ## World and Studio
 
