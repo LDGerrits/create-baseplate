@@ -194,6 +194,7 @@ test("swaps react-lua for Vide in a Luau game, with Charm's Vide binding", () =>
 	const agents = read("AGENTS.md");
 	assert.match(agents, /## UI\n\nVide/);
 	assert.doesNotMatch(agents, /react-lua|ReactRipple/, "AGENTS.md names no React package");
+	assert.doesNotMatch(read(".agents/skills/build-ui/SKILL.md"), /react-lua|ReactRipple/, "nor the build-ui skill");
 });
 
 test("adds the Luau tools: Asphalt's Luau module and Darklua's release", async () => {
@@ -284,7 +285,9 @@ test("swaps React for Vide", () => {
 	assert.match(read("tsconfig.json"), /"jsxFactory": "Vide\.jsx"/);
 	assert.doesNotMatch(read("eslint.config.ts"), /react/);
 	assert.ok(!fs.existsSync(path.join(dir, "src/app/client/app.tsx")), "no UI is mounted");
-	assert.match(read("AGENTS.md"), /CreateVideStory/);
+	const buildUi = read(".agents/skills/build-ui/SKILL.md");
+	assert.match(buildUi, /CreateVideStory/, "the build-ui skill is Vide's");
+	assert.doesNotMatch(buildUi, /\bReact\b|@rbxts\/react/, "the build-ui skill names no React package");
 
 	const agents = read("AGENTS.md");
 	assert.match(agents, /and Vide for the UI/);

@@ -35,6 +35,11 @@
 			"matchDatasources": ["custom.wally"],
 			"minimumReleaseAge": null,
 			"automerge": false
+		},
+		{
+			"description": "ree, rur and ror (Anime-Vanguards' engine emulator and renderers) release together and often: one update for the three, so the tests, the pictures and the renders move as one",
+			"matchPackageNames": ["/^Anime-Vanguards\\//"],
+			"groupName": "ree, rur and ror"
 		}
 	],
 	"description": "Updates for this game. Its CI runs the full check on each update, so an update merges only when the game still builds and passes its tests.",

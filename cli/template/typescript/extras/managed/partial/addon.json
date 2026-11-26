@@ -162,7 +162,7 @@
 		},
 		{
 			"file": "README.md",
-			"from": "`.github/workflows/publish.yml` publishes the game through Open Cloud from git, never from a place edited by hand: main to a dev place each time CI passes on it, a version tag (`v1.2.0`) to the live game once someone approves it, after an optional stable place for testers. Each target is a GitHub environment (`dev`, `stable`, `prod`) holding the secret `ROBLOX_PUBLISH_API_KEY`, a key with `universe-places:write` on that target's experience (`prod`'s also needs `universe-datastores.control:snapshot`, because the workflow snapshots the DataStores before it publishes), and its places are the variables `ROBLOX_<TARGET>_UNIVERSE_ID` and `ROBLOX_<TARGET>_PLACE_ID`; a target without them is skipped. Give `prod` required reviewers, or every tag goes live. `mise run publish` publishes the same way from your machine, with the keys in `.env`, but takes no snapshot.\n",
+			"from": "The first version goes out from Studio, which also creates the experience: `mise run build`, open `build/game.rbxl` in Studio, and use **File > Publish to Roblox**. After that, publish from git: `mise run doc publishing` covers the keys, and `mise run publish` publishes from your machine.\n\n`.github/workflows/publish.yml` publishes the game through Open Cloud from git, never from a place edited by hand: main to a dev place each time CI passes on it, a version tag (`v1.2.0`) to the live game once someone approves it, after an optional stable place for testers. Each target is a GitHub environment (`dev`, `stable`, `prod`) holding the secret `ROBLOX_PUBLISH_API_KEY`, a key with `universe-places:write` on that target's experience (`prod`'s also needs `universe-datastores.control:snapshot`, because the workflow snapshots the DataStores before it publishes), and its places are the variables `ROBLOX_<TARGET>_UNIVERSE_ID` and `ROBLOX_<TARGET>_PLACE_ID`; a target without them is skipped. Give `prod` required reviewers, or every tag goes live. `mise run publish` publishes the same way from your machine, with the keys in `.env`, but takes no snapshot.\n",
 			"to": "Nothing here publishes the game: Rojo syncs the code into your place in Studio, and you publish from Studio. Install Rojo's plugin in Studio once with `mise x -- rojo plugin install`; then, after `mise run dev`, open your place and press Connect in the plugin.\n"
 		},
 		{
@@ -209,6 +209,11 @@
 			"file": "AGENTS.md",
 			"from": "and for the map its file in `world/`.",
 			"to": "and for the map, the place in Studio (`.agents/skills/drive-studio/SKILL.md`)."
+		},
+		{
+			"file": "README.md",
+			"from": "1. Run `mise run dev` (with the place's name, in a game with several places) and press Play in Studio.",
+			"to": "1. Run `mise run dev` (with the place's name, in a game with several places), open your place in Studio, press Connect in Rojo's plugin, and press Play."
 		}
 	]
 }

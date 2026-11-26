@@ -206,8 +206,22 @@ function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 	let readme = replaceSection(read("README.md"), "Layout", extra("README-layout.md"));
 	readme = replaceIn(readme, "mise run dev       #", "mise run dev lobby #");
 	if (managed === "full") readme = replaceIn(readme, "mise run sync      #", "mise run sync lobby #");
+	if (managed === "full") {
+		readme = replaceIn(
+			readme,
+			"`mise run build`, open `build/game.rbxl` in Studio",
+			"`mise run build`, open a place's `projects/<place>/build/game.rbxl` in Studio",
+		);
+	}
 	fs.writeFileSync(at("README.md"), readme);
 
+	// The UI skill names the UI root's single-place paths, as AGENTS.md's add-on notes do.
+	const buildUi = at(".agents", "skills", "build-ui", "SKILL.md");
+	if (fs.existsSync(buildUi)) {
+		let skill = fs.readFileSync(buildUi, "utf8");
+		for (const [from, to] of PATHS) skill = skill.replaceAll(from, to);
+		fs.writeFileSync(buildUi, skill);
+	}
 	// Skills describe one place; say how their paths map.
 	for (const skill of fs.readdirSync(at(".agents", "skills"))) {
 		const file = at(".agents", "skills", skill, "SKILL.md");

@@ -191,6 +191,13 @@ export function makeMultiPlaceLuau(dir: string, name: string, managed: Managed) 
 	let readme = replaceSection(read("README.md"), "Layout", extra("README-layout.md"));
 	readme = replaceIn(readme, "mise run dev       #", "mise run dev lobby #");
 	if (managed === "full") readme = replaceIn(readme, "mise run sync      #", "mise run sync lobby #");
+	if (managed === "full") {
+		readme = replaceIn(
+			readme,
+			"`mise run build`, open `build/game.rbxl` in Studio",
+			"`mise run build`, open a place's `projects/<place>/build/game.rbxl` in Studio",
+		);
+	}
 	readme = readme.replaceAll("builds the place", "builds every place");
 	fs.writeFileSync(at("README.md"), readme);
 

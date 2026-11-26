@@ -129,7 +129,7 @@ if (report.records.length === 0) {
 		say("No story matches the filter; `mise run ui` renders them all.");
 		process.exit(1);
 	}
-	say("No stories found. Add a `<component>.story.tsx` beside a component (see UI in AGENTS.md).");
+	say("No stories found. Add a `<component>.story.tsx` beside a component (see .agents/skills/build-ui/SKILL.md).");
 	process.exit(0);
 }
 

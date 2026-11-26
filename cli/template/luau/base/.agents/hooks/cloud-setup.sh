@@ -2,7 +2,7 @@
 # Sets up a fresh Linux machine for agents: installs mise, the pinned tools and the packages, so
 # `mise run check` works there too.
 # - Claude Code's cloud sessions run it as a SessionStart hook (CLAUDE_CODE_REMOTE=true). On your
-#   own machine that hook does nothing.
+#   own machine that hook only gives the session's shell the project's tools, from mise.
 # - Elsewhere, run it with --force: Cursor's cloud agents (.cursor/environment.json), Codespaces and
 #   dev containers (.devcontainer/devcontainer.json), or Codex cloud's setup script. --force also
 #   puts mise on the PATH of later shells, through ~/.bashrc.
@@ -21,8 +21,20 @@ fi
 
 force=false
 [ "${1:-}" = "--force" ] && force=true
-[ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || $force || exit 0
 cd "${CLAUDE_PROJECT_DIR:-$(dirname "$0")/../..}"
+
+# A Claude Code session on your own machine: its shell commands get the project's tools by name
+# (rogen, ree, wally, and the rest), as a shell that activates mise has them, through the session's
+# environment file. Nothing is installed.
+if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ] && ! $force; then
+	local_mise=$(command -v mise 2>/dev/null || echo "$HOME/.local/bin/mise")
+	# Not on Windows, where mise's PATH is Windows-style and Git Bash couldn't read it.
+	case "$(uname -s)" in MINGW* | MSYS* | CYGWIN*) exit 0 ;; esac
+	if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -x "$local_mise" ]; then
+		"$local_mise" env -s bash 2>/dev/null >>"$CLAUDE_ENV_FILE" || true
+	fi
+	exit 0
+fi
 
 install_mise() {
 	local arch sum

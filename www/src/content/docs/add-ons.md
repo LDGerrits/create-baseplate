@@ -25,7 +25,7 @@ Each add-on arrives wired in and tested, with a section in the game's `AGENTS.md
 
 ## UI: Vide
 
-`--ui vide` swaps React for [Vide](https://github.com/centau/vide), fine-grained reactivity without re-renders. The JSX settings in `tsconfig.json` and `AGENTS.md`'s UI section, which shows how to mount a root, become Vide's; React, its hooks, Ripple, React DevTools and React's lint rules go. [UI](/ui/#vide) has the differences. Going back to React means changing those settings and the UI's code by hand: create a game without the flag and compare.
+`--ui vide` swaps React for [Vide](https://github.com/centau/vide), fine-grained reactivity without re-renders. The JSX settings in `tsconfig.json` and the `build-ui` skill, which shows how to mount a root, become Vide's; React, its hooks, Ripple, React DevTools and React's lint rules go. [UI](/ui/#vide) has the differences. Going back to React means changing those settings and the UI's code by hand: create a game without the flag and compare.
 
 ## Places: several
 
@@ -91,7 +91,7 @@ A [Luau game](/luau/) asks the same questions, with what Luau games use, and eac
 | --- | --- | --- |
 | `--managed partial` | | As in a TypeScript game: no `world/`, `sync` task, `edit-world` skill or publishing; the code alone is tested and typed |
 | `--places multi` | | Rogen's Luau layout: `<place>.rogen.json` at the root, shared code in `projects/common/src`, each place in `projects/<place>/` (see [Luau games](/luau/#several-places)) |
-| `--ui vide` | `centau/vide`, `littensy/vide-ripple`, in place of react-lua | Vide's section in `AGENTS.md` (mounting a root, `CreateVideStory`); the game starts without a UI |
+| `--ui vide` | `centau/vide`, `littensy/vide-ripple`, in place of react-lua | Vide's `build-ui` skill (mounting a root, `CreateVideStory`) and UI section in `AGENTS.md`; the game starts without a UI |
 | `--state charm` | `littensy/charm`, with `littensy/react-charm` or `littensy/vide-charm` | Charm's section in `AGENTS.md`: a controller keeps a signal, and the UI reads it |
 | `--data profilestore` | `lm-loleris/profilestore`, a server package | `src/game/playerdata/server/`: `PlayerData.luau`, `PlayerDataService.luau` and its spec |
 | `--data lapis` | `nezuo/lapis`, `nezuo/data-store-service-mock`, server packages | the same three files, on Lapis |

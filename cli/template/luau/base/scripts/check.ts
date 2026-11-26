@@ -150,17 +150,30 @@ const GENERATED_SOURCE =
 	/(^|\/)(world\.d\.ts|[^/]*\.project\.json|sourcemap\.json)$|(^|\/)(node_modules|out|include|build|dist|Packages|ServerPackages|DevPackages)\//;
 function sourceHashes(): Map<string, string> {
 	const hashes = new Map<string, string>();
-	for (const dir of SOURCES.filter((one) => fs.existsSync(path.join(ROOT, one)))) {
-		for (const file of fs.readdirSync(path.join(ROOT, dir), { recursive: true, encoding: "utf8" })) {
-			const relative = path.posix.join(dir, file.split(path.sep).join("/"));
-			const at = path.join(ROOT, relative);
-			// A file can vanish while the check runs, or be a link to nothing.
-			if (GENERATED_SOURCE.test(relative) || fs.statSync(at, { throwIfNoEntry: false })?.isFile() !== true) continue;
-			try {
-				hashes.set(relative, createHash("sha256").update(fs.readFileSync(at)).digest("hex"));
-			} catch {}
+	const walk = (dir: string) => {
+		let entries: fs.Dirent[];
+		try {
+			entries = fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true });
+		} catch {
+			return; // gone while the check runs
 		}
-	}
+		for (const entry of entries) {
+			const relative = `${dir}/${entry.name}`;
+			if (GENERATED_SOURCE.test(entry.isDirectory() ? `${relative}/` : relative)) continue;
+			if (entry.isDirectory()) walk(relative);
+			else if (entry.isFile()) {
+				try {
+					hashes.set(
+						relative,
+						createHash("sha256")
+							.update(fs.readFileSync(path.join(ROOT, relative)))
+							.digest("hex"),
+					);
+				} catch {}
+			}
+		}
+	};
+	for (const dir of SOURCES) walk(dir);
 	return hashes;
 }
 

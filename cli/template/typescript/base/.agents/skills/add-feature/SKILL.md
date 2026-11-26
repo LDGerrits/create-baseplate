@@ -17,7 +17,7 @@ and imports the service and the controller in `app/server/main.server.ts` and `a
 
 1. **Rules first.** Put the rules in the service, as methods a spec can call: ownership, cost, cooldowns, limits. The clients ask; nothing the client sends is true until the service checks it. Write the spec for each rule before the code that uses it (`write-tests` skill).
 2. **Network.** Add events to `shared/<name>-network.ts`. Each client-to-server event that changes state gets Flamework middleware in `createServer` that rate-limits it, at a rate that fits the action (a purchase is one a second, not twenty); remove the `// trusts-client` mark from a handler once its event has it.
-3. **Controller.** Keep what the UI shows, and let the root component subscribe to it (the UI section of `AGENTS.md` shows how to mount one).
+3. **Controller.** Keep what the UI shows, and let the root component subscribe to it (`.agents/skills/build-ui/SKILL.md`).
 4. **UI.** A component in `client/` with a story, and look at its picture (`mise run ui -- --filter <name>`): text cut off, overlap, the empty state.
 5. **End to end.** A request from the client through the real server and remotes in `tests/e2e/<name>.luau`, from the harness in the `write-tests` skill.
 6. **`mise run check`** until it passes.

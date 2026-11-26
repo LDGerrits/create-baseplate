@@ -151,8 +151,10 @@ export async function serve({ root, linter, idleMs = IDLE_MS, onListening }: Ser
 			try {
 				const request = JSON.parse(text) as Request;
 				const asked = new Set(request.files);
+				// A folder asked for covers the files in it, as the check's whole-project lint asks.
+				const covered = (file: string) => asked.has(file) || request.files.some((one) => file.startsWith(`${one}/`));
 				const now = snapshot(root);
-				if (changedFiles(seen, now).some((file) => !asked.has(file))) return { stale: true };
+				if (changedFiles(seen, now).some((file) => !covered(file))) return { stale: true };
 				const results = await linter(request.files);
 				seen = snapshot(root);
 				return { results };
@@ -162,8 +164,8 @@ export async function serve({ root, linter, idleMs = IDLE_MS, onListening }: Ser
 		};
 		busy = true;
 		if (idle !== undefined) clearTimeout(idle);
-		// A lint that never ends would leave this process behind: stop it.
-		const hung = setTimeout(() => process.exit(1), ANSWER_MS * 2);
+		// A lint that never ends would leave this process behind: stop it. A whole project gets longer.
+		const hung = setTimeout(() => process.exit(1), ANSWER_MS * 2 + 120_000);
 		const answer = await lint();
 		clearTimeout(hung);
 		busy = false;
