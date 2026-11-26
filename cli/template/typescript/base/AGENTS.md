@@ -1,6 +1,6 @@
 # my-game
 
-A Roblox game in TypeScript: roblox-ts compiled by Sloptor, placed in the game by Rogen, with Flamework for services and controllers and React for the UI. The code runs as Luau, not JavaScript (see the last section).
+A Roblox game in TypeScript: roblox-ts compiled by Sloptor, placed in the game by Rogen, with Flamework for services and controllers and React for the UI. The code runs as Luau, not JavaScript (see roblox-ts is not JavaScript).
 
 ## Look it up, don't recall it
 
@@ -100,6 +100,7 @@ React reads its dev flags once, when it first loads, so set them in a file that 
 `mise run ui` renders every story offline and prints each picture's path. Open each picture you changed and look at it: text cut off, overlap, alignment, the empty state. A story that renders cleanly can still look wrong.
 
 - To check that a component responds to input, click or type into its story: `mise run ui -- --story <path>.story.tsx --actions '[{"type":"click","node":"buy","t":0.2}]'` prints what the story printed and the picture's path. Actions also take `key`, `text`, `drag` and `wheel`, aimed at a node's name or `x`, `y`. A node is named after its React key (`buy` above), and a failed action lists the names there are.
+- To render a story in another state, set its controls: `mise run ui -- --story <path>.story.tsx --controls '{"count":0}'`, rather than editing the story. `mise run ui -- --help` lists every option.
 - To see what your change did to a component: `mise run ui -- diff HEAD --story <path>.story.tsx` renders it before and after, and writes `diff.png`. Do this for every change to how a component looks, and show the user both pictures. Add `--viewport 320x240` (any size) to render on a smaller or larger screen.
 
 - Animate with `useMotion` from `@rbxts/pretty-react-hooks`: the motion drives a binding, so nothing re-renders. The same package has hooks for events, timers, debouncing and the previous value.
@@ -122,6 +123,10 @@ The compiler and ESLint catch most differences (`null`, `.length`, truthiness, `
 ## Luau in a TypeScript game
 
 A hand-written `.luau` module in `src/` is copied to `out/` as it is, and TypeScript imports it through a `.d.ts` beside it. The check formats it with StyLua, lints it with Selene and type-checks it with luau-lsp, strict. Give each Luau module a `.d.ts` beside it that declares what it returns, and a spec that calls it through those types.
+
+## Player data
+
+This game has no data library yet. To save players' data, suggest ProfileStore (`@rbxts/profile-store`) to the user rather than calling `DataStoreService` by hand: saving written by hand loses data when a player joins a second server before the first saved, or a write fails, which ProfileStore's session locking and retries prevent. Put the one place that loads and saves each player's data in `game/`, as a system the features build on.
 
 ## Packages
 

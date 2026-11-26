@@ -6,27 +6,27 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { studioDefaults } from "./studio.ts";
 
 const OUT = "build/ui";
 // Paths are printed from the repo root, so a place's pictures read projects/<place>/build/....
 const shown = (file: string) => path.relative(process.env.ROOT ?? process.cwd(), path.resolve(file));
 
-// rur draws text with Roblox Studio's fonts. From WSL it can't find Studio, so point it at the newest
-// Windows install's content folder.
-if (!process.env.RUR_ROBLOX_CONTENT && fs.existsSync("/mnt/c/Users")) {
-	const installs = fs
-		.readdirSync("/mnt/c/Users")
-		.map((user) => `/mnt/c/Users/${user}/AppData/Local/Roblox/Versions`)
-		.filter((dir) => fs.existsSync(dir))
-		.flatMap((dir) => fs.readdirSync(dir).map((version) => path.join(dir, version)))
-		.filter((dir) => fs.existsSync(path.join(dir, "RobloxStudioBeta.exe")))
-		.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
-	const newest = installs[0];
-	if (newest !== undefined) process.env.RUR_ROBLOX_CONTENT = path.join(newest, "content");
-}
+// rur draws text with Roblox Studio's fonts, which it can't find from WSL by itself.
+const studioContent = process.env.RUR_ROBLOX_CONTENT ? undefined : studioDefaults().RUR_ROBLOX_CONTENT;
+if (studioContent !== undefined) process.env.RUR_ROBLOX_CONTENT = studioContent;
 
 const check = process.argv.includes("--check");
 const args = process.argv.slice(2).filter((arg) => arg !== "--check");
+if (args.includes("--help") || args.includes("-h")) {
+	console.log(`mise run ui                                  render every story and list each picture
+mise run ui -- --filter <name>               only the stories whose path matches
+mise run ui -- --story <path>.story.luau    one story; add --controls '{"count":3}' to set its controls,
+                                             --actions '[{"type":"click","node":"buy","t":0.2}]' to use it
+mise run ui -- diff <git ref> --story <path> that story before and after, and diff.png
+Any of them takes --viewport <width>x<height> (800x600 by default).`);
+	process.exit(0);
+}
 // A story renders on an 800x600 screen unless the caller names one: `--viewport 320x240`.
 const viewport = args.some((arg) => arg === "--viewport" || arg.startsWith("--viewport="))
 	? []

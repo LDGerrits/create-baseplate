@@ -18,7 +18,7 @@ const fetchable = () =>
 	}).status === 0;
 if (doc.status !== 0 && !fetchable()) {
 	console.error(
-		`Couldn't run create-baseplate@${pin ?? "latest"}: pnpm needs the network the first time, and that version published on npm.`,
+		`Couldn't run create-baseplate@${pin ?? "latest"}: pnpm needs the network the first time it runs a version, and the version must be published on npm.`,
 	);
 }
 process.exit(doc.status ?? 1);

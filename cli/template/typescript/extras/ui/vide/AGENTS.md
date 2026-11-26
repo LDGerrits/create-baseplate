@@ -24,6 +24,7 @@ export class UiController implements OnStart {
 `mise run ui` renders every story offline and prints each picture's path. Open each picture you changed and look at it: text cut off, overlap, alignment, the empty state. A story that renders cleanly can still look wrong.
 
 - To check that a component responds to input, click or type into its story: `mise run ui -- --story <path>.story.tsx --actions '[{"type":"click","node":"TextButton","t":0.2}]'` prints what the story printed and the picture's path. A node is named after its `Name`, or its class without one, and a failed action lists the names there are.
+- To render a story in another state, set its controls: `mise run ui -- --story <path>.story.tsx --controls '{"count":0}'`, rather than editing the story. `mise run ui -- --help` lists every option.
 - To see what your change did to a component: `mise run ui -- diff HEAD --story <path>.story.tsx` renders it before and after, and writes `diff.png`. Do this for every change to how a component looks, and show the user both pictures. Add `--viewport 320x240` (any size) to render on a smaller or larger screen.
 - Animate with Vide's `spring`.
 - Vide sets its own defaults on the instances it creates (such as a white background), unlike Roblox's: set the properties you rely on.

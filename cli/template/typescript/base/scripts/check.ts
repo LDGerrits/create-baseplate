@@ -15,6 +15,7 @@
 // on CI (the CI variable is set) and with --all, they always run.
 
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { CHECK_RECORD, partId, readRecord, stateId, writeRecord } from "../.agents/hooks/fingerprint.ts";
@@ -184,6 +185,28 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 const ci = process.argv.includes("--ci");
 const verbose = process.argv.includes("--verbose");
 const everything = process.argv.includes("--all") || (process.env.CI ?? "") !== "";
+
+// What the fixing steps changed, so a person sees it: the game's own source files, by content.
+const SOURCES = ["src", "tests", "projects"];
+const GENERATED_SOURCE =
+	/(^|\/)(world\.d\.ts|[^/]*\.project\.json|sourcemap\.json)$|(^|\/)(node_modules|out|include|build|dist|Packages|ServerPackages|DevPackages)\//;
+function sourceHashes(): Map<string, string> {
+	const hashes = new Map<string, string>();
+	for (const dir of SOURCES.filter((one) => fs.existsSync(path.join(ROOT, one)))) {
+		for (const file of fs.readdirSync(path.join(ROOT, dir), { recursive: true, encoding: "utf8" })) {
+			const relative = path.posix.join(dir, file.split(path.sep).join("/"));
+			const at = path.join(ROOT, relative);
+			// A file can vanish while the check runs, or be a link to nothing.
+			if (GENERATED_SOURCE.test(relative) || fs.statSync(at, { throwIfNoEntry: false })?.isFile() !== true) continue;
+			try {
+				hashes.set(relative, createHash("sha256").update(fs.readFileSync(at)).digest("hex"));
+			} catch {}
+		}
+	}
+	return hashes;
+}
+
+const before = ci ? undefined : sourceHashes();
 const started = performance.now();
 const list = steps.map((step) => ({ ...step, command: (!ci && step.fixCommand) || step.command }));
 
@@ -241,6 +264,13 @@ await new Promise<void>((finish) => {
 	settle();
 });
 
+if (before !== undefined) {
+	const after = sourceHashes();
+	const fixed = [...after]
+		.filter(([file, hash]) => before.has(file) && before.get(file) !== hash)
+		.map(([file]) => file);
+	if (fixed.length > 0) console.log(`Fixed formatting or lint in: ${fixed.join(", ")}`);
+}
 // ESLint's fixes land while the other steps read the files as they were: check the fixed files once more.
 const lint = outcomes.get("lint");
 if (lint?.output.includes("@eslint-fixed") === true) {

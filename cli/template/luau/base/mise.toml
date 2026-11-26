@@ -35,6 +35,8 @@ _.path = ["{{config_root}}/node_modules/.bin"]
 # hook and task after the first starts faster. Only a cache: Node checks each file against it, and
 # deleting node_modules removes it.
 NODE_COMPILE_CACHE = "{{config_root}}/node_modules/.cache/node-compile-cache"
+# Node's own downloads (Roblox's types for luau-lsp) go through HTTPS_PROXY when one is set, as pnpm's and Wally's do.
+NODE_USE_ENV_PROXY = "1"
 # Syncback writes each new world instance as a readable .model.json instead of a binary .rbxm.
 # Set for every task so forge's sync on save gets it too. It's Rojo's undocumented debug switch
 # (src/syncback/mod.rs), not a stable option: check it still works when upgrading Rojo.
@@ -55,7 +57,7 @@ depends = ["deps"]
 run = [
 	# At the root, Rogen writes the project file of each *.rogen.json: the game's, or each place's.
 	"rogen write --quiet",
-	'node scripts/each-place.ts "node {root}/scripts/game-project.ts" "rojo sourcemap game.project.json --include-non-scripts --output sourcemap.json"',
+	'node scripts/each-place.ts "node {root}/scripts/game-project.ts"',
 	"node scripts/packages.ts --types",
 ]
 

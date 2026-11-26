@@ -19,19 +19,11 @@ const FOLDERS = ["Packages", "ServerPackages", "DevPackages"];
 const CACHE = ".luau-lsp";
 const STAMP = path.join(CACHE, "packages-installed");
 const UNTYPED = path.join(CACHE, "packages-untyped");
+const TYPING = "typing";
 const DEFINITIONS = path.join(CACHE, "globalTypes.d.luau");
 const DEFINITIONS_VERSION = path.join(CACHE, "version");
 
-const run = (command: string, args: string[]) => {
-	const result = spawnSync(command, args, { stdio: "inherit", shell: process.platform === "win32" });
-	if (result.error) {
-		console.error(`${command}: ${result.error.message}`);
-		process.exit(1);
-	}
-	if (result.status !== 0) process.exit(result.status ?? 1);
-};
-
-/** Like `run`, for a tool that logs every file it touches on stdout: that shows only when it fails. */
+/** Runs a tool that logs every file it touches on stdout: that shows only when it fails. */
 const runQuiet = (command: string, args: string[]) => {
 	// Its warnings, on stderr, still show.
 	const result = spawnSync(command, args, {
@@ -97,20 +89,91 @@ const neededFolders = () => {
 	return needed;
 };
 
+// One run at a time per game: a check, the edit hook's regeneration and an install can overlap, and
+// wally-package-types can't type a folder twice. A run waits for the one before it; a lock whose
+// process is gone, killed before it could let go, is taken over.
+const LOCK = path.join(CACHE, "packages.lock");
+const OWNER = path.join(LOCK, "pid");
+const alive = (pid: number) => {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (error) {
+		return (error as NodeJS.ErrnoException).code === "EPERM";
+	}
+};
+fs.mkdirSync(CACHE, { recursive: true });
+for (const started = Date.now(); ; ) {
+	try {
+		fs.mkdirSync(LOCK);
+		fs.writeFileSync(OWNER, String(process.pid));
+		break;
+	} catch {
+		const owner = Number(read(OWNER));
+		const age = Date.now() - (fs.statSync(LOCK, { throwIfNoEntry: false })?.mtimeMs ?? 0);
+		// A lock without its owner's pid yet is being taken right now, unless it's old.
+		if ((owner > 0 && !alive(owner)) || (!(owner > 0) && age > 10_000)) {
+			fs.rmSync(LOCK, { recursive: true, force: true });
+		} else if (Date.now() - started > 5 * 60_000) {
+			console.error(`Another install holds ${LOCK} (process ${owner}); if none is running, delete it.`);
+			process.exit(1);
+		} else await new Promise((resolve) => setTimeout(resolve, 200));
+	}
+}
+const release = () => fs.rmSync(LOCK, { recursive: true, force: true });
+process.on("exit", release);
+for (const [signal, code] of [
+	["SIGINT", 130],
+	["SIGTERM", 143],
+	["SIGHUP", 129],
+] as const) {
+	process.on(signal, () => process.exit(code));
+}
+
+/**
+ * Installs the packages beside the old ones and swaps them in only once Wally succeeds, so a failed
+ * install (offline, a registry error) leaves the game with the packages it had.
+ */
+function install() {
+	const staging = path.join(CACHE, "install");
+	fs.rmSync(staging, { recursive: true, force: true });
+	fs.mkdirSync(staging, { recursive: true });
+	for (const file of ["wally.toml", "wally.lock"]) {
+		if (fs.existsSync(file)) fs.copyFileSync(file, path.join(staging, file));
+	}
+	const wally = spawnSync("wally", ["install"], {
+		cwd: staging,
+		stdio: "inherit",
+		shell: process.platform === "win32",
+	});
+	if (wally.error || wally.status !== 0) {
+		fs.rmSync(staging, { recursive: true, force: true });
+		console.error(
+			`Couldn't install the Wally packages${wally.error ? ` (${wally.error.message})` : ""}: Wally needs the network for packages it hasn't fetched. The packages the game had are kept.`,
+		);
+		process.exit(1);
+	}
+	for (const folder of FOLDERS) {
+		fs.rmSync(folder, { recursive: true, force: true });
+		if (fs.existsSync(path.join(staging, folder))) fs.renameSync(path.join(staging, folder), folder);
+	}
+	if (fs.existsSync(path.join(staging, "wally.lock"))) fs.copyFileSync(path.join(staging, "wally.lock"), "wally.lock");
+	fs.rmSync(staging, { recursive: true, force: true });
+}
+
 if (!process.argv.includes("--types")) {
 	// Install when the manifest or lock changed, a package folder went missing (deleted by hand), or
-	// typing the last install failed partway: wally-package-types can't type a folder twice, so the
-	// packages start over.
+	// typing began and never finished: wally-package-types can't type a folder twice, so the packages
+	// start over. A fresh install that isn't typed yet is left for the typing step.
 	if (
 		read(STAMP) !== manifestHash() ||
 		neededFolders().some((folder) => !fs.existsSync(folder)) ||
-		fs.existsSync(UNTYPED)
+		read(UNTYPED) === TYPING
 	) {
-		for (const folder of FOLDERS) fs.rmSync(folder, { recursive: true, force: true });
-		run("wally", ["install"]);
+		install();
 		fs.mkdirSync(CACHE, { recursive: true });
 		fs.writeFileSync(STAMP, manifestHash());
-		fs.writeFileSync(UNTYPED, "");
+		fs.writeFileSync(UNTYPED, "installed");
 	}
 	fixJestSuccess();
 } else {
@@ -133,6 +196,9 @@ if (!process.argv.includes("--types")) {
 	// Wally's package files only point at the package; this copies the package's types into them, so
 	// `require(ReplicatedStorage.Packages.React)` is typed. It reads the instance paths from the sourcemap.
 	if (fs.existsSync(UNTYPED)) {
+		// Until it finishes, a typing that stops partway leaves folders it can't type again, and the
+		// next run installs them anew.
+		fs.writeFileSync(UNTYPED, TYPING);
 		for (const folder of FOLDERS) {
 			if (fs.existsSync(folder)) runQuiet("wally-package-types", ["--sourcemap", "sourcemap.json", `${folder}/`]);
 		}
@@ -149,7 +215,12 @@ if (!process.argv.includes("--types")) {
 	}
 	if (read(DEFINITIONS_VERSION) !== version || !fs.existsSync(DEFINITIONS)) {
 		const url = `https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/${version}/scripts/globalTypes.None.d.luau`;
-		const response = await fetch(url);
+		const response = await fetch(url).catch((error: Error) => {
+			console.error(
+				`Couldn't fetch Roblox's types for luau-lsp ${version} (${error.cause instanceof Error ? error.cause.message : error.message}): it needs the network once per luau-lsp version.`,
+			);
+			process.exit(1);
+		});
 		if (!response.ok) {
 			console.error(`Couldn't fetch Roblox's types for luau-lsp ${version} (${response.status}): ${url}`);
 			process.exit(1);

@@ -7,8 +7,14 @@
 //
 // In a multi-place game this runs in projects/<place>/, and the place's code is <place>.project.json
 // at the repo root, which Rogen writes from <place>.rogen.json.
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+
+/** Writes `text` to `file` only when it differs, so watchers (the ESLint server, luau-lsp) see no change. */
+const write = (file: string, text: string) => {
+	if (!fs.existsSync(file) || fs.readFileSync(file, "utf8") !== text) fs.writeFileSync(file, text);
+};
 
 type ProjectNode = Record<string, unknown>;
 
@@ -44,7 +50,7 @@ const code = multi
 const tree = code.tree as ProjectNode;
 
 const game = { ...code, name: "game" };
-fs.writeFileSync("game.project.json", `${JSON.stringify(game, undefined, "\t")}\n`);
+write("game.project.json", `${JSON.stringify(game, undefined, "\t")}\n`);
 
 const serverScripts = (tree.ServerScriptService ?? { $className: "ServerScriptService" }) as ProjectNode;
 const test = {
@@ -58,13 +64,13 @@ const test = {
 		},
 	},
 };
-fs.writeFileSync("test.project.json", `${JSON.stringify(test, undefined, "\t")}\n`);
+write("test.project.json", `${JSON.stringify(test, undefined, "\t")}\n`);
 
 // jest-roblox matches its folders against the project's $path strings as written, which here start
 // with ../, so a place of a multi-place game also gets a copy at the repo root with paths from
 // there: test.<place>.project.json.
 if (multi) {
-	fs.writeFileSync(
+	write(
 		path.join(root, `test.${place}.project.json`),
 		`${JSON.stringify(
 			movePaths(test, (p) => path.posix.normalize(path.posix.join("projects", place, p))),
@@ -73,3 +79,15 @@ if (multi) {
 		)}\n`,
 	);
 }
+
+// sourcemap.json, every instance of the place, which luau-lsp types the code from.
+const sourcemap = spawnSync("rojo", ["sourcemap", "game.project.json", "--include-non-scripts"], {
+	encoding: "utf8",
+	shell: process.platform === "win32",
+	maxBuffer: 256 * 1024 * 1024,
+});
+if (sourcemap.status !== 0) {
+	console.error(`rojo sourcemap: ${sourcemap.error?.message ?? sourcemap.stderr.trim()}`);
+	process.exit(1);
+}
+write("sourcemap.json", sourcemap.stdout);

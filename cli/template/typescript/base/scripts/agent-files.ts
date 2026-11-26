@@ -75,7 +75,7 @@ if (pin !== undefined && pin !== version) {
 				}).status === 0;
 			if (!fetchable)
 				console.log(
-					`✗ Couldn't run create-baseplate@${pin}: pnpm needs the network the first time, and that version published on npm.`,
+					`✗ Couldn't run create-baseplate@${pin}: pnpm needs the network the first time it runs a version, and the version must be published on npm.`,
 				);
 			failed = true;
 		}
