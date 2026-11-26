@@ -33,7 +33,7 @@ By hand; [Add-ons](/add-ons/) lists what each one adds and how to take it out. T
 
 ## Which agents does it work with?
 
-Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI read `AGENTS.md` (Claude Code through `CLAUDE.md`, Gemini CLI through `.gemini/settings.json`) and the skills in `.agents/skills/`. [How agents work in it](/agents/) says which hooks each one runs. Any other agent that reads `AGENTS.md` and runs shell commands works too: what matters is that it runs `mise run check`.
+Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI read `AGENTS.md` (Claude Code through `.claude/CLAUDE.md`, Gemini CLI through `.gemini/settings.json`) and the skills in `.agents/skills/`. [How agents work in it](/agents/) says which hooks each one runs. Any other agent that reads `AGENTS.md` and runs shell commands works too: what matters is that it runs `mise run check`.
 
 ## Can I use Luau instead of TypeScript?
 

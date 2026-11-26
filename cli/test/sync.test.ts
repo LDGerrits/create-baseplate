@@ -103,6 +103,8 @@ test("a new game records its agent files as the template made them", () => {
 	assert.equal(files["AGENTS.md"], fs.readFileSync(path.join(dir, "AGENTS.md"), "utf8"));
 	assert.ok(files[".agents/skills/write-tests/SKILL.md"]);
 	assert.ok(files[".claude/settings.json"]);
+	assert.equal(files[".claude/CLAUDE.md"], "@../AGENTS.md\n", "Claude Code reads AGENTS.md from beside .claude");
+	assert.ok(!fs.existsSync(path.join(dir, "CLAUDE.md")));
 	assert.ok(!Object.keys(files).some((file) => file.startsWith("src/") || file.startsWith("projects/")));
 	assert.ok(!(".claude/skills" in files), "the link isn't a file");
 	const check = sync(dir, "--check");
@@ -158,6 +160,24 @@ test("refuses to sync a game whose add-on this version doesn't have, rather than
 	assert.equal(run.status, 1);
 	assert.match(run.stdout, /--state zustand isn't a TypeScript choice/);
 	assert.equal(fs.readFileSync(path.join(dir, "AGENTS.md"), "utf8"), before, "nothing changed");
+});
+
+test("moves an older game's CLAUDE.md into .claude, unless the game changed it", () => {
+	for (const edited of [false, true]) {
+		const dir = createGame();
+		const base = readBase(dir);
+		// As a game made when CLAUDE.md sat at the root.
+		const old = "@AGENTS.md\n";
+		base.files["CLAUDE.md"] = old;
+		delete base.files[".claude/CLAUDE.md"];
+		fs.writeFileSync(path.join(dir, BASE), JSON.stringify(base));
+		fs.writeFileSync(path.join(dir, "CLAUDE.md"), edited ? `${old}Our notes.\n` : old);
+		fs.rmSync(path.join(dir, ".claude/CLAUDE.md"));
+		const run = sync(dir);
+		assert.equal(run.status, 0, run.stdout + run.stderr);
+		assert.equal(fs.readFileSync(path.join(dir, ".claude/CLAUDE.md"), "utf8"), "@../AGENTS.md\n");
+		assert.equal(fs.existsSync(path.join(dir, "CLAUDE.md")), edited, edited ? "the game's own" : "dropped");
+	}
 });
 
 test("updates a game's agent files from an older template, keeping its own edits", () => {

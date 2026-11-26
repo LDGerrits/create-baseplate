@@ -14,6 +14,8 @@ export type Files = Record<string, string>;
  */
 const AGENT_FILES = [
 	/^AGENTS\.md$/,
+	/^\.claude\/CLAUDE\.md$/,
+	// Where it sat until 0.3.0: listed still, so a sync deletes it from a game that left it alone.
 	/^CLAUDE\.md$/,
 	/^\.agents\//,
 	/^\.claude\/settings\.json$/,
