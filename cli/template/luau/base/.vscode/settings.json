@@ -9,22 +9,32 @@
 	"luau-lsp.sourcemap.includeNonScripts": true,
 	"luau-lsp.ignoreGlobs": ["**/Packages/**", "**/ServerPackages/**", "**/DevPackages/**", "**/node_modules/**"],
 	"explorer.fileNesting.enabled": true,
+	"explorer.fileNesting.expand": false,
 	"explorer.fileNesting.patterns": {
 		"*.luau": "${capture}.spec.luau, ${capture}.engine.spec.luau, ${capture}.story.luau",
-		"package.json": "pnpm-lock.yaml, pnpm-workspace.yaml",
+		"package.json": "pnpm-lock.yaml, pnpm-workspace.yaml, tsconfig.node.json, biome.json, jest.config.ts",
 		"wally.toml": "wally.lock",
-		"selene.toml": "stylua.toml, .styluaignore, .luaurc, biome.json, jest.config.ts",
-		".env.example": ".env",
-		"mise.toml": "rbx-forge.config.ts, default.rogen.json"
+		"*.rogen.json": "${capture}.project.json, test.${capture}.project.json, game.project.json, test.project.json, sourcemap.json",
+		"mise.toml": "mise.lock, rbx-forge.config.ts, asphalt.toml, .darklua.json, *.rbxlx, *.rbxlx.lock, *.rbxl.lock",
+		"selene.toml": "stylua.toml, .styluaignore, .luaurc",
+		".gitignore": ".gitattributes, .editorconfig",
+		".env.example": ".env, .env.*"
+	},
+	"files.exclude": {
+		"**/.forge": true,
+		"**/.jest-roblox": true
 	},
 	"search.exclude": {
 		"Packages": true,
 		"ServerPackages": true,
 		"DevPackages": true,
 		"build": true,
+		"dist": true,
+		"projects/*/build": true,
 		".luau-lsp": true,
 		"sourcemap.json": true,
-		"default.project.json": true,
-		"game.project.json": true
+		"projects/*/sourcemap.json": true,
+		"*.project.json": true,
+		"projects/*/*.project.json": true
 	}
 }
