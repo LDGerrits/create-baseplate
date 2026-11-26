@@ -7,13 +7,18 @@
 import fs from "node:fs";
 import path from "node:path";
 
+/** Writes `text` to `file` only when it differs, so watchers (the ESLint server, luau-lsp) see no change. */
+const write = (file: string, text: string) => {
+	if (!fs.existsSync(file) || fs.readFileSync(file, "utf8") !== text) fs.writeFileSync(file, text);
+};
+
 type ProjectNode = Record<string, unknown>;
 
 const code = JSON.parse(fs.readFileSync("default.project.json", "utf8"));
 const tree = code.tree as ProjectNode;
 
 const game = { ...code, name: "game" };
-fs.writeFileSync("game.project.json", `${JSON.stringify(game, undefined, "\t")}\n`);
+write("game.project.json", `${JSON.stringify(game, undefined, "\t")}\n`);
 
 const serverScripts = (tree.ServerScriptService ?? { $className: "ServerScriptService" }) as ProjectNode;
 const test = {
@@ -27,7 +32,7 @@ const test = {
 		},
 	},
 };
-fs.writeFileSync("test.project.json", `${JSON.stringify(test, undefined, "\t")}\n`);
+write("test.project.json", `${JSON.stringify(test, undefined, "\t")}\n`);
 
 // In a multi-place game this runs in projects/<place>/. jest-roblox matches its compiled folders
 // against the project's $path strings as written, which here start with ../../, so it also gets a
@@ -50,7 +55,7 @@ if (path.basename(placesDir) === "projects") {
 			}),
 		);
 	};
-	fs.writeFileSync(
+	write(
 		path.join(placesDir, "..", `test.${place}.project.json`),
 		`${JSON.stringify(fromRoot(test), undefined, "\t")}\n`,
 	);
