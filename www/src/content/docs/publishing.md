@@ -57,6 +57,8 @@ Every published version should come from a commit, so you can publish any of the
 
 A tag publishes only a commit whose CI passed on main: the workflow waits for that commit's run if it is still going, and stops when there is none or it failed. Tag a commit that has merged to main.
 
+Each publish builds the place in a step of its own (`mise run publish:build`) and uploads it in the next (`mise run --skip-deps publish`), the only step that gets the key: the compiler and the other build tools never run with it.
+
 Most games need only dev and prod. Add stable when other people test releases, such as a QA group or trusted players: they play the exact build prod will get, while dev keeps moving. Each experience has its own DataStores, and its own developer products, game passes and badges, with their own IDs, so every target is one more set of these to keep in step.
 
 Set up each target you use:

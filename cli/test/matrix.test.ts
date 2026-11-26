@@ -289,3 +289,22 @@ test("the plan's outputs say which jobs run, so a pull request of only docs stil
 	assert.deepEqual(Object.keys(batch ?? {}).sort(), ["games", "language", "name", "template"], "no node on a push");
 	assert.deepEqual(events.length, 4);
 });
+
+test("every question answered: Darklua and partially managed, which conflict, each get a game, and Windows runs Darklua", () => {
+	for (const language of ["typescript", "luau"] as const) {
+		const { matrices, flagsOf } = generators[language];
+		const pull = matrices.pull.map(flagsOf);
+		assert.ok(
+			pull.some((flags) => flags.includes("--release darklua")),
+			language,
+		);
+		assert.ok(
+			pull.some((flags) => flags.includes("--managed partial")),
+			language,
+		);
+		assert.ok(
+			matrices.windows.map(flagsOf).some((flags) => flags.includes("--release darklua")),
+			language,
+		);
+	}
+});

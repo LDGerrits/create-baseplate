@@ -8,15 +8,22 @@
 #   puts mise on the PATH of later shells, through ~/.bashrc.
 # These machines have no Roblox Studio: `mise run ui` draws no text, and Studio work isn't possible.
 set -euo pipefail
+
+# mise itself, pinned and checked: the release CI uses, from GitHub, against the SHA-256s its release
+# publishes (SHASUMS256.txt). The workflows in .github/workflows read this version too (`--pin`), so
+# the game pins mise here only, and `create-baseplate sync` moves it with the sums.
+MISE_VERSION="2026.11.8"
+if [ "${1:-}" = "--pin" ]; then
+	# For GitHub Actions' step outputs: jdx/mise-action's `version`.
+	echo "version=$MISE_VERSION"
+	exit 0
+fi
+
 force=false
 [ "${1:-}" = "--force" ] && force=true
 [ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || $force || exit 0
 cd "${CLAUDE_PROJECT_DIR:-$(dirname "$0")/../..}"
 
-# mise itself, pinned and checked: the release CI uses, from GitHub, against the SHA-256s its release
-# publishes (SHASUMS256.txt). mise's version is also the `version:` of jdx/mise-action in each
-# workflow in .github/workflows: change them all together, and the sums with them.
-MISE_VERSION="2026.11.8"
 install_mise() {
 	local arch sum
 	case "$(uname -m)" in

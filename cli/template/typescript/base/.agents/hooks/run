@@ -13,7 +13,7 @@ input=$(cat)
 failed() {
 	[ "$hook" = guard.ts ] || exit 0
 	# Only the tool's name and its command, which Copilot sends inside a JSON string.
-	printf '%s' "$input" | grep -Eq '"(tool_name|toolName)" *: *"[^"]*(open_cloud_invoke|execute_luau)"|command\\?" *: *\\?"[^"\\]*(mise +run +publish|scripts/publish\.ts|rojo +upload)' || exit 0
+	printf '%s' "$input" | grep -Eq '"(tool_name|toolName)" *: *"[^"]*(open_cloud_invoke|execute_luau)"|command\\?" *: *\\?"[^"\\]*(mise[^"\\]* +publish|publish\.ts|rojo +upload)' || exit 0
 	reason="The guard could not run (is mise installed?), so this call is blocked: it can act on the live game. Tell the user."
 	case $1 in
 	cursor) printf '{"permission":"deny","agent_message":"%s","user_message":"%s"}\n' "$reason" "$reason" ;;

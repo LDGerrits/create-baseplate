@@ -62,7 +62,7 @@ Run `mise run feature <name>` to start one, and read `.agents/skills/add-feature
 
 The rules the code follows:
 
-- **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. The server takes what clients send only through Remo remotes, whose validators drop calls with the wrong arguments and whose throttle drops floods; the throttle fits the action (a purchase is one a second, not twenty). The check fails on `OnServerEvent` or `OnServerInvoke` in the game's code.
+- **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. The server takes what clients send only through Remo remotes, whose validators drop calls with the wrong arguments and whose throttle drops floods; the throttle fits the action (a purchase is one a second, not twenty). The check fails on `OnServerEvent` or `OnServerInvoke` in the game's code, and on a remote clients send that has no throttle, or no validators for its arguments; mark one any client may send freely with `-- trusts-client: <why>` on the line above it.
 - **Services own server state.** A service keeps its state in its module and only it changes it; other code calls its functions. Depend on another service by requiring it.
 - **Controllers run the client side.** A controller handles input and the server's events and keeps what the UI shows; the UI reads it from there.
 
@@ -78,7 +78,7 @@ A failing test's trace names the instance and the file: `ServerScriptService.fea
 
 ## UI
 
-React from `ReplicatedStorage.Packages.React` (react-lua), written with `React.createElement`. Give each component worth looking at a story beside it, `<Component>.story.luau`, made with `CreateReactStory` from `ReplicatedStorage.DevPackages.UILabs`; A story renders the component alone, so pass in through props what comes from controllers.
+React from `ReplicatedStorage.Packages.React` (react-lua), written with `React.createElement`. Give each component worth looking at a story beside it, `<Component>.story.luau`, made with `CreateReactStory` from `ReplicatedStorage.DevPackages.UILabs`. A story renders the component alone, so pass in through props what comes from controllers.
 
 The game starts without a UI. To add one, write a root component in `src/app/client/App.luau` (a `ScreenGui` holding the screens) and mount it from `Start.start()` in `src/app/client/Start.luau`, after the controllers start:
 

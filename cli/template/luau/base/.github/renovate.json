@@ -20,6 +20,12 @@
 			"automerge": true
 		},
 		{
+			"description": "Below 1.0, a minor update may change the API (0.9 to 0.10), which the game's tests may not reach: a person merges it",
+			"matchCurrentVersion": "<1.0.0",
+			"matchUpdateTypes": ["minor"],
+			"automerge": false
+		},
+		{
 			"description": "Never merged without a person: the tools above come in on release day, before any wait could catch a hijacked release, and CI's engine job runs them with the Open Cloud key once a commit reaches main; and a Rojo update needs a check that CI can't make, that rbx-forge supports its Studio plugin",
 			"matchPackageNames": ["rbx-forge", "@rbx-forge/**", "@ldgerrits/rogen", "rojo-rbx/rojo", "github:rojo-rbx/rojo"],
 			"automerge": false

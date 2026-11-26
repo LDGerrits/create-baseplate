@@ -3,8 +3,11 @@
 		"Vide": "centau/vide@=0.4.1",
 		"VideRipple": "littensy/vide-ripple@=0.10.2"
 	},
-	"removeDependencies": ["React", "ReactRipple", "ReactRoblox"],
-	"imports": {},
+	"removeDependencies": [
+		"React",
+		"ReactRipple",
+		"ReactRoblox"
+	],
 	"replaceAgentsSection": "UI",
 	"replaceText": [
 		{

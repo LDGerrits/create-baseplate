@@ -147,6 +147,19 @@ test("a game made before the language question syncs as TypeScript", () => {
 	assert.equal(check.status, 0, check.stdout + check.stderr);
 });
 
+test("refuses to sync a game whose add-on this version doesn't have, rather than drop its agent files", () => {
+	const dir = createGame();
+	const file = path.join(dir, "package.json");
+	const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
+	pkg.baseplate.addOns = { ...pkg.baseplate.addOns, state: "zustand" };
+	fs.writeFileSync(file, `${JSON.stringify(pkg, undefined, "\t")}\n`);
+	const before = fs.readFileSync(path.join(dir, "AGENTS.md"), "utf8");
+	const run = sync(dir);
+	assert.equal(run.status, 1);
+	assert.match(run.stdout, /--state zustand isn't a TypeScript choice/);
+	assert.equal(fs.readFileSync(path.join(dir, "AGENTS.md"), "utf8"), before, "nothing changed");
+});
+
 test("updates a game's agent files from an older template, keeping its own edits", () => {
 	const dir = createGame("--state", "charm");
 	const base = readBase(dir);

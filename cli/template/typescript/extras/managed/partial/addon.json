@@ -1,6 +1,4 @@
 {
-	"dependencies": {},
-	"imports": {},
 	"removeFiles": [
 		"world",
 		"scripts/world-types.ts",
@@ -12,6 +10,7 @@
 	],
 	"removeMiseTasks": [
 		"sync",
+		"publish:build",
 		"publish"
 	],
 	"replaceAgentsSection": "World and Studio",
@@ -98,8 +97,8 @@
 		},
 		{
 			"file": ".agents/hooks/guard.ts",
-			"from": "/\\bmise\\s+run\\s+publish\\b|\\bnode\\b[^|;&]*scripts\\/publish\\.ts|\\brojo\\s+upload\\b/",
-			"to": "/\\brojo\\s+upload\\b/"
+			"from": "// Publishing: the publish script under any runtime, and Rojo's own upload.\nconst PUBLISH_SCRIPT = /\\b(node|bun|deno|tsx)\\b[^|;&\\n]*publish\\.ts\\b|\\brojo\\s+upload\\b/;\n\n/**\n * Whether a command publishes: the script, or the task however mise is asked to run it\n * (`mise run -q publish`, `mise r 'publish'`, `mise publish`, a pattern such as `publi*`). Only\n * mise's own arguments count, not those after `--`, which go to the task.\n */\nfunction publishes(command: string): boolean {\n\tif (PUBLISH_SCRIPT.test(command)) return true;\n\tfor (const [, args = \"\"] of command.matchAll(/\\bmise\\b([^|;&\\n]*)/g)) {\n\t\tconst words = (args.split(/\\s--(?=\\s|$)/)[0] ?? \"\").split(/\\s+/).map((word) => word.replace(/^[\"']+|[\"']+$/g, \"\"));\n\t\tconst matches = (word: string) =>\n\t\t\tnew RegExp(\n\t\t\t\t`^${word\n\t\t\t\t\t.replace(/[.+^${}()|[\\]\\\\]/g, \"\\\\$&\")\n\t\t\t\t\t.replaceAll(\"*\", \".*\")\n\t\t\t\t\t.replaceAll(\"?\", \".\")}$`,\n\t\t\t).test(\"publish\");\n\t\tif (words.some((word) => word === \"publish\" || (/[*?]/.test(word) && matches(word)))) return true;\n\t}\n\treturn false;\n}\n\n",
+			"to": "// Publishing: this game is published from Studio, so only Rojo's own upload.\nconst publishes = (command: string) => /\\brojo\\s+upload\\b/.test(command);\n\n"
 		},
 		{
 			"file": ".agents/hooks/guard.ts",
@@ -108,7 +107,7 @@
 		},
 		{
 			"file": ".agents/hooks/hooks.test.ts",
-			"from": "\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise run publish\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise x -- node scripts/publish.ts build/game.rbxl\" } },\n",
+			"from": "\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise run publish\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise x -- node scripts/publish.ts build/game.rbxl\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise run --quiet publish\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise r publish\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise publish\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise tasks run publish\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: \"cd scripts && node publish.ts ../build/game.rbxl\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: 'sh -c \"mise run publish\"' } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise run 'publish'\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: 'mise run \"publi*\"' } },\n",
 			"to": "\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise x -- rojo upload --asset 1 default.project.json\" } },\n"
 		},
 		{

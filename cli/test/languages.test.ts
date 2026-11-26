@@ -37,7 +37,7 @@ for (const language of ["typescript", "luau"]) {
 			assert.ok(!exists(gone), `${gone} is gone`);
 		}
 		const mise = read("mise.toml");
-		assert.doesNotMatch(mise, /\[tasks\.(sync|publish)\]|ROJO_SYNCBACK_DEBUG|syncback/);
+		assert.doesNotMatch(mise, /\[tasks\.(sync|publish|"publish:build")\]|ROJO_SYNCBACK_DEBUG|syncback/);
 		assert.match(mise, /scripts\/dev\.ts/);
 		assert.doesNotMatch(read(".env.example"), /ROBLOX_PUBLISH/);
 		assert.match(read(".env.example"), /ROBLOX_OPEN_CLOUD_API_KEY/, "the engine tests keep their key");

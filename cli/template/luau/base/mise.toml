@@ -31,6 +31,10 @@ lockfile_platforms = ["linux-x64", "linux-arm64", "macos-arm64", "macos-x64", "w
 
 [env]
 _.path = ["{{config_root}}/node_modules/.bin"]
+# Node keeps the compiled code of the tools and scripts it loads, such as Rogen's, so every check,
+# hook and task after the first starts faster. Only a cache: Node checks each file against it, and
+# deleting node_modules removes it.
+NODE_COMPILE_CACHE = "{{config_root}}/node_modules/.cache/node-compile-cache"
 # Syncback writes each new world instance as a readable .model.json instead of a binary .rbxm.
 # Set for every task so forge's sync on save gets it too. It's Rojo's undocumented debug switch
 # (src/syncback/mod.rs), not a stable option: check it still works when upgrading Rojo.
@@ -89,16 +93,14 @@ run = 'node scripts/each-place.ts "node {root}/scripts/test.ts" --'
 [tasks."test:engine"]
 description = "Run every Jest spec, *.engine.spec included, in Roblox Studio or Open Cloud through jest-roblox"
 depends = ["generate"]
-# Your keys and local paths (copy .env.example to .env) reach only the tasks that use them, so the
-# other tasks' tools never see them.
-env = { _.file = ".env" }
-run = 'node scripts/each-place.ts "jest-roblox --passWithNoTests" --'
+# Your keys and local paths (copy .env.example to .env) reach only the tasks that use them, and each
+# of those gets only its own (scripts/with-env.ts): the tests never see the publish key.
+run = 'node scripts/with-env.ts ROBLOX_OPEN_CLOUD_API_KEY,ROBLOX_UNIVERSE_ID,ROBLOX_PLACE_ID,JEST_ROBLOX_* -- node scripts/each-place.ts "jest-roblox --passWithNoTests" --'
 
 [tasks.ui]
 description = "Render every UI story offline with rur; prints each picture's path"
 depends = ["generate"]
-env = { _.file = ".env" }
-run = 'node scripts/each-place.ts "node {root}/scripts/ui.ts" --'
+run = 'node scripts/with-env.ts RUR_* -- node scripts/each-place.ts "node {root}/scripts/ui.ts" --'
 
 [tasks.dev]
 description = "Start the dev session: serve code to Studio, open Studio on the world, and sync each Studio save back to world/. A multi-place game names the place: mise run dev lobby"
@@ -116,16 +118,18 @@ description = "Build the whole game, code and world, to build/game.rbxl (in each
 depends = ["generate"]
 run = 'node scripts/each-place.ts "mkdir build" "rojo build game.project.json --output build/game.rbxl"'
 
+[tasks."publish:build"]
+description = "Build the place that `mise run publish` uploads; the publish workflow runs it in a step of its own, before the step that holds the key"
+depends = ["build"]
+
 [tasks.publish]
 description = "Build the game and publish it to Roblox through Open Cloud, to the place in ROBLOX_PUBLISH_PLACE_ID (see .env.example); .github/workflows/publish.yml runs it for dev, stable and prod"
-depends = ["build"]
-env = { _.file = ".env" }
-run = 'node scripts/each-place.ts "node {root}/scripts/publish.ts build/game.rbxl"'
+depends = ["publish:build"]
+run = 'node scripts/with-env.ts ROBLOX_PUBLISH_* -- node scripts/each-place.ts "node {root}/scripts/publish.ts build/game.rbxl"'
 
 [tasks.errors]
 description = "Read-only: the errors first seen in a place version, with stack traces, from Open Cloud's Error Reporting API (the key, ROBLOX_ERRORS_API_KEY, in .env.example): mise run errors -- 42, or -- --hours 6"
-env = { _.file = ".env" }
-run = 'node scripts/each-place.ts "node {root}/scripts/errors.ts" --'
+run = 'node scripts/with-env.ts ROBLOX_ERRORS_* -- node scripts/each-place.ts "node {root}/scripts/errors.ts" --'
 
 [tasks.feature]
 description = "Start a feature: its network file, service with a spec, controller, and their entries in the entry scripts. In a multi-place game it goes in the shared code, or in one place when you name it: mise run feature shop lobby"

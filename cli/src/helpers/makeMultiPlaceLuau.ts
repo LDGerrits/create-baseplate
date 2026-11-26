@@ -186,7 +186,7 @@ export function makeMultiPlaceLuau(dir: string, name: string, managed: Managed) 
 	agents = agents
 		.replace(
 			"it processes `src/` and the packages",
-			"it processes `projects/` (every place and the shared code) and the packages",
+			"it processes each place's code in `projects/<place>/src/`, the shared code's included, and the packages",
 		)
 		.replaceAll("`tests/e2e/spinner.luau`", `\`projects/${SHARED_TESTS_PLACE}/tests/e2e/spinner.luau\``);
 	// Single-place paths, in the template's sections and the add-ons': a place's entry scripts,

@@ -95,7 +95,7 @@ export class UiController implements OnStart {
 }
 ```
 
-React reads its dev flags once, when it first loads, so set them in a file that `main.client.ts` imports before anything that loads React: `ReactGlobals.__DEV__ = RunService.IsStudio()`, with `ReactGlobals` from `@rbxts/react-globals`. For React DevTools, also set `ReactGlobals.__PROFILE__ = true` and call `backend.connectToDevtools()` from `@rbxts/react-devtools-core` when `Workspace.GetAttribute("ReactDevTools") === true`. Give each component worth looking at a story beside it, `<component>.story.tsx`, made with `CreateReactStory` from `@rbxts/ui-labs`. A story renders the component alone, so pass in through props what comes from controllers.
+React reads its dev flags once, when it first loads, so set them in a file that `main.client.ts` imports before anything that loads React: `ReactGlobals.__DEV__ = RunService.IsStudio()`, with `ReactGlobals` from `@rbxts/react-globals`. For React DevTools, see the README. Give each component worth looking at a story beside it, `<component>.story.tsx`, made with `CreateReactStory` from `@rbxts/ui-labs`. A story renders the component alone, so pass in through props what comes from controllers.
 
 `mise run ui` renders every story offline and prints each picture's path. Open each picture you changed and look at it: text cut off, overlap, alignment, the empty state. A story that renders cleanly can still look wrong.
 

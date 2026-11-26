@@ -25,7 +25,7 @@
 			"versioningTemplate": "semver"
 		},
 		{
-			"description": "mise's own version: every workflow's jdx/mise-action `version:` and the template's cloud setup. Grouped into one update; .github/scripts/check-mise-pins.ts then fails until cloud-setup.sh's SHA-256s match the new release.",
+			"description": "mise's own version: this repository's workflows' jdx/mise-action `version:` and the templates' cloud setup, which a game's workflows read. Grouped into one update; .github/scripts/check-mise-pins.ts then fails until cloud-setup.sh's SHA-256s match the new release.",
 			"customType": "regex",
 			"managerFilePatterns": ["/(^|/)\\.github/workflows/.+\\.ya?ml$/", "/cloud-setup\\.sh$/"],
 			"matchStrings": [

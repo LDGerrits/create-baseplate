@@ -28,9 +28,12 @@ jobs:
           path: ${{ runner.temp }}/mesa-debs
           key: ${{ steps.mesa.outputs.key }}
       - run: sh scripts/mesa.sh start
+      # mise's version is the one .agents/hooks/cloud-setup.sh pins, which create-baseplate sync keeps current.
+      - id: mise
+        run: bash .agents/hooks/cloud-setup.sh --pin >> "$GITHUB_OUTPUT"
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
-          version: 2026.11.8
+          version: ${{ steps.mise.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mise run install

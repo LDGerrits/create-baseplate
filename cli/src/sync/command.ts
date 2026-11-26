@@ -8,6 +8,8 @@ import {
 	type AddOnChoices,
 	choicesFor,
 	DEFAULT_LANGUAGE,
+	findConflict,
+	flagProblem,
 	installAddOns,
 	isLanguage,
 	type Language,
@@ -71,8 +73,19 @@ export function runSync(dir: string, version: string, check: boolean): number {
 		console.log(`✗ This create-baseplate has no ${language} template: update create-baseplate first.`);
 		return 1;
 	}
+	// A choice this version dropped would leave its add-on's agent files out, as if the game never had it.
+	const dropped = flagProblem(language, origin.addOns ?? {});
+	if (dropped !== undefined) {
+		console.log(`✗ This create-baseplate can't sync the game's add-ons: ${dropped} Use the version the game pins.`);
+		return 1;
+	}
 	// Questions newer than the game take their default, which is what the game has.
 	const chosen = choicesFor(language, origin.addOns ?? {});
+	const conflict = findConflict(language, chosen);
+	if (conflict !== undefined) {
+		console.log(`✗ This create-baseplate can't sync the game's add-ons together: ${conflict}`);
+		return 1;
+	}
 	const base = readBase(dir) ?? { version: origin.version ?? "", files: {} };
 	const ours = readAgentFiles(dir);
 	const theirs = templateAgentFiles(pkg.name, language, chosen, version);
