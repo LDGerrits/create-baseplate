@@ -16,9 +16,17 @@ let sums: { file: string; arch: string; sum: string }[] = [];
 
 for (const file of files) {
 	const text = fs.readFileSync(file, "utf8");
-	for (const match of text.matchAll(/uses: jdx\/mise-action@\S+[^\n]*\n(?:\s+[^\n]*\n)*?\s+version: (\d\S*)/g)) {
-		pin(match[1] ?? "", file);
-	}
+	// Each jdx/mise-action step's `version:`, up to the next step; a game's workflows read it from
+	// cloud-setup.sh (an expression), so only a number is a pin.
+	const lines = text.split("\n");
+	lines.forEach((line, index) => {
+		if (!line.includes("uses: jdx/mise-action@")) return;
+		for (const next of lines.slice(index + 1)) {
+			if (/^\s*- /.test(next) || !/^\s/.test(next)) break;
+			const version = /^\s+version: (\d\S*)/.exec(next)?.[1];
+			if (version !== undefined) pin(version, file);
+		}
+	});
 	const misePin = /^MISE_VERSION="([^"]+)"/m.exec(text);
 	if (misePin?.[1] !== undefined) {
 		pin(misePin[1], file);
