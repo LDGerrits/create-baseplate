@@ -390,7 +390,7 @@ test("uploads assets with Asphalt", async () => {
 	assert.match(mise, /\[tools\][^[]*"github:jackTabsCode\/asphalt" = "\d[^"]*"\n/, "the tool joins [tools]");
 	assert.match(mise, /\n\[tasks\.assets\]\n/);
 	// check and ci (one list of steps) fail on assets that aren't uploaded yet.
-	assert.equal(read("scripts/check.ts").match(/asphalt sync cloud --dry-run/g)?.length, 1);
+	assert.equal(read("scripts/check.ts").match(/node scripts\/assets\.ts --check/g)?.length, 1);
 	assert.match(read("biome.json"), /src\/game\/assets\/shared\/assets\.d\.ts/, "Biome leaves Asphalt's code alone");
 	assert.match(read("eslint.config.ts"), /src\/game\/assets\/shared\/assets\.d\.ts/);
 	assert.match(read(".env.example"), /^ASPHALT_API_KEY=$/m);

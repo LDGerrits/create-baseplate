@@ -200,6 +200,7 @@ function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 	);
 	// The add-ons' sections name single-place paths.
 	for (const [from, to] of PATHS) agents = agents.replaceAll(from, to);
+	if (managed === "full") agents = agents.replaceAll("under `world/`", "under a place's `world/`");
 	fs.writeFileSync(at("AGENTS.md"), agents);
 
 	let readme = replaceSection(read("README.md"), "Layout", extra("README-layout.md"));
@@ -221,6 +222,7 @@ const PATHS: [string, string][] = [
 	["`src/game/", "`projects/common/src/game/"],
 	["`src/platform/", "`projects/common/src/platform/"],
 	["`world/Workspace/", "`projects/<place>/world/Workspace/"],
+	["// src/app/client/ui-controller.tsx", "// projects/<place>/src/app/client/ui-controller.tsx"],
 	["`tests/e2e/spinner.luau`", `\`projects/${SHARED_TESTS_PLACE}/tests/e2e/spinner.luau\``],
 	["`src/app/client/app.tsx`", "each place's `src/app/client/app.tsx`"],
 	["`src/app/client/main.client.ts`", "each place's `src/app/client/main.client.ts`"],

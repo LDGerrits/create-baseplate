@@ -110,6 +110,10 @@ const indexMount = (mount: string, names: string[]) => {
 	}
 };
 indexTree(JSON.parse(fs.readFileSync(project, "utf8")).tree, []);
+// ree loads each end-to-end test as ReplicatedStorage.RURFixtures.<name>.
+for (const run of runs) {
+	if (run.name.startsWith("e2e/")) sourceFiles.set(`ReplicatedStorage.RURFixtures.${run.name.slice(4)}`, run.harness);
+}
 
 /** Adds the file and line after each frame in the game's own code. */
 const withSources = (text: string) =>
