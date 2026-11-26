@@ -6,7 +6,16 @@ import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { changedFiles, failureOutput, wantsCheck } from "./check.ts";
-import { biomeProblems, editedFiles, editedOutput, filesToCheck, seleneProblems, styluaProblems } from "./edited.ts";
+import {
+	biomeProblems,
+	editedFiles,
+	editedOutput,
+	filesToCheck,
+	seleneProblems,
+	sourcemapFiles,
+	sourcemapStale,
+	styluaProblems,
+} from "./edited.ts";
 import { guardOutput, guardReason, type Payload } from "./guard.ts";
 
 const root = "/game";
@@ -379,4 +388,34 @@ test("lets the read-only errors task run", () => {
 	const run = (command: string) => reason({ tool_name: "Bash", tool_input: { command } });
 	assert.equal(run("mise run errors -- 42"), undefined);
 	assert.equal(run("mise run errors -- --hours 6 --json"), undefined);
+});
+
+test("the sourcemap is stale after an edit that adds code, changes the world or the routes", () => {
+	const sourcemap = {
+		name: "game",
+		filePaths: ["game.project.json"],
+		children: [
+			{ name: "Shop", filePaths: ["src/features/shop/server/Shop.luau"] },
+			{ name: "Ui", filePaths: ["src\\app\\client\\Ui.luau"] },
+			{ name: "Lobby", filePaths: ["/game/projects/lobby/src/app/server/Main.server.luau"] },
+			{ name: "Pkg", filePaths: ["DevPackages/_Index/x/src/Controls/Util.luau"] },
+		],
+	};
+	const known = new Set([
+		...sourcemapFiles(sourcemap, ""),
+		...sourcemapFiles({ filePaths: ["src/Place.luau"] }, "projects/lobby"),
+	]);
+	const stale = (...files: string[]) => sourcemapStale(files, known, "/game");
+	assert.equal(stale("src/features/shop/server/Shop.luau"), false, "a file it lists");
+	assert.equal(stale("src/app/client/Ui.luau"), false, "written on Windows");
+	assert.equal(stale("projects/lobby/src/app/server/Main.server.luau"), false, "listed by its absolute path");
+	assert.equal(stale("projects/lobby/src/Place.luau"), false, "listed by a place's own sourcemap");
+	assert.equal(stale("src/features/shop/server/New.luau"), true, "a new module");
+	assert.equal(stale("src/Controls/Util.luau"), true, "a new module whose path ends a package's");
+	assert.equal(stale("src/features/shop/shared/Config.model.json"), true, "a new Rojo model");
+	assert.equal(stale("world/Workspace/Part.model.json"), true);
+	assert.equal(stale("projects/lobby/world/Workspace/Part.model.json"), true);
+	assert.equal(stale("default.rogen.json"), true, "the routes");
+	assert.equal(stale("tests/e2e/shop.luau", "scripts/x.ts", "biome.json"), false, "outside the game's instances");
+	assert.equal(sourcemapStale(["src/New.luau"], new Set(), "/game"), false, "no sourcemap to update yet");
 });
