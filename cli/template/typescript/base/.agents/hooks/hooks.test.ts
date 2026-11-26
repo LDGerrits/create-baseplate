@@ -341,8 +341,10 @@ test("finds the game's files a shell command wrote, not installed or built ones"
 			fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
 			fs.writeFileSync(path.join(root, file), "old");
 		}
+		// Apart from the start by more than a coarse filesystem's clock tick, on either side.
+		await new Promise((resolve) => setTimeout(resolve, 50));
 		const since = Date.now();
-		await new Promise((resolve) => setTimeout(resolve, 20));
+		await new Promise((resolve) => setTimeout(resolve, 50));
 		for (const file of ["src/deep/b.luau", "node_modules/x/c.ts", "src/out/d.ts", "README.md", "world/e.json"]) {
 			fs.writeFileSync(path.join(root, file), "new");
 		}
