@@ -51,7 +51,7 @@ Skills in `.agents/skills/` cover what only some tasks need. `AGENTS.md` says wh
 
 ## Type errors as it edits
 
-In Claude Code, `mise run install` adds the project's language server, so the agent gets type errors and go-to-definition: TypeScript's, with the roblox-ts types, or in a Luau game luau-lsp, with the game's instances and Roblox's API typed.
+In Claude Code, `mise run install` adds the project's language server, so the agent gets type errors and go-to-definition: TypeScript's, with the roblox-ts types, or in a Luau game luau-lsp, with the game's instances and Roblox's API typed. In a Luau game, the edit hook writes `sourcemap.json` again when an edit adds a module or changes the world, and luau-lsp reads it at once, so a new module or part is typed during the session, not only in the next one.
 
 ## Parallel and cloud agents
 
