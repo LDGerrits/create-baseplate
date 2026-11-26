@@ -105,6 +105,12 @@ export function writeBase(dir: string, base: Base) {
 	const sorted = Object.fromEntries(Object.entries(base.files).sort(([a], [b]) => (a < b ? -1 : 1)));
 	fs.mkdirSync(path.join(dir, path.dirname(BASE_FILE)), { recursive: true });
 	fs.writeFileSync(path.join(dir, BASE_FILE), `${JSON.stringify({ ...base, files: sorted }, undefined, "\t")}\n`);
+	// The record holds every agent file's text again; searches (ripgrep, and the agent tools built on
+	// it) skip it, so a search for a rule finds AGENTS.md once.
+	fs.writeFileSync(
+		path.join(dir, path.dirname(BASE_FILE), ".ignore"),
+		`# What create-baseplate sync merges against; not for searching.\n${path.basename(BASE_FILE)}\n`,
+	);
 }
 
 /** A line-based three-way merge (git's), or undefined when the two sides change the same lines. */

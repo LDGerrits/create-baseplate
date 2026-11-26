@@ -1,4 +1,5 @@
 {
+	"replaceAgentsSection": "Player data",
 	"dependencies": {
 		"@rbxts/profile-store": "1.0.3"
 	},

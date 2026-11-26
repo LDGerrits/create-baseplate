@@ -55,12 +55,15 @@ const lintStaged = await import("lint-staged").then(
 );
 const passed =
 	lintStaged !== undefined &&
-	(await lintStaged({ config: { "*": [format, () => "mise run ci"] }, hideAll: true, diffFilter: "ACMRD" }).catch(
-		(error: Error) => {
-			console.error("pre-commit: lint-staged couldn't run:", error);
-			return false;
-		},
-	));
+	(await lintStaged({
+		config: { "*": [format, () => "mise run ci"] },
+		hideAll: true,
+		diffFilter: "ACMRD",
+		quiet: true,
+	}).catch((error: Error) => {
+		console.error("pre-commit: lint-staged couldn't run:", error);
+		return false;
+	}));
 
 for (const file of kept) {
 	if (!fs.existsSync(file)) {
@@ -69,4 +72,8 @@ for (const file of kept) {
 	}
 }
 fs.rmSync(backup, { recursive: true, force: true });
+if (!passed)
+	console.error(
+		"pre-commit: the commit stopped; the check's output, if any, is above. Run `mise run ci` to see it again.",
+	);
 process.exit(passed ? 0 : 1);

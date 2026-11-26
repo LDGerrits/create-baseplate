@@ -4,6 +4,8 @@ Vide from `ReplicatedStorage.Packages.Vide`. A component is a function that runs
 
 The game starts without a UI. To add one, write a root component in `src/app/client/App.luau` (a function returning a `ScreenGui` with `ResetOnSpawn = false`) and mount it from `Start.start()` in `src/app/client/Start.luau`, after the controllers start:
 
+App.luau reaches a feature's client components the way `Start.luau` reaches its controllers: `require(script.Parent.Parent.features.shop.ShopPanel)`.
+
 ```lua
 -- In Studio, Vide checks for mistakes and gives readable errors; live servers skip that cost.
 Vide.strict = RunService:IsStudio()
@@ -26,6 +28,7 @@ end)
 `mise run ui` renders every story offline and prints each picture's path. Open each picture you changed and look at it: text cut off, overlap, alignment, the empty state. A story that renders cleanly can still look wrong.
 
 - To check that a component responds to input, click or type into its story: `mise run ui -- --story <path>.story.luau --actions '[{"type":"click","node":"TextButton","t":0.2}]'` prints what the story printed and the picture's path. Actions also take `key`, `text`, `drag` and `wheel`, aimed at a node's name or `x`, `y`. A node is named after its `Name`, or its class without one, and a failed action lists the names there are.
+- To render a story in another state, set its controls: `mise run ui -- --story <path>.story.luau --controls '{"count":0}'`, rather than editing the story. `mise run ui -- --help` lists every option.
 - To see what your change did to a component: `mise run ui -- diff HEAD --story <path>.story.luau` renders it before and after, and writes `diff.png`. Do this for every change to how a component looks, and show the user both pictures. Add `--viewport 320x240` (any size) to render on a smaller or larger screen.
 
 - Animate with `useSpring` or `useMotion` from `ReplicatedStorage.Packages.VideRipple`: the animation drives a source, so only the properties that read it update.

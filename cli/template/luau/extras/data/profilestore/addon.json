@@ -1,4 +1,5 @@
 {
+	"replaceAgentsSection": "Player data",
 	"serverDependencies": {
 		"ProfileStore": "lm-loleris/profilestore@=1.0.3"
 	},

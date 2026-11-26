@@ -107,6 +107,11 @@ test("a new game records its agent files as the template made them", () => {
 	assert.ok(!fs.existsSync(path.join(dir, "CLAUDE.md")));
 	assert.ok(!Object.keys(files).some((file) => file.startsWith("src/") || file.startsWith("projects/")));
 	assert.ok(!(".claude/skills" in files), "the link isn't a file");
+	assert.match(
+		fs.readFileSync(path.join(dir, ".baseplate/.ignore"), "utf8"),
+		/^agent-files\.json$/m,
+		"searches skip the record",
+	);
 	const check = sync(dir, "--check");
 	assert.equal(check.status, 0, check.stdout + check.stderr);
 });

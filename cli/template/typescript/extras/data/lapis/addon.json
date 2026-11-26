@@ -1,4 +1,5 @@
 {
+	"replaceAgentsSection": "Player data",
 	"dependencies": {
 		"@rbxts/lapis": "0.3.8",
 		"@rbxts/lapis-mockdatastore": "0.3.7"

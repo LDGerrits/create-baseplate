@@ -1,4 +1,5 @@
 {
+	"replaceAgentsSection": "Player data",
 	"serverDependencies": {
 		"DataStoreServiceMock": "nezuo/data-store-service-mock@=0.3.8",
 		"Lapis": "nezuo/lapis@=0.3.4"

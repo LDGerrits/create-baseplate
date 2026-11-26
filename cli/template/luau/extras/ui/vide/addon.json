@@ -22,7 +22,7 @@
 		},
 		{
 			"file": "AGENTS.md",
-			"from": "- React: react-lua follows React 17; how it differs is in `Packages/_Index/jsdotlua_react@*/react/README.md` and https://jsdotlua.github.io/react-lua/. Ripple's hooks: `Packages/_Index/littensy_react-ripple@*/`.\n",
+			"from": "- React: react-lua follows React 17; how it differs is at https://jsdotlua.github.io/react-lua/, and what it exports in `Packages/_Index/jsdotlua_react@*/react/src/init.luau`. Ripple's hooks: `Packages/_Index/littensy_react-ripple@*/`.\n",
 			"to": "- Vide: https://centau.github.io/vide/ (a crash course, then the API), and its source in `Packages/_Index/centau_vide@*/vide/src/`. Ripple's Vide hooks: `Packages/_Index/littensy_vide-ripple@*/vide-ripple/src/`; the `README.md` beside them covers Ripple's springs, tweens and their options.\n"
 		},
 		{

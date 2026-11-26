@@ -12,6 +12,7 @@ import fs from "node:fs";
 import path from "node:path";
 import util from "node:util";
 import spawn from "cross-spawn";
+import { studioDefaults } from "./studio.ts";
 import { mainCheckout } from "./worktree.ts";
 
 /** The variables of `file` (the text of a .env) that `names` pick. */
@@ -39,8 +40,14 @@ if (import.meta.main) {
 		process.exit(1);
 	}
 	const file = envFile(process.cwd());
-	const fromFile = file === undefined ? {} : pick(fs.readFileSync(file, "utf8"), list.split(","));
-	const child = spawn(command, args, { stdio: "inherit", env: { ...fromFile, ...process.env } });
+	const names = list.split(",");
+	const fromFile = file === undefined ? {} : pick(fs.readFileSync(file, "utf8"), names);
+	// From WSL, where Windows Studio is for the tools that need it, unless .env or the environment says.
+	const wantsStudio = names.some((name) => /^(RUR_|JEST_ROBLOX_)/.test(name));
+	const defaults = wantsStudio
+		? Object.fromEntries(Object.entries(studioDefaults()).filter(([key]) => key in pick(`${key}=x`, names)))
+		: {};
+	const child = spawn(command, args, { stdio: "inherit", env: { ...defaults, ...fromFile, ...process.env } });
 	child.on("error", (error) => {
 		console.error(`${command}: ${error.message}`);
 		process.exit(1);

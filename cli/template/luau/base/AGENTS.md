@@ -8,7 +8,7 @@ What you remember of Luau's type system, react-lua, Rogen and the Roblox API is 
 
 - Roblox API: search `.luau-lsp/globalTypes.d.luau` for the class or member, as luau-lsp types it. For what it does, read its page on create.roblox.com: add `.md` to a page's link for Markdown, and start from https://create.roblox.com/docs/llms.txt rather than guessing a URL.
 - Luau itself (types, generics, `--!strict`, string interpolation): https://luau.org, and https://luau.org/typecheck for the type checker.
-- React: react-lua follows React 17; how it differs is in `Packages/_Index/jsdotlua_react@*/react/README.md` and https://jsdotlua.github.io/react-lua/. Ripple's hooks: `Packages/_Index/littensy_react-ripple@*/`.
+- React: react-lua follows React 17; how it differs is at https://jsdotlua.github.io/react-lua/, and what it exports in `Packages/_Index/jsdotlua_react@*/react/src/init.luau`. Ripple's hooks: `Packages/_Index/littensy_react-ripple@*/`.
 - Any other package: its folder under `Packages/_Index/` (or `ServerPackages/`, `DevPackages/`): the `README.md` when there is one, and the types its source exports.
 - Rogen: `rogen doc <topic>` and `rogen help <command> --json`. Other tools: `<tool> --help`, and the skills below for how this game uses them.
 - How this game is set up (the check, tests, UI, the world, publishing, its keys): `mise run doc <topic>`, Baseplate's docs for the version this game came from; `mise run doc` lists the topics.
@@ -82,6 +82,8 @@ React from `ReplicatedStorage.Packages.React` (react-lua), written with `React.c
 
 The game starts without a UI. To add one, write a root component in `src/app/client/App.luau` (a `ScreenGui` holding the screens) and mount it from `Start.start()` in `src/app/client/Start.luau`, after the controllers start:
 
+App.luau reaches a feature's client components the way `Start.luau` reaches its controllers: `require(script.Parent.Parent.features.shop.ShopPanel)`.
+
 ```lua
 -- At the top of Start.luau: React reads this flag once, when it first loads. In Studio, React checks
 -- hooks and keys and gives readable errors; live servers skip that cost.
@@ -109,6 +111,7 @@ end)
 `mise run ui` renders every story offline and prints each picture's path. Open each picture you changed and look at it: text cut off, overlap, alignment, the empty state. A story that renders cleanly can still look wrong.
 
 - To check that a component responds to input, click or type into its story: `mise run ui -- --story <path>.story.luau --actions '[{"type":"click","node":"buy","t":0.2}]'` prints what the story printed and the picture's path. Actions also take `key`, `text`, `drag` and `wheel`, aimed at a node's name or `x`, `y`. A node is named after its React key (`buy` above), and a failed action lists the names there are.
+- To render a story in another state, set its controls: `mise run ui -- --story <path>.story.luau --controls '{"count":0}'`, rather than editing the story. `mise run ui -- --help` lists every option.
 - To see what your change did to a component: `mise run ui -- diff HEAD --story <path>.story.luau` renders it before and after, and writes `diff.png`. Do this for every change to how a component looks, and show the user both pictures. Add `--viewport 320x240` (any size) to render on a smaller or larger screen.
 
 - Animate with `useSpring` or `useMotion` from `ReplicatedStorage.Packages.ReactRipple`: the animation drives a binding, so nothing re-renders.
@@ -130,6 +133,10 @@ luau-lsp and Selene catch most mistakes. These they don't explain:
 - An `and` chain's type joins its operands': `player and part:IsA("BasePart") and award(player)` can be `false`, `nil` or a boolean as well as the result. Narrow with `if` statements instead.
 - A function passed to `pcall` must return the same types on every path; `pcall` returns `ok`, then those values or the error.
 - Yielding functions (`task.wait`, `WaitForChild`, `InvokeServer`, DataStore calls) pause the thread: never call them where the order of events matters without saying so, and use `task.spawn` or `task.defer` to run something alongside.
+
+## Player data
+
+This game has no data library yet. To save players' data, suggest ProfileStore (`lm-loleris/profilestore`, in `wally.toml`'s `[server-dependencies]`) to the user rather than calling `DataStoreService` by hand: saving written by hand loses data when a player joins a second server before the first saved, or a write fails, which ProfileStore's session locking and retries prevent. Put the one place that loads and saves each player's data in `game/`, as a system the features build on.
 
 ## Packages
 

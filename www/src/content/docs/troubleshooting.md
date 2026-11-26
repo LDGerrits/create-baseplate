@@ -23,7 +23,7 @@ description: What goes wrong when setting up or running a game, and how to fix i
 ## Windows and WSL
 
 - **Native Windows:** install mise (`winget install jdx.mise`) and [Git for Windows](https://git-scm.com/download/win). The tasks run in any terminal; the commit hook runs in Git's own shell.
-- **WSL:** the game runs in WSL, Studio on Windows. `mise run ui` finds Windows Studio's fonts by itself; `mise run test:engine` needs `JEST_ROBLOX_STUDIO_PATH` and `JEST_ROBLOX_PLUGINS_DIR` in `.env` (see [environment variables](/environment/)).
+- **WSL:** the game runs in WSL, Studio on Windows. `mise run ui` and `mise run test:engine` find the newest Windows Studio by themselves; `JEST_ROBLOX_STUDIO_PATH` and `JEST_ROBLOX_PLUGINS_DIR` in `.env` pick another (see [environment variables](/environment/)).
 
 ## Pictures and Studio
 

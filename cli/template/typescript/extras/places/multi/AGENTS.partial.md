@@ -6,6 +6,7 @@ This game has several places: each place is a folder in `projects/`, and the cod
 - `projects/<place>/src/`: what only that place has. Its `app/` holds the entry scripts: `app/server/main.server.ts` and `app/client/main.client.ts` import every service and controller the place uses, shared ones included, and start Flamework. Its own features, systems and modules sit beside `app/`, in the same layers.
 - The shared code's specs and end-to-end tests run in the `game` place only (its `tsconfig.game.json` compiles them; the others exclude them), so each runs once. Put a test of shared code in `projects/game/tests/e2e/`, and a test of one place's own code in that place.
 - Each place has its own `default.rogen.json` (`sourcePaths` `["../common/src", "src"]`), `tsconfig.json`, `tests/e2e/` and forge config.
+- To send players to another place, look its ID up by name on the server, with `AssetService.GetGamePlacesAsync()` (pages of `Name` and `PlaceId`), and teleport with `TeleportService`. Don't write the IDs down: each place has another ID in dev, stable and prod. ree doesn't emulate either, so test the lookup in an engine spec.
 
 The four layers sit in each source root, `projects/common/src` and `projects/<place>/src`, and imports only go down: `app`, then `features`, then `game`, then `platform`. A place may import the shared code; the shared code never imports a place, and a place never imports another. The check fails on any of them.
 

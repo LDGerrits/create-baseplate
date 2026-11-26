@@ -82,13 +82,14 @@ return {
 - `Server` boots the game's own server script; keep `bootServer` as it is. A test of the world can also do its checks in `Server`, and print `@done` there.
 - `Client` talks to the server through the game's remotes, the way the real client would, and `assert`s on what comes back. Wait for what you expect with `waitFor`, not a fixed `task.wait`.
 - The test passes when the client prints `@done`. A failed `assert`, or any script error on either side, fails it.
+- ree spawns no character and never fires `Touched` or other physics: a test that waits for them times out. Call the handler a touch would call from a spec, and test the touch itself in an engine spec.
 - The client can't run a script's source in ree, so a test of what the player sees can't boot `main.client.ts`: test the controller's logic in a spec, and look at the UI through its stories.
 
 ## Engine specs
 
 Name the file `<name>.engine.spec.ts`; ree skips it. After writing or changing one, run `mise run test:engine` yourself.
 
-jest-roblox uses Roblox Studio when it finds it, and Open Cloud otherwise. From WSL it can't find Studio: set `JEST_ROBLOX_STUDIO_PATH` and `JEST_ROBLOX_PLUGINS_DIR` in `.env` (see `.env.example`). Open Cloud needs the `ROBLOX_*` values there. `node_modules/@isentinel/jest-roblox/README.md` covers both.
+jest-roblox uses Roblox Studio when it finds it, and Open Cloud otherwise. From WSL, `mise run test:engine` points it at the newest Windows Studio; `JEST_ROBLOX_STUDIO_PATH` and `JEST_ROBLOX_PLUGINS_DIR` in `.env` pick another. Open Cloud needs the `ROBLOX_*` values there. `node_modules/@isentinel/jest-roblox/README.md` covers both.
 
 ## When a test fails
 

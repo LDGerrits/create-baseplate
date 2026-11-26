@@ -177,6 +177,17 @@ const ownLines = (text: string) =>
 		.filter((line, index) => index === 0 || !(FRAME.test(line) && NOT_OURS.test(line)))
 		.join("\n");
 
+// In a multi-place game a place without tests of its own is normal: the shared ones run in one place.
+const inMultiPlace = fs.existsSync(path.join(process.env.ROOT ?? ".", "projects"));
+if (
+	runs.length === 0 &&
+	!inMultiPlace &&
+	filter.testPathPattern === undefined &&
+	filter.testNamePattern === undefined
+) {
+	console.log("No specs or end-to-end tests yet: add a <name>.spec beside the code, or tests/e2e/<feature>.luau.");
+	process.exit(0);
+}
 let failed = 0;
 let ran = 0;
 for (const run of runs) {
