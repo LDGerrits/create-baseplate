@@ -3,9 +3,18 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
+import { pathToFileURL } from "node:url";
 import { validateAppName } from "../src/utils/appName.ts";
 import { parseNameAndPath } from "../src/utils/parseNameAndPath.ts";
 import { create, tempDir } from "./helpers.ts";
+
+/** Why the created game's guard blocks an edit of `file`, or undefined when it lets it through. */
+async function guardsEdit(dir: string, file: string): Promise<string | undefined> {
+	const guard = (await import(pathToFileURL(path.join(dir, ".agents/hooks/guard.ts")).href)) as {
+		guardReason: (payload: object, root: string, start: string) => string | undefined;
+	};
+	return guard.guardReason({ tool_name: "Edit", tool_input: { file_path: file } }, dir, dir);
+}
 
 test("refuses a folder that has files", () => {
 	const cwd = tempDir();
@@ -187,7 +196,7 @@ test("swaps react-lua for Vide in a Luau game, with Charm's Vide binding", () =>
 	assert.doesNotMatch(agents, /react-lua|ReactRipple/, "AGENTS.md names no React package");
 });
 
-test("adds the Luau tools: Asphalt's Luau module and Darklua's release", () => {
+test("adds the Luau tools: Asphalt's Luau module and Darklua's release", async () => {
 	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--language", "luau", "--assets", "asphalt", "--release", "darklua");
 	assert.equal(run.status, 0, run.stderr);
@@ -199,13 +208,19 @@ test("adds the Luau tools: Asphalt's Luau module and Darklua's release", () => {
 	assert.match(mise, /\[tasks\.release\]/);
 	assert.match(mise, /\[tasks\.assets\]/);
 	assert.match(read("asphalt.toml"), /src\/game\/assets\/shared/);
+	assert.match((await guardsEdit(dir, "src/game/assets/shared/Assets.luau")) ?? "", /mise run assets/);
+	assert.match((await guardsEdit(dir, "dist/app/server/Main.server.luau")) ?? "", /mise run release/);
 	assert.ok(fs.existsSync(path.join(dir, ".darklua.json")));
 	assert.match(read(".gitignore"), /^\/dist$/m);
 	assert.doesNotMatch(read(".github/workflows/ci.yml"), /mise run release/);
-	assert.match(mise, /\[tasks\.publish\][^[]*depends = \["release"\][^[]*publish\.ts build\/release\.rbxl/);
+	assert.match(mise, /\[tasks\."publish:build"\][^[]*depends = \["release"\]/);
+	assert.match(
+		mise,
+		/\[tasks\.publish\]\ndescription = .*\ndepends = \["publish:build"\]\nrun = .*publish\.ts build\/release\.rbxl/,
+	);
 });
 
-test("lays out a multi-place Luau game as Rogen prescribes for Luau", () => {
+test("lays out a multi-place Luau game as Rogen prescribes for Luau", async () => {
 	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--language", "luau", "--places", "multi", "--assets", "asphalt");
 	assert.equal(run.status, 0, run.stderr);
@@ -225,6 +240,7 @@ test("lays out a multi-place Luau game as Rogen prescribes for Luau", () => {
 	for (const gone of ["src", "world", "tests", "default.rogen.json"]) assert.ok(!exists(gone), `${gone} moved`);
 	assert.ok(exists("wally.toml"), "the packages stay shared at the root");
 	assert.match(read("asphalt.toml"), /output_path = "projects\/common\/src\/game\/assets\/shared"/);
+	assert.match((await guardsEdit(dir, "projects/common/src/game/assets/shared/Assets.luau")) ?? "", /mise run assets/);
 	assert.match(read("AGENTS.md"), /projects\/common\/src/);
 });
 
@@ -355,7 +371,7 @@ test("keeps the shared code of a multi-place game with no features type-checkabl
 	assert.ok(fs.existsSync(path.join(cwd, "my-game/projects/common/shared.d.ts")));
 });
 
-test("uploads assets with Asphalt", () => {
+test("uploads assets with Asphalt", async () => {
 	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--assets", "asphalt");
 	assert.equal(run.status, 0, run.stderr);
@@ -365,6 +381,10 @@ test("uploads assets with Asphalt", () => {
 	// The game's developer names the creator; the template leaves the ID unset.
 	assert.match(read("asphalt.toml"), /\[creator\]\ntype = "user"\nid = 0\n/);
 	assert.match(read("asphalt.toml"), /output_path = "src\/game\/assets\/shared"/);
+	for (const file of ["src/game/assets/shared/assets.luau", "src/game/assets/shared/assets.d.ts"]) {
+		assert.match((await guardsEdit(dir, file)) ?? "", /mise run assets/, file);
+	}
+	assert.equal(await guardsEdit(dir, "src/game/assets/shared/icons.ts"), undefined);
 	assert.ok(fs.existsSync(path.join(dir, "assets")));
 	const mise = read("mise.toml");
 	assert.match(mise, /\[tools\][^[]*"github:jackTabsCode\/asphalt" = "\d[^"]*"\n/, "the tool joins [tools]");
@@ -378,7 +398,7 @@ test("uploads assets with Asphalt", () => {
 	assert.match(read("AGENTS.md"), /## Assets/);
 });
 
-test("builds a release with Darklua", () => {
+test("builds a release with Darklua", async () => {
 	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--release", "darklua");
 	assert.equal(run.status, 0, run.stderr);
@@ -393,8 +413,15 @@ test("builds a release with Darklua", () => {
 	assert.match(mise, /\n\[tasks\.release\]\n/);
 	assert.match(read(".gitignore"), /^\/dist$/m);
 	assert.doesNotMatch(read(".github/workflows/ci.yml"), /mise run release/, "only publishing runs it");
-	assert.match(mise, /\[tasks\.publish\][^[]*depends = \["release"\][^[]*publish\.ts build\/release\.rbxl/);
+	assert.match(mise, /\[tasks\."publish:build"\][^[]*depends = \["release"\]/);
+	assert.match(
+		mise,
+		/\[tasks\.publish\]\ndescription = .*\ndepends = \["publish:build"\]\nrun = .*publish\.ts build\/release\.rbxl/,
+	);
 	assert.match(read("AGENTS.md"), /## Release builds/);
+	for (const file of ["dist/app/server/main.server.luau", "release.project.json"]) {
+		assert.match((await guardsEdit(dir, file)) ?? "", /mise run release/, file);
+	}
 });
 
 test("refuses Darklua in a partially managed game", () => {

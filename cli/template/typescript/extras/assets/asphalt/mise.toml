@@ -4,5 +4,4 @@
 
 [tasks.assets]
 description = "Upload the new and changed files in assets/ to Roblox and write their IDs as typed code; needs asphalt.toml's creator and ASPHALT_API_KEY in .env"
-env = { _.file = ".env" }
-run = "node scripts/assets.ts"
+run = "node scripts/with-env.ts ASPHALT_API_KEY -- node scripts/assets.ts"

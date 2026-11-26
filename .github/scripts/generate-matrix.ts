@@ -163,11 +163,13 @@ export function generatorFor(language: Language) {
 
 	/**
 	 * Every question answered with a choice, not its default or "none", once per UI. Where a question
-	 * has several, the second game takes the next one, so both games differ as much as they can.
+	 * has several, the second game takes the next one, so both games differ as much as they can. Where
+	 * two choices conflict (Darklua and a partially managed game), the first game answers the questions
+	 * in order and the second from the last, so each of the two is in one of them.
 	 */
 	const everything = (questions.find((question) => question.name === "ui")?.values ?? [""]).map((ui, i) => {
 		const answers: Answers = withDefaults({ ui });
-		for (const question of questions) {
+		for (const question of i % 2 === 0 ? questions : questions.toReversed()) {
 			if (question.name === "ui") continue;
 			const choices = question.values.filter((value) => value !== question.defaultValue && value !== "none");
 			const fits = choices.filter((value) => allowed({ ...answers, [question.name]: value }));

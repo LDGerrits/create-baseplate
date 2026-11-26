@@ -1,5 +1,6 @@
-// mise's own version is pinned by hand: in every workflow's jdx/mise-action `version:`, and in the
-// template's cloud setup, which also pins the SHA-256 of the binaries it downloads. This fails when
+// mise's own version is pinned by hand: in this repository's workflows' jdx/mise-action `version:`,
+// and in the templates' cloud setup, which also pins the SHA-256 of the binaries it downloads (a
+// game's workflows read their version from it, so they hold no pin of their own). This fails when
 // they disagree, or when those SHA-256s aren't the ones that release publishes, so a bump (Renovate's
 // or a person's) can't leave one behind. CI runs it: `node .github/scripts/check-mise-pins.ts`.
 import { execFileSync } from "node:child_process";
@@ -15,7 +16,7 @@ let sums: { file: string; arch: string; sum: string }[] = [];
 
 for (const file of files) {
 	const text = fs.readFileSync(file, "utf8");
-	for (const match of text.matchAll(/uses: jdx\/mise-action@\S+[^\n]*\n(?:\s+[^\n]*\n)*?\s+version: (\S+)/g)) {
+	for (const match of text.matchAll(/uses: jdx\/mise-action@\S+[^\n]*\n(?:\s+[^\n]*\n)*?\s+version: (\d\S*)/g)) {
 		pin(match[1] ?? "", file);
 	}
 	const misePin = /^MISE_VERSION="([^"]+)"/m.exec(text);

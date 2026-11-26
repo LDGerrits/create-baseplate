@@ -26,6 +26,11 @@
 			"file": ".gitignore",
 			"from": "# forge's session state and logs",
 			"to": "# What `asphalt sync debug` writes, to see how Asphalt processes assets/\n/.asphalt-debug\n\n# forge's session state and logs"
+		},
+		{
+			"file": ".agents/hooks/guard.ts",
+			"from": "\t[/^node_modules\\//, \"pnpm writes it: `pnpm add <package>`, or a patch with `pnpm patch`\"],\n",
+			"to": "\t[/^node_modules\\//, \"pnpm writes it: `pnpm add <package>`, or a patch with `pnpm patch`\"],\n\t[\n\t\t/^(projects\\/common\\/)?src\\/game\\/assets\\/shared\\/assets\\.(luau|d\\.ts)$/,\n\t\t\"`mise run assets` writes it with Asphalt from assets/: add or change files there and run `mise run assets`\",\n\t],\n"
 		}
 	]
 }

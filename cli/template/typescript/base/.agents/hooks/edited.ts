@@ -8,7 +8,6 @@
 
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import module from "node:module";
 import path from "node:path";
 import { type Linted, lintViaServer, UNFIXED } from "./eslint-server.ts";
 import { GENERATED, namedFiles, type Payload, patched, toolInput } from "./guard.ts";
@@ -123,10 +122,6 @@ if (import.meta.main) {
 	const files = filesToCheck(editedFiles(payload), root, start).filter((file) => fs.existsSync(path.join(root, file)));
 	if (files.length === 0) process.exit(0);
 	process.chdir(root);
-	// When there's no ESLint server to ask, this process loads ESLint's plugins; V8's compile cache
-	// shortens that on later edits by about 0.2s. It lives in node_modules, so deleting that removes it:
-	// Node's default folder in the temp folder grows with every checkout and is never cleaned.
-	module.enableCompileCache?.(path.join(root, "node_modules/.cache/node-compile-cache"));
 
 	// ESLint reads the files only once Biome is done with them; when this process has to load ESLint
 	// itself, which takes most of the time, Biome formats meanwhile.

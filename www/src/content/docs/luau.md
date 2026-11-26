@@ -54,7 +54,7 @@ local remotes: Remotes = Remo.createRemotes({
 return remotes.shop
 ```
 
-The type gives both sides the arguments. Remo runs the [`t`](https://github.com/osyrisrblx/t) validators on what arrives before any handler sees it, so each argument a client sends gets one, and `throttleMiddleware` drops a player's floods. The namespace keeps a feature's remote names apart from other features'. The check fails on `OnServerEvent` or `OnServerInvoke` in the game's own code, which would take what clients send with neither, and on client-visible code that reaches for `ServerScriptService` or `ServerStorage`.
+The type gives both sides the arguments. Remo runs the [`t`](https://github.com/osyrisrblx/t) validators on what arrives before any handler sees it, so each argument a client sends gets one, and `throttleMiddleware` drops a player's floods. The namespace keeps a feature's remote names apart from other features'. The check fails on `OnServerEvent` or `OnServerInvoke` in the game's own code, which would take what clients send with neither; on a remote clients send declared without a throttle, or without validators for its arguments (unless the line above it says `-- trusts-client: <why>`); and on client-visible code that reaches for `ServerScriptService` or `ServerStorage`.
 
 ## Tests and UI
 

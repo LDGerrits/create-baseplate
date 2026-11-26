@@ -28,6 +28,11 @@ interface Step {
 	format?: boolean;
 	/** The tooling's: skipped while its files are as they were when it last passed. */
 	tooling?: boolean;
+	/**
+	 * Started with the check, before its needs pass, and sent a line on its input once they do; its
+	 * command waits for that line. For a step whose startup, which needs nothing, is most of its time.
+	 */
+	warm?: boolean;
 }
 
 const steps: Step[] = [
@@ -75,7 +80,8 @@ const steps: Step[] = [
 	{ name: "luau-lsp", command: "node scripts/luau.ts analyze", needs: ["format"] },
 	{ name: "selene", command: "node scripts/luau.ts selene", needs: ["format"] },
 	// No --cache: type-aware rules depend on other files, which the cache doesn't track.
-	{ name: "lint", command: "eslint --max-warnings 0 --no-error-on-unmatched-pattern src projects", needs: ["format"] },
+	// ESLint loads its config and plugins while the files are generated and formatted (scripts/lint.ts).
+	{ name: "lint", command: "node scripts/lint.ts --wait", needs: ["format"], warm: true },
 	{
 		name: "place",
 		command:
@@ -106,13 +112,29 @@ interface Outcome {
 	skipped?: string;
 }
 
-function run(step: Step): Promise<Outcome> {
-	const started = performance.now();
-	return new Promise((resolve) => {
+/** A step's process: `done` once it exits; `go` sends a warm step the line it waits for. */
+interface Started {
+	done: Promise<Outcome>;
+	go: () => void;
+	cancel: () => void;
+}
+
+function start(step: Step): Started {
+	let since = performance.now();
+	let go = () => {};
+	let cancel = () => {};
+	const done = new Promise<Outcome>((resolve) => {
 		const [command = "", ...args] = words(step.command);
 		let output = "";
-		const done = (ok: boolean) => resolve({ step, ok, output, seconds: (performance.now() - started) / 1000 });
-		const child = spawn(command, args, { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
+		const done = (ok: boolean) => resolve({ step, ok, output, seconds: (performance.now() - since) / 1000 });
+		const child = spawn(command, args, { cwd: ROOT, stdio: [step.warm === true ? "pipe" : "ignore", "pipe", "pipe"] });
+		// A warm step that already exited (its startup failed) has no input left to write to.
+		child.stdin?.on("error", () => {});
+		go = () => {
+			since = performance.now();
+			child.stdin?.end("go\n");
+		};
+		cancel = () => child.stdin?.end();
 		const take = (chunk: Buffer) => {
 			output += chunk.toString("utf8");
 		};
@@ -124,6 +146,7 @@ function run(step: Step): Promise<Outcome> {
 		});
 		child.on("close", (code) => done(code === 0));
 	});
+	return { done, go, cancel };
 }
 
 const ROOT = path.resolve(import.meta.dirname, "..");
@@ -135,6 +158,7 @@ const list = steps.map((step) => ({ ...step, command: (!ci && step.fixCommand) |
 
 const outcomes = new Map<string, Outcome>();
 const running = new Map<string, Promise<void>>();
+const warm = new Map(list.filter((step) => step.warm === true).map((step) => [step.name, start(step)]));
 let formatted: { files?: string; tooling?: string } | undefined;
 let toolingUnchanged = false;
 
@@ -154,10 +178,12 @@ await new Promise<void>((finish) => {
 			const needs = step.needs.map((need) => outcomes.get(need));
 			if (needs.some((need) => need === undefined)) continue;
 			if (needs.some((need) => need?.ok !== true)) {
+				warm.get(step.name)?.cancel();
 				outcomes.set(step.name, { step, ok: false, output: "", seconds: 0, skipped: "a step it needs failed" });
 				continue;
 			}
 			if (step.tooling === true && toolingUnchanged) {
+				warm.get(step.name)?.cancel();
 				outcomes.set(step.name, {
 					step,
 					ok: true,
@@ -167,9 +193,11 @@ await new Promise<void>((finish) => {
 				});
 				continue;
 			}
+			const launched = warm.get(step.name) ?? start(step);
+			launched.go();
 			running.set(
 				step.name,
-				run(step).then((outcome) => {
+				launched.done.then((outcome) => {
 					outcomes.set(step.name, outcome);
 					if (list.every((one) => one.format !== true || outcomes.get(one.name)?.ok === true)) noteFormatted();
 					running.delete(step.name);

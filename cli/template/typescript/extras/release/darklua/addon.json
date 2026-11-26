@@ -9,13 +9,23 @@
 		},
 		{
 			"file": "mise.toml",
-			"from": "depends = [\"build\"]\nenv = { _.file = \".env\" }\nrun = 'node scripts/each-place.ts \"node {root}/scripts/publish.ts build/game.rbxl\"'",
-			"to": "depends = [\"release\"]\nenv = { _.file = \".env\" }\nrun = 'node scripts/each-place.ts \"node {root}/scripts/publish.ts build/release.rbxl\"'"
+			"from": "before the step that holds the key\"\ndepends = [\"build\"]",
+			"to": "before the step that holds the key\"\ndepends = [\"release\"]"
+		},
+		{
+			"file": "mise.toml",
+			"from": "publish.ts build/game.rbxl",
+			"to": "publish.ts build/release.rbxl"
 		},
 		{
 			"file": "mise.toml",
 			"from": "Build the game and publish it",
 			"to": "Build the release (mise run release) and publish it"
+		},
+		{
+			"file": ".agents/hooks/guard.ts",
+			"from": "\t[/^node_modules\\//, \"pnpm writes it: `pnpm add <package>`, or a patch with `pnpm patch`\"],\n",
+			"to": "\t[/^node_modules\\//, \"pnpm writes it: `pnpm add <package>`, or a patch with `pnpm patch`\"],\n\t[/^dist\\//, \"`mise run release` writes it with Darklua from the code: change the code, or .darklua.json\"],\n\t[\n\t\t/^(projects\\/[^/]+\\/)?release\\.project\\.json$/,\n\t\t\"`mise run release` writes it from game.project.json: change the code's layout and run `mise run release`\",\n\t],\n"
 		}
 	],
 	"conflicts": {

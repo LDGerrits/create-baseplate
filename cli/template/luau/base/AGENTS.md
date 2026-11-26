@@ -62,7 +62,7 @@ Run `mise run feature <name>` to start one, and read `.agents/skills/add-feature
 
 The rules the code follows:
 
-- **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. The server takes what clients send only through Remo remotes, whose validators drop calls with the wrong arguments and whose throttle drops floods; the throttle fits the action (a purchase is one a second, not twenty). The check fails on `OnServerEvent` or `OnServerInvoke` in the game's code.
+- **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. The server takes what clients send only through Remo remotes, whose validators drop calls with the wrong arguments and whose throttle drops floods; the throttle fits the action (a purchase is one a second, not twenty). The check fails on `OnServerEvent` or `OnServerInvoke` in the game's code, and on a remote clients send that has no throttle, or no validators for its arguments; mark one any client may send freely with `-- trusts-client: <why>` on the line above it.
 - **Services own server state.** A service keeps its state in its module and only it changes it; other code calls its functions. Depend on another service by requiring it.
 - **Controllers run the client side.** A controller handles input and the server's events and keeps what the UI shows; the UI reads it from there.
 

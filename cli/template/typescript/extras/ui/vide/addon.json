@@ -84,6 +84,11 @@
 			"file": "AGENTS.md",
 			"from": "- React: `node_modules/@rbxts/react/README.md` (how React Lua differs) and `src/index.d.ts`; its hooks in `node_modules/@rbxts/pretty-react-hooks/README.md`.\n",
 			"to": "- Vide: `node_modules/@rbxts/vide/README.md` and `src/index.d.ts`; the guide is at https://centau.github.io/vide/.\n"
+		},
+		{
+			"file": ".github/renovate.json",
+			"from": "\t\t{\n\t\t\t\"description\": \"pretty-react-hooks is built for Ripple 0.9, and the game loads one copy (AGENTS.md, Packages)\",\n\t\t\t\"matchPackageNames\": [\"@rbxts/ripple\"],\n\t\t\t\"allowedVersions\": \"<0.10.0\"\n\t\t},\n",
+			"to": ""
 		}
 	]
 }

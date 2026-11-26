@@ -29,11 +29,6 @@ export const GENERATED: [RegExp, string][] = [
 		"Wally installs it from wally.toml: add or change the package there and run `mise run install`",
 	],
 	[/^wally\.lock$/, "Wally writes it: change wally.toml and run `mise run install`"],
-	[/^dist\//, "`mise run release` writes it with Darklua from the code: change the code, or .darklua.json"],
-	[
-		/^(projects\/[^/]+\/)?release\.project\.json$/,
-		"`mise run release` writes it from game.project.json: change the code's layout and run `mise run release`",
-	],
 	[/^\.luau-lsp\//, "scripts/packages.ts fetches it for the pinned luau-lsp: run `mise run generate`"],
 	[
 		/^\.baseplate\//,
@@ -63,13 +58,20 @@ const isSecretFile = (file: string) => /(^|[/\\])\.env(\.(?!example$)[\w.-]+)?$/
 const SECRET =
 	".env holds secret keys: don't print it. .env.example lists the names it can hold; ask the user which are set.";
 
+// Publishing: the task however mise is asked to run it (`mise run -q publish`, `mise r publish`,
+// `mise publish`), its script under any runtime, and Rojo's own upload.
+const PUBLISH =
+	/\bmise\b[^|;&\n]*\spublish(?=$|[\s;&|)"'])|\b(node|bun|deno|tsx)\b[^|;&\n]*publish\.ts\b|\brojo\s+upload\b/;
+
 function checkCommand(command: string): string | undefined {
 	// Quoted text, such as a commit message, isn't flags.
 	const bare = command.replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, '""');
 	if (/\bgit\b[^|;&]*\bcommit\b[^|;&]*(\s--no-v[a-z-]*|\s-[A-Za-z]*n[A-Za-z]*)(?=\s|$)/.test(bare)) {
 		return "The commit hook runs the check on what you commit; commit without --no-verify, and fix what it reports.";
 	}
-	if (/\bmise\s+run\s+publish\b|\bnode\b[^|;&]*scripts\/publish\.ts|\brojo\s+upload\b/.test(bare)) {
+	// Quoted text counts here, as in `sh -c "mise run publish"`; only a commit message doesn't.
+	const unmessaged = command.replace(/(\s(?:-m|--message)(?:=|\s+))("(?:[^"\\]|\\.)*"|'[^']*')/g, '$1""');
+	if (PUBLISH.test(unmessaged)) {
 		return "Publishing replaces the game players join. Only a person publishes, with `mise run publish` or a tag (see `mise run doc publishing`): tell the user it's ready.";
 	}
 	if (/core\.hooksPath|HUSKY=0|LINT_STAGED/.test(command)) {

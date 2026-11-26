@@ -12,6 +12,7 @@
 	],
 	"removeMiseTasks": [
 		"sync",
+		"publish:build",
 		"publish"
 	],
 	"replaceAgentsSection": "World and Studio",
@@ -98,8 +99,8 @@
 		},
 		{
 			"file": ".agents/hooks/guard.ts",
-			"from": "/\\bmise\\s+run\\s+publish\\b|\\bnode\\b[^|;&]*scripts\\/publish\\.ts|\\brojo\\s+upload\\b/",
-			"to": "/\\brojo\\s+upload\\b/"
+			"from": "// Publishing: the task however mise is asked to run it (`mise run -q publish`, `mise r publish`,\n// `mise publish`), its script under any runtime, and Rojo's own upload.\nconst PUBLISH =\n\t/\\bmise\\b[^|;&\\n]*\\spublish(?=$|[\\s;&|)\"'])|\\b(node|bun|deno|tsx)\\b[^|;&\\n]*publish\\.ts\\b|\\brojo\\s+upload\\b/;\n\n",
+			"to": "// Publishing: this game is published from Studio, so only Rojo's own upload.\nconst PUBLISH = /\\brojo\\s+upload\\b/;\n\n"
 		},
 		{
 			"file": ".agents/hooks/guard.ts",
@@ -108,7 +109,7 @@
 		},
 		{
 			"file": ".agents/hooks/hooks.test.ts",
-			"from": "\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise run publish\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise x -- node scripts/publish.ts build/game.rbxl\" } },\n",
+			"from": "\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise run publish\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise x -- node scripts/publish.ts build/game.rbxl\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise run --quiet publish\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise r publish\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise publish\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise tasks run publish\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: \"cd scripts && node publish.ts ../build/game.rbxl\" } },\n\t\t{ tool_name: \"Bash\", tool_input: { command: 'sh -c \"mise run publish\"' } },\n",
 			"to": "\t\t{ tool_name: \"Bash\", tool_input: { command: \"mise x -- rojo upload --asset 1 default.project.json\" } },\n"
 		},
 		{

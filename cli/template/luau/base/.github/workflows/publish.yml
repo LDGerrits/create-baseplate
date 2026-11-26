@@ -78,13 +78,18 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           persist-credentials: false
+      # mise's version is the one .agents/hooks/cloud-setup.sh pins, which create-baseplate sync keeps current.
+      - id: mise
+        run: bash .agents/hooks/cloud-setup.sh --pin >> "$GITHUB_OUTPUT"
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
-          version: 2026.11.8
+          version: ${{ steps.mise.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mise run install
-      - run: mise run publish
+      # The build runs the compiler and the other tools; the step after it, which holds the key, only uploads.
+      - run: mise run publish:build
+      - run: mise run --skip-deps publish
         env:
           # The key only here: the steps before run installs and tools, which never see it.
           ROBLOX_PUBLISH_API_KEY: ${{ secrets.ROBLOX_PUBLISH_API_KEY }}
@@ -105,13 +110,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # mise's version is the one .agents/hooks/cloud-setup.sh pins, which create-baseplate sync keeps current.
+      - id: mise
+        run: bash .agents/hooks/cloud-setup.sh --pin >> "$GITHUB_OUTPUT"
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
-          version: 2026.11.8
+          version: ${{ steps.mise.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mise run install
-      - run: mise run publish
+      - run: mise run publish:build
+      - run: mise run --skip-deps publish
         env:
           ROBLOX_PUBLISH_API_KEY: ${{ secrets.ROBLOX_PUBLISH_API_KEY }}
           ROBLOX_PUBLISH_UNIVERSE_ID: ${{ vars.ROBLOX_STABLE_UNIVERSE_ID }}
@@ -135,19 +144,23 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # mise's version is the one .agents/hooks/cloud-setup.sh pins, which create-baseplate sync keeps current.
+      - id: mise
+        run: bash .agents/hooks/cloud-setup.sh --pin >> "$GITHUB_OUTPUT"
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
-          version: 2026.11.8
+          version: ${{ steps.mise.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mise run install
+      - run: mise run publish:build
       # Before players get the new version, so their data as it stands now stays restorable for 30
       # days if the release corrupts it (scripts/snapshot.ts).
       - run: mise exec -- node scripts/snapshot.ts
         env:
           ROBLOX_PUBLISH_API_KEY: ${{ secrets.ROBLOX_PUBLISH_API_KEY }}
           ROBLOX_PUBLISH_UNIVERSE_ID: ${{ vars.ROBLOX_PROD_UNIVERSE_ID }}
-      - run: mise run publish
+      - run: mise run --skip-deps publish
         env:
           ROBLOX_PUBLISH_API_KEY: ${{ secrets.ROBLOX_PUBLISH_API_KEY }}
           ROBLOX_PUBLISH_UNIVERSE_ID: ${{ vars.ROBLOX_PROD_UNIVERSE_ID }}
