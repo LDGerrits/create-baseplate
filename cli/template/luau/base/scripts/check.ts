@@ -30,6 +30,13 @@ interface Step {
 	tooling?: boolean;
 }
 
+/** The workflow files, as quoted paths from the project's root. */
+function workflows() {
+	const folder = path.join(import.meta.dirname, "..", ".github", "workflows");
+	const names = fs.existsSync(folder) ? fs.readdirSync(folder).filter((name) => /\.ya?ml$/.test(name)) : [];
+	return names.map((name) => `".github/workflows/${name}"`).join(" ");
+}
+
 const FORMATTED = ["stylua", "format"];
 const steps: Step[] = [
 	// Writes the generated files each later step reads, after installing the locked packages.
@@ -47,8 +54,9 @@ const steps: Step[] = [
 	// The agent files at the create-baseplate version package.json pins, and no clash left unmerged.
 	{ name: "agent-files", command: "node scripts/agent-files.ts --check", needs: FORMATTED },
 	{ name: "tooling-types", command: "tsc -p tsconfig.node.json", needs: FORMATTED, tooling: true },
-	// The workflows in .github/workflows: expressions, job and step names, the actions' inputs.
-	{ name: "workflows", command: "actionlint", needs: FORMATTED, tooling: true },
+	// The workflows in .github/workflows: expressions, job and step names, the actions' inputs. Named
+	// one by one: with none named, actionlint looks for them through git, and the game may not be a repo.
+	{ name: "workflows", command: `actionlint ${workflows()}`, needs: FORMATTED, tooling: true },
 	// The agent hooks' and scripts' own tests.
 	{
 		name: "tooling-tests",
