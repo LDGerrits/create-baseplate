@@ -1,4 +1,3 @@
--- The UI root: a ScreenGui holding the screens, which a story couldn't show, so it has none.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Vide = require(ReplicatedStorage.Packages.Vide)

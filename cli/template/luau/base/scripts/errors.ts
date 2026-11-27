@@ -1,19 +1,3 @@
-// `mise run errors`: the errors a place's players ran into that first showed up in a version, with
-// their stack traces, from Roblox's Error Reporting API. Run it after a version reaches the dev
-// experience, to see what the version broke, and again after a fix to see the count fall.
-//
-//   mise run errors -- 42           errors first seen in place version 42 or later
-//   mise run errors -- --hours 6    errors first seen in the last 6 hours (24 by default)
-//   mise run errors -- --json       the errors as JSON
-//
-// It only reads. It uses a key of its own, ROBLOX_ERRORS_API_KEY, that holds only the read operation
-// `universe.analytics:read` (never the publish key), and it sends exactly two requests: the Analytics
-// Query API's POST /metrics, which reads the count of each error (a POST because it takes a query),
-// and the GET of the errors' details. It can't publish, change a rule or write anything.
-//   https://create.roblox.com/docs/cloud/guides/error-reporting
-//   https://create.roblox.com/docs/cloud/guides/analytics
-// Reads ROBLOX_ERRORS_UNIVERSE_ID and ROBLOX_ERRORS_PLACE_ID (a multi-place game gives each place its
-// ID, as `lobby=123,game=456`; scripts/each-place.ts names the place in PLACE).
 import fs from "node:fs";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -21,7 +5,6 @@ import { setTimeout as sleep } from "node:timers/promises";
 const API = "https://apis.roblox.com";
 /** Roblox keeps performance metrics, such as the error count, for 28 days; the details default to 7. */
 const COUNT_DAYS = 7;
-/** How many error hashes one request to the details endpoint carries. */
 const HASHES_PER_REQUEST = 50;
 const MAX_ERRORS = 100;
 
@@ -32,11 +15,8 @@ export interface ErrorsRequest {
 	universe: string;
 	place: string;
 	now: Date;
-	/** Only errors first seen in this place version or later. */
 	version?: number;
-	/** Without a version: only errors first seen within this many hours. */
 	hours?: number;
-	/** How long to wait between checks of a slow query. */
 	pollMs?: number;
 }
 
@@ -71,7 +51,6 @@ interface Detail {
 	firstSeenPlaceVersion?: number | null;
 }
 
-/** The place ID for `place` from ROBLOX_ERRORS_PLACE_ID: a bare ID, or `<place>=<id>` pairs. */
 export function placeIdFor(setting: string, place: string, multi: boolean): string {
 	const variable = "ROBLOX_ERRORS_PLACE_ID";
 	const value = setting.trim();
@@ -124,7 +103,6 @@ async function json<T>(response: Response): Promise<T> {
 	return JSON.parse(text) as T;
 }
 
-/** The count of each error (by message hash) over the last week: the Analytics Query API's `ErrorCount` by `MessageHash`. */
 async function countErrors(request: ErrorsRequest, fetch: Fetch): Promise<Map<string, number>> {
 	const headers = { "x-api-key": request.key };
 	let operation = await json<Operation>(
@@ -157,7 +135,6 @@ async function countErrors(request: ErrorsRequest, fetch: Fetch): Promise<Map<st
 	return counts;
 }
 
-/** The errors that first showed up in `version` or later (or lately), most frequent first. */
 export async function readErrors(request: ErrorsRequest, fetch: Fetch = globalThis.fetch): Promise<PlaceError[]> {
 	const counts = await countErrors(request, fetch);
 	const hashes = [...counts.keys()];

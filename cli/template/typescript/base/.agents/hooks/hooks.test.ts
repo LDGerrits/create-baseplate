@@ -1,4 +1,3 @@
-// The hooks' decisions, fed the payloads each agent tool sends. `mise run check` runs these.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -256,7 +255,6 @@ test("without mise, the guard still blocks Studio's live tools and publishing, a
 	skip: process.platform === "win32",
 }, () => {
 	const home = fs.mkdtempSync(path.join(os.tmpdir(), "no-mise-"));
-	// A PATH with only what `run` needs, so a mise installed system-wide can't stand in.
 	const bin = path.join(home, "bin");
 	fs.mkdirSync(bin);
 	for (const tool of ["sh", "cat", "dirname", "grep"]) {
@@ -292,7 +290,6 @@ test("without mise, the guard still blocks Studio's live tools and publishing, a
 		assert.equal(guard("claude", { tool_name: "Bash", tool_input: { command: "ls" } }).stdout, "");
 		const copilotPublish = guard("copilot", { toolName: "bash", toolArgs: '{"command":"mise run publish"}' });
 		assert.equal(JSON.parse(copilotPublish.stdout).permissionDecision, "deny");
-		// Only the tool and the command count, not what an edit writes.
 		const edit = {
 			tool_name: "Write",
 			tool_input: { file_path: "notes.md", content: "open_cloud_invoke, mise run publish" },
@@ -421,8 +418,6 @@ error roblox-ts: Operator \`+\` is not supported here.
 	]);
 });
 
-// The check runs `rogen check`, so Rogen's own stop hook (`rogen init --agent-hook`) would run it a
-// second time at every stop.
 test("no agent tool starts Rogen's stop hook beside the check", () => {
 	const folder = path.join(import.meta.dirname, "../..");
 	assert.equal(fs.existsSync(path.join(folder, ".agents/hooks/rogen-check.mjs")), false);
@@ -470,7 +465,6 @@ test("the Claude copy of a hook stands down when Cursor or Copilot runs it, and 
 		const found = spawnSync("sh", ["-c", `command -v ${tool}`], { encoding: "utf8" }).stdout.trim();
 		fs.symlinkSync(found, path.join(bin, tool));
 	}
-	// A mise only where its installer puts it, which reports where the hook finds `mise` by name.
 	fs.mkdirSync(path.join(home, ".local/bin"), { recursive: true });
 	fs.writeFileSync(path.join(home, ".local/bin/mise"), "#!/bin/sh\ncommand -v mise\n", { mode: 0o755 });
 	const run = (format: string, payload: object) =>

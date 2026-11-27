@@ -1,7 +1,5 @@
-// Rules for the game's source files that no compiler or linter has (scripts/check-sources.ts runs them).
 import path from "node:path";
 
-/** Files are kebab-case, with dotted suffixes such as `.server`, `.spec` or `.story`. */
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z]+)*\.tsx?$/;
 
 export function namingErrors(files: string[]): string[] {
@@ -17,7 +15,6 @@ export function namingErrors(files: string[]): string[] {
 		});
 }
 
-/** An eslint-disable comment with no reason after ` -- `. */
 const BARE_DISABLE = /(?:\/\/|\/\*)\s*eslint-disable(?:-next-line|-line)?\b(?![^\n]*\s--\s+\S)/;
 
 export function disableErrors(file: string, source: string): string[] {
@@ -32,10 +29,8 @@ export function disableErrors(file: string, source: string): string[] {
 		);
 }
 
-/** Whether a file opts out of a rule with `// <marker>: <why>`. */
 const optedOut = (source: string, marker: string) => new RegExp(`//\\s*${marker}:\\s*\\S`).test(source);
 
-/** A service with no spec beside it: its rules are what a spec tests. */
 export function specErrors(files: string[], read: (file: string) => string): string[] {
 	const present = new Set(files);
 	return files
@@ -47,11 +42,6 @@ export function specErrors(files: string[], read: (file: string) => string): str
 		);
 }
 
-/**
- * Whether a network file has remotes clients send: a function, or an event whose first type
- * argument (what clients send) has a member. A network the server only broadcasts on needs no
- * end-to-end test of requests.
- */
 export function clientSends(network: string): boolean {
 	if (/\bNetworking\.createFunction\b/.test(network)) return true;
 	const sent = /\bNetworking\.createEvent\s*<\s*(\w+|\{)/.exec(network)?.[1];
@@ -63,10 +53,6 @@ export function clientSends(network: string): boolean {
 	return /\w+\s*[(:]/.test(body.slice(0, body.indexOf("}") === -1 ? undefined : body.indexOf("}") + 1));
 }
 
-/**
- * A feature with remotes and no end-to-end test. `testFolder` names the folder whose tests run the
- * feature's code: `tests/e2e`, or in a multi-place game the place's (`projects/<place>/tests/e2e`).
- */
 export function e2eErrors(
 	files: string[],
 	tests: string[],
@@ -85,22 +71,17 @@ export function e2eErrors(
 	});
 }
 
-/** A component with no story beside it: the story is how its picture is rendered and checked. */
 export function storyErrors(files: string[], read: (file: string) => string): string[] {
 	const present = new Set(files);
-	return (
-		files
-			// The UI root in app/ and the controllers that mount it draw nothing a story could show.
-			.filter((file) => file.endsWith(".tsx") && !/\.(story|spec)\.tsx$|-controller\.tsx$|(^|\/)app\//.test(file))
-			.filter((file) => !present.has(file.replace(/\.tsx$/, ".story.tsx")) && !optedOut(read(file), "no-story"))
-			.map(
-				(file) =>
-					`${file}: a component has a story beside it, ${path.posix.basename(file, ".tsx")}.story.tsx, which \`mise run ui\` renders (see .agents/skills/build-ui/SKILL.md). If the file draws nothing on its own, say so at its top: \`// no-story: <why>\`.`,
-			)
-	);
+	return files
+		.filter((file) => file.endsWith(".tsx") && !/\.(story|spec)\.tsx$|-controller\.tsx$|(^|\/)app\//.test(file))
+		.filter((file) => !present.has(file.replace(/\.tsx$/, ".story.tsx")) && !optedOut(read(file), "no-story"))
+		.map(
+			(file) =>
+				`${file}: a component has a story beside it, ${path.posix.basename(file, ".tsx")}.story.tsx, which \`mise run ui\` renders (see .agents/skills/build-ui/SKILL.md). If the file draws nothing on its own, say so at its top: \`// no-story: <why>\`.`,
+		);
 }
 
-/** The npm scopes the project files mount in the game, as `"@scope": { "$path": "node_modules/@scope" }`. */
 export function mountedScopes(projectFiles: string[]): Set<string> {
 	return new Set(
 		projectFiles.flatMap((text) =>
@@ -141,7 +122,6 @@ const ONE_COPY = new Set([
 	"@flamework/components",
 ]);
 
-/** Such packages the lockfile holds in more than one version, as when one is updated past what another package depends on. */
 export function duplicateErrors(lockfile: string): string[] {
 	const versions = new Map<string, Set<string>>();
 	for (const [, name = "", version = ""] of lockfile.matchAll(

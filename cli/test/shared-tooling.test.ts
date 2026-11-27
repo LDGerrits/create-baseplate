@@ -1,5 +1,3 @@
-// The two templates share their machinery (hooks, scripts, the agent tools' settings, CI): a file
-// both have is the same in both, unless it is listed below as one that differs by language.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";

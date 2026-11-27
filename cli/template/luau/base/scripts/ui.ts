@@ -1,15 +1,9 @@
-// Renders every UI story (`*.story.luau`) offline with rur and lists each picture, so you can look
-// at it. Run it through `mise run ui`, which writes the project files first. Extra arguments go to `rur-native sweep`,
-// such as `--filter ShopButton`. Fails when a story doesn't render cleanly.
-// With --check, as `mise run check` runs it: prints only the stories that fail. Without Studio's
-// fonts it renders without text, so a story that crashes still fails, even in CI.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { studioDefaults } from "./studio.ts";
 
 const OUT = "build/ui";
-// Paths are printed from the repo root, so a place's pictures read projects/<place>/build/....
 const shown = (file: string) => path.relative(process.env.ROOT ?? process.cwd(), path.resolve(file));
 
 // rur draws text with Roblox Studio's fonts, which it can't find from WSL by itself.
@@ -27,11 +21,9 @@ mise run ui -- diff <git ref> --story <path> that story before and after, and di
 Any of them takes --viewport <width>x<height> (800x600 by default).`);
 	process.exit(0);
 }
-// A story renders on an 800x600 screen unless the caller names one: `--viewport 320x240`.
 const viewport = args.some((arg) => arg === "--viewport" || arg.startsWith("--viewport="))
 	? []
 	: ["--viewport", "800x600"];
-/** What a person reads at `mise run ui`; the check prints only what fails. */
 const say = check ? () => {} : (line: string) => console.log(line);
 
 // Without Studio's fonts rur draws no text; `rur-native doctor` says when it can't find them. The
@@ -43,15 +35,10 @@ if (noStudio && !check) {
 	console.log("  Judge layout, size and overlap from them.");
 }
 
-// `mise run ui -- --story <story> --actions '<json>'`: render one story after clicks or key presses,
-// and list what it printed. `mise run ui -- diff <git ref> --story <story>`: render the story at that
-// commit and now, and show what changed.
 const story = args.indexOf("--story");
 if (story !== -1) {
 	const given = args[story + 1] ?? "";
 	const name = path.basename(given, ".story.luau");
-	// Accept the path from the repo root; rur renders the story file itself. In a multi-place game
-	// a place that doesn't hold the story skips it.
 	const root = process.env.ROOT ?? process.cwd();
 	const place = process.env.PLACE ?? "";
 	const inProjects = path.relative(path.join(root, "projects"), path.resolve(root, given));
@@ -59,7 +46,6 @@ if (story !== -1) {
 	if (multi && !["common", place].includes(inProjects.split(path.sep)[0] ?? "")) process.exit(0);
 	const storyFile = path.resolve(root, given);
 	const rest = args.filter((_, i) => i !== story && i !== story + 1);
-	// `diff <git ref>` may sit anywhere among the other arguments, such as after `--viewport 320x240`.
 	const at = rest.indexOf("diff");
 	const diff = at !== -1;
 	const ref = diff ? (rest[at + 1] ?? "HEAD") : "";
@@ -150,7 +136,6 @@ for (const record of report.records) {
 		.replace(/^(.*\/)?src\//, "")
 		.replace(/\.story\.luau$/, "");
 	const picture = path.join(OUT, record.out, "render.png");
-	// Without Studio, stories render without fonts; only a story that breaks fails then.
 	const missingFonts = check || noStudio ? [] : (record.missingFonts ?? []);
 	if (record.clean && missingFonts.length === 0) {
 		say(`✓ ${name}: ${shown(picture)}${noStudio ? " (no text)" : ""}`);

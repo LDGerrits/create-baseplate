@@ -19,7 +19,6 @@ import { nameProblem } from "../../domain/game/app-name.ts";
 import { folderProblem } from "../../domain/game/scaffold.ts";
 import { parseNameAndPath } from "./parse-name-and-path.ts";
 
-/** The folder, and so the name, of a game when none is given. */
 const DEFAULT_APP_NAME = "my-game";
 
 export interface CliResults {
@@ -46,10 +45,6 @@ function flagsNpmTook(): string[] {
 		.map((name) => (name === "git" || name === "install" ? `--no-${name}` : `--${name}`));
 }
 
-/**
- * Why the add-on flags can't go together: in the language given, or, without --language, in every
- * language that takes them, so no answer to the language question could make them work.
- */
 function flagsConflict(given: Language | undefined, addOns: Partial<AddOnChoices>): string | undefined {
 	const candidates = given === undefined ? languages.map((language) => language.value) : [given];
 	const problems = candidates
@@ -69,7 +64,6 @@ export function stackSummary(stack: readonly AddOn[], chosen: AddOnChoices): str
 	return [hasText, left.length > 0 ? `no ${list(left)} yet` : ""].filter((part) => part !== "").join("; ");
 }
 
-/** Why the game can't be made in the folder `input` names, with `name` (--name) or the folder's name. */
 function answerProblem(input: string, name: string | undefined): string | undefined {
 	const parsed = parseNameAndPath(input);
 	return nameProblem(name ?? parsed.name) ?? folderProblem(parsed.dir);
@@ -93,7 +87,6 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 			languages.map((language) => language.value),
 		),
 	);
-	// One flag per question of any language; a value the chosen language lacks is refused after parsing.
 	for (const addOn of allAddOns) {
 		program.addOption(
 			new Option(`--${addOn.name} <${addOn.valueName}>`, addOn.question).choices(flagValuesOf(addOn.name)),
@@ -111,7 +104,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 		program.parse();
 	} catch (error) {
 		if (!(error instanceof CommanderError)) throw error;
-		// Commander has printed the message. With --json, the result says it too.
+		// Commander has printed the message.
 		if (error.exitCode !== 0 && process.argv.includes("--json")) {
 			printJsonError(error.message);
 		}
@@ -144,17 +137,15 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 	let language = flags.language ?? DEFAULT_LANGUAGE;
 	let input = given ?? DEFAULT_APP_NAME;
 	let { git, install } = flags;
-	// Refused before a question that would have no choice left to offer.
 	const settle = (language: Language) => {
 		const settled = settleChoices(language, givenAddOns);
 		return "problem" in settled ? refuse(settled.problem) : settled.choices;
 	};
-	// Without --language, a flag only one language takes picks it in the prompt, so check it there.
-	if (ask && flags.language !== undefined) {
+	const languageGiven = flags.language !== undefined;
+	if (ask && languageGiven) {
 		const problem = flagProblem(language, givenAddOns);
 		if (problem !== undefined) refuse(problem);
 	}
-	// What the command line already says can be wrong before any question: say so at once.
 	if (ask && given !== undefined) {
 		const problem = answerProblem(given, flags.name) ?? flagsConflict(flags.language, givenAddOns);
 		if (problem !== undefined) refuse(problem);
@@ -176,11 +167,10 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 			process.exit(1);
 		};
 		cancelled(dir);
-		if (flags.language === undefined) {
+		if (!languageGiven) {
 			const answer = await p.select({
 				message: "Which language?",
 				initialValue: DEFAULT_LANGUAGE as Language,
-				// Leave out a language the flags given can't go with, such as Luau with --entities components.
 				options: languages
 					.filter((option) => flagProblem(option.value, givenAddOns) === undefined)
 					.map((option) => ({ ...option })),
@@ -188,14 +178,12 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 			cancelled(answer);
 			language = answer as Language;
 		}
-		// The language is known only now, after its question.
 		const picked = settle(language);
 		const choose = async (addOn: AddOn) => {
 			const answer = await p.select({
 				message: addOn.question,
 				initialValue: defaultFor(language, addOn, picked),
 				options: [
-					// Leave out what can't go with the answers so far, such as Reflex with Vide.
 					...addOn.choices.filter(
 						(choice) => findConflict(language, { ...picked, [addOn.name]: choice.value }) === undefined,
 					),
@@ -206,7 +194,6 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 			picked[addOn.name] = answer as string;
 		};
 		const unanswered = addOnsByLanguage[language].filter((addOn) => givenAddOns[addOn.name] === undefined);
-		// The project's shape first, then the libraries and tools: the recommended ones, or each in turn.
 		for (const addOn of unanswered.filter((addOn) => addOn.shape === true)) await choose(addOn);
 		const stack = unanswered.filter((addOn) => addOn.shape !== true);
 		if (stack.length > 0) {
@@ -242,7 +229,6 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 		git = answers.git;
 		install = answers.install;
 	} else {
-		// The name before the choices, as the prompt asks them.
 		const problem = nameProblem(flags.name ?? parseNameAndPath(input).name);
 		if (problem !== undefined) refuse(problem);
 		chosen = settle(language);

@@ -1,23 +1,7 @@
 name: Release
 
-# On main, changesets opens (and keeps up to date) a "Version packages" pull request from the
-# changesets in .changeset/: the next version of create-baseplate and its CHANGELOG.md. Merging it
-# publishes the new version to npm, once publishing is switched on: set the repository variable
-# NPM_PUBLISH to true and add this workflow as a trusted publisher of create-baseplate on npmjs.com.
-# npm then takes the package from this workflow alone, with provenance, and no token is stored.
-#
-# A pull request opened with the default GITHUB_TOKEN starts no workflows, so the version PR's CI
-# wouldn't run. With the repository's GitHub App in BOT_APP_CLIENT_ID and BOT_APP_PRIVATE_KEY (the
-# one the mise lock workflow uses; it needs Contents and Pull requests: read and write), the PR is
-# opened as the app and its CI runs.
-#
-# The workflow starts when CI has finished on a push to main, and only goes on when CI's "CI passed"
-# job succeeded (not the run's conclusion: the engine job can be red on main without it, since a
-# Roblox outage mustn't stop a release) and the commit is still main's tip: nothing untested reaches
-# npm, and a stale run can't version or publish over a newer commit. It checks out the commit CI
-# tested, and looks at main's tip once more right before the changesets step. The changesets action
-# reads the workflow's own sha (main's tip when this run started, which GitHub doesn't let a step
-# override), so that second look is what keeps it from acting on a commit whose CI didn't pass.
+# The changesets action reads the workflow's own sha (main's tip when this run started, which
+# GitHub doesn't let a step override).
 
 on:
   workflow_run:
@@ -95,7 +79,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: pnpm install --frozen-lockfile
-      # The install took a while: main may have moved on since the gate looked.
       - id: still
         run: |
           tip=$(gh api "repos/$REPO/commits/main" --jq .sha)

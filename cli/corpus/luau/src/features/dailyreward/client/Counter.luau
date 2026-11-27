@@ -1,4 +1,3 @@
--- The seconds until the next claim, or "Claim" when the reward is ready.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Vide = require(ReplicatedStorage.Packages.Vide)

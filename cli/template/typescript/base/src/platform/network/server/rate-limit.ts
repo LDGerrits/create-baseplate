@@ -1,7 +1,6 @@
 import { Networking } from "@flamework/networking";
 import { Players } from "@rbxts/services";
 
-/** How many requests in a row pass before the limit starts to count, by default. */
 const BURST = 3;
 
 /**
@@ -35,7 +34,6 @@ export class RateLimiter<K> {
 	}
 }
 
-/** A limiter per remote, keyed by player, that forgets a player who leaves. */
 function playerLimiter(seconds: number): RateLimiter<Player> {
 	const limiter = new RateLimiter<Player>(seconds);
 	Players.PlayerRemoving.Connect((player) => {

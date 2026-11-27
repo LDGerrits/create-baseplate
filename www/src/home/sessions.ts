@@ -1,10 +1,3 @@
-// Three recorded Claude Code sessions in new Luau games, each asked for one feature; the demo on
-// the home page replays them. Each step is a moment in the recording (seconds from its start): the
-// files written, the checks that failed and the one that passed, and when the agent opened the
-// picture of its UI. Each task ended with "Make the UI look like a simulator game.", left out here.
-// The pictures are rur's renders of the agents' own UI stories, cropped to the UI on a transparent
-// background; `crop` is where that UI sat in rur's 1200x900 picture.
-
 export interface Step {
 	readonly t: number;
 	readonly text: string;

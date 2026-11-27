@@ -1,7 +1,5 @@
 import { Flamework } from "@flamework/core";
 
-// Flamework starts each service imported here; `mise run feature <name>` adds them.
-
 import "../../game/currency/server/currency-service";
 import "../../features/coin-pickup/server/coin-pickup-service";
 import "../../features/daily-reward/server/daily-reward-service";

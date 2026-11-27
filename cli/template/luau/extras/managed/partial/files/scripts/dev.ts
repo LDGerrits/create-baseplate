@@ -1,6 +1,3 @@
-// `mise run dev`: serves the code with Rogen, which writes the project file again on every change.
-// Open your place in Studio and press Connect in the Rojo plugin. Runs in a place's folder (see
-// each-place.ts); a multi-place game's place has its config at the repo root.
 import path from "node:path";
 import spawn from "cross-spawn";
 

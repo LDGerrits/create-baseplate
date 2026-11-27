@@ -1,12 +1,10 @@
 import React from "@rbxts/react";
 
 export interface DailyRewardButtonProps {
-	/** Seconds until the next claim; 0 when the reward is ready, -1 while it loads. */
 	secondsLeft: number;
 	onClaim: () => void;
 }
 
-/** The claim button, or a countdown while the reward isn't ready. */
 export function DailyRewardButton({ secondsLeft, onClaim }: DailyRewardButtonProps) {
 	const ready = secondsLeft === 0;
 	const text =

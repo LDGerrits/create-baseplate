@@ -5,7 +5,6 @@ import { Players, RunService } from "@rbxts/services";
 import { t } from "@rbxts/t";
 import { DEFAULT_PLAYER_DATA, type PlayerData } from "./player-data";
 
-// Studio saves to a mock DataStore, which forgets everything when the server stops.
 if (RunService.IsStudio()) setConfig({ dataStoreService: new DataStoreServiceMock() });
 
 const validate = t.strictInterface({ coins: t.number });
@@ -15,16 +14,11 @@ const newCollection = (name: string) =>
 // Lapis allows one collection per name, so the game's is made once, on first use.
 let gameCollection: Collection<PlayerData> | undefined;
 
-/**
- * Loads each player's saved data when they join and saves it when they leave, with Lapis.
- * Other services read and change it through `get` and `update`.
- */
 @Service()
 export class PlayerDataService implements OnStart {
 	private collection?: Collection<PlayerData>;
 	private readonly documents = new Map<number, Document<PlayerData>>();
 
-	/** A service over its own collection name, such as a spec's. Flamework constructs the game's own. */
 	static withCollection(name: string) {
 		const service = new PlayerDataService();
 		service.collection = newCollection(name);
@@ -35,8 +29,8 @@ export class PlayerDataService implements OnStart {
 		const join = (player: Player) => {
 			this.load(player.UserId)
 				.then((loaded) => {
-					// The player may have left while their data loaded.
-					if (player.Parent === undefined) this.release(player.UserId);
+					const hasLeft = player.Parent === undefined;
+					if (hasLeft) this.release(player.UserId);
 					else if (!loaded) player.Kick("Your data couldn't load. Please rejoin.");
 				})
 				.catch(warn);
@@ -49,7 +43,6 @@ export class PlayerDataService implements OnStart {
 		});
 	}
 
-	/** Loads the player's document; resolves false when it couldn't. */
 	async load(userId: number): Promise<boolean> {
 		try {
 			this.collection ??= gameCollection ??= newCollection("PlayerData");
@@ -62,12 +55,10 @@ export class PlayerDataService implements OnStart {
 		}
 	}
 
-	/** The player's data, or undefined when it isn't loaded. */
 	get(userId: number): Readonly<PlayerData> | undefined {
 		return this.documents.get(userId)?.read();
 	}
 
-	/** Replaces the player's data with what `change` returns; false when it isn't loaded. */
 	update(userId: number, change: (data: Readonly<PlayerData>) => PlayerData): boolean {
 		const document = this.documents.get(userId);
 		if (document === undefined) return false;
@@ -75,7 +66,6 @@ export class PlayerDataService implements OnStart {
 		return true;
 	}
 
-	/** Saves the player's data and closes the document. */
 	release(userId: number) {
 		this.documents.get(userId)?.close().catch(warn);
 		this.documents.delete(userId);

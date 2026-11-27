@@ -117,7 +117,6 @@ test("refuses a folder name that isn't lowercase letters and digits", () => {
 	assert.deepEqual(errorsFor("src/game/playerdata/server/PlayerDataService.luau"), []);
 });
 
-/** A sourcemap from instance paths and the files that are their modules; the folders between have none. */
 function sourcemap(modules: Record<string, string>): SourcemapNode {
 	const root: SourcemapNode = { name: "game", className: "DataModel", children: [] };
 	for (const [instance, file] of Object.entries(modules)) {

@@ -3,7 +3,6 @@
 import fs from "node:fs";
 import path from "node:path";
 
-/** The newest Windows Studio install's folder, from WSL; undefined elsewhere or without one. */
 export function windowsStudio(): string | undefined {
 	if (!fs.existsSync("/mnt/c/Users")) return undefined;
 	return fs
@@ -15,7 +14,6 @@ export function windowsStudio(): string | undefined {
 		.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs)[0];
 }
 
-/** What the tools need to know of that install, for the variables the caller doesn't set itself. */
 export function studioDefaults(): Record<string, string> {
 	const studio = windowsStudio();
 	if (studio === undefined) return {};

@@ -28,7 +28,6 @@ concurrency:
 jobs:
   lock:
     name: Lock tools and sync agent files
-    # Only Renovate's own pushes: a person's push to its branch is left alone.
     if: github.actor == 'renovate[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -44,7 +43,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           token: ${{ steps.app.outputs.token || secrets.GITHUB_TOKEN }}
-      # mise's version is the one .agents/hooks/cloud-setup.sh pins, which create-baseplate sync keeps current.
       - id: mise
         run: bash .agents/hooks/cloud-setup.sh --pin >> "$GITHUB_OUTPUT"
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
@@ -64,8 +62,6 @@ jobs:
           if [ -f .baseplate/agent-files.json ]; then
             pin=$(grep -A1 '"baseplate"' package.json | sed -n 's/.*"version": *"\([^"]*\)".*/\1/p')
             synced=$(sed -n 's/^\t"version": *"\([^"]*\)".*/\1/p' .baseplate/agent-files.json)
-            # Only when Renovate moved the pin: the version it proposes, released at least two weeks
-            # ago (renovate.json).
             if [ -n "$pin" ] && [ "$pin" != "$synced" ]; then
               mise install --quiet node pnpm
               # A clash exits 1 and leaves a .baseplate-new file beside the game's, which the check

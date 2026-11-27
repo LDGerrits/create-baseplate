@@ -1,30 +1,10 @@
-// The games CI creates, generated from the CLI's questions (cli/src/domain/add-ons/questions.ts) and the
-// manifests' `conflicts`, for each language, so a new language, question or choice is tested without
-// editing the workflow. The sets:
-// - pull: no add-ons, every question answered together (once per UI), and then as few more games as it
-//   takes for every two choices of different questions to meet in some game (pairwise), which catches
-//   add-ons that break each other. Every choice is in some pair, so this covers each one.
-// - full: no add-ons, each choice alone, every question answered together and the pairwise games: what
-//   a pull request runs, and each choice alone besides.
-// - windows: no add-ons, and every question answered together.
-// - macos: no add-ons, a game of each language, on macOS: nightly and by hand only.
-// - engine: no add-ons, and as few games as it takes for each choice to run once in a real Roblox
-//   server; the runs share one test place and go one at a time, in one job.
-// Which sets a run takes depends on the event (`plan`): a pull request creates `pull`, a push to main,
-// the nightly run and a run by hand create `full`; the engine runs on those, and on Renovate's pull
-// requests, not on the others. The nightly run and a run by hand also create the defaults on macOS, and
-// one game, with the CLI's tests, under the oldest Node the CLI supports (its `engines`). A pull request that changes only the docs site and Markdown files
-// creates no game. The games are grouped into batches, about BATCH_SIZE to a job, by language, so a job
-// installs the tools once and creates and checks each game in turn (run-games.ts).
-// `node .github/scripts/generate-matrix.ts` prints the plan of every event; `--event <name>` prints one
-// (with `--head-ref <branch>` and `--changed-files <file>` for a pull request); given a file, as CI
-// gives "$GITHUB_OUTPUT", it also writes the plan there, as the step's outputs. A game of a language
-// other than the default starts its flags with `--language <language>`.
 import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { DEFAULT_LANGUAGE, type Language, languages } from "../../cli/src/domain/add-ons/language.ts";
 import { addOnsByLanguage, choicesFor, valuesOf } from "../../cli/src/domain/add-ons/questions.ts";
+
+const WEIGHT_PER_ADD_ON = 0.05;
 
 /** One game's answers: the value for each question, by its name. */
 export type Answers = Record<string, string>;
@@ -32,7 +12,6 @@ export type Answers = Record<string, string>;
 interface Question {
 	name: string;
 	defaultValue: string;
-	/** Every value, the default first. */
 	values: string[];
 }
 
@@ -50,7 +29,6 @@ export function generatorFor(language: Language) {
 		values: [addOn.defaultValue, ...valuesOf(addOn).filter((value) => value !== addOn.defaultValue)],
 	}));
 
-	/** Pairs that can't go together, as "question=value" keys, from each manifest's `conflicts`. */
 	const conflicts = new Set<string>();
 	for (const question of questions) {
 		for (const value of question.values) {
@@ -73,7 +51,6 @@ export function generatorFor(language: Language) {
 		return entries.every((a, i) => entries.slice(i + 1).every((b) => !conflicts.has(pairKey(a, b))));
 	}
 
-	/** `answers` filled in with what the CLI takes for the questions they leave out. */
 	const withDefaults = (answers: Answers = {}): Answers => choicesFor(language, answers);
 	const defaults = () => withDefaults();
 
@@ -112,11 +89,6 @@ export function generatorFor(language: Language) {
 
 	const singlesOf = (answers: Answers) => Object.entries(answers).map((entry) => entry.join("="));
 
-	/**
-	 * Adds games to `games` until each key of `wanted` (what `keysOf` returns for a game) is in one:
-	 * each new game starts from a missing key and takes, question by question, the value that adds the
-	 * most missing keys and conflicts with nothing so far (a greedy covering, like AETG).
-	 */
 	function cover(games: Answers[], wanted: string[], keysOf: (answers: Answers) => string[]): Answers[] {
 		const missing = new Set(wanted);
 		const take = (answers: Answers) => {
@@ -137,7 +109,6 @@ export function generatorFor(language: Language) {
 					if (!allowed(next)) return -1;
 					return keysOf(next).filter((key) => missing.has(key)).length;
 				};
-				// The value that covers the most, and among equals the default: what most games use.
 				const best = question.values.reduce((a, b) => (gain(b) > gain(a) ? b : a));
 				answers[question.name] = best;
 			}
@@ -147,20 +118,12 @@ export function generatorFor(language: Language) {
 		return games;
 	}
 
-	/** No add-ons. */
 	const none = defaults();
 
-	/** Each choice that isn't a default, alone. */
 	const alone = questions.flatMap((question) =>
 		question.values.slice(1).map((value) => withDefaults({ [question.name]: value })),
 	);
 
-	/**
-	 * Every question answered with a choice, not its default or "none", once per UI. Where a question
-	 * has several, the second game takes the next one, so both games differ as much as they can. Where
-	 * two choices conflict (Darklua and a partially managed game), the first game answers the questions
-	 * in order and the second from the last, so each of the two is in one of them.
-	 */
 	const everything = (questions.find((question) => question.name === "ui")?.values ?? [""]).map((ui, i) => {
 		const answers: Answers = withDefaults({ ui });
 		for (const question of i % 2 === 0 ? questions : questions.toReversed()) {
@@ -174,7 +137,6 @@ export function generatorFor(language: Language) {
 
 	const unique = (games: Answers[]) => [...new Map(games.map((game) => [flagsOf(game), game])).values()];
 
-	/** The games that cover every pair of choices, and "every question answered" once per UI. */
 	const pull = unique(cover(unique([none, ...everything]), allPairs(), pairsOf));
 
 	const matrices = {
@@ -191,14 +153,8 @@ export function generatorFor(language: Language) {
 		),
 	};
 
-	/**
-	 * How long a game takes, next to the default one (the sets' unit): each answer that differs from the
-	 * defaults adds an add-on's packages and files to install and check. Measured on one machine, a game
-	 * with every question answered took 1.25 times as long as the default; only the balance between
-	 * batches depends on it.
-	 */
 	const weightOf = (answers: Answers) =>
-		1 + 0.05 * questions.filter((question) => answers[question.name] !== question.defaultValue).length;
+		1 + WEIGHT_PER_ADD_ON * questions.filter((question) => answers[question.name] !== question.defaultValue).length;
 
 	return { questions, allowed, allPairs, pairsOf, flagsOf, weightOf, matrices };
 }
@@ -258,7 +214,6 @@ export function batchesOf(
 	const count = Math.max(1, Math.ceil((games.length + (template ? 1 : 0)) / size));
 	const bins = Array.from({ length: count }, (_, index) => ({
 		games: [] as { flags: string; weight: number; order: number }[],
-		// The template's check takes about a game's time.
 		load: template && index === 0 ? 1 : 0,
 		size: template && index === 0 ? 1 : 0,
 	}));

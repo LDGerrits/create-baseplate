@@ -1,7 +1,3 @@
-// Uploads the new and changed files in assets/ to Roblox with Asphalt, and writes their IDs as typed
-// code. `mise run assets` runs it; Asphalt reads ASPHALT_API_KEY, which the task loads from .env.
-//
-//   node scripts/assets.ts --check: what the check runs; fails on a file not uploaded yet.
 import fs from "node:fs";
 import spawn from "cross-spawn";
 

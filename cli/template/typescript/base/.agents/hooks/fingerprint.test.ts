@@ -1,4 +1,3 @@
-// How the check tells one state from another, so the stop and commit hooks can skip it. `mise run check` runs these.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -83,7 +82,6 @@ test("what is staged is told from what is on disk, and the index is left alone",
 		git("add", "a.ts");
 		const staged = stateId(dir, "index");
 		assert.equal(stateId(dir, "files"), staged);
-		// A pass of the files on disk must not stand for a different staged state.
 		write(dir, "a.ts", "3");
 		const disk = stateId(dir, "files");
 		assert.notEqual(disk, staged);
@@ -91,10 +89,8 @@ test("what is staged is told from what is on disk, and the index is left alone",
 		writeRecord(dir, CHECK_RECORD, disk ?? "");
 		assert.equal(alreadyPassed(dir, "files"), true);
 		assert.equal(alreadyPassed(dir, "index"), false);
-		// The index still holds the staged version; the copy never touched it.
 		assert.equal(git("diff", "--cached", "--name-only").trim(), "a.ts");
 		assert.equal(git("show", ":a.ts"), "2");
-		// A new untracked file is not in the index, so the commit isn't what the files were.
 		write(dir, "a.ts", "2");
 		write(dir, "c.ts", "x");
 		writeRecord(dir, CHECK_RECORD, stateId(dir, "files") ?? "");
@@ -172,7 +168,6 @@ test("the commit hook skips a Markdown-only commit and a commit of the state tha
 		assert.match(commitSkip(dir, stagedFiles(dir)) ?? "", /Markdown/);
 		git("commit", "-q", "-m", "docs");
 
-		// A deletion and a rename name both paths; a source file among them needs the check.
 		git("mv", "README.md", "src.ts");
 		assert.deepEqual(stagedFiles(dir).sort(), ["README.md", "src.ts"]);
 		assert.equal(commitSkip(dir, stagedFiles(dir)), undefined);
@@ -181,13 +176,11 @@ test("the commit hook skips a Markdown-only commit and a commit of the state tha
 		write(dir, "a.ts", "2");
 		git("add", "-A");
 		assert.equal(commitSkip(dir, stagedFiles(dir)), undefined);
-		// The check passed on the files with one more edit: not what is staged.
 		write(dir, "a.ts", "3");
 		writeRecord(dir, CHECK_RECORD, stateId(dir, "files") ?? "");
 		assert.equal(commitSkip(dir, stagedFiles(dir)), undefined);
 		git("add", "-A");
 		assert.match(commitSkip(dir, stagedFiles(dir)) ?? "", /already passed/);
-		// Deleting a file is a different state again.
 		git("rm", "-qf", "a.ts");
 		assert.equal(commitSkip(dir, stagedFiles(dir)), undefined);
 	});

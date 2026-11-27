@@ -1,19 +1,8 @@
-// The game's four layers, and what the check says about them. Code under src/ (in a multi-place game,
-// under each source root: projects/common/src and each place's src) sits in one of:
-//   app/<side>/                 entry scripts and composition; may import every layer
-//   features/<feature>/<side>/  what the game could ship without; imports game, platform and other features
-//   game/<module>/<side>/       always-on systems; never imports features or app
-//   platform/<module>/<side>/   game-agnostic Roblox code; never imports game, features or app
-// where <side> is server, client or shared. check-sources.ts runs `structureErrors` and `cycleErrors`;
-// eslint.config.ts turns `layerZones` into import-x/no-restricted-paths zones.
-
 export const LAYERS = ["app", "features", "game", "platform"] as const;
 export type Layer = (typeof LAYERS)[number];
 export const SIDES = ["server", "client", "shared"];
-/** Names that say nothing about what a module holds. */
 export const REFUSED_MODULES = ["util", "utils", "lib", "libs"];
 
-/** What each layer may not import, and the next move for each. */
 const FORBIDDEN: Record<Layer, { from: Layer[]; message: string }> = {
 	app: { from: [], message: "" },
 	features: {
@@ -33,12 +22,10 @@ const FORBIDDEN: Record<Layer, { from: Layer[]; message: string }> = {
 	},
 };
 
-/** A file's source root: the longest of `roots` it sits under. */
 export function rootOf(file: string, roots: string[]): string | undefined {
 	return roots.filter((root) => file.startsWith(`${root}/`)).sort((a, b) => b.length - a.length)[0];
 }
 
-/** The layer a file sits in, or undefined outside the layers. */
 export function layerOf(file: string, roots: string[]): Layer | undefined {
 	const root = rootOf(file, roots);
 	if (root === undefined) return undefined;
@@ -46,11 +33,6 @@ export function layerOf(file: string, roots: string[]): Layer | undefined {
 	return LAYERS.find((layer) => layer === first);
 }
 
-/**
- * ESLint's import-x/no-restricted-paths zones for the layers, over every source root, plus the places:
- * a place may import the shared code, the shared code never a place, and a place never another.
- * Paths are anchored to the root, so node_modules is never matched.
- */
 export function layerZones(roots: string[], places: string[] = []) {
 	const zones: { target: string; from: string; message: string }[] = [];
 	for (const layer of LAYERS) {
@@ -80,10 +62,6 @@ export function layerZones(roots: string[], places: string[] = []) {
 	return zones;
 }
 
-/**
- * Where each file may sit. `files` are source files by path from the repo root, `roots` the source
- * roots: `src`, or `projects/common/src` and each place's `src`.
- */
 export function structureErrors(files: string[], roots: string[]): string[] {
 	const errors: string[] = [];
 	const seen = new Set<string>();
@@ -164,7 +142,6 @@ function wrongDepth(file: string, root: string, layer: Layer, parts: string[]): 
 	return `${file}: a side folder at the wrong depth. Server, client and shared folders sit only at ${at}, and Rogen routes by the outermost one: move ${parts.filter((part) => SIDES.includes(part)).at(-1)}/'s files up into ${root}/${parts[0]}/${layer === "app" ? "" : `${parts[1]}/`}<side>/.`;
 }
 
-/** The feature a file belongs to, as `<root>|<name>`, or undefined. */
 export function featureOf(file: string, roots: string[]): string | undefined {
 	const root = rootOf(file, roots);
 	if (root === undefined) return undefined;
@@ -172,10 +149,6 @@ export function featureOf(file: string, roots: string[]): string | undefined {
 	return layer === "features" && name !== undefined && side !== undefined ? `${root}|${name}` : undefined;
 }
 
-/**
- * Cycles between feature folders, from the files' imports (`edges`: [importer, imported]). Folder
- * level: two features that import each other through different files are a cycle too.
- */
 export function cycleErrors(edges: [string, string][], roots: string[]): string[] {
 	const multi = roots.length > 1;
 	const label = (feature: string) => {
@@ -191,7 +164,6 @@ export function cycleErrors(edges: [string, string][], roots: string[]): string[
 		if (!graph.get(a)?.has(b)) graph.get(a)?.set(b, [from, to]);
 	}
 
-	// Tarjan's strongly connected components: each one of two or more features is a cycle.
 	const index = new Map<string, number>();
 	const low = new Map<string, number>();
 	const stack: string[] = [];
@@ -246,7 +218,6 @@ export function cycleErrors(edges: [string, string][], roots: string[]): string[
 	});
 }
 
-/** A path from `start` back to `start` inside one component. */
 function cyclePath(graph: Map<string, Map<string, [string, string]>>, inside: Set<string>, start: string): string[] {
 	const previous = new Map<string, string>();
 	const queue = [start];
@@ -272,7 +243,6 @@ function cyclePath(graph: Map<string, Map<string, [string, string]>>, inside: Se
 
 const SPECIFIER = /\b(?:import|export)\b(?:[^"';]*?\bfrom)?\s*["']([^"']+)["']|\bimport\(\s*["']([^"']+)["']\s*\)/g;
 
-/** The files each source file imports, by relative specifier: [importer, imported] for sources only. */
 export function importEdges(
 	sources: Map<string, string>,
 	posixJoin: (...parts: string[]) => string,

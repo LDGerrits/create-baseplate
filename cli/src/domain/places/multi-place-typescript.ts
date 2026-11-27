@@ -11,7 +11,6 @@ import {
 	SHARED_TESTS_PLACE,
 } from "./place-steps.ts";
 
-/** Each place's generated files, and its world's project files when Rojo manages the world. */
 const gitignore = (managed: Managed) => `
 # Each place's generated files
 /projects/*/build
@@ -35,7 +34,6 @@ export function makeMultiPlaceTypeScript(dir: string, name: string, choices: Add
 	const managed = managedOf(choices);
 	const at = (...parts: string[]) => path.join(dir, ...parts);
 	const read = (file: string) => fs.readFileSync(at(file), "utf8");
-	// The template's text this relies on; fail rather than leave a half-converted game.
 	const replaceIn = (text: string, from: string, to: string) => replaceExact(text, from, to, "places: the template");
 	const extra = (file: string) => placesExtra("typescript", managed, file);
 	const common = at("projects", "common", "src");
@@ -56,7 +54,6 @@ export function makeMultiPlaceTypeScript(dir: string, name: string, choices: Add
 		for (const file of fs.readdirSync(path.join(placeDir, "src", "app"), { recursive: true, encoding: "utf8" })) {
 			const source = path.join(placeDir, "src", "app", file);
 			if (!fs.statSync(source).isFile()) continue;
-			// Imports of src/ from src/app/<side>/ now reach the shared code, four folders up.
 			const code = fs.readFileSync(source, "utf8");
 			fs.writeFileSync(
 				source,
@@ -95,8 +92,6 @@ export function makeMultiPlaceTypeScript(dir: string, name: string, choices: Add
 			),
 		};
 		fs.writeFileSync(path.join(placeDir, "default.rogen.json"), `${JSON.stringify(config, undefined, "\t")}\n`);
-		// Sloptor compiles the place from the root (it writes only inside its tsconfig's folder), and
-		// the place's own tsconfig.json points editors and ESLint at the same settings.
 		const json = (value: unknown) => `${JSON.stringify(value, undefined, "\t")}\n`;
 		fs.writeFileSync(
 			at(`tsconfig.${place}.json`),
@@ -109,7 +104,6 @@ export function makeMultiPlaceTypeScript(dir: string, name: string, choices: Add
 					noEmit: false,
 				},
 				include: ["projects/common/src", `projects/${place}/src`],
-				// The shared code's specs compile into one place only, so they run once.
 				...(place === SHARED_TESTS_PLACE
 					? {}
 					: { exclude: ["projects/common/src/**/*.spec.ts", "projects/common/src/**/*.spec.tsx"] }),
@@ -122,7 +116,6 @@ export function makeMultiPlaceTypeScript(dir: string, name: string, choices: Add
 		fs.rmSync(at(gone), { recursive: true, force: true });
 	}
 
-	// The root tsconfig holds the shared settings, and covers the shared code for editors and ESLint.
 	fs.writeFileSync(
 		at("tsconfig.json"),
 		replaceIn(
@@ -132,7 +125,6 @@ export function makeMultiPlaceTypeScript(dir: string, name: string, choices: Add
 		),
 	);
 	fs.appendFileSync(at(".gitignore"), gitignore(managed));
-	// Asphalt, from the root, writes the assets' IDs into the shared code.
 	if (fs.existsSync(at("asphalt.toml"))) {
 		fs.writeFileSync(
 			at("asphalt.toml"),
@@ -158,14 +150,12 @@ export function makeMultiPlaceTypeScript(dir: string, name: string, choices: Add
 		"in `default.rogen.json`, like the existing scopes",
 		"in each place's `default.rogen.json`, like the existing scopes",
 	);
-	// The add-ons' sections name single-place paths.
 	for (const [from, to] of PATHS) agents = agents.replaceAll(from, to);
 	if (managed === "full") agents = agents.replaceAll("under `world/`", "under a place's `world/`");
 	fs.writeFileSync(at("AGENTS.md"), agents);
 
 	fs.writeFileSync(at("README.md"), multiPlaceReadme(read("README.md"), extra("README-layout.md"), managed));
 
-	// The UI skill names the UI root's single-place paths, as AGENTS.md's add-on notes do.
 	const buildUi = at(".agents", "skills", "build-ui", "SKILL.md");
 	if (fs.existsSync(buildUi)) {
 		let skill = fs.readFileSync(buildUi, "utf8");
@@ -175,7 +165,6 @@ export function makeMultiPlaceTypeScript(dir: string, name: string, choices: Add
 	addSkillNotes(dir, skillNote(managed));
 }
 
-/** Single-place paths in add-on notes, and where they are in a multi-place game. */
 const PATHS: [string, string][] = [
 	["`src/features/", "`projects/common/src/features/"],
 	["`src/game/", "`projects/common/src/game/"],

@@ -1,5 +1,3 @@
-// What the "CI passed" job requires (.github/scripts/ci-passed.jq): the engine job decides it on pull
-// requests only, so a Roblox outage on main neither fails the required check nor stops a release.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { test } from "node:test";

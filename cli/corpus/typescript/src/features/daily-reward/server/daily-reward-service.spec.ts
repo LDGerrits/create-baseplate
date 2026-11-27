@@ -9,7 +9,6 @@ const currency = {
 	},
 } as unknown as CurrencyService;
 
-/** An assertion through a helper: the lint counts `expect*` functions as assertions. */
 function expectSecondsLeft(service: DailyRewardService, now: number, seconds: number) {
 	expect(service.secondsLeft(1, now)).toBe(seconds);
 }
@@ -30,7 +29,6 @@ describe("DailyRewardService", () => {
 		expect(service.claimedThisSession(2)).toBe(false);
 	});
 
-	// A skipped test shows in the results; the lint lets it through.
 	it.skip("resets at midnight in the player's time zone", () => {
 		expect(true).toBe(true);
 	});

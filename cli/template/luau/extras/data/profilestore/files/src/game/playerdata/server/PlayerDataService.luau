@@ -1,6 +1,3 @@
--- Loads each player's saved data when they join and saves it when they leave, with ProfileStore.
--- Other services read and change it through `get` and `update`. Studio uses ProfileStore's mock
--- store, which forgets everything when the server stops.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ServerScriptService = game:GetService("ServerScriptService")
@@ -21,14 +18,10 @@ local PlayerDataService = {}
 local store: Store = if RunService:IsStudio() then STORE.Mock else STORE
 local profiles: { [number]: Profile } = {}
 
--- Saves to ProfileStore's mock store from here on, which keeps profiles in memory only, as specs do.
--- Call it before any player loads.
 function PlayerDataService.useMockStore()
 	store = STORE.Mock
 end
 
--- Starts the player's session. Returns false when it couldn't, or when `cancel` says they left
--- meanwhile.
 function PlayerDataService.load(userId: number, cancel: (() -> boolean)?): boolean
 	local profile = store:StartSessionAsync(`Player_{userId}`, { Cancel = cancel })
 	if profile == nil then
@@ -37,8 +30,9 @@ function PlayerDataService.load(userId: number, cancel: (() -> boolean)?): boole
 	profile:AddUserId(userId)
 	profile:Reconcile()
 	profile.OnSessionEnd:Connect(function()
-		if profiles[userId] ~= profile then
-			return -- Released here, as when the player left.
+		local releasedHere = profiles[userId] ~= profile
+		if releasedHere then
+			return
 		end
 		-- The session ended without a release, as when another server took it: the player's changes
 		-- would no longer save, so they rejoin with the latest data.
@@ -52,13 +46,11 @@ function PlayerDataService.load(userId: number, cancel: (() -> boolean)?): boole
 	return true
 end
 
--- The player's data, or nil when it isn't loaded.
 function PlayerDataService.get(userId: number): PlayerData?
 	local profile = profiles[userId]
 	return if profile then profile.Data else nil
 end
 
--- Replaces the player's data with what `change` returns. Returns false when it isn't loaded.
 function PlayerDataService.update(userId: number, change: (data: PlayerData) -> PlayerData): boolean
 	local profile = profiles[userId]
 	if profile == nil then
@@ -68,7 +60,6 @@ function PlayerDataService.update(userId: number, change: (data: PlayerData) -> 
 	return true
 end
 
--- Saves the player's data and ends the session.
 function PlayerDataService.release(userId: number)
 	local profile = profiles[userId]
 	if profile == nil then
@@ -78,14 +69,13 @@ function PlayerDataService.release(userId: number)
 	profile:EndSession()
 end
 
--- Main.server.luau calls this once, after every service has loaded.
 function PlayerDataService.start()
 	local function join(player: Player)
-		local loaded = PlayerDataService.load(player.UserId, function()
+		local function hasLeft()
 			return player.Parent == nil
-		end)
-		-- The player may have left while their data loaded, after it could still be cancelled.
-		if player.Parent == nil then
+		end
+		local loaded = PlayerDataService.load(player.UserId, hasLeft)
+		if hasLeft() then
 			PlayerDataService.release(player.UserId)
 		elseif not loaded then
 			player:Kick("Your data couldn't load. Please rejoin.")

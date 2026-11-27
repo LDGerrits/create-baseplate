@@ -1,15 +1,11 @@
-# Project place file
 /my-game.rbxlx
 
-# Roblox Studio lock files
 /*.rbxlx.lock
 /*.rbxl.lock
 
-# Written by Rogen, scripts/game-project.ts and Rojo (mise run generate)
 sourcemap.json
 *.project.json
 
-# Installed packages, and Roblox's types for luau-lsp (mise run install)
 /node_modules
 /Packages
 /ServerPackages
@@ -19,7 +15,6 @@ sourcemap.json
 # Built places
 /build
 
-# jest-roblox run logs
 /.jest-roblox
 
 # The world's project files are written by hand and by syncback; keep them
@@ -28,19 +23,14 @@ sourcemap.json
 # forge's session state and logs
 /.forge
 
-# Keys and local paths; .env.example shows what goes in them
 /.env
 /.env.*
 !/.env.example
 
-# Claude Code settings for this clone only; `mise run setup` writes the language server here
 /.claude/settings.local.json
-# Written by scripts/setup.ts, named for this clone
 /.claude/plugins/.claude-plugin/
 
-# Agent tools' worktrees inside the game (Claude Code, Gemini CLI): checkouts of their own
 /.claude/worktrees/
 /.gemini/worktrees/
 
-# Selene's Roblox standard library, written once by the tools
 /roblox.yml

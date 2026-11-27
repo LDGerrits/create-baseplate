@@ -1,13 +1,3 @@
-// What a CI job (.github/workflows/ci.yml) does with the games it was given, one after another.
-// A game that fails doesn't stop the ones after it: each is a group in the log, the job ends with a
-// table of them all, and it fails when any did.
-//
-//   node .github/scripts/run-games.ts check     GAMES is one batch (generate-matrix.ts): create each game with the
-//                                               CLI, then check it, and the batch's template first.
-//   node .github/scripts/run-games.ts prepare   GAMES is a list of flags: create each game.
-//   node .github/scripts/run-games.ts engine    run the prepared games' specs in real Roblox.
-//
-// CLI is the create-baseplate entry file to run, GAMES_DIR the folder the games are made in.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
@@ -64,7 +54,6 @@ const group = async <T>(title: string, body: () => Promise<T>): Promise<T> => {
 	}
 };
 
-/** Times `body` as a row: a thrown error or a returned reason is its failure. */
 async function timed(
 	name: string,
 	body: () => Promise<string | undefined | { failure?: string; note?: string }>,
@@ -100,7 +89,6 @@ export function summarise(title: string, rows: Row[]): { markdown: string; text:
 	return { markdown, text };
 }
 
-/** Prints the table, annotates each failure, and writes the job's summary page. Returns the exit code. */
 function report(title: string, rows: Row[]): number {
 	const { markdown, text } = summarise(title, rows);
 	console.log(`\n${text}`);
@@ -184,7 +172,6 @@ export async function checkGame(
 ): Promise<{ failure?: string; note?: string }> {
 	const created = await steps.create(flags, dir);
 	if (created.code !== 0) {
-		// The CLI exits 1 when the first commit fails: its hook ran the game's check, and the CLI printed its report.
 		if (created.result?.created === true)
 			return { failure: "the first commit failed, so the game's check did; the report is above" };
 		return {
@@ -193,7 +180,6 @@ export async function checkGame(
 	}
 	let note: string;
 	if (created.result?.committed === true) {
-		// The hook is what checked the game; a game whose hook is off was committed without a check.
 		const hooks = await steps.hooksPath(dir);
 		if (hooks !== ".githooks") {
 			return {
@@ -209,7 +195,6 @@ export async function checkGame(
 			return { failure: `mise run ci failed${code === null ? "" : ` (exit ${code})`}; the output is above` };
 		note = "checked after creating";
 	}
-	// The game runs this when it publishes, with --release.
 	if (flags.split(" ").includes("--release")) {
 		const code = await steps.mise(["run", "release"], dir);
 		if (code !== 0)
@@ -236,8 +221,6 @@ export async function runBatch(batch: Batch, gamesDir: string, steps: Steps, tem
 			),
 		);
 	}
-	// The corpus of correct code (scripts/corpus.ts) in a game with no add-ons: every rule the check
-	// enforces must accept it, so a rule that fires on legitimate code fails here.
 	if (batch.template) {
 		const name = `corpus ${batch.language}`;
 		rows.push(
@@ -255,8 +238,6 @@ export async function runBatch(batch: Batch, gamesDir: string, steps: Steps, tem
 			),
 		);
 	}
-	// The first TypeScript game's edit hook is run for real too: its ESLint server listens on a named
-	// pipe on Windows, a socket elsewhere, and the hook's tests alone don't show it works in a game.
 	let probed = false;
 	for (const [index, flags] of batch.games.entries()) {
 		const name = flags === "" ? "(no add-ons)" : flags;
@@ -345,7 +326,6 @@ export async function runEngine(
 	return report("Games in real Roblox", rows);
 }
 
-/** Calls the game's edit hook twice, as an agent tool does after a write, on a file with a lint problem. */
 async function probeEditHook(dir: string): Promise<EditHookProbe> {
 	const folder = fs.existsSync(path.join(dir, "projects", "common", "src"))
 		? "projects/common/src/probe"
@@ -396,13 +376,10 @@ if (import.meta.main) {
 	const templateDir = path.resolve(import.meta.dirname, "../../cli/template");
 	const cli = () => path.resolve(need("CLI"));
 	const create = async (flags: string, dir: string) => {
-		// The JSON on one line is for scripts: print what it says instead.
 		const { code, stdout } = await run(
 			process.execPath,
 			[cli(), dir, "--json", ...flags.split(" ").filter((flag) => flag !== "")],
 			process.cwd(),
-			// The games keep the tooling's own tests, so each game's check tests the hooks and scripts as
-			// its add-ons left them, on each platform.
 			{ quiet: true, env: { ...process.env, BASEPLATE_TOOLING_TESTS: "1" } },
 		);
 		const result = lastJson(stdout);
@@ -423,7 +400,6 @@ if (import.meta.main) {
 	if (mode === "check") {
 		process.exitCode = await runBatch(JSON.parse(need("GAMES")) as Batch, gamesDir, steps, templateDir);
 	} else if (mode === "prepare") {
-		// The engine job's games, created before the step that has the key.
 		const games = JSON.parse(need("GAMES")) as string[];
 		const rows: Row[] = [];
 		for (const [index, flags] of games.entries()) {
@@ -443,7 +419,6 @@ if (import.meta.main) {
 		process.exitCode = report("Games created", rows);
 	} else if (mode === "engine") {
 		const games = JSON.parse(need("GAMES")) as string[];
-		// The key is in this step's environment and goes to the specs' command alone.
 		process.exitCode = await runEngine(games, gamesDir, (dir) =>
 			run("mise", ["run", "test:engine", "--", "--backend", "open-cloud"], dir),
 		);

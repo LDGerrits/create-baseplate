@@ -1,9 +1,3 @@
-// Uploads the new and changed files in assets/ to Roblox with Asphalt, writes their IDs to the
-// Assets.luau module in asphalt.toml's output_path, and formats that module as StyLua would, so the
-// check leaves it as it is.
-// `mise run assets` runs it; Asphalt reads ASPHALT_API_KEY, which the task loads from .env.
-//
-//   node scripts/assets.ts --check: what the check runs; fails on a file not uploaded yet.
 import fs from "node:fs";
 import spawn from "cross-spawn";
 

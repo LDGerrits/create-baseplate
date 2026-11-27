@@ -18,17 +18,14 @@ export interface Rendered {
 	stale: { packages: boolean; wally: boolean; tools: boolean };
 }
 
-/** package.json's packages, which pnpm-lock.yaml locks. */
 const packages = (dir: string) => {
 	const pkg = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8")) as Record<string, unknown>;
 	return JSON.stringify([pkg.dependencies, pkg.devDependencies]);
 };
-/** A Luau game's Roblox packages, which wally.lock locks. */
 const wallyPackages = (dir: string) => {
 	const wally = path.join(dir, "wally.toml");
 	return fs.existsSync(wally) ? fs.readFileSync(wally, "utf8") : undefined;
 };
-/** The [tools] of mise.toml, which the template's mise.lock covers until an add-on brings a tool. */
 const tools = (dir: string) => miseTools(fs.readFileSync(path.join(dir, "mise.toml"), "utf8"));
 
 /**

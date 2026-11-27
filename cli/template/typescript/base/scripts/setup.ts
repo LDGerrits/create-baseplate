@@ -1,5 +1,3 @@
-// Sets up this clone: the commit hook, the skills link, and the TypeScript language server for
-// Claude Code. `mise run install` runs it; it's safe to rerun.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
@@ -10,8 +8,6 @@ import { canonical, mainCheckout } from "./worktree.ts";
 const run = (command: string, args: string[]) =>
 	spawnSync(command, args, { encoding: "utf8", shell: process.platform === "win32" });
 
-// The commit hook. When this project sits in a subfolder of a bigger repo, that repo's own hooks
-// decide, so leave them alone.
 const prefix = run("git", ["rev-parse", "--show-prefix"]);
 if (prefix.status === 0 && prefix.stdout.trim() === "") {
 	run("git", ["config", "core.hooksPath", ".githooks"]);
@@ -54,13 +50,10 @@ fs.writeFileSync(
 	)}\n`,
 );
 
-// BASEPLATE_NO_CLAUDE_PLUGIN=1, for a game made only to try something, leaves Claude Code's settings alone.
 if (process.env.BASEPLATE_NO_CLAUDE_PLUGIN === "1") process.exit(0);
 if (run("claude", ["--version"]).status !== 0) process.exit(0);
 const claude = (args: string[]) =>
 	spawnSync("claude", args, { cwd: root, encoding: "utf8", shell: process.platform === "win32" });
-// Other names in this checkout's settings: from worktrees before they shared this one, or from
-// where the folder was before it moved.
 for (const name of staleMarketplaces(root, marketplace)) {
 	claude(["plugin", "uninstall", `roblox-ts@${name}`, "--scope", "local"]);
 	claude(["plugin", "marketplace", "remove", name]);
@@ -77,7 +70,6 @@ for (const args of [
 	}
 }
 
-/** The baseplate marketplaces `root`'s local settings declare besides `current`. */
 function staleMarketplaces(root: string, current: string): string[] {
 	const file = path.join(root, ".claude/settings.local.json");
 	if (!fs.existsSync(file)) return [];

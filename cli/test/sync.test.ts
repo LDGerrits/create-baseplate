@@ -1,4 +1,3 @@
-// The agent files' three-way update, on its own (the pure plan) and through the built CLI.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -72,7 +71,6 @@ test("refreshes an earlier clash no one merged, and drops it once the files agre
 	assert.deepEqual(settled.conflicts, []);
 });
 
-// Through the built CLI (`pnpm build` first; turbo's test task does).
 const CLI = path.resolve(import.meta.dirname, "../dist/index.js");
 const BASE = ".baseplate/agent-files.json";
 
@@ -133,7 +131,6 @@ test("a partially managed game's sync doesn't bring back the world's files", () 
 		const { files } = readBase(dir);
 		assert.ok(!files[".agents/skills/edit-world/SKILL.md"], "no edit-world skill recorded");
 		assert.doesNotMatch(files["AGENTS.md"] ?? "", /edit-world|mise run publish/);
-		// A game that lost its record syncs from the template as it is: the skill must not come back.
 		fs.rmSync(path.join(dir, BASE));
 		const run = sync(dir);
 		assert.equal(run.status, 0, run.stdout + run.stderr);
@@ -172,7 +169,6 @@ test("moves an older game's CLAUDE.md into .claude, unless the game changed it",
 	for (const edited of [false, true]) {
 		const dir = createGame();
 		const base = readBase(dir);
-		// As a game made when CLAUDE.md sat at the root.
 		const old = "@AGENTS.md\n";
 		base.files["CLAUDE.md"] = old;
 		delete base.files[".claude/CLAUDE.md"];
@@ -191,8 +187,6 @@ test("updates a game's agent files from an older template, keeping its own edits
 	const base = readBase(dir);
 	const skill = ".agents/skills/write-tests/SKILL.md";
 	const current = base.files[skill] ?? "";
-	// As if an older create-baseplate made the game: its skill read differently, and it shipped a
-	// file this one dropped. The game's AGENTS.md has a rule of its own at the end.
 	const older = current.replace("# ", "# Old ");
 	base.files[skill] = older;
 	base.files[".agents/skills/gone/SKILL.md"] = "dropped\n";
@@ -218,7 +212,6 @@ test("keeps a new hook executable, and leaves an agent's worktree inside the gam
 	const dir = createGame();
 	const base = readBase(dir);
 	const hook = ".agents/hooks/run";
-	// As if the hook were new in this version: the game and its base lack it.
 	delete base.files[hook];
 	fs.writeFileSync(path.join(dir, BASE), JSON.stringify(base));
 	fs.rmSync(path.join(dir, hook));

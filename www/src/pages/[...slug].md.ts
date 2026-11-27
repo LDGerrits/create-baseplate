@@ -1,5 +1,3 @@
-// Every docs page as plain Markdown at /<page>.md, for agents (src/lib/markdown.ts).
-
 import { type CollectionEntry, getCollection } from "astro:content";
 import type { APIRoute, GetStaticPaths } from "astro";
 import { markdownOf } from "../lib/markdown.ts";

@@ -1,27 +1,9 @@
-// The check: `mise run check` fixes formatting and runs every step that doesn't need another's
-// result at the same time, so the slowest one bounds the run. `mise run ci` is the same steps
-// without the fixes. Each step's output is held back and printed only for a step that failed, in
-// the order of the list below, then one line says how it went.
-//
-//   node scripts/check.ts [--ci] [--all] [--verbose]
-//
-// A step is a command and its arguments, split at spaces ("double quotes" keep spaces in one
-// argument), run without a shell so it works the same on Windows. `needs` names the steps that must
-// pass first; a step whose need failed doesn't run. Add a step to the list, with what it needs.
-//
-// When the check passes, it records the state of the files (.agents/hooks/fingerprint.ts), which the
-// stop hook and the commit hook read to skip a check that already passed on exactly this state.
-// The tooling's own type-check and tests run only when the tooling changed since they last passed;
-// on CI (the CI variable is set) and with --all, they always run.
-
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { CHECK_RECORD, partId, readRecord, stateId, writeRecord } from "../.agents/hooks/fingerprint.ts";
 
-// The locked packages first, before this script or any step loads one: a new clone or worktree has
-// none yet, and another branch's lockfile may differ. Instant when they already match.
 const deps = spawnSync("mise", ["run", "--quiet", "deps"], {
 	cwd: path.resolve(import.meta.dirname, ".."),
 	encoding: "utf8",
@@ -40,15 +22,11 @@ interface Step {
 	name: string;
 	command: string;
 	needs: string[];
-	/** What `mise run check` runs instead of `command` (`mise run ci` runs `command`): the step's fixing form. */
 	fixCommand?: string;
-	/** Formats files: once these are done, the files are as the check will leave them. */
 	format?: boolean;
-	/** The tooling's: skipped while its files are as they were when it last passed. */
 	tooling?: boolean;
 }
 
-/** The workflow files, as quoted paths from the project's root. */
 function workflows() {
 	const folder = path.join(import.meta.dirname, "..", ".github", "workflows");
 	const names = fs.existsSync(folder) ? fs.readdirSync(folder).filter((name) => /\.ya?ml$/.test(name)) : [];
@@ -57,7 +35,6 @@ function workflows() {
 
 const FORMATTED = ["stylua", "format"];
 const steps: Step[] = [
-	// Writes the generated files each later step reads; the packages are installed above.
 	{ name: "generate", command: "mise run --quiet --skip-deps generate", needs: [] },
 	{ name: "stylua", command: "stylua --check .", fixCommand: "stylua .", needs: ["generate"], format: true },
 	{
@@ -69,14 +46,11 @@ const steps: Step[] = [
 	},
 	// Tests named so they never run, services nothing starts, and remotes taken without Remo.
 	{ name: "sources", command: "node scripts/check-sources.ts", needs: FORMATTED },
-	// The agent files at the create-baseplate version package.json pins, and no clash left unmerged.
 	{ name: "agent-files", command: "node scripts/agent-files.ts --check", needs: FORMATTED },
 	{ name: "tooling-types", command: "tsc -p tsconfig.node.json", needs: FORMATTED, tooling: true },
 	// The workflows in .github/workflows: expressions, job and step names, the actions' inputs. Named
 	// one by one: with none named, actionlint looks for them through git, and the game may not be a repo.
 	{ name: "workflows", command: `actionlint ${workflows()}`, needs: FORMATTED, tooling: true },
-	// The agent hooks' and scripts' own tests. A game created for use has none (only Baseplate's
-	// template and the games its CI creates keep them), and the step then passes.
 	{
 		name: "tooling-tests",
 		command: 'node --test --test-reporter=dot ".agents/hooks/*.test.ts" "scripts/*.test.ts"',
@@ -104,7 +78,6 @@ const steps: Step[] = [
 	},
 ];
 
-/** The files the tooling's type-check and tests read, as paths from the project's root. */
 const toolingFile = (file: string) =>
 	!file.includes("/") || /^(scripts|\.agents|\.claude|\.codex|\.cursor|\.gemini|\.github\/workflows)\//.test(file);
 const TOOLING_RECORD = "check-tooling-passed";
@@ -116,7 +89,6 @@ interface Outcome {
 	ok: boolean;
 	output: string;
 	seconds: number;
-	/** Why it didn't run, when it didn't. */
 	skipped?: string;
 }
 
@@ -143,11 +115,9 @@ function run(step: Step): Promise<Outcome> {
 const ROOT = path.resolve(import.meta.dirname, "..");
 const ci = process.argv.includes("--ci");
 const verbose = process.argv.includes("--verbose");
-/** How much of a failed step's output the check prints, unless it runs for CI or --verbose. */
 const STEP_LINES = 40;
 const everything = process.argv.includes("--all") || (process.env.CI ?? "") !== "";
 
-// What the fixing steps changed, so a person sees it: the game's own source files, by content.
 const SOURCES = ["src", "tests", "projects"];
 const GENERATED_SOURCE =
 	/(^|\/)(world\.d\.ts|[^/]*\.project\.json|sourcemap\.json)$|(^|\/)(node_modules|out|include|build|dist|Packages|ServerPackages|DevPackages)\//;
@@ -158,7 +128,7 @@ function sourceHashes(): Map<string, string> {
 		try {
 			entries = fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true });
 		} catch {
-			return; // gone while the check runs
+			return;
 		}
 		for (const entry of entries) {
 			const relative = `${dir}/${entry.name}`;
@@ -189,7 +159,6 @@ const running = new Map<string, Promise<void>>();
 let formatted: { files?: string; tooling?: string } | undefined;
 let toolingUnchanged = false;
 
-/** Once formatting is done the files are as the check will leave them: note the state they pass in. */
 function noteFormatted() {
 	if (formatted !== undefined) return;
 	const files = stateId(ROOT, "files");
@@ -252,8 +221,6 @@ for (const step of list) {
 	if (!outcome.ok || verbose) {
 		console.log(`${outcome.ok ? "✓" : "✗"} ${step.name} (${outcome.seconds.toFixed(1)}s): ${step.command}`);
 		const text = outcome.output.trim();
-		// Each failed step keeps its start, where its first problems are: a cut across the whole
-		// output (as a hook's message makes) would drop the first step's instead of the last's.
 		const lines = text.split("\n");
 		const shown = ci || verbose || lines.length <= STEP_LINES ? text : lines.slice(0, STEP_LINES).join("\n");
 		const more = lines.length - STEP_LINES;
@@ -273,8 +240,6 @@ if (failed.length > 0) {
 	process.exit(1);
 }
 
-// A step that ran on a state the files then left was not checking what is now there; record only a
-// state that held from the end of formatting to the end of the check.
 const after = stateId(ROOT, "files");
 if (formatted?.files !== undefined && formatted.files === after) {
 	writeRecord(ROOT, CHECK_RECORD, after);

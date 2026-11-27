@@ -1,4 +1,3 @@
-// Runs the built CLI to create a game: the project it writes, its git repo and its flags.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -197,7 +196,6 @@ test("creates into a freshly cloned repo, and commits there", () => {
 
 test("exits non-zero when the first commit fails, leaving the game uncommitted", () => {
 	const cwd = tempDir();
-	// A commit hook that refuses, as a game's does when its check fails.
 	const hooks = path.join(cwd, "hooks");
 	fs.mkdirSync(hooks);
 	fs.writeFileSync(

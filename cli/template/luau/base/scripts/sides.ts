@@ -4,11 +4,7 @@
 // `sideErrors` on every file under a side folder. The lists hold only APIs the Roblox docs say are
 // client-only or server-only; an API that works on both (`HttpService:JSONEncode`, `StarterGui` as a
 // container) isn't listed.
-//
-// shared/ runs on both sides, so both lists apply there. A call guarded by `RunService:IsClient()`
-// or `IsServer()` carries `-- guarded: <why>` on its line, and the check lets it through.
 
-/** Services that exist only on the client. */
 export const CLIENT_ONLY_SERVICES = [
 	"UserInputService",
 	"ContextActionService",
@@ -16,7 +12,6 @@ export const CLIENT_ONLY_SERVICES = [
 	"HapticService",
 	"VRService",
 ];
-/** Members that only work on the client, whatever object they're read from. */
 export const CLIENT_ONLY_MEMBERS = [
 	"LocalPlayer",
 	"RenderStepped",
@@ -27,7 +22,6 @@ export const CLIENT_ONLY_MEMBERS = [
 	"SetCoreGuiEnabled",
 	"PlayLocalSound",
 ];
-/** Services that exist only on the server. */
 export const SERVER_ONLY_SERVICES = [
 	"DataStoreService",
 	"MessagingService",
@@ -35,9 +29,7 @@ export const SERVER_ONLY_SERVICES = [
 	"ServerStorage",
 	"ServerScriptService",
 ];
-/** Members that only work on the server. */
 export const SERVER_ONLY_MEMBERS = ["AwardBadge", "ProcessReceipt", "SetNetworkOwner", "LoadCharacter"];
-/** HttpService's requests are the server's: a client can't call them. */
 export const SERVER_ONLY_HTTP = ["RequestAsync", "GetAsync", "PostAsync"];
 
 export type Side = "server" | "client" | "shared";
@@ -62,7 +54,6 @@ interface Pattern {
 
 const services = (list: string[], works: Works): Pattern[] =>
 	list.map((name) => ({
-		// game:GetService("X"), game.X and game["X"]
 		pattern: new RegExp(
 			`\\bGetService\\s*\\(?\\s*["']${name}["']|\\bgame\\s*\\.\\s*${name}\\b|\\bgame\\s*\\[\\s*["']${name}["']\\s*\\]`,
 		),
@@ -83,16 +74,11 @@ const SERVER_ONLY: Pattern[] = [
 	})),
 ];
 
-/** The code without comments, line for line, so a line number still points at the file. */
 const withoutComments = (source: string) =>
 	source
 		.replace(/--\[(=*)\[[\s\S]*?\]\1\]/g, (block) => block.replace(/[^\n]/g, " "))
 		.replace(/--.*$/gm, (comment) => " ".repeat(comment.length));
 
-/**
- * One `<file>:<line>: ...` per use of an API that doesn't work on the side of the folder the file
- * sits in. `side` is where Rogen routes the file.
- */
 export function sideErrors(file: string, side: Side, source: string): string[] {
 	const patterns = side === "server" ? CLIENT_ONLY : side === "client" ? SERVER_ONLY : [...CLIENT_ONLY, ...SERVER_ONLY];
 	const raw = source.split("\n");

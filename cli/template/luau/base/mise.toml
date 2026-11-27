@@ -1,6 +1,3 @@
-# Every tool this project needs, pinned. `mise install` fetches them all.
-# Rogen, rbx-forge and the other Node tools come from package.json, and the game's Roblox packages
-# from wally.toml, through `mise run install`.
 [tools]
 node = "24.22.1"
 pnpm = "12.18.0"
@@ -14,9 +11,7 @@ pnpm = "12.18.0"
 # From aqua, which marks the binary executable; the GitHub release zip doesn't.
 "aqua:Kampfkarren/selene" = "0.32.0"
 "github:lune-org/lune" = "0.11.1"
-# Lints the workflows in .github/workflows.
 "aqua:rhysd/actionlint" = "1.7.12"
-# ree runs the game offline for tests, rur renders UI, ror renders 3D. Anime-Vanguards tools.
 "github:Anime-Vanguards/roblox-engine-emulator" = { version = "0.8.0", bin = "ree" }
 "github:Anime-Vanguards/roblox-ui-renderer" = { version = "0.9.0", bin = "rur-native" }
 "github:Anime-Vanguards/roblox-object-renderer" = { version = "0.7.0", bin = "ror" }
@@ -24,18 +19,13 @@ pnpm = "12.18.0"
 [settings]
 # mise.lock records each tool's download and checksum for these platforms; `mise install` refuses a
 # download that doesn't match, and, being locked, a tool the lock doesn't list. After changing a pin
-# above by hand, run `mise lock` and commit mise.lock; on Renovate's updates,
-# .github/workflows/renovate-fixups.yml does it.
+# above by hand, run `mise lock` and commit mise.lock.
 locked = true
 lockfile_platforms = ["linux-x64", "linux-arm64", "macos-arm64", "macos-x64", "windows-x64", "windows-arm64"]
 
 [env]
 _.path = ["{{config_root}}/node_modules/.bin"]
-# Node keeps the compiled code of the tools and scripts it loads, such as Rogen's, so every check,
-# hook and task after the first starts faster. Only a cache: Node checks each file against it, and
-# deleting node_modules removes it.
 NODE_COMPILE_CACHE = "{{config_root}}/node_modules/.cache/node-compile-cache"
-# Node's own downloads (Roblox's types for luau-lsp) go through HTTPS_PROXY when one is set, as pnpm's and Wally's do.
 NODE_USE_ENV_PROXY = "1"
 # Syncback writes each new world instance as a readable .model.json instead of a binary .rbxm.
 # Set for every task so forge's sync on save gets it too. It's Rojo's undocumented debug switch
@@ -45,11 +35,6 @@ ROJO_SYNCBACK_DEBUG = "2"
 [tasks.deps]
 description = "Make node_modules match pnpm-lock.yaml and the Wally packages match wally.toml; instant when they already do, so every task runs on the locked packages"
 run = ["pnpm install --frozen-lockfile --silent", "node scripts/packages.ts"]
-
-# Steps for one place run through scripts/each-place.ts: in the root for a single-place game, or
-# in each projects/<place>/ for a multi-place one. Each quoted step is a command run without a shell,
-# so the tasks work the same in Windows' cmd and in sh; {root} is the repo root and {dir} the place's
-# folder (see the script).
 
 [tasks.generate]
 description = "Write the generated files of each place: its code's project file (Rogen), game.project.json (code and world), sourcemap.json (every instance, for luau-lsp); then the packages' and Roblox's types"
@@ -98,8 +83,6 @@ run = 'node scripts/each-place.ts "node {root}/scripts/test.ts" --'
 [tasks."test:engine"]
 description = "Run every Jest spec, *.engine.spec included, in Roblox Studio or Open Cloud through jest-roblox"
 depends = ["generate"]
-# Your keys and local paths (copy .env.example to .env) reach only the tasks that use them, and each
-# of those gets only its own (scripts/with-env.ts): the tests never see the publish key.
 run = 'node scripts/with-env.ts ROBLOX_OPEN_CLOUD_API_KEY,ROBLOX_UNIVERSE_ID,ROBLOX_PLACE_ID,JEST_ROBLOX_* -- node scripts/each-place.ts "jest-roblox --passWithNoTests" --'
 
 [tasks.ui]

@@ -18,7 +18,6 @@ local Start = {}
 const SERVICES = /^\trequire\(ServerScriptService\.features\..*\),$/;
 const PRELUDE = 'local ServerScriptService = game:GetService("ServerScriptService")';
 
-// Each test's folder, removed when the file's tests end.
 const temps: string[] = [];
 after(() => {
 	for (const dir of temps) fs.rmSync(dir, { recursive: true, force: true });

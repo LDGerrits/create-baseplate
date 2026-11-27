@@ -1,12 +1,3 @@
-// `mise run feature <name>`: starts a feature the way the add-feature skill describes, so
-// its folders, its event and its entry-script imports are right from the first line.
-//
-//   node scripts/feature.ts <name> [<place>]
-//
-// <name> is kebab-case: `shop` makes src/features/shop with a network file, a service with a spec
-// and a controller, and imports the service and the controller in the entry scripts. In a
-// multi-place game the feature goes in projects/common/src and every place imports it; naming a
-// place keeps it to that one place's src. The UI is yours to add: a component and its story.
 import fs from "node:fs";
 import path from "node:path";
 
@@ -14,10 +5,6 @@ const ENTRIES = { server: "app/server/main.server.ts", client: "app/client/main.
 
 const pascal = (name: string) => name.replace(/(^|-)([a-z0-9])/g, (_, __, letter: string) => letter.toUpperCase());
 
-/**
- * The files of a feature, by path from its folder. `rateLimitFrom` is the rate limiter's module, as
- * the service imports it.
- */
 export function featureFiles(
 	name: string,
 	rateLimitFrom = "../../../platform/network/server/rate-limit",
@@ -98,7 +85,6 @@ export class ${Name}Controller implements OnStart {
 	};
 }
 
-/** Adds an `import "<specifier>";` after the entry script's last side-effect import of a feature, or before Flamework.ignite(). */
 export function addImport(source: string, specifier: string): string {
 	const line = `import "${specifier}";`;
 	if (source.includes(line)) return source;
@@ -114,7 +100,6 @@ export function addImport(source: string, specifier: string): string {
 	return lines.join("\n");
 }
 
-/** The feature's end-to-end test: a client asks for its value through the real server and remotes. */
 export function e2eFile(name: string): string {
 	const Name = pascal(name);
 	return `-- End-to-end: the ${name} feature's requests through the real server and remotes, the way a
@@ -180,7 +165,6 @@ return {
 `;
 }
 
-/** Creates the feature under `cwd`, and returns the files it wrote or changed. */
 export function createFeature(cwd: string, name: string, place?: string): string[] {
 	if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(name)) {
 		throw new Error(`Name the feature in kebab-case, such as "shop" or "daily-reward": not "${name}".`);
@@ -217,8 +201,6 @@ export function createFeature(cwd: string, name: string, place?: string): string
 		written.push(target);
 	}
 
-	// Its end-to-end test goes where the tests of its code run: in a multi-place game, a shared
-	// feature's in the place that runs the shared code's tests.
 	const testPlace = place ?? (places.includes("game") ? "game" : places[0]);
 	const e2e = at(
 		multi && testPlace !== undefined ? at("projects", testPlace, "tests") : "tests",

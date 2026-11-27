@@ -6,7 +6,6 @@ import { COIN_TAG } from "../shared/coin-tag";
 export const COIN_VALUE = 10;
 export const RESPAWN_SECONDS = 5;
 
-/** Gives a player coins for touching a coin, which is then gone for everyone until it respawns. */
 @Service()
 export class CoinPickupService implements OnStart {
 	private readonly taken = new Set<BasePart>();

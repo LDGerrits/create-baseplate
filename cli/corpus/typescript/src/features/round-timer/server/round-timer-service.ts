@@ -6,7 +6,6 @@ export const ROUND_SECONDS = 120;
 
 const events = RoundTimerNetwork.createServer({});
 
-/** Counts each round down and tells every player each whole second, checked every frame. */
 @Service()
 export class RoundTimerService implements OnStart {
 	private left = ROUND_SECONDS;
@@ -19,7 +18,6 @@ export class RoundTimerService implements OnStart {
 		});
 	}
 
-	/** Advances the round by `deltaTime`; returns the whole seconds left when they changed. */
 	step(deltaTime: number): number | undefined {
 		this.left -= deltaTime;
 		if (this.left <= 0) this.left += ROUND_SECONDS;

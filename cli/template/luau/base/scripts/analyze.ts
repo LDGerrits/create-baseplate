@@ -17,9 +17,7 @@ if (!fs.existsSync(definitions)) {
 	console.error("Roblox's types for luau-lsp are missing: run `mise run generate`.");
 	process.exit(1);
 }
-// The place's code; in a multi-place game, the shared code too, as this place sees it.
 const placeSources = ["src", path.join(ROOT, "projects", "common", "src")].filter((dir) => fs.existsSync(dir));
-// Given files (from the repo root, as the edit hook passes them), only those of them in this place.
 const given = process.argv.slice(2).map((file) => path.resolve(ROOT, file));
 const sources =
 	given.length === 0
@@ -29,17 +27,12 @@ const sources =
 					(file) =>
 						fs.existsSync(file) && placeSources.some((dir) => !path.relative(path.resolve(dir), file).startsWith("..")),
 				)
-				// From the place's folder, as its project file's ignore globs are.
 				.map((file) => path.relative(process.cwd(), file));
 if (sources.length === 0) process.exit(0);
-// What the place's project file leaves out (its `globIgnorePaths`, such as the shared code's specs in
-// the places that don't run them) isn't in its sourcemap, so it's type-checked in another place.
 const project = JSON.parse(fs.readFileSync("game.project.json", "utf8")) as { globIgnorePaths?: string[] };
 // luau-lsp matches its globs against paths from here, as the project file's are.
 const ignored = (project.globIgnorePaths ?? []).map((glob) => `--ignore=${glob}`);
 
-// The fix for the type errors agents meet most, said once per run after the problems (in a
-// multi-place game, once per place; the edit hook shows each once).
 const HINTS: [RegExp, string][] = [
 	[
 		/not found in external type 'StarterPlayer'/,

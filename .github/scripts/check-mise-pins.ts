@@ -1,8 +1,3 @@
-// mise's own version is pinned by hand: in this repository's workflows' jdx/mise-action `version:`,
-// and in the templates' cloud setup, which also pins the SHA-256 of the binaries it downloads (a
-// game's workflows read their version from it, so they hold no pin of their own). This fails when
-// they disagree, or when those SHA-256s aren't the ones that release publishes, so a bump (Renovate's
-// or a person's) can't leave one behind. CI runs it: `node .github/scripts/check-mise-pins.ts`.
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 
@@ -16,8 +11,6 @@ let sums: { file: string; arch: string; sum: string }[] = [];
 
 for (const file of files) {
 	const text = fs.readFileSync(file, "utf8");
-	// Each jdx/mise-action step's `version:`, up to the next step; a game's workflows read it from
-	// cloud-setup.sh (an expression), so only a number is a pin.
 	const lines = text.split("\n");
 	lines.forEach((line, index) => {
 		if (!line.includes("uses: jdx/mise-action@")) return;

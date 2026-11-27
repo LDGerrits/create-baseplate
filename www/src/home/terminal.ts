@@ -1,8 +1,3 @@
-// create-baseplate as a person runs it: its own questions, options, hints and spinner messages
-// (cli/src/commands/create/, cli/src/domain/add-ons/questions.ts and
-// cli/src/domain/game/install-dependencies.ts), answered with the defaults and the recommended libraries
-// and tools, up to the install.
-
 const root = document.documentElement;
 const term = document.getElementById("term") as HTMLElement;
 const command = document.getElementById("term-cmd") as HTMLElement;
@@ -38,7 +33,6 @@ let visible = false;
 let paused = false;
 
 class Stopped extends Error {}
-// Waits, unless a newer run started meanwhile.
 const sleep = (ms: number, id: number) =>
 	new Promise<void>((resolve, reject) => setTimeout(() => (id === run ? resolve() : reject(new Stopped())), ms));
 const between = (low: number, high: number) => low + Math.random() * (high - low);
@@ -64,7 +58,6 @@ const optionsHtml = (options: readonly Option[], at: number) =>
 			: `<span class="hint">○ ${escapeHtml(option.label)}</span>`,
 	);
 
-// A select: the question, its options, arrow-key steps to the choice, Enter, then the answer alone.
 async function select(id: number, question: string, options: readonly Option[], path: readonly number[]) {
 	const q = row("q active gap", "◆", escapeHtml(question));
 	const rows = options.map(() => row("a", "│", ""));
@@ -192,7 +185,6 @@ async function play() {
 	}
 }
 
-// The finished run, drawn at once: for the reserved height and while paused.
 function finalState() {
 	run += 1;
 	const lang = language();
@@ -217,7 +209,6 @@ function finalState() {
 	row("done gap", "◇", "Installed the tools and packages");
 }
 
-// Reserves the finished run's height, plus the one line an open select adds, from the first frame.
 const measure = () => {
 	term.style.height = "";
 	finalState();

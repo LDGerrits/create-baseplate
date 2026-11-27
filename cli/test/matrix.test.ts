@@ -1,5 +1,3 @@
-// CI's sets of created games (.github/scripts/generate-matrix.ts) cover what they promise, in each language,
-// and what a run of each event takes of them, in batches.
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { test } from "node:test";
@@ -43,9 +41,7 @@ for (const [language, generator] of Object.entries(generators) as [Language, (ty
 	});
 
 	test(`${language}: creates a game with every question answered, once per UI`, () => {
-		// A question whose only choice besides "none" is its default, such as Luau's state, answers with it.
 		const onlyChoice = (q: (typeof questions)[number]) => q.values.filter((value) => value !== "none").length === 1;
-		// One that can't take any of its choices with the game's other answers, such as Darklua in a partially managed game, keeps its default.
 		const fitsAnother = (game: Answers, q: (typeof questions)[number]) =>
 			q.values.some((value) => value !== "none" && value !== q.defaultValue && allowed({ ...game, [q.name]: value }));
 		const uis = questions.find((question) => question.name === "ui")?.values ?? [];
@@ -259,7 +255,6 @@ test("a pull request that changes only the docs creates no game", () => {
 		});
 	}
 	assert.equal(plan({ event: "pull_request", changedFiles: [...changed, "cli/src/main.ts"] }).create.length > 0, true);
-	// A push has no changed files to read, and always creates games.
 	assert.equal(plan({ event: "push", changedFiles: changed }).create.length > 0, true);
 });
 

@@ -1,5 +1,3 @@
--- Owns every player's coins for as long as they are in the server; nothing is saved. The balance
--- shows on the player list as leaderstats, which is only a copy of what this service holds.
 local Players = game:GetService("Players")
 
 local CurrencyService = {}
@@ -33,7 +31,6 @@ local function addLeaderstats(player: Player)
 	show(player)
 end
 
--- Main.server.luau calls this once, after every service has loaded.
 function CurrencyService.start()
 	Players.PlayerAdded:Connect(addLeaderstats)
 	Players.PlayerRemoving:Connect(function(player)

@@ -1,4 +1,3 @@
--- Gives each player a reward once a day. Clients ask; this service decides, by its own clock.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
@@ -14,7 +13,6 @@ export type Record = { claimedAt: number?, history: { number } }
 
 local records: { [number]: Record } = {}
 
--- What a claim at `now` makes of a player's record: a changed copy, its nested history copied too.
 function DailyRewardService.claimed(data: Record, now: number): Record
 	local copy = table.clone(data)
 	copy.history = table.clone(data.history)
@@ -31,7 +29,6 @@ function DailyRewardService.secondsLeft(userId: number, now: number?): number
 	return math.max(0, record.claimedAt + DailyRewardService.DAY - (now or os.time()))
 end
 
--- Claims the reward if a day has passed since the last claim.
 function DailyRewardService.claim(userId: number, now: number?): boolean
 	local at = now or os.time()
 	if DailyRewardService.secondsLeft(userId, at) > 0 then
@@ -41,7 +38,6 @@ function DailyRewardService.claim(userId: number, now: number?): boolean
 	return true
 end
 
--- Main.server.luau calls this once, after every service has loaded.
 function DailyRewardService.start()
 	DailyRewardNetwork.request:connect(function(player: Player)
 		DailyRewardNetwork.changed:fire(player, DailyRewardService.secondsLeft(player.UserId))

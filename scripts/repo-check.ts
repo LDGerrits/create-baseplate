@@ -1,5 +1,3 @@
-// What the repository's own local loop shares: which checks a set of changed files needs, where a
-// pass is recorded, and how a failure is shortened.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -19,7 +17,6 @@ export const DOCS_RECORD = "root-docs-passed";
  */
 export type Scope = "none" | "docs" | "full";
 
-/** Whether the CLI's tests or the docs site read this Markdown file. */
 const readByChecks = (file: string) => file === "README.md" || file === "cli/README.md" || file.startsWith("www/");
 
 export function scopeOf(files: string[]): Scope {
@@ -42,7 +39,6 @@ export function templatesOf(files: string[]): string[] {
 	return [...bases].filter(([, code]) => code).map(([base]) => base);
 }
 
-/** Lines of a failure's output that never say what broke: progress dots, turbo's banner, the test runner's own frames. */
 const noise = /^(\S+:\s)?(\.+X?\.*|\s*at .*node:(internal|async_hooks).*|\s*[•]\s.*)$/;
 
 /** The tail of a failure's output, without colors or noise: where the failing test or step says what broke. */
@@ -61,7 +57,6 @@ export function withoutGitEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.Proc
 	return Object.fromEntries(Object.entries(env).filter(([name]) => !name.startsWith("GIT_")));
 }
 
-/** The files that decide what a dependency install gives. */
 const INSTALL_FILES = ["package.json", "cli/package.json", "www/package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml"];
 
 /**

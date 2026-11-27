@@ -1,13 +1,8 @@
 name: Lock mise tools and Wally packages
 
-# mise.toml is locked: `mise install` refuses a tool that mise.lock doesn't list with its checksums.
-# Renovate updates a tool's pin in mise.toml but not mise.lock (the hosted Renovate app runs no
-# post-upgrade commands), so this regenerates mise.lock on Renovate's branches and pushes it. The
-# same for the Luau template's wally.toml and wally.lock, which ships to every Luau game.
-#
-# A push with the default GITHUB_TOKEN doesn't start CI again, so the update would stay red. Give
-# this workflow a GitHub App with Contents: read and write on this repository, installed on it, as
-# the secrets BOT_APP_CLIENT_ID and BOT_APP_PRIVATE_KEY: its push starts CI on the new lock.
+# `mise install` refuses a tool that mise.lock doesn't list with its checksums, and the hosted
+# Renovate app runs no post-upgrade commands, so it updates mise.toml but not mise.lock. A push with
+# the default GITHUB_TOKEN doesn't start CI again.
 
 on:
   push:
@@ -24,7 +19,6 @@ concurrency:
 jobs:
   lock:
     name: Regenerate mise.lock and wally.lock
-    # Only Renovate's own pushes: a person's push to its branch is left alone.
     if: github.actor == 'renovate[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15

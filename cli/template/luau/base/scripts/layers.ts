@@ -1,26 +1,14 @@
-// The game's four layers, and what the check says about them. Code under src/ (in a multi-place game,
-// under each source root: projects/common/src and each place's src) sits in one of:
-//   app/<side>/                 entry scripts and composition; may import every layer
-//   features/<feature>/<side>/  what the game could ship without; imports game, platform and other features
-//   game/<module>/<side>/       always-on systems; never imports features or app
-//   platform/<module>/<side>/   game-agnostic Roblox code; never imports game, features or app
-// where <side> is server, client or shared. check-sources.ts runs `structureErrors`, and, on the
-// requires `requireEdges` reads out of the game's sourcemap, `layerErrors` and `cycleErrors`.
-
 import path from "node:path";
 
 export const LAYERS = ["app", "features", "game", "platform"] as const;
 export type Layer = (typeof LAYERS)[number];
 export const SIDES = ["server", "client", "shared"];
-/** Names that say nothing about what a module holds. */
 export const REFUSED_MODULES = ["util", "utils", "lib", "libs"];
 
-/** A file's source root: the longest of `roots` it sits under. */
 export function rootOf(file: string, roots: string[]): string | undefined {
 	return roots.filter((root) => file.startsWith(`${root}/`)).sort((a, b) => b.length - a.length)[0];
 }
 
-/** The layer a file sits in, or undefined outside the layers. */
 export function layerOf(file: string, roots: string[]): Layer | undefined {
 	const root = rootOf(file, roots);
 	if (root === undefined) return undefined;
@@ -28,10 +16,6 @@ export function layerOf(file: string, roots: string[]): Layer | undefined {
 	return LAYERS.find((layer) => layer === first);
 }
 
-/**
- * Where each file may sit. `files` are source files by path from the repo root, `roots` the source
- * roots: `src`, or `projects/common/src` and each place's `src`.
- */
 export function structureErrors(files: string[], roots: string[]): string[] {
 	const errors: string[] = [];
 	const seen = new Set<string>();
@@ -119,7 +103,6 @@ function wrongDepth(file: string, root: string, layer: Layer, parts: string[]): 
 	return `${file}: a side folder at the wrong depth. Server, client and shared folders sit only at ${at}, and Rogen routes by the outermost one: move ${parts.filter((part) => SIDES.includes(part)).at(-1)}/'s files up into ${root}/${parts[0]}/${layer === "app" ? "" : `${parts[1]}/`}<side>/.`;
 }
 
-/** The feature a file belongs to, as `<root>|<name>`, or undefined. */
 export function featureOf(file: string, roots: string[]): string | undefined {
 	const root = rootOf(file, roots);
 	if (root === undefined) return undefined;
@@ -127,10 +110,6 @@ export function featureOf(file: string, roots: string[]): string | undefined {
 	return layer === "features" && name !== undefined && side !== undefined ? `${root}|${name}` : undefined;
 }
 
-/**
- * Cycles between feature folders, from the files' imports (`edges`: [importer, imported]). Folder
- * level: two features that import each other through different files are a cycle too.
- */
 export function cycleErrors(edges: [string, string][], roots: string[]): string[] {
 	const multi = roots.length > 1;
 	const label = (feature: string) => {
@@ -146,7 +125,6 @@ export function cycleErrors(edges: [string, string][], roots: string[]): string[
 		if (!graph.get(a)?.has(b)) graph.get(a)?.set(b, [from, to]);
 	}
 
-	// Tarjan's strongly connected components: each one of two or more features is a cycle.
 	const index = new Map<string, number>();
 	const low = new Map<string, number>();
 	const stack: string[] = [];
@@ -201,7 +179,6 @@ export function cycleErrors(edges: [string, string][], roots: string[]): string[
 	});
 }
 
-/** A path from `start` back to `start` inside one component. */
 function cyclePath(graph: Map<string, Map<string, [string, string]>>, inside: Set<string>, start: string): string[] {
 	const previous = new Map<string, string>();
 	const queue = [start];
@@ -225,7 +202,6 @@ function cyclePath(graph: Map<string, Map<string, [string, string]>>, inside: Se
 	return [start, start];
 }
 
-/** One instance of Rojo's sourcemap (`rojo sourcemap`). */
 export interface SourcemapNode {
 	name: string;
 	className?: string;
@@ -237,13 +213,11 @@ interface Instance {
 	name: string;
 	parent: Instance | undefined;
 	children: Map<string, Instance>;
-	/** The module's file, by path from the repo root. */
 	file: string | undefined;
 }
 
 const SCRIPT_FILE = /\.luau?$/;
 
-/** Rojo's tree as instances that know their parent, and the files that are modules in it. */
 function instancesOf(sourcemap: SourcemapNode, dir: string) {
 	const byFile = new Map<string, Instance>();
 	const build = (node: SourcemapNode, parent: Instance | undefined): Instance => {
@@ -264,7 +238,6 @@ function instancesOf(sourcemap: SourcemapNode, dir: string) {
 	return { root: build(sourcemap, undefined), byFile };
 }
 
-/** A sourcemap's file path (from the folder `rojo sourcemap` ran in, or absolute) from the repo root. */
 function toRepoPath(file: string, dir: string): string {
 	const normal = file.replaceAll("\\", "/");
 	const absolute = /^([A-Za-z]:)?\//.test(normal);
@@ -273,12 +246,10 @@ function toRepoPath(file: string, dir: string): string {
 	).replace(/^\.\//, "");
 }
 
-/** Source without comments, with strings kept: `--` inside one stays. */
 function withoutComments(source: string): string {
 	return source.replace(/--\[(=*)\[[\s\S]*?\]\1\]|--.*$/gm, "");
 }
 
-/** The text between the parentheses of the call that opens at `open`. */
 function argumentOf(text: string, open: number): string | undefined {
 	let depth = 0;
 	for (let at = open; at < text.length; at++) {
@@ -288,7 +259,6 @@ function argumentOf(text: string, open: number): string | undefined {
 	return undefined;
 }
 
-/** `local name = <path>` lines whose right side is an instance path, by name. */
 function aliasesOf(text: string): Map<string, string> {
 	const aliases = new Map<string, string>();
 	for (const [, name, expression] of text.matchAll(/^local\s+(\w+)\s*(?::[^=\n]+)?=\s*(.+?)\s*$/gm)) {
@@ -297,12 +267,6 @@ function aliasesOf(text: string): Map<string, string> {
 	return aliases;
 }
 
-/**
- * Follows an instance path written in code (`ServerScriptService.game.bank.Bank`,
- * `script.Parent.Parent.features.shop.ShopController`, `game:GetService("X")`, `:WaitForChild("X")`,
- * `["X"]`, `.Parent`, and locals that hold one) through the tree. Undefined when it isn't one this
- * can follow, such as a package's or a computed one.
- */
 function follow(
 	expression: string,
 	script: Instance,
@@ -322,7 +286,6 @@ function follow(
 	else if (name === "workspace") current = root.children.get("Workspace");
 	else if (aliases.has(name)) {
 		const target = aliases.get(name) as string;
-		// A local that names itself, or one defined from another: follow it, once per step.
 		const own = new Map(aliases);
 		own.delete(name);
 		current = follow(target, script, root, own, depth + 1);
@@ -341,12 +304,6 @@ function follow(
 	return rest.trim() === "" ? current : undefined;
 }
 
-/**
- * The requires between the game's own files, as [requirer, required] by path from the repo root,
- * read through the sourcemap Rojo writes (`rojo sourcemap game.project.json`): every instance path
- * and every `script.Parent` chain resolves where Rojo and Rogen put the file, not where its folder
- * looks like it goes. `dir` is the folder the sourcemap was written in, `read` gives a file's text.
- */
 export function requireEdges(
 	sourcemap: SourcemapNode,
 	dir: string,
@@ -369,7 +326,6 @@ export function requireEdges(
 	return edges;
 }
 
-/** Which layer imports which: a violation for each file pair, with the next move. */
 export function layerErrors(edges: [string, string][], roots: string[]): string[] {
 	const errors: string[] = [];
 	const seen = new Set<string>();

@@ -1,5 +1,3 @@
-// The Mesa driver install (.github/scripts/mesa.sh): from the cached .deb files when they're there,
-// from the network (which fills them) when not, and from the network again when they don't install.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -13,7 +11,6 @@ after(() => {
 	for (const dir of temps) fs.rmSync(dir, { recursive: true, force: true });
 });
 
-/** A machine with a fake `sudo` and `apt-get` that log what they're asked and "download" one package. */
 function machine() {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "mesa-"));
 	temps.push(root);

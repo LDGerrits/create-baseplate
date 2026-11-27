@@ -1,4 +1,3 @@
-// The server that keeps ESLint loaded for the edit hook, with a stand-in for ESLint. `mise run check` runs these.
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
@@ -6,7 +5,6 @@ import path from "node:path";
 import { test } from "node:test";
 import { ask, changedFiles, fixable, type Linted, serve, snapshot, socketPath } from "./eslint-server.ts";
 
-/** A project folder with a source file, a config and a lockfile, removed after `body`. */
 async function inProject(body: (root: string) => Promise<void>) {
 	const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "eslint-server-")));
 	fs.mkdirSync(path.join(root, "src"));
@@ -27,10 +25,6 @@ const problem = (file: string): Linted => ({
 	messages: [{ line: 1, ruleId: "x/y", message: "no" }],
 });
 
-/**
- * Starts a server with a counting linter; `stopped` settles when it exits. A test that makes
- * several requests needs an idle time that outlasts a slow CI runner between them.
- */
 function start(root: string, idleMs = 60_000) {
 	const calls: string[][] = [];
 	const linter = async (files: string[]) => {
@@ -113,7 +107,6 @@ test("replies stale and stops when anything but the requested files changed", as
 			assert.deepEqual(await ask(root, ["src/a.ts"]), { stale: true }, change);
 			await server.stopped;
 			assert.equal(server.calls.length, 0);
-			// Nothing answers any more, so the caller lints for itself.
 			assert.equal(await ask(root, ["src/a.ts"]), undefined);
 		});
 	}

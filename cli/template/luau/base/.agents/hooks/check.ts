@@ -1,11 +1,3 @@
-// Stop hook, for every agent tool that runs hooks: when files changed, run `mise run check` and hand
-// any failure back to the agent before it ends its turn. `.agents/hooks/run` starts it, with the
-// tool's reply format as the argument: claude (also Codex's), cursor, copilot or gemini.
-// When the agent already had its chance in this stop and the check still fails, it may stop, so the
-// hook can't loop, and the user is told the check fails where the tool can show it. Cursor says
-// nothing of the earlier follow-up, so it gets a few follow-ups instead.
-// The check records the state of the files it passed on (fingerprint.ts), and the hook skips the check
-// on later stops until a file changes again, whether the agent ran the check itself or the hook did.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
@@ -24,21 +16,18 @@ export interface StopPayload {
 
 const CURSOR_FOLLOW_UPS = 3;
 
-/** Whether this stop should run the check at all, before looking at the files. */
 export function wantsCheck(format: Format, payload: StopPayload): boolean {
 	if (format !== "cursor") return true;
 	// Only a finished turn: after Stop or an error, a follow-up would start the agent again.
 	return payload.status === "completed" && (payload.loop_count ?? 0) < CURSOR_FOLLOW_UPS;
 }
 
-/** The output cut to `max` characters, keeping its start (the first failure) and its end (the summary). */
 export function clip(output: string, max: number): string {
 	if (output.length <= max) return output;
 	const tail = Math.floor(max / 5);
 	return `${output.slice(0, max - tail)}\n…\n${output.slice(-tail)}`;
 }
 
-/** What to print after the check failed with this output, or undefined to print nothing. */
 export function failureOutput(format: Format, payload: StopPayload, output: string): object | undefined {
 	const retried = format !== "cursor" && payload.stop_hook_active === true;
 	if (retried) {
@@ -62,10 +51,8 @@ const git = (...args: string[]) => {
 	return run.status === 0 ? run.stdout : Buffer.alloc(0);
 };
 
-// Outside git, when this hook last ran the check: it runs again only after a file changed since.
 const lastRun = (root: string) =>
 	path.join(os.tmpdir(), `baseplate-check-${createHash("sha256").update(root).digest("hex").slice(0, 8)}`);
-// Folders of installed, generated or cached files, which the check itself writes.
 const SKIPPED = new Set([
 	"node_modules",
 	"out",
@@ -77,7 +64,6 @@ const SKIPPED = new Set([
 	"DevPackages",
 ]);
 
-/** Outside git: a file under `root` changed since `since` (ms), skipping dot folders and SKIPPED. */
 export function changedSince(root: string, since: number): boolean {
 	for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
 		const at = path.join(root, entry.name);
@@ -90,10 +76,6 @@ export function changedSince(root: string, since: number): boolean {
 	return false;
 }
 
-/**
- * The files this hook would check, relative to the current folder; Markdown changes need no check.
- * Outside git, ["."] when anything changed since the hook last ran the check.
- */
 export function changedFiles(): string[] {
 	if (git("rev-parse", "--is-inside-work-tree").toString("utf8").trim() !== "true") {
 		const since = fs.statSync(lastRun(process.cwd()), { throwIfNoEntry: false })?.mtimeMs ?? 0;
@@ -137,10 +119,8 @@ if (import.meta.main) {
 		maxBuffer: 64 * 1024 * 1024,
 	});
 	if (check.error !== undefined) process.exit(0);
-	// After the check, so the files it writes don't count as changes.
 	fs.writeFileSync(lastRun(root), "");
 	if (check.status === 0) {
-		// The check records its own pass; this covers a game whose check predates the record.
 		const state = stateId(root, "files");
 		if (state !== undefined && readRecord(root, CHECK_RECORD) !== state) writeRecord(root, CHECK_RECORD, state);
 		process.exit(0);

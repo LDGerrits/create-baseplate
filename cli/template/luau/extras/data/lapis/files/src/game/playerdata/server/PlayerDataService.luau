@@ -1,5 +1,3 @@
--- Loads each player's saved data when they join and saves it when they leave, with Lapis. Other
--- services read and change it through `get` and `update`.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -15,12 +13,9 @@ type Collection = Lapis.Collection<PlayerData>
 type Document = Lapis.Document<PlayerData>
 
 local function useMockDataStore()
-	-- Lapis types `dataStoreService` as Roblox's DataStoreService, which the mock stands in for
-	-- without matching its types.
 	Lapis.setConfig({ dataStoreService = DataStoreServiceMock.new() :: any }) -- the mock isn't typed as DataStoreService
 end
 
--- Studio saves to a mock DataStore, which forgets everything when the server stops.
 if RunService:IsStudio() then
 	useMockDataStore()
 end
@@ -33,8 +28,6 @@ local function newCollection(name: string): Collection
 	return Lapis.createCollection(name, {
 		defaultData = PlayerData.DEFAULT,
 		validate = validate,
-		-- Each takes data as saved before a change and returns it changed, first to last: for a new
-		-- field, `function(data) data.gems = 0 return data end`.
 		migrations = {},
 	})
 end
@@ -46,14 +39,11 @@ local PlayerDataService = {}
 local collection: Collection? = nil
 local documents: { [number]: Document } = {}
 
--- Saves to a fresh mock DataStore from here on, which keeps data in memory only, in a collection of
--- this name: specs give each test its own. Call it before any player loads.
 function PlayerDataService.useMockCollection(name: string)
 	useMockDataStore()
 	collection = newCollection(name)
 end
 
--- Loads the player's document, yielding until it has. Returns false when it couldn't.
 function PlayerDataService.load(userId: number): boolean
 	local current = collection or newCollection("PlayerData")
 	collection = current
@@ -83,7 +73,6 @@ function PlayerDataService.update(userId: number, change: (data: PlayerData) -> 
 	return true
 end
 
--- Saves the player's data and closes the document.
 function PlayerDataService.release(userId: number)
 	local document = documents[userId]
 	if document == nil then
@@ -93,12 +82,11 @@ function PlayerDataService.release(userId: number)
 	document:close():catch(warn)
 end
 
--- Main.server.luau calls this once, after every service has loaded.
 function PlayerDataService.start()
 	local function join(player: Player)
 		local loaded = PlayerDataService.load(player.UserId)
-		-- The player may have left while their data loaded.
-		if player.Parent == nil then
+		local hasLeft = player.Parent == nil
+		if hasLeft then
 			PlayerDataService.release(player.UserId)
 		elseif not loaded then
 			player:Kick("Your data couldn't load. Please rejoin.")

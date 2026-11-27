@@ -4,8 +4,6 @@
 // and a module or world part added during the session would stay "not found" until the next one.
 // This claims the capability, answers luau-lsp's registration for it, and sends the change itself
 // when sourcemap.json or .luaurc changes in the folder it runs in.
-//
-//   node .agents/hooks/luau-lsp.ts <luau-lsp's arguments>
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -22,13 +20,11 @@ export interface Message {
 
 const WATCHED = ["sourcemap.json", ".luaurc"];
 
-/** A message as LSP sends it over stdio: a Content-Length header, then the JSON. */
 export function frame(message: Message): Buffer {
 	const body = Buffer.from(JSON.stringify(message), "utf8");
 	return Buffer.concat([Buffer.from(`Content-Length: ${body.length}\r\n\r\n`, "ascii"), body]);
 }
 
-/** The whole messages at the start of `buffer`, and what's left of the next one. */
 export function readMessages(buffer: Buffer): { messages: Message[]; rest: Buffer } {
 	const messages: Message[] = [];
 	let rest = buffer;
@@ -36,7 +32,6 @@ export function readMessages(buffer: Buffer): { messages: Message[]; rest: Buffe
 		const end = rest.indexOf("\r\n\r\n");
 		if (end === -1) break;
 		const length = Number(/content-length:\s*(\d+)/i.exec(rest.subarray(0, end).toString("ascii"))?.[1]);
-		// Not a message's header, such as a stray line a program printed: skip it.
 		if (!Number.isFinite(length)) {
 			rest = rest.subarray(end + 4);
 			continue;
@@ -50,7 +45,6 @@ export function readMessages(buffer: Buffer): { messages: Message[]; rest: Buffe
 	return { messages, rest };
 }
 
-/** The client's initialize request, saying it watches files and will send their changes. */
 export function withWatchedFiles(message: Message): Message {
 	if (message.method !== "initialize") return message;
 	const params = (message.params ?? {}) as { capabilities?: { workspace?: Record<string, unknown> } };
@@ -59,7 +53,6 @@ export function withWatchedFiles(message: Message): Message {
 	return { ...message, params: { ...params, capabilities: { ...capabilities, workspace } } };
 }
 
-/** Whether luau-lsp asks the client to register only file watching, which this answers itself. */
 export function isWatchRegistration(message: Message): boolean {
 	if (message.method !== "client/registerCapability") return false;
 	const registrations = (message.params as { registrations?: { method?: string }[] } | undefined)?.registrations ?? [];
@@ -72,7 +65,6 @@ if (import.meta.main) {
 		console.error(`luau-lsp: ${error.message}`);
 		process.exit(1);
 	});
-	// Let what the server last wrote reach the client first.
 	server.on("exit", (code) => process.stdout.end(() => process.exit(code ?? 1)));
 	const toServer = (message: Message) => server.stdin.write(frame(message));
 
@@ -120,7 +112,6 @@ if (import.meta.main) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			if (!initialized || pending.size === 0) return;
-			// A sourcemap that never parses (its generator failed) goes after about two seconds anyway.
 			if (![...pending].every(settled) && waits++ < 20) return flush();
 			waits = 0;
 			const changes = [...pending].map((file) => {

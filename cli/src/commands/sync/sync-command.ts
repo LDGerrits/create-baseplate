@@ -22,7 +22,6 @@ import type { GameSpec } from "../../domain/game/spec.ts";
 /** Whether `dir` is a game create-baseplate made, where `create-baseplate sync` applies. */
 export const isGame = (dir: string) => readOrigin(dir) !== undefined;
 
-/** The agent files this version's template writes for the game `spec` describes. */
 function templateAgentFiles(spec: GameSpec, keepToolingTests: boolean): AgentFiles {
 	const temp = fs.mkdtempSync(path.join(os.tmpdir(), "baseplate-sync-"));
 	try {
@@ -50,8 +49,6 @@ export function runSync(dir: string, version: string, check: boolean, keepToolin
 		console.log(`✗ This create-baseplate has no ${language} template: update create-baseplate first.`);
 		return 1;
 	}
-	// A choice this version dropped would leave its add-on's agent files out, as if the game never had
-	// it. Questions newer than the game take their default, which is what the game has.
 	const settled = settleChoices(language, origin.addOns);
 	if ("problem" in settled) {
 		console.log(

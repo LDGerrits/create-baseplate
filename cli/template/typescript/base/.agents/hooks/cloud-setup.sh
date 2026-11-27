@@ -1,20 +1,8 @@
 #!/usr/bin/env bash
-# Sets up a fresh Linux machine for agents: installs mise, the pinned tools and the packages, so
-# `mise run check` works there too.
-# - Claude Code's cloud sessions run it as a SessionStart hook (CLAUDE_CODE_REMOTE=true). On your
-#   own machine that hook only gives the session's shell the project's tools, from mise.
-# - Elsewhere, run it with --force: Cursor's cloud agents (.cursor/environment.json), Codespaces and
-#   dev containers (.devcontainer/devcontainer.json), or Codex cloud's setup script. --force also
-#   puts mise on the PATH of later shells, through ~/.bashrc.
-# These machines have no Roblox Studio: `mise run ui` draws no text, and Studio work isn't possible.
 set -euo pipefail
 
-# mise itself, pinned and checked: the release CI uses, from GitHub, against the SHA-256s its release
-# publishes (SHASUMS256.txt). The workflows in .github/workflows read this version too (`--pin`), so
-# the game pins mise here only, and `create-baseplate sync` moves it with the sums.
 MISE_VERSION="2026.11.8"
 if [ "${1:-}" = "--pin" ]; then
-	# For GitHub Actions' step outputs: jdx/mise-action's `version`.
 	echo "version=$MISE_VERSION"
 	exit 0
 fi
@@ -23,9 +11,6 @@ force=false
 [ "${1:-}" = "--force" ] && force=true
 cd "${CLAUDE_PROJECT_DIR:-$(dirname "$0")/../..}"
 
-# A Claude Code session on your own machine: its shell commands get the project's tools by name
-# (rogen, ree, wally, and the rest), as a shell that activates mise has them, through the session's
-# environment file. Nothing is installed.
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ] && ! $force; then
 	local_mise=$(command -v mise 2>/dev/null || echo "$HOME/.local/bin/mise")
 	# Not on Windows, where mise's PATH is Windows-style and Git Bash couldn't read it.
@@ -54,7 +39,6 @@ install_mise() {
 }
 
 # rur renders the stories in the check through Vulkan; with no GPU it needs Mesa's software driver.
-# Best effort: only where apt and root (or sudo without a password) are at hand.
 install_vulkan() {
 	command -v apt-get >/dev/null || return 0
 	dpkg -s mesa-vulkan-drivers >/dev/null 2>&1 && return 0
@@ -77,7 +61,6 @@ install_vulkan() {
 	mise run install
 } >&2
 
-# Later shell commands in the session find mise and the tools.
 path_line="export PATH=\"$HOME/.local/bin:$HOME/.local/share/mise/shims:\$PATH\""
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
 	echo "$path_line" >>"$CLAUDE_ENV_FILE"

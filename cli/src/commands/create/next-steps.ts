@@ -15,7 +15,6 @@ export interface NextStepsState {
 	place: string;
 }
 
-/** Quotes a path for a POSIX shell when it needs it, since agents run these lines as they are. */
 const quoted = (text: string) => (/^[\w./@+-]+$/.test(text) ? text : `'${text.replaceAll("'", "'\\''")}'`);
 
 export function nextSteps(dir: string, state: NextStepsState): string[] {

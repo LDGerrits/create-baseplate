@@ -4,7 +4,6 @@ import { COIN_TAG } from "../shared/coin-tag";
 
 const RADIANS_PER_SECOND = math.pi;
 
-/** Spins the coins on each player's device, which is smooth and sends nothing over the network. */
 @Controller()
 export class CoinPickupController implements OnTick {
 	onTick(dt: number) {

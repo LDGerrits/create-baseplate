@@ -1,8 +1,5 @@
-// Rules for the game's source files that luau-lsp and Selene don't have (scripts/check-sources.ts
-// runs them).
 import path from "node:path";
 
-/** Files are PascalCase, with dotted suffixes such as `.server`, `.spec` or `.story`; `init` too. */
 const PASCAL = /^(?:[A-Z][A-Za-z0-9]*|init)(?:\.[a-z]+)*\.luau?$/;
 
 export function namingErrors(files: string[]): string[] {
@@ -18,10 +15,8 @@ export function namingErrors(files: string[]): string[] {
 		});
 }
 
-/** A comment after the code on the same line: ` -- <why>`. */
 const REASON = /--\s*\S/;
 
-/** A `selene: allow` or a `:: any` cast with no reason after it. */
 export function silencedErrors(file: string, source: string): string[] {
 	return source.split("\n").flatMap((line, index) => {
 		const at = `${file}:${index + 1}`;
@@ -39,10 +34,8 @@ export function silencedErrors(file: string, source: string): string[] {
 	});
 }
 
-/** Whether a file opts out of a rule with `-- <marker>: <why>`. */
 const optedOut = (source: string, marker: string) => new RegExp(`--\\s*${marker}:\\s*\\S`).test(source);
 
-/** A service with no spec beside it: its rules are what a spec tests. */
 export function specErrors(files: string[], read: (file: string) => string): string[] {
 	const present = new Set(files);
 	return files
@@ -54,10 +47,6 @@ export function specErrors(files: string[], read: (file: string) => string): str
 		);
 }
 
-/**
- * A feature with remotes and no end-to-end test. `testFolder` names the folder whose tests run the
- * feature's code: `tests/e2e`, or in a multi-place game the place's (`projects/<place>/tests/e2e`).
- */
 export function e2eErrors(
 	files: string[],
 	tests: string[],
@@ -67,7 +56,6 @@ export function e2eErrors(
 	const present = new Set(tests);
 	return files.flatMap((file) => {
 		const feature = /(?:^|\/)features\/([^/]+)\/shared\/[^/]+Network\.luau$/.exec(file)?.[1];
-		// Only remotes clients send (Remo's ClientToServer and ServerAsync) need requests tested.
 		if (
 			feature === undefined ||
 			optedOut(read(file), "no-e2e") ||
@@ -83,10 +71,8 @@ export function e2eErrors(
 	});
 }
 
-/** Client modules that aren't components: they start, or mount, what the player sees; the UI root in app/ too. */
 const NOT_COMPONENT = /(Controller|\.story|\.storybook|\.spec|\.server|\.client|\/Start)\.luau$|(^|\/)app\//;
 
-/** A component (a client module that creates UI elements) with no story beside it. */
 export function storyErrors(files: string[], read: (file: string) => string): string[] {
 	const present = new Set(files);
 	return files
@@ -99,9 +85,7 @@ export function storyErrors(files: string[], read: (file: string) => string): st
 		);
 }
 
-/** DataStoreService by hand: player data belongs in a data library, whose session locking saves it safely. */
 export function dataStoreErrors(file: string, source: string): string[] {
-	// An engine spec tests real DataStores on purpose.
 	if (file.endsWith(".engine.spec.luau")) return [];
 	const lines = source.split("\n");
 	return lines.flatMap((line, index) => {
@@ -129,7 +113,6 @@ const ONE_COPY = new Set([
 	"ukendio/jecs",
 ]);
 
-/** Such packages wally.lock holds in more than one version, as when one is updated past what another package depends on. */
 export function duplicateErrors(lockfile: string): string[] {
 	const versions = new Map<string, Set<string>>();
 	for (const [, name = "", version = ""] of lockfile.matchAll(/name = "([^"]+)"\s*\nversion = "([^"]+)"/g)) {
@@ -143,7 +126,6 @@ export function duplicateErrors(lockfile: string): string[] {
 		);
 }
 
-/** A focused test left in a spec: the others then don't run, and the check passes without them. (A skip shows in the results.) */
 export function focusedErrors(file: string, source: string): string[] {
 	if (!/\.spec\.luau$/.test(file)) return [];
 	return source

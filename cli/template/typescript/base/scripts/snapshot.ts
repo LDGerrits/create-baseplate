@@ -2,11 +2,6 @@
 // publishes to prod. Nothing is copied: after a snapshot, the next write to each key keeps the value
 // it replaces as a version, so all data as it stood stays restorable for at least 30 days. Roblox
 // takes one a day, so a second run that day reports the earlier one.
-//
-//   node scripts/snapshot.ts
-//
-// Reads ROBLOX_PUBLISH_API_KEY (a key with universe-datastores.control:snapshot on the experience)
-// and ROBLOX_PUBLISH_UNIVERSE_ID.
 async function snapshot() {
 	const key = process.env.ROBLOX_PUBLISH_API_KEY ?? "";
 	const universe = process.env.ROBLOX_PUBLISH_UNIVERSE_ID ?? "";

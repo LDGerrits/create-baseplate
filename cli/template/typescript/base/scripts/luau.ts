@@ -1,17 +1,7 @@
-// Checks the Luau a game keeps beside its TypeScript: a hand-written module roblox-ts copies from
-// src/ to out/ untouched, and the end-to-end tests in tests/e2e. The compiled code is not checked.
-// Does nothing in a game with no .luau files.
-//
-//   node scripts/luau.ts stylua [--fix]   Check the formatting, or write it.
-//   node scripts/luau.ts selene           Lint.
-//   node scripts/luau.ts analyze          Type-check the code in src/ with luau-lsp, strict (.luaurc), new type solver,
-//                                         against Roblox's API types, which it fetches for the pinned
-//                                         luau-lsp into .luau-lsp/ once.
 import fs from "node:fs";
 import path from "node:path";
 import spawn from "cross-spawn";
 
-/** The folders among `names` (`src`, `tests`), in the root and in each place's folder, that hold a Luau file. */
 export function luauFolders(root: string, names: string[]): string[] {
 	const places = ["", ...(fs.existsSync(path.join(root, "projects")) ? subfolders(path.join(root, "projects")) : [])];
 	const found: string[] = [];
@@ -64,7 +54,6 @@ if (import.meta.main) {
 	if (tool === "stylua" || tool === "selene") {
 		const folders = luauFolders(ROOT, ["src", "tests"]);
 		if (folders.length === 0) process.exit(0);
-		// Selene's Roblox standard library: written once, so later lints run offline.
 		if (tool === "selene" && !fs.existsSync("roblox.yml"))
 			spawn.sync("selene", ["generate-roblox-std"], { stdio: "ignore" });
 		if (tool === "selene") exec("selene", folders);

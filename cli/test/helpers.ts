@@ -1,4 +1,3 @@
-// What the tests that run the built CLI (`pnpm build` first; turbo's test task does) share.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -6,7 +5,6 @@ import path from "node:path";
 import { after } from "node:test";
 
 export const CLI = path.resolve(import.meta.dirname, "../dist/index.js");
-// Each test's folder, removed when the file's tests end: games add up to thousands of files.
 const temps: string[] = [];
 export const tempDir = () => {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "create-baseplate-"));

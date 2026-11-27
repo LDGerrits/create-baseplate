@@ -1,6 +1,3 @@
-// Runs a command and collects what it printed, for the repository's scripts (the check, the CI jobs
-// that create games). `echo` says what of that output also goes to this process's own: `all`, `stderr`
-// only, `none`, or `inherit`, which hands the terminal to the command and so collects nothing.
 import { spawn } from "node:child_process";
 
 export interface Outcome {

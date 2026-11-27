@@ -5,7 +5,6 @@ import { RunService } from "@rbxts/services";
 import { DEFAULT_PLAYER_DATA } from "./player-data";
 import { PlayerDataService } from "./player-data-service";
 
-// Each test gets its own collection, so documents don't carry over between tests.
 let collections = 0;
 const newService = () => PlayerDataService.withCollection(`Test_${++collections}`);
 

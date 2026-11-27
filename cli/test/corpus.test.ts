@@ -1,7 +1,3 @@
-// The skills' code examples are kept in the corpus of correct code (scripts/corpus.ts), whose check
-// runs in CI: an example the check would reject, or that the formatter would change, fails there
-// rather than in an agent's game. Each example's code lines must appear, in order, in one corpus file;
-// its comment lines, which say where the code goes, needn't.
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -10,19 +6,16 @@ import { test } from "node:test";
 const CLI = path.resolve(import.meta.dirname, "..");
 const LANGUAGES = ["typescript", "luau"] as const;
 
-/** The code blocks of a Markdown file, in the languages a game's code is written in. */
 export function codeBlocks(markdown: string): string[] {
 	return [...markdown.matchAll(/^```(?:tsx|ts|typescript|luau|lua)\n([\s\S]*?)^```$/gm)].map(([, code = ""]) => code);
 }
 
-/** A block's lines that are code: trimmed, without blank lines and comment-only lines. */
 export const codeLines = (code: string) =>
 	code
 		.split("\n")
 		.map((line) => line.trim())
 		.filter((line) => line !== "" && !line.startsWith("//") && !line.startsWith("--"));
 
-/** Whether `lines` appear in `file`'s lines in this order, each as a whole line. */
 export function appearsIn(lines: string[], file: string): boolean {
 	const fileLines = file.split("\n").map((line) => line.trim());
 	let at = 0;

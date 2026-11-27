@@ -1,6 +1,3 @@
-// /llms.txt (https://llmstxt.org): what Baseplate is, and a link to each page's Markdown copy,
-// in the sidebar's reading order: by full URL once the site's address is set (src/site.ts).
-
 import type { APIRoute } from "astro";
 import { pagesInOrder } from "../lib/markdown.ts";
 import { SUMMARY } from "../site.ts";

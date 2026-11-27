@@ -1,4 +1,3 @@
-// Each language's games: the world a managed game keeps, and the layers every file holds to.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -51,7 +50,6 @@ for (const language of ["typescript", "luau"]) {
 		assert.doesNotMatch(agents, /edit-world|`mise run publish`|world\.d\.ts|Spinner\.model\.json/);
 		assert.match(read(".agents/skills/release/SKILL.md"), /published from Studio/);
 		assert.doesNotMatch(read(".agents/skills/drive-studio/SKILL.md"), /edit-world|--syncback/);
-		// The spinner example needs no world part: its end-to-end test makes its own.
 		assert.match(read("tests/e2e/spinner.luau"), /Instance\.new\("Part"\)/);
 	});
 
@@ -103,7 +101,6 @@ for (const language of ["typescript", "luau"]) {
 	});
 }
 
-// The layers (app, features, game, platform) hold for every file the template and its add-ons write.
 for (const [label, args] of [
 	["a roblox-ts game", ["--language", "typescript", "--data", "lapis", "--entities", "jecs", "--assets", "asphalt"]],
 	[
