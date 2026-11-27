@@ -366,12 +366,12 @@ test("lays out a multi-place game in projects/", () => {
 	assert.deepEqual(JSON.parse(run.stdout).nextSteps.slice(-1), ["mise run dev lobby"]);
 });
 
-test("keeps the shared code of a multi-place game with no features type-checkable", () => {
+test("puts the rate limiter in the shared code of a multi-place game", () => {
 	const cwd = tempDir();
 	const run = create(cwd, "my-game", "--no-git", "--places", "multi", "--state", "none");
 	assert.equal(run.status, 0, run.stderr);
-	assert.ok(fs.existsSync(path.join(cwd, "my-game/projects/common/src/.gitkeep")));
-	assert.ok(fs.existsSync(path.join(cwd, "my-game/projects/common/shared.d.ts")));
+	assert.ok(fs.existsSync(path.join(cwd, "my-game/projects/common/src/platform/network/server/rate-limit.ts")));
+	assert.ok(!fs.existsSync(path.join(cwd, "my-game/src")));
 });
 
 test("uploads assets with Asphalt", async () => {
