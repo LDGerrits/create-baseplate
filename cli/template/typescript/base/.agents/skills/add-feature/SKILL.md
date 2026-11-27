@@ -16,7 +16,7 @@ Run `mise run feature <name>` with the name in kebab-case (`daily-reward`). In a
 and imports the service and the controller in `app/server/main.server.ts` and `app/client/main.client.ts`, which Flamework needs to start them. Then make it do something:
 
 1. **Rules first.** Put the rules in the service, as methods a spec can call: ownership, cost, cooldowns, limits. The clients ask; nothing the client sends is true until the service checks it. Write the spec for each rule before the code that uses it (`write-tests` skill).
-2. **Network.** Add events to `shared/<name>-network.ts`. Give each client-to-server event `rateLimit(<seconds>)` in `createServer`'s `middleware` (a function `rateLimitFunction`), from `src/platform/network/server/rate-limit.ts`, at a rate that fits the action: a purchase is one a second, not twenty.
+2. **Network.** Add events to `shared/<name>-network.ts`. Give each client-to-server event `rateLimit(<seconds>)` in `createServer`'s `middleware` (a function `rateLimitFunction`), from `src/platform/network/server/rate-limit.ts`, with `seconds` the fastest a real player does the action (a purchase is about one a second, not twenty); it lets a burst of three through, so normal network jitter isn't dropped.
 3. **Controller.** Keep what the UI shows, and let the root component subscribe to it (`.agents/skills/build-ui/SKILL.md`).
 4. **UI.** A component in `client/` with a story, and look at its picture (`mise run ui -- --filter <name>`): text cut off, overlap, the empty state.
 5. **End to end.** A request from the client through the real server and remotes in `tests/e2e/<name>.luau`, from the harness in the `write-tests` skill.
