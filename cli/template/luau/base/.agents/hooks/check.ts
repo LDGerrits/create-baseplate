@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { alreadyPassed, CHECK_RECORD, isMarkdown, readRecord, stateId, writeRecord } from "./fingerprint.ts";
+import { alreadyPassed, isMarkdown } from "./fingerprint.ts";
 import { type Format, formatArg, projectRoot } from "./project.ts";
 
 export interface StopPayload {
@@ -120,11 +120,7 @@ if (import.meta.main) {
 	});
 	if (check.error !== undefined) process.exit(0);
 	fs.writeFileSync(lastRun(root), "");
-	if (check.status === 0) {
-		const state = stateId(root, "files");
-		if (state !== undefined && readRecord(root, CHECK_RECORD) !== state) writeRecord(root, CHECK_RECORD, state);
-		process.exit(0);
-	}
+	if (check.status === 0) process.exit(0);
 	const output = failureOutput(format, payload, `${check.stdout}${check.stderr}`.trim());
 	if (output !== undefined) console.log(JSON.stringify(output));
 }

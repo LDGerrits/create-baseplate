@@ -249,9 +249,15 @@ if (before !== undefined) {
 		.map(([file]) => file);
 	if (fixed.length > 0) console.log(`Fixed formatting or lint in: ${fixed.join(", ")}`);
 }
+// What the check saw: the files as formatting left them, unless something changed them after.
 const after = stateId(ROOT, "files");
-const changedSinceFormatting = formatted?.files !== undefined && formatted.files !== after;
-if (changedSinceFormatting && !ci && process.env.BASEPLATE_CHECK_AGAIN === undefined) {
+const files: { state: "unknown" } | { state: "settled"; id: string } | { state: "changed" } =
+	formatted?.files === undefined
+		? { state: "unknown" }
+		: formatted.files === after
+			? { state: "settled", id: formatted.files }
+			: { state: "changed" };
+if (files.state === "changed" && !ci && process.env.BASEPLATE_CHECK_AGAIN === undefined) {
 	const again = spawnSync(process.execPath, process.argv.slice(1), {
 		stdio: "inherit",
 		env: { ...process.env, BASEPLATE_CHECK_AGAIN: "1" },
@@ -291,9 +297,13 @@ if (failed.length > 0) {
 	process.exit(1);
 }
 
-if (formatted?.files !== undefined && !changedSinceFormatting) {
-	writeRecord(ROOT, CHECK_RECORD, formatted.files);
-	if (formatted.tooling !== undefined) writeRecord(ROOT, TOOLING_RECORD, formatted.tooling);
+if (files.state === "changed" && !ci) {
+	console.log("✗ check: files changed while it ran, so it saw none of them whole; run it again.");
+	process.exit(1);
+}
+if (files.state === "settled") {
+	writeRecord(ROOT, CHECK_RECORD, files.id);
+	if (formatted?.tooling !== undefined) writeRecord(ROOT, TOOLING_RECORD, formatted.tooling);
 }
 const skipped = list.filter((step) => outcomes.get(step.name)?.skipped !== undefined).map((step) => step.name);
 console.log(

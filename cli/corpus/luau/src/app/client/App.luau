@@ -8,14 +8,14 @@ local DailyRewardController = require(script.Parent.Parent.features.dailyreward.
 local create = Vide.create
 
 local function App()
-	local secondsLeft = Vide.source(DailyRewardController.getSecondsLeft())
-	Vide.cleanup(DailyRewardController.subscribe(function(seconds)
-		secondsLeft(seconds)
+	local reward = Vide.source(DailyRewardController.getReward())
+	Vide.cleanup(DailyRewardController.subscribe(function(value)
+		reward(value)
 	end))
 	return create("ScreenGui")({
 		Name = "App",
 		ResetOnSpawn = false,
-		Counter({ count = secondsLeft }),
+		Counter({ reward = reward }),
 	})
 end
 
