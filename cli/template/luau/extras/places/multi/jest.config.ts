@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { defineConfig } from "@isentinel/jest-roblox";
+import { pathsIn } from "../../scripts/rojo-project.ts";
 
 // jest-roblox matches the folders it runs against the project's $path strings as written, which in
 // this place's own project files start with ../. So it runs from the repo root, on the root's copy of
@@ -8,24 +9,15 @@ import { defineConfig } from "@isentinel/jest-roblox";
 // its own), each a project whose specs sit beside its code. Wally's package folders are left out.
 const root = new URL("../../", import.meta.url);
 const project = "test.PLACE.project.json";
-const mounts: string[] = [];
-const collect = (node: unknown) => {
-	if (typeof node !== "object" || node === null) return;
-	for (const [key, value] of Object.entries(node)) {
-		if (key !== "$path") collect(value);
-		else {
-			const mount = typeof value === "string" ? value : (value as { optional: string }).optional;
-			const at = new URL(mount, root);
-			// A folder Rogen splits, such as one whose shared specs this place leaves out, is mounted
-			// file by file; those files are code, never specs, so they need no project of their own.
-			if (/^projects\/[^/]+\/src\//.test(mount) && fs.existsSync(at) && fs.statSync(at).isDirectory()) {
-				mounts.push(mount);
-			}
-		}
-	}
-};
 const projectFile = new URL(project, root);
-collect(fs.existsSync(projectFile) ? JSON.parse(fs.readFileSync(projectFile, "utf8")) : {});
+// A folder Rogen splits, such as one whose shared specs this place leaves out, is mounted file by
+// file; those files are code, never specs, so they need no project of their own.
+const sourceFolders = pathsIn(fs.existsSync(projectFile) ? JSON.parse(fs.readFileSync(projectFile, "utf8")) : {}).filter(
+	(mount) => {
+		const at = new URL(mount, root);
+		return /^projects\/[^/]+\/src\//.test(mount) && fs.existsSync(at) && fs.statSync(at).isDirectory();
+	},
+);
 
 export default defineConfig({
 	rootDir: "../..",
@@ -33,7 +25,7 @@ export default defineConfig({
 	rojoProject: project,
 	jestPath: "ReplicatedStorage/DevPackages/Jest",
 	sourceMap: false,
-	luauRoots: mounts,
+	luauRoots: sourceFolders,
 	formatters: ["agent"],
 	test: {
 		testMatch: ["**/*.spec.luau"],
