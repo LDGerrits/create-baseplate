@@ -6,7 +6,7 @@ import { recordAgentFiles } from "../../domain/agent-files/agent-files.ts";
 import { commitAll, initGit } from "../../domain/game/git.ts";
 import { installDependencies, isMiseInstalled } from "../../domain/game/install-dependencies.ts";
 import { type Rendered, renderGame } from "../../domain/game/render.ts";
-import { PLACES } from "../../domain/places/multi-place.ts";
+import { PLACES } from "../../domain/places/place-steps.ts";
 import { logNextSteps, nextSteps } from "./next-steps.ts";
 import { runCli } from "./options.ts";
 

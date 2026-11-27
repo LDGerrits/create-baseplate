@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { replaceExact, replaceSection } from "../../base/text-edit.ts";
-import type { Managed } from "../add-ons/questions.ts";
+import { type AddOnChoices, type Managed, managedOf } from "../add-ons/questions.ts";
 import {
 	addSkillNotes,
 	copyPlaceTests,
@@ -31,7 +31,8 @@ ${managed === "full" ? "!/projects/*/world/**/*.project.json\n" : ""}`;
  * into a folder inside rootDir), and Sloptor writes only inside its tsconfig's folder. So each
  * place compiles from tsconfig.<place>.json at the root to out/<place>, with the root's include/.
  */
-export function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
+export function makeMultiPlaceTypeScript(dir: string, name: string, choices: AddOnChoices) {
+	const managed = managedOf(choices);
 	const at = (...parts: string[]) => path.join(dir, ...parts);
 	const read = (file: string) => fs.readFileSync(at(file), "utf8");
 	// The template's text this relies on; fail rather than leave a half-converted game.

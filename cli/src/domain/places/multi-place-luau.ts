@@ -147,7 +147,7 @@ export function makeMultiPlaceLuau(dir: string, name: string, choices: AddOnChoi
 			"Each place's map and lighting live in `world/` as files; luau-lsp types them from the place's `sourcemap.json`",
 		);
 	}
-	agents = agents.replaceAll("builds the place", "builds every place");
+	agents = replaceIn(agents, "builds the place", "builds every place");
 	// Darklua's section names the folders its script processes, which the paths below would
 	// rewrite to the shared code alone.
 	if (choices.release === "darklua") {
@@ -172,7 +172,7 @@ export function makeMultiPlaceLuau(dir: string, name: string, choices: AddOnChoi
 	fs.writeFileSync(at("AGENTS.md"), agents);
 
 	const readme = multiPlaceReadme(read("README.md"), extra("README-layout.md"), managed);
-	fs.writeFileSync(at("README.md"), readme.replaceAll("builds the place", "builds every place"));
+	fs.writeFileSync(at("README.md"), replaceIn(readme, "builds the place", "builds every place"));
 
 	addSkillNotes(dir, skillNote(managed));
 }

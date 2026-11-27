@@ -1,9 +1,7 @@
 import type { Language } from "../add-ons/language.ts";
-import { type AddOnChoices, managedOf } from "../add-ons/questions.ts";
+import type { AddOnChoices } from "../add-ons/questions.ts";
 import { makeMultiPlaceLuau } from "./multi-place-luau.ts";
 import { makeMultiPlaceTypeScript } from "./multi-place-typescript.ts";
-
-export { PLACES } from "./place-steps.ts";
 
 /**
  * Turns the single-place game in `dir`, with these add-ons, into several places: the shared code in
@@ -12,5 +10,5 @@ export { PLACES } from "./place-steps.ts";
  */
 export function makeMultiPlace(dir: string, name: string, language: Language, choices: AddOnChoices) {
 	if (language === "luau") makeMultiPlaceLuau(dir, name, choices);
-	else makeMultiPlaceTypeScript(dir, name, managedOf(choices));
+	else makeMultiPlaceTypeScript(dir, name, choices);
 }

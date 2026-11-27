@@ -5,8 +5,6 @@ import { replaceExact, replaceSection } from "../../base/text-edit.ts";
 import type { Language } from "../add-ons/language.ts";
 import type { Managed } from "../add-ons/questions.ts";
 
-// The steps of making a game multi-place that both languages take.
-
 /** The places a multi-place game starts with. */
 export const PLACES = ["lobby", "game"];
 /**

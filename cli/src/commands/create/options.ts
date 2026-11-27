@@ -144,9 +144,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 	let language = flags.language ?? DEFAULT_LANGUAGE;
 	let input = given ?? DEFAULT_APP_NAME;
 	let { git, install } = flags;
-	// The flags' choices for a language, each missing one its default; refused when they don't fit it,
-	// such as --entities components with --language luau, or can't go together, such as --ui vide
-	// with --state reflex (which would leave a later question with no choice to offer).
+	// Refused before a question that would have no choice left to offer.
 	const settle = (language: Language) => {
 		const settled = settleChoices(language, givenAddOns);
 		return "problem" in settled ? refuse(settled.problem) : settled.choices;
@@ -190,7 +188,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 			cancelled(answer);
 			language = answer as Language;
 		}
-		// Asking, the language may not be known until its question is answered.
+		// The language is known only now, after its question.
 		const picked = settle(language);
 		const choose = async (addOn: AddOn) => {
 			const answer = await p.select({
@@ -243,11 +241,13 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 		input = dir as string;
 		git = answers.git;
 		install = answers.install;
-	} else chosen = settle(language);
+	} else {
+		// The name before the choices, as the prompt asks them.
+		const problem = nameProblem(flags.name ?? parseNameAndPath(input).name);
+		if (problem !== undefined) refuse(problem);
+		chosen = settle(language);
+	}
 
-	const parsed = parseNameAndPath(input);
-	const name = flags.name ?? parsed.name;
-	const problem = nameProblem(name);
-	if (problem !== undefined) refuse(problem);
-	return { name, dir: parsed.dir, git, install, json: flags.json, language, addOns: chosen };
+	const { name, dir } = parseNameAndPath(input);
+	return { name: flags.name ?? name, dir, git, install, json: flags.json, language, addOns: chosen };
 }
