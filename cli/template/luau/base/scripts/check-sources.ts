@@ -29,6 +29,7 @@ import {
 	dataStoreErrors,
 	duplicateErrors,
 	e2eErrors,
+	focusedErrors,
 	namingErrors,
 	silencedErrors,
 	specErrors,
@@ -188,11 +189,15 @@ const e2eTests = testDirs.flatMap((dir) =>
 );
 errors.push(
 	...namingErrors(sources),
-	...sources.flatMap((file) => [...silencedErrors(file, read(file)), ...dataStoreErrors(file, read(file))]),
+	...sources.flatMap((file) => [
+		...silencedErrors(file, read(file)),
+		...dataStoreErrors(file, read(file)),
+		...focusedErrors(file, read(file)),
+	]),
 	...specErrors(sources, read),
 	...e2eErrors(sources, e2eTests, read),
 	...storyErrors(sources, read),
-	...(fs.existsSync("wally.lock") ? duplicateErrors(read("wally.lock"), read("wally.toml")) : []),
+	...(fs.existsSync("wally.lock") ? duplicateErrors(read("wally.lock")) : []),
 );
 
 for (const error of errors) console.error(error);

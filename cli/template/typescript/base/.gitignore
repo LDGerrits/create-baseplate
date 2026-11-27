@@ -50,3 +50,6 @@ sourcemap.json
 # Agent tools' worktrees inside the game (Claude Code, Gemini CLI): checkouts of their own
 /.claude/worktrees/
 /.gemini/worktrees/
+
+# Selene's Roblox standard library, written once by the tools
+/roblox.yml

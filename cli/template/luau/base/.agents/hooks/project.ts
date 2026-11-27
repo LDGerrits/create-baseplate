@@ -3,6 +3,7 @@
 // session's folder, and the project's place inside the repo (the root, or a subfolder of a bigger
 // repo) from where this file sits.
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -32,4 +33,33 @@ export type Format = "claude" | "cursor" | "copilot" | "gemini";
 
 export function formatArg(arg: string | undefined): Format {
 	return arg === "cursor" || arg === "copilot" || arg === "gemini" ? arg : "claude";
+}
+
+/**
+ * Whether Claude Code runs the game's language server, which reports type errors after each edit
+ * itself: `scripts/setup.ts` enables it in the main checkout's .claude/settings.local.json, under a
+ * marketplace named after that checkout's path. It isn't there when `claude` wasn't installed when
+ * the game's tools were, or a person skipped it.
+ */
+export function languageServerOn(root: string): boolean {
+	try {
+		// A git hook's variables (GIT_DIR, GIT_INDEX_FILE) would point git at another repository.
+		const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_")));
+		const git = (...args: string[]) =>
+			spawnSync("git", ["rev-parse", "--path-format=absolute", ...args], { cwd: root, encoding: "utf8", env });
+		const common = git("--git-common-dir").stdout.trim();
+		const own = git("--git-dir").stdout.trim();
+		const prefix = spawnSync("git", ["rev-parse", "--show-prefix"], { cwd: root, encoding: "utf8", env }).stdout.trim();
+		// In a linked worktree the main checkout registers it, for every worktree.
+		const linked =
+			common !== "" && own !== "" && path.resolve(common) !== path.resolve(own) && path.basename(common) === ".git";
+		const main = fs.realpathSync.native(linked ? path.join(path.dirname(common), prefix) : root);
+		const marketplace = `baseplate-${createHash("sha256").update(main).digest("hex").slice(0, 8)}`;
+		const settings = JSON.parse(fs.readFileSync(path.join(main, ".claude", "settings.local.json"), "utf8")) as {
+			enabledPlugins?: Record<string, boolean>;
+		};
+		return settings.enabledPlugins?.[`luau@${marketplace}`] === true;
+	} catch {
+		return false;
+	}
 }

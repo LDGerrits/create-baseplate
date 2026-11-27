@@ -4,6 +4,7 @@ import {
 	dataStoreErrors,
 	duplicateErrors,
 	e2eErrors,
+	focusedErrors,
 	namingErrors,
 	silencedErrors,
 	specErrors,
@@ -88,16 +89,15 @@ test("player data goes through a data library, unless the line above says why no
 	);
 });
 
-test("a runtime package in two versions is an error; a test tool's own copy isn't", () => {
+test("a package whose state the game shares, in two versions, is an error; another isn't", () => {
 	const lock = [
 		'[[package]]\nname = "littensy/charm"\nversion = "0.10.0"',
 		'[[package]]\nname = "littensy/charm"\nversion = "0.11.1"',
 		'[[package]]\nname = "jsdotlua/react-is"\nversion = "17.2.1"',
 		'[[package]]\nname = "jsdotlua/react-is"\nversion = "17.1.0"',
 	].join("\n\n");
-	const toml = '[dependencies]\nCharm = "littensy/charm@=0.11.1"\n\n[dev-dependencies]\nJest = "jsdotlua/jest@=3.10.0"';
 	assert.deepEqual(
-		duplicateErrors(lock, toml).map((error) => error.split(" is installed")[0]),
+		duplicateErrors(lock).map((error) => error.split(" is installed")[0]),
 		["wally.lock: littensy/charm"],
 	);
 });

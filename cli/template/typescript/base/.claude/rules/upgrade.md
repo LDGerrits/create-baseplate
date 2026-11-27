@@ -5,6 +5,4 @@ paths:
   - "mise.toml"
 ---
 
-Working on the game's packages, tools and agent files: follow `.agents/skills/upgrade/SKILL.md`.
-
-@../../.agents/skills/upgrade/SKILL.md
+Working on the game's packages, tools and agent files: read `.agents/skills/upgrade/SKILL.md` first, and follow it.

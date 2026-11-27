@@ -5,7 +5,7 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import type { Payload } from "./guard.ts";
+import { GENERATED, type Payload } from "./guard.ts";
 
 // Each agent tool's shell tool: Claude Code's and Codex's Bash, Gemini CLI's run_shell_command,
 // Copilot's bash and powershell, Cursor's Shell and its afterShellExecution hook.
@@ -107,4 +107,20 @@ export function lockTools(root: string, written: string[]): string[] {
 	return [
 		`mise.toml: \`mise lock\` failed, so mise won't install the new pin until it passes:\n${said || (run.error?.message ?? "")}`,
 	];
+}
+
+/** Tools that write generated files as they should: a shell command that runs one wrote them on purpose. */
+const GENERATORS =
+	/\b(mise|rogen|rojo|wally|pnpm|npm|npx|sloptor|rbxtsc|forge|lune|stylua|selene|biome|eslint|node|git)\b/;
+
+/**
+ * Generated files a shell command wrote by hand (with `sed`, `echo >`, `cp`), which their
+ * generator overwrites: the guard stops an edit tool from writing them, but can't see into a script.
+ */
+export function generatedWrites(command: string, written: string[]): string[] {
+	if (GENERATORS.test(command)) return [];
+	return written.flatMap((file) => {
+		const fix = GENERATED.find(([pattern]) => pattern.test(file))?.[1];
+		return fix === undefined ? [] : [`${file} is generated, so this edit will be overwritten; ${fix}.`];
+	});
 }

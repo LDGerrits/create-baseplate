@@ -90,7 +90,7 @@ test("runtime packages come from @rbxts or @flamework", () => {
 	assert.match(packageErrors(json)[0] ?? "", /lodash is a plain npm package/);
 });
 
-test("a Roblox package in two versions is an error", () => {
+test("a package whose state the game shares, in two versions, is an error; a stateless one isn't", () => {
 	const lockfile = [
 		"packages:",
 		"",
@@ -98,6 +98,8 @@ test("a Roblox package in two versions is an error", () => {
 		"  '@rbxts/ripple@0.10.2':",
 		"  '@rbxts/react@17.3.13-ts.1':",
 		"  '@rbxts-js/shared@17.3.7-ts.1':",
+		"  '@rbxts/t@2.2.1':",
+		"  '@rbxts/t@3.2.1':",
 		"  '@rbxts-js/shared@17.3.13-ts.2':",
 		"",
 		"snapshots:",
@@ -106,9 +108,7 @@ test("a Roblox package in two versions is an error", () => {
 		"  '@rbxts/pretty-react-hooks@0.6.4(@rbxts/react@17.3.13-ts.1)':",
 	].join("\n");
 	assert.deepEqual(
-		duplicateErrors(lockfile, JSON.stringify({ dependencies: { "@rbxts/ripple": "0.10.2", "@rbxts/react": "1" } })).map(
-			(error) => error.split(" is installed")[0],
-		),
+		duplicateErrors(lockfile).map((error) => error.split(" is installed")[0]),
 		["pnpm-lock.yaml: @rbxts/ripple"],
 	);
 });

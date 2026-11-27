@@ -86,12 +86,24 @@ export function packageErrors(packageJson: string): string[] {
 }
 
 /**
- * The game's own runtime packages that the lockfile holds in more than one version, as when one is
- * updated past what another package depends on: the game would load both copies. (Test tools bring
- * their own copies of some packages; those never reach the game.)
+ * Packages that hold state the whole game shares (a renderer, a store, an ECS world, Flamework's
+ * registry): two copies of one don't see each other's, which breaks the game in ways no type shows.
  */
-export function duplicateErrors(lockfile: string, packageJson: string): string[] {
-	const { dependencies = {} } = JSON.parse(packageJson) as { dependencies?: Record<string, string> };
+const ONE_COPY = new Set([
+	"@rbxts/react",
+	"@rbxts/react-roblox",
+	"@rbxts/ripple",
+	"@rbxts/vide",
+	"@rbxts/charm",
+	"@rbxts/reflex",
+	"@rbxts/jecs",
+	"@flamework/core",
+	"@flamework/networking",
+	"@flamework/components",
+]);
+
+/** Such packages the lockfile holds in more than one version, as when one is updated past what another package depends on. */
+export function duplicateErrors(lockfile: string): string[] {
 	const versions = new Map<string, Set<string>>();
 	for (const [, name = "", version = ""] of lockfile.matchAll(
 		/^ {2}'?(@(?:rbxts|rbxts-js|flamework)\/[^@'\s]+)@([^('\s:]+)/gm,
@@ -99,7 +111,7 @@ export function duplicateErrors(lockfile: string, packageJson: string): string[]
 		versions.set(name, (versions.get(name) ?? new Set()).add(version));
 	}
 	return [...versions]
-		.filter(([name, found]) => found.size > 1 && name in dependencies)
+		.filter(([name, found]) => found.size > 1 && ONE_COPY.has(name))
 		.map(
 			([name, found]) =>
 				`pnpm-lock.yaml: ${name} is installed in versions ${[...found].sort().join(" and ")}, so the game would load two copies that don't share state. Pin the version the other packages need (\`pnpm why ${name}\` shows who needs which).`,

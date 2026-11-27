@@ -14,9 +14,9 @@ import path from "node:path";
 import { fixable, type Linted, lintViaServer } from "./eslint-server.ts";
 import { GENERATED, namedFiles, type Payload, patched, toolInput } from "./guard.ts";
 import { hintsFor } from "./hints.ts";
-import { type Format, formatArg, projectRoot } from "./project.ts";
+import { type Format, formatArg, languageServerOn, projectRoot } from "./project.ts";
 import { newSkills, skillNote } from "./skill-rules.ts";
-import { isShell, lockTools, movesFiles, runsTask, shellStarted, writtenSince } from "./written.ts";
+import { generatedWrites, isShell, lockTools, movesFiles, runsTask, shellStarted, writtenSince } from "./written.ts";
 
 // What Biome formats; ESLint lints the TypeScript among them under src/ or projects/, as the check does.
 const FORMATS = /\.(ts|tsx|js|mjs|cjs|json|jsonc)$/;
@@ -166,6 +166,7 @@ if (import.meta.main) {
 	const shell = isShell(payload);
 	let written: string[];
 	let raw: string[];
+	let overwritten: string[] = [];
 	let moved = false;
 	if (shell) {
 		const input = toolInput(payload);
@@ -173,13 +174,14 @@ if (import.meta.main) {
 		const since = shellStarted(root);
 		if (since === undefined || runsTask(command)) process.exit(0);
 		raw = writtenSince(root, since);
+		overwritten = generatedWrites(command, raw);
 		written = filesToCheck(raw, root, root);
 		moved = movesFiles(command);
 	} else {
 		raw = editedFiles(payload).map((file) => path.relative(root, path.resolve(start, file)).split(path.sep).join("/"));
 		written = filesToCheck(raw, root, root);
 	}
-	const locked = lockTools(root, raw);
+	const locked = [...overwritten, ...lockTools(root, raw)];
 	// Codex and Gemini CLI load no rules for the files an agent works on: name the skill instead.
 	const notes =
 		process.argv[3] === "codex" || replyFormat === "gemini"
@@ -188,7 +190,12 @@ if (import.meta.main) {
 	// Who type-checks a write: Claude Code's language server sees what its edit tools write; nothing
 	// does for a shell command, Codex's apply_patch or the other tools' edits. Cursor shows the agent
 	// nothing a hook says, so a type check there would only cost time.
-	const noServer = shell || replyFormat !== "claude" || (payload.tool_name ?? payload.toolName) === "apply_patch";
+	const noServer =
+		shell ||
+		replyFormat !== "claude" ||
+		(payload.tool_name ?? payload.toolName) === "apply_patch" ||
+		process.argv[3] === "codex" ||
+		!languageServerOn(root);
 	const wantsTypes = noServer && replyFormat !== "cursor";
 	const files = written.filter((file) => fs.existsSync(path.join(root, file)));
 	// A move or a delete leaves no new file, but can break the imports of others: type-check then too.

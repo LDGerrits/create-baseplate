@@ -14,7 +14,7 @@ description: What goes wrong when setting up or running a game, and how to fix i
 ## Tools and packages
 
 - **A command isn't found, such as `rogen` or `ror`.** The game's tools are on the PATH only where your shell activates mise. Run them as `mise x -- rogen …`, or add mise's activation to your shell.
-- **"… is not in the lockfile".** A tool's pin in `mise.toml` changed without `mise.lock`. Run `mise lock`, and commit `mise.lock`.
+- **"… is not in the lockfile".** A tool's pin in `mise.toml` changed without `mise.lock`. Run `mise lock`, and commit `mise.lock`. An agent's edit hook runs it after each change to `mise.toml`.
 - **"Regenerate the lockfile" from pnpm.** `package.json` changed without `pnpm-lock.yaml`. Run `mise exec -- pnpm install`, and commit the lockfile.
 - **pnpm refuses a package version.** It installs only versions published at least two weeks ago. Pick an older version.
 - **A hook skipped the check and you want it to run.** The stop and commit hooks skip the check when it already passed on exactly the same files (the record is `check-passed` in the worktree's git folder, never committed). `mise run check` always runs; change a file, or delete that record, to make the hooks run it too.

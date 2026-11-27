@@ -185,6 +185,8 @@ function start(step: Step): Started {
 const ROOT = path.resolve(import.meta.dirname, "..");
 const ci = process.argv.includes("--ci");
 const verbose = process.argv.includes("--verbose");
+/** How much of a failed step's output the check prints, unless it runs for CI or --verbose. */
+const STEP_LINES = 40;
 const everything = process.argv.includes("--all") || (process.env.CI ?? "") !== "";
 
 // What the fixing steps changed, so a person sees it: the game's own source files, by content.
@@ -309,7 +311,16 @@ for (const step of list) {
 	if (!outcome.ok || verbose) {
 		console.log(`${outcome.ok ? "✓" : "✗"} ${step.name} (${outcome.seconds.toFixed(1)}s): ${step.command}`);
 		const text = outcome.output.trim();
-		if (text !== "") console.log(`${text}\n`);
+		// Each failed step keeps its start, where its first problems are: a cut across the whole
+		// output (as a hook's message makes) would drop the first step's instead of the last's.
+		const lines = text.split("\n");
+		const shown = ci || verbose || lines.length <= STEP_LINES ? text : lines.slice(0, STEP_LINES).join("\n");
+		const more = lines.length - STEP_LINES;
+		if (text !== "") {
+			console.log(
+				`${shown}${shown === text ? "" : `\n… ${more} more lines: run \`${step.command}\` for all of them`}\n`,
+			);
+		}
 	}
 }
 if (failed.length > 0) {

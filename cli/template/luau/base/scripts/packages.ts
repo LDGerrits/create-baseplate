@@ -254,4 +254,11 @@ if (!process.argv.includes("--types")) {
 		fs.writeFileSync(DEFINITIONS, await response.text());
 		fs.writeFileSync(DEFINITIONS_VERSION, version);
 	}
+	// Selene's Roblox standard library, written here once so the lint runs offline afterwards, as in a
+	// cloud session without the network. Selene would otherwise fetch it on its first run.
+	if (!fs.existsSync("roblox.yml")) {
+		const std = spawnSync("selene", ["generate-roblox-std"], { encoding: "utf8", shell: process.platform === "win32" });
+		if (std.status !== 0)
+			console.warn(`Couldn't write Selene's Roblox library (roblox.yml): ${std.stderr ?? ""}`.trim());
+	}
 }

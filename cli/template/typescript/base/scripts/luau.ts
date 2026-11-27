@@ -64,6 +64,9 @@ if (import.meta.main) {
 	if (tool === "stylua" || tool === "selene") {
 		const folders = luauFolders(ROOT, ["src", "tests"]);
 		if (folders.length === 0) process.exit(0);
+		// Selene's Roblox standard library: written once, so later lints run offline.
+		if (tool === "selene" && !fs.existsSync("roblox.yml"))
+			spawn.sync("selene", ["generate-roblox-std"], { stdio: "ignore" });
 		if (tool === "selene") exec("selene", folders);
 		exec("stylua", flag === "--fix" ? folders : ["--check", ...folders]);
 	} else if (tool === "analyze") {

@@ -4,6 +4,6 @@ globs: **/*.story.luau,**/*.storybook.luau,**/client/**/*.luau
 alwaysApply: false
 ---
 
-Working on UI components and their stories: follow `.agents/skills/build-ui/SKILL.md`.
+Working on UI components and their stories: read `.agents/skills/build-ui/SKILL.md` first, and follow it.
 
 @.agents/skills/build-ui/SKILL.md

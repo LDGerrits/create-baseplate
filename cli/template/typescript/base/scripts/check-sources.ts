@@ -133,7 +133,7 @@ errors.push(
 	...e2eErrors(sources, e2eTests, read),
 	...storyErrors(sources, read),
 	...packageErrors(read("package.json")),
-	...(fs.existsSync("pnpm-lock.yaml") ? duplicateErrors(read("pnpm-lock.yaml"), read("package.json")) : []),
+	...(fs.existsSync("pnpm-lock.yaml") ? duplicateErrors(read("pnpm-lock.yaml")) : []),
 );
 
 for (const error of errors) console.error(error);

@@ -97,34 +97,46 @@ export function dataStoreErrors(file: string, source: string): string[] {
 	});
 }
 
-/** The packages wally.toml asks for at runtime: under [dependencies] and [server-dependencies]. */
-export function runtimePackages(wallyToml: string): Set<string> {
-	const names = new Set<string>();
-	let runtime = false;
-	for (const line of wallyToml.split("\n")) {
-		const section = /^\[([\w-]+)\]/.exec(line);
-		if (section !== null) runtime = section[1] === "dependencies" || section[1] === "server-dependencies";
-		const name = /"([\w-]+\/[\w-]+)@/.exec(line)?.[1];
-		if (runtime && name !== undefined) names.add(name);
-	}
-	return names;
-}
-
 /**
- * The game's own runtime packages that wally.lock holds in more than one version, as when one is
- * updated past what another package depends on: the game would load both copies. (Test tools bring
- * their own copies of some packages; those never reach the game.)
+ * Packages that hold state the whole game shares (a renderer, a store, an ECS world, the remotes):
+ * two copies of one don't see each other's, which breaks the game in ways no type shows.
  */
-export function duplicateErrors(lockfile: string, wallyToml: string): string[] {
-	const runtime = runtimePackages(wallyToml);
+const ONE_COPY = new Set([
+	"jsdotlua/react",
+	"jsdotlua/react-roblox",
+	"littensy/ripple",
+	"littensy/react-ripple",
+	"littensy/charm",
+	"littensy/reflex",
+	"littensy/remo",
+	"centau/vide",
+	"ukendio/jecs",
+]);
+
+/** Such packages wally.lock holds in more than one version, as when one is updated past what another package depends on. */
+export function duplicateErrors(lockfile: string): string[] {
 	const versions = new Map<string, Set<string>>();
 	for (const [, name = "", version = ""] of lockfile.matchAll(/name = "([^"]+)"\s*\nversion = "([^"]+)"/g)) {
 		versions.set(name, (versions.get(name) ?? new Set()).add(version));
 	}
 	return [...versions]
-		.filter(([name, found]) => found.size > 1 && runtime.has(name))
+		.filter(([name, found]) => found.size > 1 && ONE_COPY.has(name))
 		.map(
 			([name, found]) =>
 				`wally.lock: ${name} is installed in versions ${[...found].sort().join(" and ")}, so the game would load two copies that don't share state. Pin the version the other packages need in wally.toml.`,
+		);
+}
+
+/** A focused test left in a spec: the others then don't run, and the check passes without them. (A skip shows in the results.) */
+export function focusedErrors(file: string, source: string): string[] {
+	if (!/\.spec\.luau$/.test(file)) return [];
+	return source
+		.split("\n")
+		.flatMap((line, index) =>
+			/\b(?:it|test|describe)\.only\b|\bf(?:it|describe)\s*\(/.test(line) && !line.trimStart().startsWith("--")
+				? [
+						`${file}:${index + 1}: a focused test keeps the others from running: remove it. To run one test, \`mise run test -- -t <name>\`.`,
+					]
+				: [],
 		);
 }
