@@ -17,7 +17,7 @@ description: Update the game's tools and packages, or bring its agent files up t
 
 ## Tools
 
-A tool's pin in `mise.toml` is locked: after changing it by hand, run `mise lock`, because `mise install` refuses a tool the lock doesn't list. Renovate's branches do this in CI.
+A tool's pin in `mise.toml` is locked: `mise install` refuses a tool the lock doesn't list. The edit hook runs `mise lock` after each change to `mise.toml` (in a tool without hooks, run it yourself), and Renovate's branches do it in CI.
 
 - **Rojo** is pinned to a version rbx-forge supports, because forge patches Rojo's Studio plugin. Before a Rojo update, check forge's release notes for support of the new version, and test `mise run dev`.
 - **Rogen, rbx-forge** update from npm in `package.json`. After one, run `mise run check`. Rogen keeps its own block in `AGENTS.md` and its hook in `.agents/hooks/` as it writes them, so `git diff` after the check may show them changed: commit that with the update.

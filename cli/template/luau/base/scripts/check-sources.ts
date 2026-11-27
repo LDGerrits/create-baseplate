@@ -14,14 +14,26 @@
 // - a Roblox API on the wrong side: client-only ones in server/ code, server-only ones in client/ code,
 //   both in shared/ (see sides.ts).
 // - a file name that isn't PascalCase, a `selene: allow` that doesn't say why, and a `:: any` cast
-//   that doesn't say why (see source-rules.ts).
+//   that doesn't say why;
+// - a service with no spec, a feature with remotes and no end-to-end test, a component with no story
+//   (each may opt out with `-- no-spec: <why>`, `-- no-e2e: <why>`, `-- no-story: <why>`), player
+//   data saved with DataStoreService by hand, and a runtime package installed in two versions (see
+//   source-rules.ts).
 // `mise run check` runs it. In a multi-place game, a place's entry scripts start its own code and
 // the shared code; shared code passes when one place lists it.
 import fs from "node:fs";
 import path from "node:path";
 import { cycleErrors, layerErrors, requireEdges, type SourcemapNode, structureErrors } from "./layers.ts";
 import { type Side, sideErrors } from "./sides.ts";
-import { namingErrors, silencedErrors } from "./source-rules.ts";
+import {
+	dataStoreErrors,
+	duplicateErrors,
+	e2eErrors,
+	namingErrors,
+	silencedErrors,
+	specErrors,
+	storyErrors,
+} from "./source-rules.ts";
 import { unguardedRemotes } from "./unguarded-remotes.ts";
 
 const SERVER_ENTRY = "app/server/Main.server.luau";
@@ -169,9 +181,18 @@ for (const place of places) {
 errors.push(...layerErrors(edges, sourceRoots), ...cycleErrors(edges, sourceRoots));
 
 errors.push(...unguardedRemotes(new Map(sources.map((file) => [file, fs.readFileSync(file, "utf8")]))));
+const read = (file: string) => fs.readFileSync(file, "utf8");
+const testDirs = multi ? places.map((place) => `projects/${place}/tests/e2e`) : ["tests/e2e"];
+const e2eTests = testDirs.flatMap((dir) =>
+	fs.existsSync(dir) ? fs.readdirSync(dir).map((file) => path.posix.join(dir, file)) : [],
+);
 errors.push(
 	...namingErrors(sources),
-	...sources.flatMap((file) => silencedErrors(file, fs.readFileSync(file, "utf8"))),
+	...sources.flatMap((file) => [...silencedErrors(file, read(file)), ...dataStoreErrors(file, read(file))]),
+	...specErrors(sources, read),
+	...e2eErrors(sources, e2eTests, read),
+	...storyErrors(sources, read),
+	...(fs.existsSync("wally.lock") ? duplicateErrors(read("wally.lock"), read("wally.toml")) : []),
 );
 
 for (const error of errors) console.error(error);

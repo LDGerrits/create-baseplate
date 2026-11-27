@@ -46,6 +46,10 @@ const HINTS: [RegExp, string][] = [
 		"client code is copied into StarterPlayerScripts, so drop one `.Parent`: from `src/app/client/`, a feature's client code is `script.Parent.Parent.features.<feature>`, there once the feature has client code (`mise run feature` writes some).",
 	],
 	[
+		/not found in external type '(Model|Instance|Player|PlayerGui|Folder|Backpack)'/,
+		"only instances in the project and world/ are typed. Reach what appears at runtime (a character's Humanoid, a mounted ScreenGui) with `WaitForChild` or `FindFirstChildOfClass` and check its class.",
+	],
+	[
 		/Unknown require/,
 		"`rogen where <file>` prints the require path of the module the file holds; client code reaches other client code from `script`.",
 	],

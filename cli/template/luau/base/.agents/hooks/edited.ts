@@ -15,7 +15,8 @@ import os from "node:os";
 import path from "node:path";
 import { GENERATED, namedFiles, type Payload, patched, toolInput } from "./guard.ts";
 import { type Format, formatArg, projectRoot } from "./project.ts";
-import { isShell, movesFiles, runsTask, shellStarted, writtenSince } from "./written.ts";
+import { newSkills, skillNote } from "./skill-rules.ts";
+import { isShell, lockTools, movesFiles, runsTask, shellStarted, writtenSince } from "./written.ts";
 
 // What StyLua formats; Selene lints those under src/, projects/ or tests/, as the check does.
 const LUAU = /\.luau?$/;
@@ -123,11 +124,15 @@ export function regenerate(root: string) {
 }
 
 /** What to print for the tool, given the problems left after the fixes, or undefined to print nothing. */
-export function editedOutput(format: Format, problems: string[]): object | undefined {
-	if (problems.length === 0 || format === "cursor") return undefined;
+export function editedOutput(format: Format, problems: string[], notes: string[] = []): object | undefined {
+	if ((problems.length === 0 && notes.length === 0) || format === "cursor") return undefined;
 	const shown = problems.slice(0, MAX_PROBLEMS);
 	if (problems.length > MAX_PROBLEMS) shown.push(`...and ${problems.length - MAX_PROBLEMS} more`);
-	const message = `Problems left in what you just wrote (its formatting is fixed already):\n${shown.join("\n")}`;
+	const found =
+		problems.length === 0
+			? []
+			: [`Problems left in what you just wrote (its formatting is fixed already):\n${shown.join("\n")}`];
+	const message = [...notes, ...found].join("\n\n");
 	switch (format) {
 		case "copilot":
 			return { additionalContext: message };
@@ -212,17 +217,26 @@ if (import.meta.main && process.argv[2] === "--regenerate") {
 	const replyFormat = formatArg(process.argv[2]);
 	const shell = isShell(payload);
 	let written: string[];
+	let raw: string[];
 	let moved = false;
 	if (shell) {
 		const input = toolInput(payload);
 		const command = typeof input.command === "string" ? input.command : (payload.command ?? "");
 		const since = shellStarted(root);
 		if (since === undefined || runsTask(command)) process.exit(0);
-		written = filesToCheck(writtenSince(root, since), root, root);
+		raw = writtenSince(root, since);
+		written = filesToCheck(raw, root, root);
 		moved = movesFiles(command);
 	} else {
-		written = filesToCheck(editedFiles(payload), root, start);
+		raw = editedFiles(payload).map((file) => path.relative(root, path.resolve(start, file)).split(path.sep).join("/"));
+		written = filesToCheck(raw, root, root);
 	}
+	const locked = lockTools(root, raw);
+	// Codex and Gemini CLI load no rules for the files an agent works on: name the skill instead.
+	const notes =
+		process.argv[3] === "codex" || replyFormat === "gemini"
+			? newSkills(root, raw, payload.session_id).map(skillNote)
+			: [];
 	// Who type-checks a write: Claude Code's language server sees what its edit tools write; nothing
 	// does for a shell command, Codex's apply_patch or the other tools' edits. Cursor shows the agent
 	// nothing a hook says, so a type check there would only cost time.
@@ -236,13 +250,15 @@ if (import.meta.main && process.argv[2] === "--regenerate") {
 				detached: true,
 				stdio: "ignore",
 			}).unref();
+		const reply = editedOutput(replyFormat, locked, notes);
+		if (reply !== undefined) console.log(JSON.stringify(reply));
 		process.exit(0);
 	}
 	process.chdir(root);
 
 	const luau = files.filter((file) => LUAU.test(file));
 	const other = files.filter((file) => BIOME.test(file));
-	const problems: string[] = [];
+	const problems: string[] = [...locked];
 	// StyLua and Biome touch different files, so they run at once; Selene reads the Luau once StyLua is done.
 	const [stylua, biome] = await Promise.all([
 		luau.length === 0 ? "" : output("stylua", luau, "stderr"),
@@ -300,6 +316,6 @@ if (import.meta.main && process.argv[2] === "--regenerate") {
 	} else if (sourcemapStale(files, known, root)) {
 		spawn(process.execPath, [import.meta.filename, "--regenerate", root], { detached: true, stdio: "ignore" }).unref();
 	}
-	const reply = editedOutput(replyFormat, problems);
+	const reply = editedOutput(replyFormat, problems, notes);
 	if (reply !== undefined) console.log(JSON.stringify(reply));
 }

@@ -35,11 +35,6 @@
 			"to": ""
 		},
 		{
-			"file": "AGENTS.md",
-			"from": " Keep `@rbxts/ripple` on 0.9: `@rbxts/pretty-react-hooks` is built for it, and the game loads one copy.",
-			"to": ""
-		},
-		{
 			"file": "tsconfig.json",
 			"from": "\"jsxFactory\": \"React.createElement\"",
 			"to": "\"jsxFactory\": \"Vide.jsx\""

@@ -9,6 +9,7 @@ import { isShell, stampShell } from "./written.ts";
 
 export interface Payload {
 	cwd?: string;
+	session_id?: string; // Claude Code, Codex and Gemini CLI
 	hook_event_name?: string;
 	tool_name?: string; // Claude Code, Codex, Cursor and Gemini CLI
 	tool_input?: Record<string, unknown>;

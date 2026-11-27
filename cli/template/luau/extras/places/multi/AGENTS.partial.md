@@ -16,9 +16,7 @@ The four layers sit in each source root, `projects/common/src` and `projects/<pl
 - `game/<system>/`: the always-on systems and what features build on; it never requires a feature or `app`.
 - `platform/<module>/`: game-agnostic code that would move unchanged to another game; it requires none of the others.
 
-A feature or a system? Delete the folder: if the game still works, it's a feature; if other code breaks, it belongs in `game/`. The children of `game/` and `platform/` are folders named for what they hold: no loose files there, and no `util(s)` or `lib(s)`.
-
-Folder names are lowercase letters and digits, since they are parts of a require path.
+A feature or a system? Delete the folder: if the game still works, it's a feature; if other code breaks, it belongs in `game/`.
 
 Inside a feature or module, and in `app/`, the folder a file sits in decides where it runs:
 
@@ -26,13 +24,11 @@ Inside a feature or module, and in `app/`, the folder a file sits in decides whe
 - `client/`: only on the player's device: `StarterPlayerScripts.features.<feature>`, copied into each player.
 - `shared/`: both: `ReplicatedStorage.Shared.features.<feature>`. It can't require `server/` or `client/` code: the server's folders are empty on clients, and the check fails on client-visible code that reaches for `ServerScriptService` or `ServerStorage`.
 
-Side folders sit only at `app/<side>/` and `<layer>/<module>/<side>/`, and a file outside one isn't placed in the game: there's no default side, so server code can't reach clients by mistake.
-
-Require by instance path, the way `rogen where <file>` prints it: `require(ReplicatedStorage.Shared.features.shop.ShopNetwork)`, `require(ServerScriptService.game.bank.Bank)`. Client code is copied into each player at runtime, so it reaches other client code from `script`, as `projects/<place>/src/app/client/Start.luau` does: `script.Parent.Parent.features.shop.ShopController`. Shared code can't require what only one place has: the other places don't have it.
+Require by instance path, the way `rogen where <file>` prints it: `require(ReplicatedStorage.Shared.features.shop.ShopNetwork)`. Shared code can't require what only one place has: the other places don't have it.
 
 Code meets in three ways: a direct `require` by default; a registry in `game/` when one owner has many contributors (the one `ProcessReceipt` handler, with the features registering their product handlers), so `game/` never requires a feature; a typed signal the emitter exports, for a fact others react to. Never a string-keyed event bus.
 
-`mise run check` builds, type-checks and tests every place; `mise run dev` names the place it serves: `mise run dev lobby`. luau-lsp types each place against its own sourcemap in the check; your editor types one place at a time, `game`, from `sourcemap.json` at the root: to switch, change the place in `luau-lsp.sourcemap.generatorCommand` in `.vscode/settings.json` and run `mise run generate`. Files are PascalCase, named after what they hold: `InventoryService.luau`.
+`mise run check` builds, type-checks and tests every place; `mise run dev` names the place it serves: `mise run dev lobby`. luau-lsp types each place against its own sourcemap in the check; your editor types one place at a time, `game`, from `sourcemap.json` at the root: to switch, change the place in `luau-lsp.sourcemap.generatorCommand` in `.vscode/settings.json` and run `mise run generate`. Name each file after what it holds: `InventoryService.luau`.
 
 Rogen's own section below applies here too; the configs are at the root. Run `rogen check` and `rogen write` from the root with no path, which covers every place, or name a place's config to work on one: `rogen write lobby`, `rogen check lobby`. `rogen where <path>` works on shared and place files alike.
 

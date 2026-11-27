@@ -2,6 +2,7 @@
 // rather than with their edit tools, and then the edit hook and the language server never see them.
 // The guard, which runs before each shell command, stamps the time; after the command, the edit hook
 // takes the game's files written since then and checks them as it checks an edit.
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import type { Payload } from "./guard.ts";
@@ -81,4 +82,29 @@ export function writtenSince(root: string, since: number): string[] {
 	walk(""); // the root's own files, not its folders
 	for (const dir of SOURCES) walk(dir);
 	return found;
+}
+
+/**
+ * After mise.toml changed, records the tools' new pins and checksums in mise.lock, as a package
+ * manager updates its lockfile: mise installs only what the lock lists. Returns what went wrong, if
+ * anything (it takes a fraction of a second when nothing changed, and needs the network when a pin did).
+ */
+export function lockTools(root: string, written: string[]): string[] {
+	if (!written.includes("mise.toml")) return [];
+	const run = spawnSync("mise", ["lock"], {
+		cwd: root,
+		encoding: "utf8",
+		shell: process.platform === "win32",
+		// Inside the hook's own limit (Codex gives it 30 seconds).
+		timeout: 25_000,
+	});
+	if (run.status === 0) return [];
+	const said = `${run.stdout ?? ""}${run.stderr ?? ""}`
+		.split("\n")
+		.filter((line) => line.trim() !== "" && !/\bWARN\b/.test(line))
+		.slice(-5)
+		.join("\n");
+	return [
+		`mise.toml: \`mise lock\` failed, so mise won't install the new pin until it passes:\n${said || (run.error?.message ?? "")}`,
+	];
 }

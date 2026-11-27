@@ -8,13 +8,25 @@
 //   Flamework's types allow it, and it lets a client flood the server (see unguarded-remotes.ts).
 // - code outside the four layers (app, features, game, platform) or a side folder at the wrong depth,
 //   and a cycle between feature folders (see layers.ts); ESLint checks which layer imports which.
-// - a file name that isn't kebab-case, and an eslint-disable comment that doesn't say why after ` -- `.
+// - a file name that isn't kebab-case, and an eslint-disable comment that doesn't say why after ` -- `;
+// - a service with no spec, a feature with remotes and no end-to-end test, a component with no story
+//   (each may opt out with `// no-spec: <why>`, `// no-e2e: <why>`, `// no-story: <why>`);
+// - a runtime package from outside @rbxts and @flamework, and a Roblox package installed in two
+//   versions (see source-rules.ts).
 // `mise run check` runs it. In a multi-place game, a place's entry scripts start its own code and
 // the shared code it imports; shared code passes when one place imports it.
 import fs from "node:fs";
 import path from "node:path";
 import { cycleErrors, importEdges, structureErrors } from "./layers.ts";
-import { disableErrors, namingErrors } from "./source-rules.ts";
+import {
+	disableErrors,
+	duplicateErrors,
+	e2eErrors,
+	namingErrors,
+	packageErrors,
+	specErrors,
+	storyErrors,
+} from "./source-rules.ts";
 import { unguardedRemotes } from "./unguarded-remotes.ts";
 
 const SERVER_ENTRY = "app/server/main.server.ts";
@@ -109,7 +121,20 @@ errors.push(
 );
 
 errors.push(...unguardedRemotes(new Map(sources.map((file) => [file, fs.readFileSync(file, "utf8")]))));
-errors.push(...namingErrors(sources), ...sources.flatMap((file) => disableErrors(file, fs.readFileSync(file, "utf8"))));
+const read = (file: string) => fs.readFileSync(file, "utf8");
+const testDirs = multi ? places.map((place) => `projects/${place}/tests/e2e`) : ["tests/e2e"];
+const e2eTests = testDirs.flatMap((dir) =>
+	fs.existsSync(dir) ? fs.readdirSync(dir).map((file) => path.posix.join(dir, file)) : [],
+);
+errors.push(
+	...namingErrors(sources),
+	...sources.flatMap((file) => disableErrors(file, read(file))),
+	...specErrors(sources, read),
+	...e2eErrors(sources, e2eTests, read),
+	...storyErrors(sources, read),
+	...packageErrors(read("package.json")),
+	...(fs.existsSync("pnpm-lock.yaml") ? duplicateErrors(read("pnpm-lock.yaml"), read("package.json")) : []),
+);
 
 for (const error of errors) console.error(error);
 if (errors.length > 0) process.exit(1);

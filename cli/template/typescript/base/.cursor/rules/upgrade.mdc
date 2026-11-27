@@ -1,0 +1,9 @@
+---
+description: The game's packages, tools and agent files
+globs: **/*.baseplate-new,package.json,mise.toml
+alwaysApply: false
+---
+
+Working on the game's packages, tools and agent files: follow `.agents/skills/upgrade/SKILL.md`.
+
+@.agents/skills/upgrade/SKILL.md

@@ -36,6 +36,9 @@ export const SERVER_ONLY_SERVICES = [
 ];
 /** Members that only work on the server. */
 export const SERVER_ONLY_MEMBERS = ["AwardBadge", "ProcessReceipt", "SetNetworkOwner", "LoadCharacter"];
+/** Saving written by hand loses data (a player in two servers, a failed write); a data library's session locking prevents it. */
+export const SAVE_BY_HAND =
+	"Player data goes through a data library (ProfileStore or Lapis), not DataStoreService by hand. For another store, such as a leaderboard's, disable this rule on the line and say why.";
 /** HttpService's requests are the server's: a client can't call them. */
 export const SERVER_ONLY_HTTP = ["RequestAsync", "GetAsync", "PostAsync"];
 
@@ -70,14 +73,18 @@ export function sideRules(side: Side) {
 	const services = (works: "client" | "server") => (works === "client" ? CLIENT_ONLY_SERVICES : SERVER_ONLY_SERVICES);
 	const members = (works: "client" | "server") => (works === "client" ? CLIENT_ONLY_MEMBERS : SERVER_ONLY_MEMBERS);
 
-	const names = avoid.flatMap((works) => services(works).map((name) => ({ name, works })));
+	const names = avoid.flatMap((works) =>
+		services(works).map((name) => ({ name, message: messageFor(name, works, side) })),
+	);
+	// On the server, DataStoreService works, but player data belongs in a data library.
+	if (side === "server") names.push({ name: "DataStoreService", message: SAVE_BY_HAND });
 	return {
 		"@typescript-eslint/no-restricted-imports": error({
-			paths: names.map(({ name, works }) => ({
+			paths: names.map(({ name, message }) => ({
 				name: "@rbxts/services",
 				importNames: [name],
 				allowTypeImports: true,
-				message: messageFor(name, works, side),
+				message,
 			})),
 		}),
 		"no-restricted-properties": error(
@@ -94,9 +101,9 @@ export function sideRules(side: Side) {
 		),
 		// game:GetService("DataStoreService"), for code that doesn't import @rbxts/services.
 		"no-restricted-syntax": error(
-			...names.map(({ name, works }) => ({
+			...names.map(({ name, message }) => ({
 				selector: `CallExpression[callee.property.name="GetService"][arguments.0.value="${name}"]`,
-				message: messageFor(name, works, side),
+				message,
 			})),
 		),
 	};

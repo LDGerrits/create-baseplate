@@ -1,0 +1,9 @@
+---
+description: Specs and end-to-end tests
+globs: **/*.spec.ts,**/tests/**
+alwaysApply: false
+---
+
+Working on specs and end-to-end tests: follow `.agents/skills/write-tests/SKILL.md`.
+
+@.agents/skills/write-tests/SKILL.md

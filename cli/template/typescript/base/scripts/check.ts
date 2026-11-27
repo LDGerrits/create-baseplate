@@ -19,6 +19,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { CHECK_RECORD, partId, readRecord, stateId, writeRecord } from "../.agents/hooks/fingerprint.ts";
+import { hintsFor } from "../.agents/hooks/hints.ts";
 
 // The locked packages first, before this script or any step loads one: a new clone or worktree has
 // none yet, and another branch's lockfile may differ. Instant when they already match.
@@ -312,6 +313,8 @@ for (const step of list) {
 	}
 }
 if (failed.length > 0) {
+	const hints = hintsFor(failed.map((step) => outcomes.get(step.name)?.output ?? "").join("\n"));
+	if (hints.length > 0) console.log(`${hints.join("\n")}\n`);
 	const blocked = failed.filter((step) => outcomes.get(step.name)?.skipped !== undefined).map((step) => step.name);
 	const own = failed.filter((step) => !blocked.includes(step.name)).map((step) => step.name);
 	console.log(

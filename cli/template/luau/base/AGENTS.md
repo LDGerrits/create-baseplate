@@ -20,10 +20,8 @@ Before you change something, look at what's there: the code that calls it, where
 `mise run check` is the check: it formats (StyLua), type-checks (luau-lsp), lints (Selene), builds the place, runs the tests and renders the UI stories, in about three seconds, and prints only what failed. Hooks run it for you: after each file you write, from an edit tool or the shell, they hand you the problems left in that file (not in Cursor, which shows that output to no one), and when you stop, and on each commit, they run the whole check and hand you what failed. In a tool without hooks, run it yourself before you finish.
 
 - For one question, narrower commands answer sooner: `mise run analyze` for type errors, `mise run test -- shop` for the specs and end-to-end tests whose path matches (`-t <name>` for one test by name), `mise run ui -- --filter <name>` for one story's picture.
-- Every file is `--!strict` (`.luaurc`), and luau-lsp knows every instance in the game, world included: `ReplicatedStorage.Shared.features.shop.ShopNetwork` (once a `shop` feature has one) and `workspace.SpawnLocation` are typed, and a wrong name fails the check.
-- The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `wally`, `stylua`, `selene`, `luau-lsp`, `lune` and the rest are on the PATH in Claude Code's shell (a hook adds them when the session starts) and wherever your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills. To change a tool's pin in `mise.toml`, run `mise lock` after it: `mise install` refuses a tool that `mise.lock` doesn't list with its checksums.
+- The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `wally`, `stylua`, `selene`, `luau-lsp`, `lune` and the rest are on the PATH in Claude Code's shell (a hook adds them when the session starts) and wherever your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills.
 - `mise run dev` serves the code to Studio: it is the "serve script" that Rogen's section below refers to.
-- Generated files change through their generator, and a hook blocks direct edits: `Packages/`, `ServerPackages/`, `DevPackages/` and `wally.lock` (Wally, from `wally.toml`), `build/` (builds), `default.project.json` (Rogen), `game.project.json`, `test.project.json` and `sourcemap.json` (`mise run generate`, from the code and `world/`), `.luau-lsp/` (Roblox's types for the pinned luau-lsp).
 
 ## Skills
 
@@ -46,7 +44,7 @@ Code in `src/` sits in four layers, and a module requires only down: `app`, then
 - `game/<system>/`: the always-on systems: platform singletons (the one `ProcessReceipt`, the player's saved data), what features build on (currency, teams) and concepts several features write. It never requires a feature or `app`.
 - `platform/<module>/`: game-agnostic Roblox code that would move unchanged to another game: network middleware, sound playback, UI primitives. It requires none of the other layers.
 
-A feature or a system? Delete the folder: if the game still works, it's a feature; if other code breaks, it belongs in `game/`. The children of `game/` and `platform/` are folders named for what they hold: no loose files there, and no `util(s)` or `lib(s)`. Folder names are lowercase letters and digits, since they are parts of a require path.
+A feature or a system? Delete the folder: if the game still works, it's a feature; if other code breaks, it belongs in `game/`.
 
 Inside a feature or module, and in `app/`, the folder a file sits in decides where it runs, and its path in the game: `ServerScriptService.<layer>.<name>`:
 
@@ -54,26 +52,19 @@ Inside a feature or module, and in `app/`, the folder a file sits in decides whe
 - `client/`: only on the player's device: `StarterPlayerScripts.features.<feature>`, copied into each player.
 - `shared/`: both: `ReplicatedStorage.Shared.features.<feature>`. It can't require `server/` or `client/` code: the server's folders are empty on clients, and the check fails on client-visible code that reaches for `ServerScriptService` or `ServerStorage`.
 
-The check also keeps each side's own APIs on that side (`scripts/sides.ts` lists them): `Players.LocalPlayer`, `UserInputService`, `RunService.RenderStepped` and the like fail in `server/`; `DataStoreService`, `MessagingService`, `ServerStorage`, `HttpService:RequestAsync` and the like fail in `client/`. Both lists apply in `shared/`: if a call there is guarded by `RunService:IsServer()` or `IsClient()`, add `-- guarded: <why>` to its line.
+Name each file after what it holds: `InventoryService.luau`.
 
-Side folders sit only at `app/<side>/` and `<layer>/<module>/<side>/`, and a file outside one isn't placed in the game: there's no default side, so server code can't reach clients by mistake. Files are PascalCase, named after what they hold: `InventoryService.luau`.
-
-Require by instance path, the way `rogen where <file>` prints it: `require(ReplicatedStorage.Shared.features.shop.ShopNetwork)`, `require(ServerScriptService.game.bank.Bank)`. Client code is copied into each player at runtime, so it reaches other client code from `script`, as the lines `mise run feature` adds to `src/app/client/Start.luau` do: `script.Parent.Parent.features.shop.ShopController`.
+Require by instance path, the way `rogen where <file>` prints it: `require(ReplicatedStorage.Shared.features.shop.ShopNetwork)`.
 
 Code meets in three ways. Require directly by default: a feature requires the service it needs. When one owner has many contributors, put a registry in `game/`: the one `ProcessReceipt` handler lives there, and each feature registers its product handlers with it, so `game/` never requires a feature. For a fact that others react to, the emitter exports a typed signal that listeners subscribe to. Never a string-keyed event bus.
 
 ## Adding a feature
 
-Run `mise run feature <name>` to start one, and read `.agents/skills/add-feature/SKILL.md`: it writes steps 1 and 2 below and the service's spec. By hand:
-
-1. Remotes in `shared/<Feature>Network.luau`, made with [Remo](https://github.com/littensy/remo) (`ReplicatedStorage.Packages.Remo`) in a namespace named after the feature, with a `Remotes` type that gives their arguments (`Remo.ClientToServer<number>`, `Remo.ServerToClient<number>`, `Remo.ServerAsync<(number), (string)>`), as the `<Feature>Network.luau` that `mise run feature` writes does. Each argument a client sends gets a `t` validator (`Remo.remote(t.integer, t.string)`), and each client-to-server remote `.middleware(Remo.throttleMiddleware(<seconds>))`. A request the server answers (`ServerAsync`) declares what it returns: `Remo.remote(t.number).returns(t.string)`; the service connects with `Network.name:onRequest(function(player: Player, id: number) return "..." end)` (the callback may return a Promise instead), and the client asks with `Network.name:request(id)`, a Promise of the answer, which Remo checks against `.returns`. Remo has no README: its API and types are in `Packages/_Index/littensy_remo@*/remo/src/types.luau`.
-2. A service in `server/<Feature>Service.luau` and, if the client takes part, a controller in `client/<Feature>Controller.luau`: a module with a `start()` that connects its remotes and events. Add each to the list in `src/app/server/Main.server.luau` or `src/app/client/Start.luau`, or it never starts; the check fails on one that isn't.
-3. UI as a component in `client/` with a story, rendered from the root component (see `.agents/skills/build-ui/SKILL.md`).
-4. Tests: a spec for the service, and an end-to-end test for each request a client sends.
+Start one with `mise run feature <name>`, and read `.agents/skills/add-feature/SKILL.md` before you build on it. It writes the feature's remotes, a service with its spec, a controller, an end-to-end test, and the entry scripts' lines that start them. Remotes are [Remo](https://github.com/littensy/remo)'s, as its network module shows; Remo has no README: its API and types are in `Packages/_Index/littensy_remo@*/remo/src/types.luau`.
 
 The rules the code follows:
 
-- **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. The server takes what clients send only through Remo remotes, whose validators drop calls with the wrong arguments and whose throttle drops floods; the throttle fits the action (a purchase is one a second, not twenty). The check fails on `OnServerEvent` or `OnServerInvoke` in the game's code, and on a remote clients send that has no throttle, or no validators for its arguments; mark one any client may send freely with `-- trusts-client: <why>` on the line above it.
+- **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. The server takes what clients send only through Remo remotes, whose validators drop calls with the wrong arguments and whose throttle drops floods; the throttle fits the action (a purchase is one a second, not twenty).
 - **Services own server state.** A service keeps its state in its module and only it changes it; other code calls its functions. Depend on another service by requiring it.
 - **Controllers run the client side.** A controller handles input and the server's events and keeps what the UI shows; the UI reads it from there.
 
@@ -81,7 +72,7 @@ The rules the code follows:
 
 `mise run test` runs them offline in ree, an emulated Roblox engine, in a few seconds. Pick the kind by what you test:
 
-- A service's rules and decisions: a spec, `<Name>.spec.luau` beside the code, with Jest from `ReplicatedStorage.DevPackages.JestGlobals`. Pass time in as a parameter (`now: number?`) so the spec doesn't wait. A spec elsewhere, or named `*.test.luau`, would never run, so the check fails on it.
+- A service's rules and decisions: a spec, `<Name>.spec.luau` beside the code, with Jest from `ReplicatedStorage.DevPackages.JestGlobals`. Pass time in as a parameter (`now: number?`) so the spec doesn't wait.
 - A client's request through the real server and remotes: an end-to-end test, `tests/e2e/<feature>.luau`.
 - Characters, physics, collisions or real DataStore limits, which ree doesn't emulate: an engine spec, `<Name>.engine.spec.luau`, run in real Roblox by `mise run test:engine`.
 
@@ -89,7 +80,7 @@ A failing test's trace names the instance and the file: `ServerScriptService.fea
 
 ## UI
 
-React from `ReplicatedStorage.Packages.React` (react-lua). Give each component worth looking at a story beside it, `<Component>.story.luau`, and look at its picture: `mise run ui` renders every story offline. Before you build, restyle or check UI, read `.agents/skills/build-ui/SKILL.md`: mounting the UI root, writing stories, looking at their pictures on any screen size, clicking into them, and before and after.
+React from `ReplicatedStorage.Packages.React` (react-lua). Look at each component's picture: `mise run ui` renders its story offline. Before you build, restyle or check UI, read `.agents/skills/build-ui/SKILL.md`: mounting the UI root, writing stories, looking at their pictures on any screen size, clicking into them, and before and after.
 
 ## World and Studio
 
@@ -101,7 +92,6 @@ luau-lsp and Selene catch most mistakes. These they don't explain:
 
 - Arrays start at 1, `#` counts only up to the first `nil`, and `nil` in a table removes the key. Use `table.insert`, `table.remove` and `table.clear`; iterate with `for i, v in list do`.
 - Only `nil` and `false` are falsy: `0` and `""` are true.
-- luau-lsp knows only the instances in the project and `world/`. What appears at runtime, such as a player's `Character` and its `Humanoid`, a `ScreenGui` your code mounts in `PlayerGui`, or a part a script creates, isn't typed: `character.Humanoid` fails the check. Reach it with `WaitForChild` or `FindFirstChildOfClass` and check its class.
 - A function passed to `pcall` must return the same types on every path; `pcall` returns `ok`, then those values or the error.
 - Yielding functions (`task.wait`, `WaitForChild`, `InvokeServer`, DataStore calls) pause the thread: never call them where the order of events matters without saying so, and use `task.spawn` or `task.defer` to run something alongside.
 

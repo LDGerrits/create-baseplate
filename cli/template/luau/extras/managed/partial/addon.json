@@ -5,7 +5,7 @@
 		"scripts/publish.test.ts",
 		"scripts/snapshot.ts",
 		".github/workflows/publish.yml",
-		".agents/skills/edit-world"
+		".agents/skills/edit-world", ".claude/rules/edit-world.md", ".cursor/rules/edit-world.mdc", ".github/instructions/edit-world.instructions.md"
 	],
 	"removeMiseTasks": [
 		"sync",
@@ -111,23 +111,8 @@
 		},
 		{
 			"file": "AGENTS.md",
-			"from": "`game.project.json`, `test.project.json` and `sourcemap.json` (`mise run generate`, from the code and `world/`)",
-			"to": "`game.project.json`, `test.project.json` and `sourcemap.json` (`mise run generate`, from the code)"
-		},
-		{
-			"file": "AGENTS.md",
 			"from": "type-checks it in strict mode against every instance in the game.",
 			"to": "type-checks it in strict mode against every instance the code's project file mounts."
-		},
-		{
-			"file": "AGENTS.md",
-			"from": "luau-lsp knows every instance in the game, world included: `ReplicatedStorage.Shared.features.shop.ShopNetwork` (once a `shop` feature has one) and `workspace.SpawnLocation` are typed, and a wrong name fails the check.",
-			"to": "luau-lsp knows every instance the code's project file mounts: `ReplicatedStorage.Shared.features.shop.ShopNetwork` (once a `shop` feature has one) is typed, and a wrong name fails the check. It doesn't know the world, which lives in Studio."
-		},
-		{
-			"file": "AGENTS.md",
-			"from": "- luau-lsp knows only the instances in the project and `world/`. What appears at runtime,",
-			"to": "- luau-lsp knows only the instances the project file mounts, not the world in Studio: `workspace.SpawnLocation` fails the check. What appears at runtime,"
 		},
 		{
 			"file": "README.md",

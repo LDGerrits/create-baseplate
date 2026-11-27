@@ -31,3 +31,77 @@ export function disableErrors(file: string, source: string): string[] {
 				: [],
 		);
 }
+
+/** Whether a file opts out of a rule with `// <marker>: <why>`. */
+const optedOut = (source: string, marker: string) => new RegExp(`//\\s*${marker}:\\s*\\S`).test(source);
+
+/** A service with no spec beside it: its rules are what a spec tests. */
+export function specErrors(files: string[], read: (file: string) => string): string[] {
+	const present = new Set(files);
+	return files
+		.filter((file) => file.endsWith("-service.ts") && !present.has(file.replace(/\.ts$/, ".spec.ts")))
+		.filter((file) => !optedOut(read(file), "no-spec"))
+		.map(
+			(file) =>
+				`${file}: a service has a spec beside it, ${path.posix.basename(file, ".ts")}.spec.ts, that tests its rules (see .agents/skills/write-tests/SKILL.md). If it only wires other code, say so at its top: \`// no-spec: <why>\`.`,
+		);
+}
+
+/**
+ * A feature with remotes and no end-to-end test: `tests` lists the end-to-end test files, as
+ * `tests/e2e/<feature>.luau` or, in a multi-place game, `projects/<place>/tests/e2e/<feature>.luau`.
+ */
+export function e2eErrors(files: string[], tests: string[], read: (file: string) => string): string[] {
+	const tested = new Set(tests.map((file) => path.posix.basename(file, ".luau")));
+	return files.flatMap((file) => {
+		const feature = /(?:^|\/)features\/([^/]+)\/shared\/[^/]+-network\.ts$/.exec(file)?.[1];
+		if (feature === undefined || tested.has(feature) || optedOut(read(file), "no-e2e")) return [];
+		return [
+			`${file}: the ${feature} feature's remotes have no end-to-end test: add tests/e2e/${feature}.luau, which sends each request a client sends through the real server (\`mise run feature\` writes one to start from; see .agents/skills/write-tests/SKILL.md).`,
+		];
+	});
+}
+
+/** A component with no story beside it: the story is how its picture is rendered and checked. */
+export function storyErrors(files: string[], read: (file: string) => string): string[] {
+	const present = new Set(files);
+	return files
+		.filter((file) => file.endsWith(".tsx") && !/\.(story|spec)\.tsx$/.test(file))
+		.filter((file) => !present.has(file.replace(/\.tsx$/, ".story.tsx")) && !optedOut(read(file), "no-story"))
+		.map(
+			(file) =>
+				`${file}: a component has a story beside it, ${path.posix.basename(file, ".tsx")}.story.tsx, which \`mise run ui\` renders (see .agents/skills/build-ui/SKILL.md). If the file draws nothing on its own, say so at its top: \`// no-story: <why>\`.`,
+		);
+}
+
+/** Runtime packages that won't run in Roblox: only `@rbxts` and `@flamework` packages do. */
+export function packageErrors(packageJson: string): string[] {
+	const { dependencies = {} } = JSON.parse(packageJson) as { dependencies?: Record<string, string> };
+	return Object.keys(dependencies)
+		.filter((name) => !/^@(rbxts|rbxts-js|flamework)\//.test(name))
+		.map(
+			(name) =>
+				`package.json: ${name} is a plain npm package, which doesn't run in Roblox. Use an @rbxts package, or move a build tool to devDependencies (pnpm add -D).`,
+		);
+}
+
+/**
+ * The game's own runtime packages that the lockfile holds in more than one version, as when one is
+ * updated past what another package depends on: the game would load both copies. (Test tools bring
+ * their own copies of some packages; those never reach the game.)
+ */
+export function duplicateErrors(lockfile: string, packageJson: string): string[] {
+	const { dependencies = {} } = JSON.parse(packageJson) as { dependencies?: Record<string, string> };
+	const versions = new Map<string, Set<string>>();
+	for (const [, name = "", version = ""] of lockfile.matchAll(
+		/^ {2}'?(@(?:rbxts|rbxts-js|flamework)\/[^@'\s]+)@([^('\s:]+)/gm,
+	)) {
+		versions.set(name, (versions.get(name) ?? new Set()).add(version));
+	}
+	return [...versions]
+		.filter(([name, found]) => found.size > 1 && name in dependencies)
+		.map(
+			([name, found]) =>
+				`pnpm-lock.yaml: ${name} is installed in versions ${[...found].sort().join(" and ")}, so the game would load two copies that don't share state. Pin the version the other packages need (\`pnpm why ${name}\` shows who needs which).`,
+		);
+}

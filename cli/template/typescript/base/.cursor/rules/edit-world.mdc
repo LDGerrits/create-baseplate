@@ -1,0 +1,9 @@
+---
+description: The world's files
+globs: world/**,projects/*/world/**
+alwaysApply: false
+---
+
+Working on the world's files: follow `.agents/skills/edit-world/SKILL.md`.
+
+@.agents/skills/edit-world/SKILL.md

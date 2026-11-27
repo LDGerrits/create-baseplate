@@ -72,14 +72,13 @@ test("accepts what works on that side", async () => {
 	assert.deepEqual(
 		await lint(
 			"src/features/shop/server/shop-service.ts",
-			`import { Players, DataStoreService, HttpService, MarketplaceService, StarterGui } from "@rbxts/services";
+			`import { Players, HttpService, MarketplaceService, ServerStorage, StarterGui } from "@rbxts/services";
 			HttpService.JSONEncode({});
 			MarketplaceService.ProcessReceipt = () => 1;
 			const folder = StarterGui.FindFirstChild("Gui");
 			Players.PlayerAdded.Connect(() => {});
 			const players = Players.GetPlayers();
-			const store = DataStoreService.GetDataStore("a");
-			store.GetAsync("key");`,
+			const stored = ServerStorage.FindFirstChild("a");`,
 		),
 		[],
 	);
@@ -108,6 +107,24 @@ test("applies both lists to shared code, with the way out in the message", async
 		assert.match(client[0] ?? "", /shared\/ runs on both sides.*disable this rule on that line/);
 		assert.match(server[0] ?? "", /runs only on the server, and shared\/ runs on both sides/);
 	}
+});
+
+test("sends player data on the server through a data library, unless the line says why not", async () => {
+	const messages = await lint(
+		"src/features/leaderboard/server/leaderboard-service.ts",
+		`import { DataStoreService } from "@rbxts/services";
+		const store = DataStoreService.GetOrderedDataStore("wins");`,
+	);
+	assert.match(messages[0] ?? "", /data library/);
+	assert.deepEqual(
+		await lint(
+			"src/features/leaderboard/server/leaderboard-service.ts",
+			`// eslint-disable-next-line @typescript-eslint/no-restricted-imports -- a leaderboard's ordered store
+			import { DataStoreService } from "@rbxts/services";
+			const store = DataStoreService.GetOrderedDataStore("wins");`,
+		),
+		[],
+	);
 });
 
 test("leaves folders that are not side folders alone", async () => {
