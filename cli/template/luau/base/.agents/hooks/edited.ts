@@ -208,6 +208,17 @@ function output(command: string, args: string[], stream: "stdout" | "stderr" | "
 	});
 }
 
+/**
+ * The skills to name for these written files. Claude Code, Cursor and Copilot load the path rules in
+ * .claude/rules (and their copies) themselves, but only when their own tools touch a file: a file a
+ * shell command wrote (`cat > file <<EOF`) loads none, and Codex and Gemini CLI have no such rules.
+ * Each skill is named once a session.
+ */
+function skillNotes(root: string, files: string[], payload: Payload, shell: boolean): string[] {
+	const native = !shell && process.argv[3] !== "codex" && formatArg(process.argv[2]) !== "gemini";
+	return native ? [] : newSkills(root, files, payload.session_id).map(skillNote);
+}
+
 if (import.meta.main && process.argv[2] === "--regenerate") {
 	regenerate(process.argv[3] ?? process.cwd());
 } else if (import.meta.main) {
@@ -228,8 +239,14 @@ if (import.meta.main && process.argv[2] === "--regenerate") {
 		const input = toolInput(payload);
 		const command = typeof input.command === "string" ? input.command : (payload.command ?? "");
 		const since = shellStarted(root);
-		if (since === undefined || runsTask(command)) process.exit(0);
+		if (since === undefined) process.exit(0);
 		raw = writtenSince(root, since);
+		if (runsTask(command)) {
+			// The task reports the problems itself; what's left to say is which skill covers what it wrote.
+			const output = editedOutput(replyFormat, [], skillNotes(root, raw, payload, true));
+			if (output !== undefined) console.log(JSON.stringify(output));
+			process.exit(0);
+		}
 		overwritten = generatedWrites(command, raw);
 		written = filesToCheck(raw, root, root);
 		moved = movesFiles(command);
@@ -238,11 +255,7 @@ if (import.meta.main && process.argv[2] === "--regenerate") {
 		written = filesToCheck(raw, root, root);
 	}
 	const locked = [...overwritten, ...lockTools(root, raw)];
-	// Codex and Gemini CLI load no rules for the files an agent works on: name the skill instead.
-	const notes =
-		process.argv[3] === "codex" || replyFormat === "gemini"
-			? newSkills(root, raw, payload.session_id).map(skillNote)
-			: [];
+	const notes = skillNotes(root, raw, payload, shell);
 	// Who type-checks a write: Claude Code's language server sees what its edit tools write; nothing
 	// does for a shell command, Codex's apply_patch or the other tools' edits. Cursor shows the agent
 	// nothing a hook says, so a type check there would only cost time.

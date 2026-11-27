@@ -49,7 +49,7 @@ In Claude Code, the commands the skills use (`forge`, `ror`, `rogen`, `mise run`
 
 ## Skills
 
-Skills in `.agents/skills/` cover what only some tasks need. `AGENTS.md` says when to read each, and the tools load the right one when the agent works on a story, a spec, the world or the packages: Claude Code through `.claude/rules/`, Cursor through `.cursor/rules/`, Copilot through `.github/instructions/`. Codex and Gemini CLI have no such rules, so the edit hook names the skill the first time in a session the agent writes such a file.
+Skills in `.agents/skills/` cover what only some tasks need. `AGENTS.md` says when to read each, and the tools load the right one when the agent works on a story, a spec, the world or the packages: Claude Code through `.claude/rules/`, Cursor through `.cursor/rules/`, Copilot through `.github/instructions/`. Those rules load only when the tool's own file tools touch a file, and Codex and Gemini CLI have none, so the edit hook names the skill the first time in a session the agent writes such a file from the shell (`cat > file <<EOF`, as agents often do) or in Codex or Gemini CLI. After Claude Code or Gemini CLI compacts the conversation, the skills are named again, as Claude Code reloads its own rules then.
 
 | Skill | For |
 | --- | --- |
