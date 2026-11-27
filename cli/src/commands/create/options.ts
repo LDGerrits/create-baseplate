@@ -1,6 +1,6 @@
 import * as p from "@clack/prompts";
 import { Command, CommanderError, Option } from "commander";
-import { DEFAULT_APP_NAME } from "../../base/template.ts";
+import { printJsonError } from "../../base/logger.ts";
 import { DEFAULT_LANGUAGE, type Language, languages } from "../../domain/add-ons/language.ts";
 import {
 	type AddOn,
@@ -17,6 +17,9 @@ import {
 import { nameProblem } from "../../domain/game/app-name.ts";
 import { folderProblem } from "../../domain/game/scaffold.ts";
 import { parseNameAndPath } from "./parse-name-and-path.ts";
+
+/** The folder, and so the name, of a game when none is given. */
+const DEFAULT_APP_NAME = "my-game";
 
 export interface CliResults {
 	name: string;
@@ -99,7 +102,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 	const taken = flagsNpmTook();
 	if (taken.length > 0) {
 		const message = `npm read ${taken.join(", ")} as its own option${taken.length > 1 ? "s" : ""}, so create-baseplate never got ${taken.length > 1 ? "them" : "it"}. With npm, put the flags after --: npm create baseplate@latest my-game -- --yes`;
-		if (process.env.npm_config_json === "true") console.log(JSON.stringify({ ok: false, error: message }));
+		if (process.env.npm_config_json === "true") printJsonError(message);
 		else console.error(message);
 		process.exit(2);
 	}
@@ -109,7 +112,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 		if (!(error instanceof CommanderError)) throw error;
 		// Commander has printed the message. With --json, the result says it too.
 		if (error.exitCode !== 0 && process.argv.includes("--json")) {
-			console.log(JSON.stringify({ ok: false, error: error.message }));
+			printJsonError(error.message);
 		}
 		process.exit(error.exitCode);
 	}
@@ -131,7 +134,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 	const given = program.args[0];
 	const ask = !flags.yes && !flags.json && process.stdin.isTTY && process.stdout.isTTY;
 	const refuse = (problem: string) => {
-		if (flags.json) console.log(JSON.stringify({ ok: false, error: problem }));
+		if (flags.json) printJsonError(problem);
 		else if (ask) p.cancel(problem);
 		else console.error(problem);
 		process.exit(1);

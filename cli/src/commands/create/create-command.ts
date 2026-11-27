@@ -1,6 +1,6 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
-import { logger, logToStderr } from "../../base/logger.ts";
+import { logger, logToStderr, printJsonError } from "../../base/logger.ts";
 import { findConflict, isMultiPlace } from "../../domain/add-ons/questions.ts";
 import { recordAgentFiles } from "../../domain/agent-files/agent-files.ts";
 import { nameProblem } from "../../domain/game/app-name.ts";
@@ -19,7 +19,7 @@ export async function runCreate(version: string, keepToolingTests: boolean) {
 	try {
 		await create(version, keepToolingTests);
 	} catch (error) {
-		if (json) console.log(JSON.stringify({ ok: false, error: error instanceof Error ? error.message : String(error) }));
+		if (json) printJsonError(error instanceof Error ? error.message : String(error));
 		logger.error(error instanceof Error ? (error.stack ?? error.message) : String(error));
 		process.exit(1);
 	}
@@ -31,7 +31,7 @@ async function create(version: string, keepToolingTests: boolean) {
 	json = options.json;
 	if (options.json) logToStderr();
 	const fail = (message: string) => {
-		if (options.json) console.log(JSON.stringify({ ok: false, error: message }));
+		if (options.json) printJsonError(message);
 		else logger.error(message);
 		process.exit(1);
 	};
