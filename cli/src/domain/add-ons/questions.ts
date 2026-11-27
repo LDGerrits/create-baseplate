@@ -267,3 +267,18 @@ export function findConflict(language: Language, chosen: AddOnChoices): string |
 	}
 	return undefined;
 }
+
+/**
+ * A language's answers from the choices given, each missing one its default, or why they can't
+ * make a game: a choice the language doesn't have, or choices that can't go together.
+ */
+export function settleChoices(
+	language: Language,
+	given: Partial<AddOnChoices>,
+): { choices: AddOnChoices } | { problem: string } {
+	const problem = flagProblem(language, given);
+	if (problem !== undefined) return { problem };
+	const choices = choicesFor(language, given);
+	const conflict = findConflict(language, choices);
+	return conflict === undefined ? { choices } : { problem: conflict };
+}

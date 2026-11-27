@@ -1,9 +1,8 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { logger, logToStderr, printJsonError } from "../../base/logger.ts";
-import { findConflict, isMultiPlace } from "../../domain/add-ons/questions.ts";
+import { isMultiPlace } from "../../domain/add-ons/questions.ts";
 import { recordAgentFiles } from "../../domain/agent-files/agent-files.ts";
-import { nameProblem } from "../../domain/game/app-name.ts";
 import { commitAll, initGit } from "../../domain/game/git.ts";
 import { installDependencies, isMiseInstalled } from "../../domain/game/install-dependencies.ts";
 import { type Rendered, renderGame } from "../../domain/game/render.ts";
@@ -34,12 +33,6 @@ async function create(version: string, keepToolingTests: boolean) {
 		else logger.error(message);
 		process.exit(1);
 	};
-
-	const problem = nameProblem(options.name);
-	if (problem !== undefined) fail(problem);
-
-	const conflict = findConflict(options.language, options.addOns);
-	if (conflict !== undefined) fail(conflict);
 
 	let rendered: Rendered;
 	try {

@@ -13,6 +13,7 @@ import {
 	flagProblem,
 	flagValuesOf,
 	NONE,
+	settleChoices,
 } from "../../domain/add-ons/questions.ts";
 import { nameProblem } from "../../domain/game/app-name.ts";
 import { folderProblem } from "../../domain/game/scaffold.ts";
@@ -133,7 +134,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 	);
 	const given = program.args[0];
 	const ask = !flags.yes && !flags.json && process.stdin.isTTY && process.stdout.isTTY;
-	const refuse = (problem: string) => {
+	const refuse = (problem: string): never => {
 		if (flags.json) printJsonError(problem);
 		else if (ask) p.cancel(problem);
 		else console.error(problem);
@@ -143,9 +144,15 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 	let language = flags.language ?? DEFAULT_LANGUAGE;
 	let input = given ?? DEFAULT_APP_NAME;
 	let { git, install } = flags;
-	// A flag the language has no such choice for, such as --entities components with --language luau.
+	// The flags' choices for a language, each missing one its default; refused when they don't fit it,
+	// such as --entities components with --language luau, or can't go together, such as --ui vide
+	// with --state reflex (which would leave a later question with no choice to offer).
+	const settle = (language: Language) => {
+		const settled = settleChoices(language, givenAddOns);
+		return "problem" in settled ? refuse(settled.problem) : settled.choices;
+	};
 	// Without --language, a flag only one language takes picks it in the prompt, so check it there.
-	if (!ask || flags.language !== undefined) {
+	if (ask && flags.language !== undefined) {
 		const problem = flagProblem(language, givenAddOns);
 		if (problem !== undefined) refuse(problem);
 	}
@@ -154,7 +161,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 		const problem = answerProblem(given, flags.name) ?? flagsConflict(flags.language, givenAddOns);
 		if (problem !== undefined) refuse(problem);
 	}
-	let chosen = choicesFor(language, givenAddOns);
+	let chosen: AddOnChoices;
 	if (ask) {
 		p.intro("create-baseplate");
 		const dir =
@@ -182,39 +189,34 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 			});
 			cancelled(answer);
 			language = answer as Language;
-			const problem = flagProblem(language, givenAddOns);
-			if (problem !== undefined) refuse(problem);
-			chosen = choicesFor(language, givenAddOns);
 		}
-		// Flags that can't go together, such as --ui vide with --state reflex, would leave a later
-		// question with no choice to offer: refuse before asking it.
-		const conflict = findConflict(language, chosen);
-		if (conflict !== undefined) refuse(conflict);
+		// Asking, the language may not be known until its question is answered.
+		const picked = settle(language);
 		const choose = async (addOn: AddOn) => {
 			const answer = await p.select({
 				message: addOn.question,
-				initialValue: defaultFor(language, addOn, chosen),
+				initialValue: defaultFor(language, addOn, picked),
 				options: [
 					// Leave out what can't go with the answers so far, such as Reflex with Vide.
 					...addOn.choices.filter(
-						(choice) => findConflict(language, { ...chosen, [addOn.name]: choice.value }) === undefined,
+						(choice) => findConflict(language, { ...picked, [addOn.name]: choice.value }) === undefined,
 					),
 					...(addOn.allowNone ? [{ value: NONE, label: "None", hint: "add one later yourself" }] : []),
 				],
 			});
 			cancelled(answer);
-			chosen[addOn.name] = answer as string;
+			picked[addOn.name] = answer as string;
 		};
 		const unanswered = addOnsByLanguage[language].filter((addOn) => givenAddOns[addOn.name] === undefined);
 		// The project's shape first, then the libraries and tools: the recommended ones, or each in turn.
 		for (const addOn of unanswered.filter((addOn) => addOn.shape === true)) await choose(addOn);
 		const stack = unanswered.filter((addOn) => addOn.shape !== true);
 		if (stack.length > 0) {
-			for (const addOn of stack) chosen[addOn.name] = defaultFor(language, addOn, chosen);
+			for (const addOn of stack) picked[addOn.name] = defaultFor(language, addOn, picked);
 			const answer = await p.select({
 				message: "Which libraries and tools?",
 				options: [
-					{ value: "recommended", label: "The recommended ones", hint: stackSummary(stack, chosen) },
+					{ value: "recommended", label: "The recommended ones", hint: stackSummary(stack, picked) },
 					{ value: "choose", label: "Choose each one" },
 				],
 			});
@@ -237,11 +239,15 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 				},
 			},
 		);
+		chosen = picked;
 		input = dir as string;
 		git = answers.git;
 		install = answers.install;
-	}
+	} else chosen = settle(language);
 
-	const { name, dir } = parseNameAndPath(input);
-	return { name: flags.name ?? name, dir, git, install, json: flags.json, language, addOns: chosen };
+	const parsed = parseNameAndPath(input);
+	const name = flags.name ?? parsed.name;
+	const problem = nameProblem(name);
+	if (problem !== undefined) refuse(problem);
+	return { name, dir: parsed.dir, git, install, json: flags.json, language, addOns: chosen };
 }
