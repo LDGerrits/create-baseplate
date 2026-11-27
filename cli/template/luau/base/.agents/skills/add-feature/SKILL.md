@@ -7,7 +7,7 @@ description: Add a feature to the game: a service, its remotes, a controller, UI
 
 Is it a feature? If the game could ship without it, yes; if other code would break without it (currency, the player's data, the one receipt handler), it's a system: make `game/<system>/` (lowercase letters and digits, like a feature) by hand with `server/`, `client/` and `shared/` as it needs them, and let features import it. `game/` never imports a feature: for many contributors to one owner, have the feature register with a registry in `game/`; for a fact others react to, export a typed signal from the emitter.
 
-Run `mise run feature <name>` with the name in lowercase letters and digits (`dailyreward`: it is part of a Roblox path, so no hyphens). In a multi-place game the feature goes in the shared code and every place lists it; `mise run feature <name> <place>` keeps it to one place. It writes, under `features/<name>/`:
+Run `mise run feature <name>` with the name in camelCase (`dailyReward`): its modules are `DailyReward…` and its folder `dailyreward/`, since folders are part of a Roblox path. In a multi-place game the feature goes in the shared code and every place lists it; `mise run feature <name> <place>` keeps it to one place. It writes, under `features/<name>/`:
 
 - `shared/<Name>Network.luau`: the remotes between client and server, made with Remo, each with its argument types and, for what clients send, a `t` validator.
 - `server/<Name>Service.luau`: the service, which connects to the remotes, and its spec beside it.

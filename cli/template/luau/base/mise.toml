@@ -139,7 +139,7 @@ run = 'node scripts/with-env.ts ROBLOX_ERRORS_* -- node scripts/each-place.ts "n
 [tasks.feature]
 description = "Start a feature: its network file, service with a spec, controller, and their entries in the entry scripts. In a multi-place game it goes in the shared code, or in one place when you name it: mise run feature shop lobby"
 usage = '''
-arg "<name>" help="The feature's name in lowercase letters and digits, such as dailyreward"
+arg "<name>" help="The feature's name in camelCase, such as dailyReward"
 arg "[place]" help="Keep the feature to this place (a multi-place game)"
 '''
 run = 'node scripts/feature.ts "{{usage.name}}" "{{usage.place}}"'

@@ -20,7 +20,6 @@ Before you change something, look at what's there: the code that calls it, where
 `mise run check` is the check: it formats (StyLua), type-checks (luau-lsp), lints (Selene), builds the place, runs the tests and renders the UI stories, in about three seconds, and prints only what failed. Hooks run it for you: after each file you write, from an edit tool or the shell, they hand you the problems left in that file (not in Cursor, which shows that output to no one), and when you stop, and on each commit, they run the whole check and hand you what failed. In a tool without hooks, run it yourself before you finish.
 
 - For one question, narrower commands answer sooner: `mise run analyze` for type errors, `mise run test -- shop` for the specs and end-to-end tests whose path matches (`-t <name>` for one test by name), `mise run ui -- --filter <name>` for one story's picture.
-- When a Selene rule is wrong for one line, allow it on the line above with a comment saying why: `-- selene: allow(global_usage) -- <why>`. Don't silence the type checker with `:: any`; fix the type.
 - Every file is `--!strict` (`.luaurc`), and luau-lsp knows every instance in the game, world included: `ReplicatedStorage.Shared.features.shop.ShopNetwork` (once a `shop` feature has one) and `workspace.SpawnLocation` are typed, and a wrong name fails the check.
 - The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `wally`, `stylua`, `selene`, `luau-lsp`, `lune` and the rest are on the PATH in Claude Code's shell (a hook adds them when the session starts) and wherever your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills. To change a tool's pin in `mise.toml`, run `mise lock` after it: `mise install` refuses a tool that `mise.lock` doesn't list with its checksums.
 - `mise run dev` serves the code to Studio: it is the "serve script" that Rogen's section below refers to.
@@ -102,9 +101,7 @@ luau-lsp and Selene catch most mistakes. These they don't explain:
 
 - Arrays start at 1, `#` counts only up to the first `nil`, and `nil` in a table removes the key. Use `table.insert`, `table.remove` and `table.clear`; iterate with `for i, v in list do`.
 - Only `nil` and `false` are falsy: `0` and `""` are true.
-- Instances from `FindFirstChild`, `WaitForChild` and `.Parent` can be `nil` or of any class to the type checker; check with `if part and part:IsA("BasePart") then`, rather than casting with `::`.
 - luau-lsp knows only the instances in the project and `world/`. What appears at runtime, such as a player's `Character` and its `Humanoid`, a `ScreenGui` your code mounts in `PlayerGui`, or a part a script creates, isn't typed: `character.Humanoid` fails the check. Reach it with `WaitForChild` or `FindFirstChildOfClass` and check its class.
-- An `and` chain's type joins its operands': `player and part:IsA("BasePart") and award(player)` can be `false`, `nil` or a boolean as well as the result. Narrow with `if` statements instead.
 - A function passed to `pcall` must return the same types on every path; `pcall` returns `ok`, then those values or the error.
 - Yielding functions (`task.wait`, `WaitForChild`, `InvokeServer`, DataStore calls) pause the thread: never call them where the order of events matters without saying so, and use `task.spawn` or `task.defer` to run something alongside.
 

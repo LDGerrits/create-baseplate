@@ -17,7 +17,7 @@ type Document = Lapis.Document<PlayerData>
 local function useMockDataStore()
 	-- Lapis types `dataStoreService` as Roblox's DataStoreService, which the mock stands in for
 	-- without matching its types.
-	Lapis.setConfig({ dataStoreService = DataStoreServiceMock.new() :: any })
+	Lapis.setConfig({ dataStoreService = DataStoreServiceMock.new() :: any }) -- the mock isn't typed as DataStoreService
 end
 
 -- Studio saves to a mock DataStore, which forgets everything when the server stops.

@@ -21,7 +21,6 @@ Before you change something, look at what's there: the code that calls it, where
 `mise run check` is the check: it formats, compiles, lints (applying the fixes ESLint can make), builds the place, runs the tests and renders the UI stories, in about three seconds, and prints only what failed. Hooks run it for you: after each file you write, from an edit tool or the shell, they hand you the problems left in that file (not in Cursor, which shows that output to no one), and when you stop, and on each commit, they run the whole check and hand you what failed. In a tool without hooks, run it yourself before you finish.
 
 - For one question, narrower commands answer sooner: `mise run compile` for type errors, `mise run test -- shop` for the specs and end-to-end tests whose path matches (`-t <name>` for one test by name), `mise run ui -- --filter <name>` for one story's picture.
-- When a lint rule is wrong for one line, disable it on that line with a comment saying why.
 - The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `lune` and the rest are on the PATH in Claude Code's shell (a hook adds them when the session starts) and wherever your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills. To change a tool's pin in `mise.toml`, run `mise lock` after it: `mise install` refuses a tool that `mise.lock` doesn't list with its checksums.
 - `mise run dev` serves the code to Studio: it is the "serve script" that Rogen's section below refers to.
 - Generated files change through their generator, and a hook blocks direct edits: `out/` and `include/` (the compiler), `build/` (builds), `default.project.json` (Rogen), `game.project.json`, `test.project.json` and `src/world.d.ts` (`mise run check`, from the code and `world/`).
@@ -98,7 +97,6 @@ The map and lighting live in `world/` as files; code reaches them through the ty
 
 The compiler and ESLint catch most differences (`null`, `.length`, truthiness, `for...in`). These they don't explain:
 
-- There's no Node, DOM or npm runtime. Use Roblox's APIs: `HttpService:JSONEncode` for `JSON`, `task.delay` for `setTimeout`, `print` for `console`, `string.match` for regex. For `Object.keys`, `values`, `entries`, `assign` and `deepCopy`, import `Object` from `@rbxts/object-utils`.
 - Packages come from the `@rbxts` scope; a plain npm package won't run in Roblox.
 - To stub an interface's method in a spec, write a method (`{ getBalance() { return 0; } }`), not an arrow function in a property: roblox-ts compiles the two differently and refuses the arrow (`expectedMethodGotFunction`).
 - Check Roblox values with `typeIs(value, "Vector3")` and `classIs(instance, "Part")`. To check an instance and its children, let Flamework build the check from a type: `Flamework.createGuard<Model & { Humanoid: Humanoid }>()`.

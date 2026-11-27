@@ -8,11 +8,13 @@
 //   Flamework's types allow it, and it lets a client flood the server (see unguarded-remotes.ts).
 // - code outside the four layers (app, features, game, platform) or a side folder at the wrong depth,
 //   and a cycle between feature folders (see layers.ts); ESLint checks which layer imports which.
+// - a file name that isn't kebab-case, and an eslint-disable comment that doesn't say why after ` -- `.
 // `mise run check` runs it. In a multi-place game, a place's entry scripts start its own code and
 // the shared code it imports; shared code passes when one place imports it.
 import fs from "node:fs";
 import path from "node:path";
 import { cycleErrors, importEdges, structureErrors } from "./layers.ts";
+import { disableErrors, namingErrors } from "./source-rules.ts";
 import { unguardedRemotes } from "./unguarded-remotes.ts";
 
 const SERVER_ENTRY = "app/server/main.server.ts";
@@ -107,6 +109,7 @@ errors.push(
 );
 
 errors.push(...unguardedRemotes(new Map(sources.map((file) => [file, fs.readFileSync(file, "utf8")]))));
+errors.push(...namingErrors(sources), ...sources.flatMap((file) => disableErrors(file, fs.readFileSync(file, "utf8"))));
 
 for (const error of errors) console.error(error);
 if (errors.length > 0) process.exit(1);

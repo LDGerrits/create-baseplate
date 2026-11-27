@@ -93,9 +93,21 @@ test("keeps a place's feature to that place", () => {
 	assert.doesNotMatch(read(dir, "projects/game/src/app/client/Start.luau"), /queue/);
 });
 
+test("names a camelCase feature's modules in PascalCase, in a lowercase folder", () => {
+	const dir = game(entries("src"));
+	const written = createFeature(dir, "dailyReward");
+	assert.ok(written.includes("src/features/dailyreward/server/DailyRewardService.luau"), written.join("\n"));
+	const service = fs.readFileSync(path.join(dir, "src/features/dailyreward/server/DailyRewardService.luau"), "utf8");
+	assert.match(service, /features\.dailyreward\.DailyRewardNetwork/);
+	assert.match(
+		fs.readFileSync(path.join(dir, "src/app/server/Main.server.luau"), "utf8"),
+		/features\.dailyreward\.DailyRewardService/,
+	);
+});
+
 test("refuses a bad name, a place that isn't there and a feature that exists", () => {
 	const dir = game(entries("src"));
-	assert.throws(() => createFeature(dir, "daily-reward"), /lowercase letters and digits/);
+	assert.throws(() => createFeature(dir, "daily-reward"), /camelCase/);
 	assert.throws(() => createFeature(dir, "shop", "lobby"), /one place/);
 	createFeature(dir, "shop");
 	assert.throws(() => createFeature(dir, "shop"), /already exists/);

@@ -13,12 +13,15 @@
 //   requires are read through the sourcemap `mise run generate` writes.
 // - a Roblox API on the wrong side: client-only ones in server/ code, server-only ones in client/ code,
 //   both in shared/ (see sides.ts).
+// - a file name that isn't PascalCase, a `selene: allow` that doesn't say why, and a `:: any` cast
+//   that doesn't say why (see source-rules.ts).
 // `mise run check` runs it. In a multi-place game, a place's entry scripts start its own code and
 // the shared code; shared code passes when one place lists it.
 import fs from "node:fs";
 import path from "node:path";
 import { cycleErrors, layerErrors, requireEdges, type SourcemapNode, structureErrors } from "./layers.ts";
 import { type Side, sideErrors } from "./sides.ts";
+import { namingErrors, silencedErrors } from "./source-rules.ts";
 import { unguardedRemotes } from "./unguarded-remotes.ts";
 
 const SERVER_ENTRY = "app/server/Main.server.luau";
@@ -166,6 +169,10 @@ for (const place of places) {
 errors.push(...layerErrors(edges, sourceRoots), ...cycleErrors(edges, sourceRoots));
 
 errors.push(...unguardedRemotes(new Map(sources.map((file) => [file, fs.readFileSync(file, "utf8")]))));
+errors.push(
+	...namingErrors(sources),
+	...sources.flatMap((file) => silencedErrors(file, fs.readFileSync(file, "utf8"))),
+);
 
 for (const error of errors) console.error(error);
 if (errors.length > 0) process.exit(1);
