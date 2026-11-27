@@ -1,25 +1,23 @@
-import fs from "node:fs";
-import path from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { logger, logToStderr } from "../../base/logger.ts";
-import { findConflict, installAddOns } from "../../domain/add-ons/add-ons.ts";
+import { findConflict, isMultiPlace } from "../../domain/add-ons/add-ons.ts";
 import { recordAgentFiles } from "../../domain/agent-files/agent-files.ts";
 import { nameProblem } from "../../domain/game/app-name.ts";
 import { commitAll, initGit } from "../../domain/game/git.ts";
 import { installDependencies, isMiseInstalled } from "../../domain/game/install-dependencies.ts";
-import { recordOrigin, setProjectName } from "../../domain/game/project-name.ts";
-import { dropToolingTests, scaffoldProject } from "../../domain/game/scaffold.ts";
-import { makeMultiPlace, managedOf, PLACES } from "../../domain/places/multi-place.ts";
+import { renderGame } from "../../domain/game/render.ts";
+import { folderProblem } from "../../domain/game/scaffold.ts";
+import { PLACES } from "../../domain/places/multi-place.ts";
 import { logNextSteps, nextSteps } from "./next-steps.ts";
 import { runCli } from "./options.ts";
 
 let json = false;
 
 /** `create-baseplate [folder]`: asks what to create, unless the flags say, and creates the game. */
-export async function runCreate(version: string) {
+export async function runCreate(version: string, keepToolingTests: boolean) {
 	try {
-		await create(version);
+		await create(version, keepToolingTests);
 	} catch (error) {
 		if (json) console.log(JSON.stringify({ ok: false, error: error instanceof Error ? error.message : String(error) }));
 		logger.error(error instanceof Error ? (error.stack ?? error.message) : String(error));
@@ -27,7 +25,7 @@ export async function runCreate(version: string) {
 	}
 }
 
-async function create(version: string) {
+async function create(version: string, keepToolingTests: boolean) {
 	const options = await runCli(version);
 	if (options === undefined) return;
 	json = options.json;
@@ -44,41 +42,16 @@ async function create(version: string) {
 	const conflict = findConflict(options.language, options.addOns);
 	if (conflict !== undefined) fail(conflict);
 
-	let replaced: string[] = [];
-	try {
-		replaced = scaffoldProject(options.dir, options.language);
-	} catch (error) {
-		fail(error instanceof Error ? error.message : String(error));
-	}
-	setProjectName(options.dir, options.name);
-	// package.json's packages, which pnpm-lock.yaml locks.
-	const packages = () => {
-		const pkg = JSON.parse(fs.readFileSync(path.join(options.dir, "package.json"), "utf8")) as Record<string, unknown>;
-		return JSON.stringify([pkg.dependencies, pkg.devDependencies]);
-	};
-	// A Luau game's Roblox packages, which wally.lock locks.
-	const wallyPackages = () => {
-		const wally = path.join(options.dir, "wally.toml");
-		return fs.existsSync(wally) ? fs.readFileSync(wally, "utf8") : undefined;
-	};
-	const basePackages = packages();
-	const baseWallyPackages = wallyPackages();
-	// The [tools] of mise.toml, which the template's mise.lock covers until an add-on brings a tool.
-	const tools = () =>
-		/^\[tools\]\n([\s\S]*?)(?=^\[)/m.exec(fs.readFileSync(path.join(options.dir, "mise.toml"), "utf8"))?.[1];
-	const baseTools = tools();
-	installAddOns(options.dir, options.language, options.addOns);
-	if (options.addOns.places === "multi")
-		makeMultiPlace(options.dir, options.name, options.language, managedOf(options.addOns));
-	dropToolingTests(options.dir);
-	recordOrigin(options.dir, version, options.language, options.addOns);
+	const folder = folderProblem(options.dir);
+	if (folder !== undefined) fail(folder);
+	const { replaced, stale } = renderGame(
+		options.dir,
+		{ name: options.name, language: options.language, choices: options.addOns, version },
+		{ keepToolingTests },
+	);
 	recordAgentFiles(options.dir, version);
-	// The template's lockfile lists the base's packages only, until an install adds the add-ons'.
-	const packagesChanged = packages() !== basePackages;
-	const wallyPackagesChanged = wallyPackages() !== baseWallyPackages;
-	const toolsChanged = tools() !== baseTools;
 	// In a multi-place game, Studio commands name a place.
-	const place = options.addOns.places === "multi" ? (PLACES[0] ?? "") : "";
+	const place = isMultiPlace(options.addOns) ? (PLACES[0] ?? "") : "";
 	logger.success(`Created ${options.name} in ${options.dir}`);
 
 	const warnings: string[] = [];
@@ -94,7 +67,7 @@ async function create(version: string) {
 		if (isMiseInstalled()) {
 			const spinner = options.json ? undefined : p.spinner();
 			spinner?.start("Installing the tools and packages with mise");
-			const error = await installDependencies(options.dir, toolsChanged, (step) => spinner?.message(step));
+			const error = await installDependencies(options.dir, stale.tools, (step) => spinner?.message(step));
 			spinner?.stop(error === undefined ? "Installed the tools and packages" : "Install failed");
 			if (error === undefined) installed = true;
 			else warnings.push(error);
@@ -108,14 +81,14 @@ async function create(version: string) {
 	// Committed now, pnpm-lock.yaml wouldn't match package.json, or mise.lock wouldn't record the
 	// add-ons' tools, and the game's install (locked, frozen) fails on that; or wally.lock wouldn't
 	// list the add-ons' Wally packages, and the first install would leave it changed.
-	const waitForInstall = git && !installed && (packagesChanged || wallyPackagesChanged || toolsChanged);
+	const waitForInstall = git && !installed && (stale.packages || stale.wally || stale.tools);
 	if (waitForInstall) {
-		const stale = [
-			...(toolsChanged ? ["mise.lock doesn't record the add-ons' tools until `mise lock`"] : []),
-			...(packagesChanged ? ["pnpm-lock.yaml doesn't list the add-ons' packages until `pnpm install`"] : []),
-			...(wallyPackagesChanged ? ["wally.lock doesn't list the add-ons' packages until `mise run install`"] : []),
+		const unlocked = [
+			...(stale.tools ? ["mise.lock doesn't record the add-ons' tools until `mise lock`"] : []),
+			...(stale.packages ? ["pnpm-lock.yaml doesn't list the add-ons' packages until `pnpm install`"] : []),
+			...(stale.wally ? ["wally.lock doesn't list the add-ons' packages until `mise run install`"] : []),
 		];
-		warnings.push(`Nothing is committed yet: ${stale.join(", and ")}. Run the next steps, then commit.`);
+		warnings.push(`Nothing is committed yet: ${unlocked.join(", and ")}. Run the next steps, then commit.`);
 	} else if (git) {
 		// Once installed, this commit goes through the project's commit hook, which runs its check.
 		const spinner = options.json || !installed ? undefined : p.spinner();
@@ -133,7 +106,13 @@ async function create(version: string) {
 		commitError === undefined
 			? undefined
 			: `The first commit failed, so the game is created in ${options.dir} but nothing is committed. Its commit hook runs the game's check; fix what this reports (\`mise run check\` in the folder shows it again), then commit:\n${commitError}`;
-	const steps = { installed, packagesChanged, toolsChanged, commit: waitForInstall || failure !== undefined, place };
+	const steps = {
+		installed,
+		packagesChanged: stale.packages,
+		toolsChanged: stale.tools,
+		commit: waitForInstall || failure !== undefined,
+		place,
+	};
 	if (options.json) {
 		console.log(
 			JSON.stringify({

@@ -218,6 +218,13 @@ export const valuesOf = (addOn: AddOn) => [
 	...(addOn.allowNone ? [NONE] : []),
 ];
 
+/** Whether Rojo manages the whole place, world included, or only the code (the managed question). */
+export type Managed = "full" | "partial";
+
+export const managedOf = (chosen: AddOnChoices): Managed => (chosen.managed === "partial" ? "partial" : "full");
+
+export const isMultiPlace = (chosen: AddOnChoices) => chosen.places === "multi";
+
 /** Every value a flag accepts in any language. */
 export const flagValuesOf = (name: string) => [
 	...new Set(
@@ -330,7 +337,7 @@ export function installAddOns(dir: string, language: Language, chosen: AddOnChoi
 		if (manifest === undefined) continue; // "none", or the base's own choice
 		const from = path.join(templateExtras(language), name, value);
 		const variant = manifest.byUi?.[chosen.ui ?? ""];
-		const managedVariant = manifest.byManaged?.[chosen.managed ?? ""];
+		const managedVariant = manifest.byManaged?.[managedOf(chosen)];
 
 		for (const file of manifest.removeFiles ?? []) fs.rmSync(path.join(dir, file), { force: true, recursive: true });
 		const files = path.join(from, "files");

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { templateExtras } from "../../base/template.ts";
-import type { Language } from "../add-ons/add-ons.ts";
+import type { Language, Managed } from "../add-ons/add-ons.ts";
 import { makeMultiPlaceLuau } from "./multi-place-luau.ts";
 
 /** The places a multi-place game starts with. */
@@ -36,13 +36,6 @@ export function makeMultiPlace(dir: string, name: string, language: Language, ma
 	if (language === "luau") makeMultiPlaceLuau(dir, name, managed);
 	else makeMultiPlaceTypeScript(dir, name, managed);
 }
-
-/** Whether Rojo manages the whole place, world included, or only the code (see the managed question). */
-export type Managed = "full" | "partial";
-
-/** The managed question's answer in a game's add-on choices. */
-export const managedOf = (chosen: Record<string, string>): Managed =>
-	chosen.managed === "partial" ? "partial" : "full";
 
 function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 	const at = (...parts: string[]) => path.join(dir, ...parts);

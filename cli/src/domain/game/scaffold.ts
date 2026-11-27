@@ -54,10 +54,8 @@ export function scaffoldProject(dir: string, language: Language): string[] {
 /**
  * Removes the template's tests of its own tooling (the hooks' and scripts'), once the add-ons have
  * edited the tooling: they test Baseplate's code, which the game's developers don't change.
- * BASEPLATE_TOOLING_TESTS=1 keeps them, so CI's games test the tooling as each variant leaves it.
  */
 export function dropToolingTests(dir: string) {
-	if (process.env.BASEPLATE_TOOLING_TESTS === "1") return;
 	for (const folder of [".agents/hooks", "scripts"]) {
 		for (const file of fs.readdirSync(path.join(dir, folder))) {
 			if (file.endsWith(".test.ts")) fs.rmSync(path.join(dir, folder, file));
