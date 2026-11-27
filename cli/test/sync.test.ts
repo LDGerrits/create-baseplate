@@ -145,7 +145,7 @@ test("a partially managed game's sync doesn't bring back the world's files", () 
 });
 
 test("a game made before the language question syncs as TypeScript", () => {
-	const dir = createGame();
+	const dir = createGame("--language", "typescript");
 	const file = path.join(dir, "package.json");
 	const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
 	assert.equal(pkg.baseplate.language, "typescript");
@@ -156,7 +156,7 @@ test("a game made before the language question syncs as TypeScript", () => {
 });
 
 test("refuses to sync a game whose add-on this version doesn't have, rather than drop its agent files", () => {
-	const dir = createGame();
+	const dir = createGame("--language", "typescript");
 	const file = path.join(dir, "package.json");
 	const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
 	pkg.baseplate.addOns = { ...pkg.baseplate.addOns, state: "zustand" };

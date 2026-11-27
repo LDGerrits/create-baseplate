@@ -59,7 +59,7 @@ In a TypeScript game; a Luau game's are listed in [add-ons](/add-ons/#in-a-luau-
 
 | Add-on | Files |
 | --- | --- |
-| `--ui vide` | No files: Vide's packages and JSX settings in place of React's, and its section of `AGENTS.md`. |
+| `--ui vide` | No files: Vide's packages and JSX settings in place of React's, and its section of `AGENTS.md`. In a Luau game, Vide is the default, and `--ui react` swaps in react-lua's packages, `build-ui` skill and section. |
 | `--state charm` | No files: Charm's packages and its section of `AGENTS.md`. |
 | `--state reflex` | No files: Reflex's packages and its section of `AGENTS.md`. |
 | `--data profilestore`, `--data lapis` | `src/game/player-data/server/`: `player-data.ts` (the data's shape), `player-data-service.ts` and its spec. |

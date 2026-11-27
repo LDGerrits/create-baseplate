@@ -12,8 +12,8 @@ The template's agent files (`AGENTS.md`, the skills, the hooks and the agent too
 ```json
 "baseplate": {
 	"version": "0.1.0",
-	"language": "typescript",
-	"addOns": { "ui": "react", "places": "single", "managed": "full", "state": "reflex", "data": "none", "entities": "none", "assets": "none", "release": "none" }
+	"language": "luau",
+	"addOns": { "ui": "vide", "places": "single", "managed": "full", "state": "charm", "data": "none", "entities": "none", "assets": "none", "release": "none" }
 }
 ```
 
@@ -37,4 +37,4 @@ Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI read `AGENTS.md` (Clau
 
 ## Can I use Luau instead of TypeScript?
 
-Yes: `--language luau`, the first question the CLI asks. A Luau game has its own template with the tools Luau developers use (Wally, StyLua, Selene, luau-lsp) and the same checks, hooks, tests and skills. See [Luau games](/luau/). A game can't switch languages once created.
+Yes, and it's the default: the language is the first question the CLI asks, and `--language typescript` makes a roblox-ts game instead. A Luau game has its own template with the tools Luau developers use (Wally, StyLua, Selene, luau-lsp) and the same checks, hooks, tests and skills. See [Luau games](/luau/). A game can't switch languages once created.

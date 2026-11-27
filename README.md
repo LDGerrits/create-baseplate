@@ -13,12 +13,12 @@ pnpm create baseplate my-game --yes  # takes the defaults: what agents and scrip
 
 It creates the game, makes it a git repo, and installs everything with [mise](https://mise.jdx.dev). `--json` prints one machine-readable result; `--no-git` and `--no-install` skip those steps.
 
-The first question is the language, a fork in the road: `--language typescript` (the default) makes a roblox-ts game with Flamework, `--language luau` a Luau game with Wally, StyLua, Selene and luau-lsp. Each has its own template and the tools its developers use, and both get the same checks, hooks, tests and skills. Each add-on question has a flag; the first choice listed is the default, and a choice marked TS is for TypeScript games only:
+The first question is the language, a fork in the road: `--language luau` (the default) makes a Luau game with Wally, StyLua, Selene and luau-lsp, `--language typescript` a roblox-ts game with Flamework. Each has its own template and the tools its developers use, and both get the same checks, hooks, tests and skills. Each add-on question has a flag; the first choice listed is the default (for the UI, Luau's; TypeScript's is React), and a choice marked TS is for TypeScript games only:
 
 | Flag         | Choices                                     |
 | ------------ | ------------------------------------------- |
-| `--language` | `typescript`, `luau`                        |
-| `--ui`       | `react`, `vide`                             |
+| `--language` | `luau`, `typescript`                        |
+| `--ui`       | `vide`, `react`                             |
 | `--places`   | `single`, `multi`                           |
 | `--managed`  | `full`, `partial`                           |
 | `--state`    | `reflex` (TS), `charm`, `none`              |

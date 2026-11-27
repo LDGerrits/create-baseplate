@@ -5,13 +5,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
--- At the top of Start.luau: React reads this flag once, when it first loads. In Studio, React checks
--- hooks and keys and gives readable errors; live servers skip that cost.
--- selene: allow(global_usage) -- react-lua reads its dev flag from _G
-_G.__DEV__ = RunService:IsStudio()
-
-local React = require(ReplicatedStorage.Packages.React)
-local ReactRoblox = require(ReplicatedStorage.Packages.ReactRoblox)
+local Vide = require(ReplicatedStorage.Packages.Vide)
 
 local App = require(script.Parent.App)
 
@@ -30,12 +24,10 @@ function Start.start()
 		controller.start()
 	end
 
-	-- In Start.start(), after the controllers:
+	-- In Studio, Vide checks for mistakes and gives readable errors; live servers skip that cost.
+	Vide.strict = RunService:IsStudio()
 	local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
-	local root = ReactRoblox.createRoot(Instance.new("Folder"))
-	root:render(
-		React.createElement(React.StrictMode, nil, ReactRoblox.createPortal(React.createElement(App), playerGui))
-	)
+	Vide.mount(App, playerGui)
 end
 
 return Start

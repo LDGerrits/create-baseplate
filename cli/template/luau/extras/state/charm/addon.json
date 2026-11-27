@@ -1,15 +1,15 @@
 {
 	"dependencies": {
 		"Charm": "littensy/charm@=0.11.1",
-		"ReactCharm": "littensy/react-charm@=0.4.1"
+		"VideCharm": "littensy/vide-charm@=0.4.1"
 	},
 	"byUi": {
-		"vide": {
+		"react": {
 			"dependencies": {
 				"Charm": "littensy/charm@=0.11.1",
-				"VideCharm": "littensy/vide-charm@=0.4.1"
+				"ReactCharm": "littensy/react-charm@=0.4.1"
 			},
-			"agents": "AGENTS.vide.md"
+			"agents": "AGENTS.react.md"
 		}
 	}
 }

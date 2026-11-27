@@ -3,7 +3,7 @@ title: Luau games
 description: "The Luau route: its tools, where code goes, remotes, tests and UI."
 ---
 
-The first question the CLI asks is the language. `--language luau` takes a different road from roblox-ts: its own template, with the tools Luau developers use, and its own add-on questions. It holds to the same standard for agents: one check, the hooks, the skills, tests in ree and stories in rur.
+The first question the CLI asks is the language, and Luau is the default. `--language luau` takes a different road from roblox-ts: its own template, with the tools Luau developers use, and its own add-on questions. It holds to the same standard for agents: one check, the hooks, the skills, tests in ree and stories in rur.
 
 ```sh
 pnpm create baseplate my-game --language luau
@@ -18,7 +18,7 @@ pnpm create baseplate my-game --language luau
 | Lint and format | [Selene](https://github.com/Kampfkarren/selene) and [StyLua](https://github.com/JohnnyMorganz/StyLua) |
 | Sync | [Rogen](https://github.com/LDGerrits/rogen) over [Rojo](https://rojo.space), and [rbx-forge](https://github.com/christopher-buss/rbx-forge) for Studio and syncback (not with `--managed partial`, where `mise run dev` only serves the code), as in roblox-ts games |
 | Tests | [jest-lua](https://github.com/jsdotlua/jest-lua) from Wally, run in ree and through jest-roblox |
-| UI | [react-lua](https://github.com/jsdotlua/react-lua) with [Ripple](https://github.com/littensy/ripple)'s hooks, or Vide with `--ui vide`; stories in UI Labs' format |
+| UI | [Vide](https://github.com/centau/vide) with [Ripple](https://github.com/littensy/ripple)'s Vide hooks, or [react-lua](https://github.com/jsdotlua/react-lua) with `--ui react`; stories in UI Labs' format |
 
 mise pins every tool and locks its checksums. The scripts, hooks and Rogen, rbx-forge and jest-roblox still run on Node, which mise installs: you write Luau, and `package.json` holds only those tools.
 
@@ -66,4 +66,4 @@ With `--places multi`, a Luau game takes Rogen's Luau layout: a `<place>.rogen.j
 
 ## Add-ons
 
-The Luau questions offer what Luau games use: React or Vide, one place or several, Charm for state, ProfileStore or Lapis for saved data, Jecs for entities, Asphalt and Darklua. Reflex and Flamework Components are roblox-ts choices; the CLI refuses them in a Luau game. See [add-ons](/add-ons/).
+The Luau questions offer what Luau games use: Vide or React, one place or several, Charm for state, ProfileStore or Lapis for saved data, Jecs for entities, Asphalt and Darklua. Reflex and Flamework Components are roblox-ts choices; the CLI refuses them in a Luau game. See [add-ons](/add-ons/).

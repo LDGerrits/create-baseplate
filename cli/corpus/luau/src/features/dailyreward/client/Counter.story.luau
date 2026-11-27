@@ -1,15 +1,13 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local React = require(ReplicatedStorage.Packages.React)
-local ReactRoblox = require(ReplicatedStorage.Packages.ReactRoblox)
 local UILabs = require(ReplicatedStorage.DevPackages.UILabs)
+local Vide = require(ReplicatedStorage.Packages.Vide)
 
 local Counter = require(script.Parent.Counter)
 
-return UILabs.CreateReactStory({
-	react = React,
-	reactRoblox = ReactRoblox,
+return UILabs.CreateVideStory({
+	vide = Vide,
 	controls = { count = UILabs.Number(0, 0) },
 }, function(props)
-	return React.createElement(Counter, { count = props.controls.count })
+	return Counter({ count = props.controls.count })
 end)

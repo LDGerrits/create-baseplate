@@ -18,8 +18,8 @@ With npm, the flags go after `--`: npm reads flags before it as its own, and the
 | `--no-install` | Don't install the tools and packages (with mise). |
 | `--json`       | Print one JSON result on stdout. Implies `--yes`.                          |
 | `--name <name>` | The game's name, when the folder's name can't be it. Default: the folder's name. |
-| `--language <language>` | `typescript` (default): roblox-ts with Flamework; or `luau`: Luau with Wally, StyLua, Selene and luau-lsp. Asked first; each language has its own questions. |
-| `--ui <library>` | UI: `react` (default) or `vide`. |
+| `--language <language>` | `luau` (default): Luau with Wally, StyLua, Selene and luau-lsp; or `typescript`: roblox-ts with Flamework. Asked first; each language has its own questions. |
+| `--ui <library>` | UI: `vide` (Luau's default) or `react` (TypeScript's default). |
 | `--places <layout>` | `single` (default), or `multi`: a lobby and a game sharing code, each place a folder in `projects/`. |
 | `--managed <mode>` | `full` (default): Rojo manages the whole place, code and world as files, built and published from git; or `partial`: Rojo manages only the code, and Studio keeps the place and its world. |
 | `--state <library>` | Client state: `reflex` (TypeScript only; its default), `charm` (Luau's default, and the default with Vide, which Reflex doesn't support) or `none`. |
@@ -40,11 +40,11 @@ Without a terminal, as when an agent or CI runs it, it asks nothing and takes th
 	"ok": true,
 	"name": "my-game",
 	"dir": "/path/to/my-game",
-	"language": "typescript",
+	"language": "luau",
 	"git": true,
 	"committed": true,
 	"installed": true,
-	"addOns": { "ui": "react", "places": "single", "managed": "full", "state": "reflex", "data": "none", "entities": "none", "assets": "none", "release": "none" },
+	"addOns": { "ui": "vide", "places": "single", "managed": "full", "state": "charm", "data": "none", "entities": "none", "assets": "none", "release": "none" },
 	"warnings": [],
 	"nextSteps": ["cd my-game", "mise run check", "mise run dev"]
 }

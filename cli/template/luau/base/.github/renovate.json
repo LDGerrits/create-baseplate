@@ -54,7 +54,7 @@
 			"datasourceTemplate": "npm"
 		},
 		{
-			"description": "The game's Roblox packages, pinned exactly in wally.toml (`React = \"jsdotlua/react@=17.2.1\"`): .github/workflows/renovate-fixups.yml writes wally.lock on the update's branch",
+			"description": "The game's Roblox packages, pinned exactly in wally.toml (`Remo = \"littensy/remo@=1.5.3\"`): .github/workflows/renovate-fixups.yml writes wally.lock on the update's branch",
 			"customType": "regex",
 			"managerFilePatterns": ["/(^|/)wally\\.toml$/"],
 			"matchStrings": ["\"(?<depName>[\\w-]+/[\\w-]+)@=(?<currentValue>[^\"]+)\""],

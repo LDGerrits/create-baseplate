@@ -122,7 +122,7 @@ test("a batch of passing games passes, and the first batch checks its template f
 		"mise install in t/typescript/base",
 		"mise run install in t/typescript/base",
 		"mise run ci in t/typescript/base",
-		"create ",
+		"create --language typescript",
 		"corpus typescript in corpus/coin-rush",
 		"mise run ci in g/corpus/coin-rush",
 		"create ",
@@ -288,7 +288,7 @@ test("the edit hook fails when a call says nothing, or the server isn't there fo
 	assert.match(editHookFailure({ ...probed, second: "" }) ?? "", /second call/);
 });
 
-test("a batch runs the edit hook for its first TypeScript game only, and fails that game when it doesn't work", async () => {
+test("a TypeScript batch runs the edit hook for its first game only, and fails that game when it doesn't work", async () => {
 	const probes: string[] = [];
 	const steps = (result: EditHookProbe): Steps => ({
 		...fakeSteps({}),
@@ -297,10 +297,12 @@ test("a batch runs the edit hook for its first TypeScript game only, and fails t
 			return result;
 		},
 	});
-	const mixed = { ...batch(["--language luau", "", "--ui vide"]) };
-	const ok = await quietly(() => runBatch(mixed, "/g", steps(probed), "/t"));
+	const luau = { ...batch(["", "--ui react"]), name: "luau 1/1", language: "luau" as const };
+	assert.equal((await quietly(() => runBatch(luau, "/g", steps(probed), "/t"))).result, 0);
+	assert.deepEqual(probes, [], "a Luau game has no ESLint server");
+	const ok = await quietly(() => runBatch(batch(["--language typescript", "--ui vide"]), "/g", steps(probed), "/t"));
 	assert.equal(ok.result, 0);
-	assert.deepEqual(probes, ["1/coin-rush"]);
+	assert.deepEqual(probes, ["0/coin-rush"]);
 	assert.match(ok.log, /edit hook ran/);
 	const bad = await quietly(() => runBatch(batch([""]), "/g", steps({ ...probed, first: "" }), "/t"));
 	assert.equal(bad.result, 1);
