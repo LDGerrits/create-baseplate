@@ -59,7 +59,7 @@ export function clientSends(network: string): boolean {
 	const body =
 		sent === "{"
 			? network.slice(network.indexOf("{", network.indexOf("createEvent")))
-			: (new RegExp(`(?:interface|type)\\s+${sent}\\b[^{]*\\{([^}]*)\\}`).exec(network)?.[1] ?? "x");
+			: (new RegExp(`(?:interface|type)\\s+${sent}\\b[^{;\\n]*\\{([^}]*)\\}`).exec(network)?.[1] ?? "x");
 	return /\w+\s*[(:]/.test(body.slice(0, body.indexOf("}") === -1 ? undefined : body.indexOf("}") + 1));
 }
 

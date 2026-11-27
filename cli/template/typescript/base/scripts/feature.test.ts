@@ -24,10 +24,13 @@ after(() => {
 	for (const dir of temps) fs.rmSync(dir, { recursive: true, force: true });
 });
 
-function game(files: Record<string, string>) {
+/** A game with these files, and the rate limiter where the template puts it (in the shared code, when there are places). */
+function game(files: Record<string, string>, limiter = true) {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "feature-"));
 	temps.push(dir);
-	for (const [file, text] of Object.entries(files)) {
+	const multi = Object.keys(files).some((file) => file.startsWith("projects/"));
+	const limiterFile = `${multi ? "projects/common/src" : "src"}/platform/network/server/rate-limit.ts`;
+	for (const [file, text] of Object.entries(limiter ? { ...files, [limiterFile]: "" } : files)) {
 		fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
 		fs.writeFileSync(path.join(dir, file), text);
 	}
@@ -110,6 +113,11 @@ test("keeps a --place feature to that place", () => {
 	);
 	assert.match(read(dir, "projects/lobby/src/app/server/main.server.ts"), /features\/queue\/server\/queue-service/);
 	assert.doesNotMatch(read(dir, "projects/game/src/app/server/main.server.ts"), /queue/);
+});
+
+test("refuses a feature when the game has no rate limiter for its event", () => {
+	const dir = game({ "src/app/server/main.server.ts": SERVER, "src/app/client/main.client.ts": CLIENT }, false);
+	assert.throws(() => createFeature(dir, "shop"), /rate-limit\.ts, which this game doesn't have/);
 });
 
 test("refuses a bad name, a place that isn't there and a feature that exists", () => {

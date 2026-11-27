@@ -63,6 +63,8 @@ test("a feature with remotes has an end-to-end test, unless it says why not", ()
 		"src/features/bank/shared/bank-network.ts":
 			"interface ClientToServer { deposit(amount: number): void; }\nexport const BankNetwork = Networking.createEvent<ClientToServer, {}>();",
 		"src/features/log/shared/log-network.ts": "// no-e2e: tested by hand",
+		"src/features/timer/shared/timer-network.ts":
+			"type ClientToServer = Record<string, never>\ninterface ServerToClient { tick(left: number): void; }\nexport const TimerNetwork = Networking.createEvent<ClientToServer, ServerToClient>();",
 		"src/features/round/shared/round-network.ts":
 			"interface ClientToServer {}\ninterface ServerToClient { tick(left: number): void; }\nexport const RoundNetwork = Networking.createEvent<ClientToServer, ServerToClient>();",
 		"projects/common/src/features/queue/shared/queue-network.ts": "",

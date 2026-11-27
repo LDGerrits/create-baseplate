@@ -59,12 +59,9 @@ function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 		if (entry !== "app" && entry !== "world.d.ts") fs.renameSync(at("src", entry), path.join(common, entry));
 	}
 
-	// A game that starts without features has nothing shared yet. Keep the folder in git, and give
-	// the shared code's own type-check a source file, since tsc rejects a project with none.
-	if (fs.readdirSync(common).length === 0) {
-		fs.writeFileSync(path.join(common, ".gitkeep"), "");
-		fs.writeFileSync(at("projects", "common", "shared.d.ts"), "export {};\n");
-	}
+	// The template's shared code (its platform modules) moved in; without it, tsc would reject the
+	// shared code's own type-check, a project with no input.
+	if (fs.readdirSync(common).length === 0) throw new Error("places: the template has no shared code to move");
 
 	const rogen = JSON.parse(read("default.rogen.json")) as Record<string, unknown>;
 	for (const place of PLACES) {
@@ -152,7 +149,7 @@ function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 		replaceIn(
 			replaceIn(read("tsconfig.json"), '"rootDir": "src",', '"rootDir": "projects/common/src",\n\t\t"noEmit": true,'),
 			'"include": ["src"]',
-			'"include": ["projects/common/src", "projects/common/shared.d.ts"]',
+			'"include": ["projects/common/src"]',
 		),
 	);
 	fs.appendFileSync(at(".gitignore"), gitignore(managed));

@@ -113,6 +113,11 @@ export default defineConfig(
 			"@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
 		},
 	},
+	{
+		// A network the server only broadcasts on gives Flamework an empty interface for what clients send.
+		files: roots.map((root) => `${root}/**/shared/*-network.ts`),
+		rules: { "@typescript-eslint/no-empty-object-type": ["error", { allowInterfaces: "always" }] },
+	},
 	// Roblox APIs that work on one side only, kept out of the other side's folders (scripts/sides.ts).
 	...sideRestrictions(roots),
 	{
