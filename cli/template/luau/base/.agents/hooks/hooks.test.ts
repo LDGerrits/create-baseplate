@@ -372,6 +372,10 @@ test("the guard judges each command of a chain on its own for .env, keeping pipe
 		"jq . .env",
 		"cp .env /tmp/x",
 		"ls .env | xargs cat",
+		'ls "x" && cat .env',
+		"ls $(cat .env)",
+		'test -n "$(cat .env)"',
+		"ls `cat .env`",
 	]) {
 		assert.match(bash(read) ?? "", /secret/, read);
 	}
@@ -381,6 +385,7 @@ test("the guard judges each command of a chain on its own for .env, keeping pipe
 		"test -f .env && echo set",
 		"git check-ignore .env",
 		"touch .env",
+		"[ -f .env ] && echo set",
 	]) {
 		assert.equal(bash(unread), undefined, unread);
 	}

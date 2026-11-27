@@ -91,14 +91,27 @@ export function writtenSince(root: string, since: number): string[] {
  */
 export function lockTools(root: string, written: string[]): string[] {
 	if (!written.includes("mise.toml")) return [];
+	// Only when its text changed since the last lock: a checkout or a pull touches the file too.
+	const stamp = path.join(root, "node_modules", ".cache", "baseplate-mise-toml");
+	let text = "";
+	try {
+		text = fs.readFileSync(path.join(root, "mise.toml"), "utf8");
+		if (fs.readFileSync(stamp, "utf8") === text) return [];
+	} catch {}
 	const run = spawnSync("mise", ["lock"], {
 		cwd: root,
 		encoding: "utf8",
 		shell: process.platform === "win32",
-		// Inside the hook's own limit (Codex gives it 30 seconds).
-		timeout: 25_000,
+		// Well inside the hook's own limit (Codex gives it 30 seconds), leaving time for the lint.
+		timeout: 15_000,
 	});
-	if (run.status === 0) return [];
+	if (run.status === 0) {
+		try {
+			fs.mkdirSync(path.dirname(stamp), { recursive: true });
+			fs.writeFileSync(stamp, text);
+		} catch {}
+		return [];
+	}
 	const said = `${run.stdout ?? ""}${run.stderr ?? ""}`
 		.split("\n")
 		.filter((line) => line.trim() !== "" && !/\bWARN\b/.test(line))

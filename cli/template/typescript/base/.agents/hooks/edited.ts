@@ -49,8 +49,12 @@ export function filesToCheck(files: string[], root: string, start: string): stri
 /** What to print for the tool, given the problems left after the fixes, or undefined to print nothing. */
 export function editedOutput(format: Format, problems: string[], notes: string[] = []): object | undefined {
 	if ((problems.length === 0 && notes.length === 0) || format === "cursor") return undefined;
-	const shown = problems.slice(0, MAX_PROBLEMS);
-	if (problems.length > MAX_PROBLEMS) shown.push(`...and ${problems.length - MAX_PROBLEMS} more`);
+	// A hint says how to fix the problems above it, so it's never among those cut.
+	const hints = problems.filter((problem) => problem.startsWith("Hint: "));
+	const listed = problems.filter((problem) => !problem.startsWith("Hint: "));
+	const shown = listed.slice(0, MAX_PROBLEMS);
+	if (listed.length > MAX_PROBLEMS) shown.push(`...and ${listed.length - MAX_PROBLEMS} more`);
+	shown.push(...hints);
 	const found =
 		problems.length === 0
 			? []

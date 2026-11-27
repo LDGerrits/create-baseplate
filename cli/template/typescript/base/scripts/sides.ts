@@ -66,7 +66,7 @@ function messageFor(name: string, works: "server" | "client", side: Side): strin
 const error = (...options: unknown[]): ["error", ...unknown[]] => ["error", ...options];
 
 /** The flat-config rules for the files of one side. */
-export function sideRules(side: Side) {
+export function sideRules(side: Side, engineSpec = false) {
 	// What does not work on `side`: client-only APIs in server/, server-only in client/, both in shared/.
 	const avoid: ("client" | "server")[] =
 		side === "server" ? ["client"] : side === "client" ? ["server"] : ["client", "server"];
@@ -77,7 +77,8 @@ export function sideRules(side: Side) {
 		services(works).map((name) => ({ name, message: messageFor(name, works, side) })),
 	);
 	// On the server, DataStoreService works, but player data belongs in a data library.
-	if (side === "server") names.push({ name: "DataStoreService", message: SAVE_BY_HAND });
+	// An engine spec tests real DataStores on purpose.
+	if (side === "server" && !engineSpec) names.push({ name: "DataStoreService", message: SAVE_BY_HAND });
 	return {
 		"@typescript-eslint/no-restricted-imports": error({
 			paths: names.map(({ name, message }) => ({
@@ -114,11 +115,20 @@ export function sideRules(side: Side) {
  * `<layer>/<module>/<side>/`, under every source root.
  */
 export function sideRestrictions(roots: string[]) {
-	return (["server", "client", "shared"] as const).map((side) => ({
+	const sides = (["server", "client", "shared"] as const).map((side) => ({
 		files: roots.flatMap((root) => [
 			`${root}/app/${side}/**/*.{ts,tsx}`,
 			`${root}/{features,game,platform}/*/${side}/**/*.{ts,tsx}`,
 		]),
 		rules: sideRules(side),
 	}));
+	// Engine specs in server folders, which come after and so win.
+	const engineSpecs = {
+		files: roots.flatMap((root) => [
+			`${root}/app/server/**/*.engine.spec.ts`,
+			`${root}/{features,game,platform}/*/server/**/*.engine.spec.ts`,
+		]),
+		rules: sideRules("server", true),
+	};
+	return [...sides, engineSpecs];
 }

@@ -64,9 +64,9 @@ test("a feature with remotes has an end-to-end test, unless it says why not", ()
 		"projects/common/src/features/queue/shared/queue-network.ts": "",
 	});
 	assert.deepEqual(
-		e2eErrors(files, ["tests/e2e/shop.luau", "projects/game/tests/e2e/queue.luau"], read).map(
-			(error) => error.split(":")[0],
-		),
+		e2eErrors(files, ["tests/e2e/shop.luau", "projects/game/tests/e2e/queue.luau"], read, (file) =>
+			file.startsWith("projects/") ? "projects/game/tests/e2e" : "tests/e2e",
+		).map((error) => error.split(":")[0]),
 		["src/features/bank/shared/bank-network.ts"],
 	);
 });

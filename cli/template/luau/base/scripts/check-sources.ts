@@ -184,6 +184,12 @@ errors.push(...layerErrors(edges, sourceRoots), ...cycleErrors(edges, sourceRoot
 errors.push(...unguardedRemotes(new Map(sources.map((file) => [file, fs.readFileSync(file, "utf8")]))));
 const read = (file: string) => fs.readFileSync(file, "utf8");
 const testDirs = multi ? places.map((place) => `projects/${place}/tests/e2e`) : ["tests/e2e"];
+// The shared code's tests run in the game place (or the first), a place's own in that place.
+const testFolder = (file: string) => {
+	if (!multi) return "tests/e2e";
+	const place = file.split("/")[1] ?? "";
+	return `projects/${place === "common" ? (places.includes("game") ? "game" : places[0]) : place}/tests/e2e`;
+};
 const e2eTests = testDirs.flatMap((dir) =>
 	fs.existsSync(dir) ? fs.readdirSync(dir).map((file) => path.posix.join(dir, file)) : [],
 );
@@ -195,7 +201,7 @@ errors.push(
 		...focusedErrors(file, read(file)),
 	]),
 	...specErrors(sources, read),
-	...e2eErrors(sources, e2eTests, read),
+	...e2eErrors(sources, e2eTests, read, testFolder),
 	...storyErrors(sources, read),
 	...(fs.existsSync("wally.lock") ? duplicateErrors(read("wally.lock")) : []),
 );

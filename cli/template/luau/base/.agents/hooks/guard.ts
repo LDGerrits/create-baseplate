@@ -55,7 +55,7 @@ export const GENERATED: [RegExp, string][] = [
 ];
 
 // `.env` and its variants hold keys; `.env.example` only lists their names.
-const SECRET_IN_COMMAND = /(^|[\s/'"<=])\.env(\.(?!example\b)[\w.-]+)?(?=$|[\s'"\\;|&)])/;
+const SECRET_IN_COMMAND = /(^|[\s/'"<=`(])\.env(\.(?!example\b)[\w.-]+)?(?=$|[\s'"`\\;|&)])/;
 // A glob counts too, as Gemini's read_many_files takes: `.env*` or `.env.*` reaches the keys.
 const isSecretFile = (file: string) => /(^|[/\\])\.env(\.(?!example$)[\w.*-]+|\*+)?$/.test(file);
 const SECRET =
@@ -133,7 +133,11 @@ export const patched = (patch: string) =>
  */
 export function leavesSecretUnread(part: string): boolean {
 	const command = part.trim();
-	if (!command.includes("|") && /^(ls|test|\[|stat|touch|git\s+(check-ignore|status|ls-files))\b/.test(command)) {
+	// Only a single, simple command: a quote, `$`, a backtick, a chain or a pipe can make it read the file.
+	if (
+		!/[$`'"|;&<()]/.test(command) &&
+		/^(ls|test|\[|stat|touch|git\s+(check-ignore|status|ls-files))(?=\s|$)/.test(command)
+	) {
 		return true;
 	}
 	// Where it's only the target of a redirect or of a copy or move, nothing reads it.

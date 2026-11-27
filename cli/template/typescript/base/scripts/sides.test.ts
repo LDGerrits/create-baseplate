@@ -127,6 +127,17 @@ test("sends player data on the server through a data library, unless the line sa
 	);
 });
 
+test("an engine spec may test real DataStores", async () => {
+	assert.deepEqual(
+		await lint(
+			"src/features/leaderboard/server/leaderboard.engine.spec.ts",
+			`import { DataStoreService } from "@rbxts/services";
+			export const store = DataStoreService.GetDataStore("wins");`,
+		),
+		[],
+	);
+});
+
 test("leaves folders that are not side folders alone", async () => {
 	assert.deepEqual(await lint("src/features/shop/notes.ts", `const p = Players.LocalPlayer;`), []);
 	assert.deepEqual(await lint("scripts/a.ts", `import { DataStoreService } from "@rbxts/services";`), []);

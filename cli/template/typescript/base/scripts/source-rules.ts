@@ -48,16 +48,23 @@ export function specErrors(files: string[], read: (file: string) => string): str
 }
 
 /**
- * A feature with remotes and no end-to-end test: `tests` lists the end-to-end test files, as
- * `tests/e2e/<feature>.luau` or, in a multi-place game, `projects/<place>/tests/e2e/<feature>.luau`.
+ * A feature with remotes and no end-to-end test. `testFolder` names the folder whose tests run the
+ * feature's code: `tests/e2e`, or in a multi-place game the place's (`projects/<place>/tests/e2e`).
  */
-export function e2eErrors(files: string[], tests: string[], read: (file: string) => string): string[] {
-	const tested = new Set(tests.map((file) => path.posix.basename(file, ".luau")));
+export function e2eErrors(
+	files: string[],
+	tests: string[],
+	read: (file: string) => string,
+	testFolder: (file: string) => string = () => "tests/e2e",
+): string[] {
+	const present = new Set(tests);
 	return files.flatMap((file) => {
 		const feature = /(?:^|\/)features\/([^/]+)\/shared\/[^/]+-network\.ts$/.exec(file)?.[1];
-		if (feature === undefined || tested.has(feature) || optedOut(read(file), "no-e2e")) return [];
+		if (feature === undefined || optedOut(read(file), "no-e2e")) return [];
+		const test = `${testFolder(file)}/${feature}.luau`;
+		if (present.has(test)) return [];
 		return [
-			`${file}: the ${feature} feature's remotes have no end-to-end test: add tests/e2e/${feature}.luau, which sends each request a client sends through the real server (\`mise run feature\` writes one to start from; see .agents/skills/write-tests/SKILL.md).`,
+			`${file}: the ${feature} feature's remotes have no end-to-end test: add ${test}, which sends each request a client sends through the real server (\`mise run feature\` writes one to start from; see .agents/skills/write-tests/SKILL.md).`,
 		];
 	});
 }

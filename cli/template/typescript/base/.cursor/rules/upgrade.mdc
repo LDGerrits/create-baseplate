@@ -5,5 +5,3 @@ alwaysApply: false
 ---
 
 Working on the game's packages, tools and agent files: read `.agents/skills/upgrade/SKILL.md` first, and follow it.
-
-@.agents/skills/upgrade/SKILL.md
