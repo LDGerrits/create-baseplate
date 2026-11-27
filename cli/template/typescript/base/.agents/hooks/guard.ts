@@ -9,6 +9,7 @@ import { isShell, stampShell } from "./written.ts";
 
 export interface Payload {
 	cwd?: string;
+	session_id?: string; // Claude Code, Codex and Gemini CLI
 	hook_event_name?: string;
 	tool_name?: string; // Claude Code, Codex, Cursor and Gemini CLI
 	tool_input?: Record<string, unknown>;
@@ -44,7 +45,7 @@ export const GENERATED: [RegExp, string][] = [
 ];
 
 // `.env` and its variants hold keys; `.env.example` only lists their names.
-const SECRET_IN_COMMAND = /(^|[\s/'"<=])\.env(\.(?!example\b)[\w.-]+)?(?=$|[\s'"\\;|&)])/;
+const SECRET_IN_COMMAND = /(^|[\s/'"<=`(])\.env(\.(?!example\b)[\w.-]+)?(?=$|[\s'"`\\;|&)])/;
 // A glob counts too, as Gemini's read_many_files takes: `.env*` or `.env.*` reaches the keys.
 const isSecretFile = (file: string) => /(^|[/\\])\.env(\.(?!example$)[\w.*-]+|\*+)?$/.test(file);
 const SECRET =
@@ -100,12 +101,9 @@ function checkCommand(command: string): string | undefined {
 	// Each command of a plain chain on its own, so `ls .env && cat package.json` passes; a pipe stays
 	// whole, as `ls .env | xargs cat` reads it. Quotes, variables, escapes or an inline script
 	// (`python3 -c "…"`) can hide what a part reads, so such a command is judged whole.
-	const reads = (part: string) =>
-		/\b(cat|less|more|head|tail|grep|rg|sed|awk|bat|xxd|od|strings|base64|source|node|python3?)\b/.test(part) ||
-		/<\s*\S*\.env/.test(part);
 	const plain = !/["'`$\\]|\b(python3?|node|bun|deno|ruby|perl|sh|bash|zsh|pwsh)(\s+-\w+)*\s+-[ce]\b/.test(command);
 	const parts = plain ? command.split(/;|&&|\|\||\n/) : [command];
-	if (parts.some((part) => reads(part) && SECRET_IN_COMMAND.test(part))) return SECRET;
+	if (parts.some((part) => SECRET_IN_COMMAND.test(part) && !leavesSecretUnread(part))) return SECRET;
 	return undefined;
 }
 
@@ -114,6 +112,27 @@ export const patched = (patch: string) =>
 	[...patch.matchAll(/^\*\*\* (?:Add|Update|Delete) File: (.+)$|^\*\*\* Move to: (.+)$/gm)].map((m) =>
 		(m[1] ?? m[2] ?? "").trim(),
 	);
+
+/**
+ * Whether a command that names .env leaves its keys unread: checking the file is there, or writing
+ * to it (`cp .env.example .env`, `echo KEY= >> .env`). Any other command that names it may print it
+ * (`cat`, `diff`, `sort`, `jq`, a copy elsewhere), so the guard stops it.
+ */
+export function leavesSecretUnread(part: string): boolean {
+	const command = part.trim();
+	// Only a single, simple command: a quote, `$`, a backtick, a chain or a pipe can make it read the file.
+	if (
+		!/[$`'"|;&<()]/.test(command) &&
+		/^(ls|test|\[|stat|touch|git\s+(check-ignore|status|ls-files))(?=\s|$)/.test(command)
+	) {
+		return true;
+	}
+	// Where it's only the target of a redirect or of a copy or move, nothing reads it.
+	const written = command
+		.replace(/>>?\s*\S*\.env[\w.-]*/g, "")
+		.replace(/^((cp|mv)\b(\s+-\w+)*\s+(\S+\s+)+)\S*\.env[\w.-]*\s*$/, "$1");
+	return !SECRET_IN_COMMAND.test(written);
+}
 
 // Tools that only read: generated files are fine to read, `.env` isn't. Names across the tools:
 // Read, Grep and Glob (Claude Code, Cursor), view (Copilot), read_file (Gemini CLI).

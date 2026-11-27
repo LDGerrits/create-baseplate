@@ -1,0 +1,7 @@
+---
+"create-baseplate": minor
+---
+
+More of what a game's `AGENTS.md` asked of agents is now enforced, and those lines are gone from it. The check fails on a service without a spec, a feature with remotes and no end-to-end test, a component without a story (each may opt out with a reason), player data saved with `DataStoreService` by hand, a plain npm package among a TypeScript game's runtime packages, one of the game's packages installed in two versions, and in Luau a focused test. `mise run feature` now also writes the feature's end-to-end test. TypeScript games report floating roblox-ts promises (the rule saw none before) and run the Jest lint rules in multi-place games too; the check adds a hint to compiler errors whose message doesn't name the fix.
+
+Skills load by path: Claude Code, Cursor and Copilot get rules that load `build-ui`, `write-tests`, `edit-world` and `upgrade` when the agent works on matching files, and for Codex and Gemini CLI the edit hook names the skill. The edit hook also runs `mise lock` after a change to `mise.toml`, type-checks in Claude Code when its language server isn't installed, and reports a generated file, such as a project file, written by hand from the shell. The guard stops any command that may print `.env`, not only a list of reading commands. A failing check keeps the start of each failed step's output, so the first failure reaches the agent. Luau games write Selene's Roblox library at install, so the lint runs offline.

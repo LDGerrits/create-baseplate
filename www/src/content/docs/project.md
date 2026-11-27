@@ -26,12 +26,12 @@ Code meets in three ways: a direct import by default; a registry in `game/` when
 
 ## Adding a feature
 
-`mise run feature <name>` writes the first two steps, and the service's spec: the network file, a service, a controller, and their imports in the entry scripts. In a multi-place game the feature goes in the shared code; `mise run feature <name> <place>` keeps it to one place. The `add-feature` skill walks an agent through the rest.
+`mise run feature <name>` writes the first two steps, the service's spec and the end-to-end test: the network file, a service, a controller, their imports in the entry scripts, and `tests/e2e/<name>.luau`, which sends the feature's request through the real server. In a multi-place game the feature goes in the shared code; `mise run feature <name> <place>` keeps it to one place. The `add-feature` skill walks an agent through the rest.
 
 1. Network events in `shared/<feature>-network.ts`.
 2. A Flamework service in `server/` and, if the client takes part, a controller in `client/`. Import each in the matching `main` file.
 3. UI as a React component in `client/`, with a story.
-4. A spec for the service, and an end-to-end test for each request a client sends.
+4. A spec for the service, and an end-to-end test for each request a client sends. The check fails on a service with no spec, a feature with remotes and no end-to-end test, and a component with no story.
 
 ## The rules
 

@@ -31,15 +31,22 @@ export function wantsCheck(format: Format, payload: StopPayload): boolean {
 	return payload.status === "completed" && (payload.loop_count ?? 0) < CURSOR_FOLLOW_UPS;
 }
 
+/** The output cut to `max` characters, keeping its start (the first failure) and its end (the summary). */
+export function clip(output: string, max: number): string {
+	if (output.length <= max) return output;
+	const tail = Math.floor(max / 5);
+	return `${output.slice(0, max - tail)}\n…\n${output.slice(-tail)}`;
+}
+
 /** What to print after the check failed with this output, or undefined to print nothing. */
 export function failureOutput(format: Format, payload: StopPayload, output: string): object | undefined {
 	const retried = format !== "cursor" && payload.stop_hook_active === true;
 	if (retried) {
 		// Copilot has no message for the user; the agent's own reply has to say it.
 		if (format === "copilot") return undefined;
-		return { systemMessage: `The agent stopped, but \`mise run check\` still fails:\n${output.slice(-2000)}` };
+		return { systemMessage: `The agent stopped, but \`mise run check\` still fails:\n${clip(output, 2000)}` };
 	}
-	const message = `\`mise run check\` fails after your changes. Fix it, or tell the user why it stays failing:\n${output.slice(-6000)}`;
+	const message = `\`mise run check\` fails after your changes. Fix it, or tell the user why it stays failing:\n${clip(output, 6000)}`;
 	switch (format) {
 		case "cursor":
 			return { followup_message: message };

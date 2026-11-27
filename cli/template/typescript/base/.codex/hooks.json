@@ -17,7 +17,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "d=\"$PWD\"; while [ ! -f \"$d/.agents/hooks/run\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; sh \"$d/.agents/hooks/run\" edited.ts claude",
+						"command": "d=\"$PWD\"; while [ ! -f \"$d/.agents/hooks/run\" ] && [ \"$d\" != / ]; do d=$(dirname \"$d\"); done; sh \"$d/.agents/hooks/run\" edited.ts claude codex",
 						"timeout": 30
 					}
 				]

@@ -364,6 +364,31 @@ test("the guard judges each command of a chain on its own for .env, keeping pipe
 	assert.match(bash(`node -e "console.log(require('fs').readFileSync('.env','utf8'))"`) ?? "", /secret/);
 	assert.match(bash("f=.env; cat $f") ?? "", /secret/);
 	assert.match(bash("cat \\\n.env") ?? "", /secret/);
+	for (const read of [
+		"diff .env .env.example",
+		"git diff --no-index .env.example .env",
+		"sort .env",
+		"nl .env",
+		"jq . .env",
+		"cp .env /tmp/x",
+		"ls .env | xargs cat",
+		'ls "x" && cat .env',
+		"ls $(cat .env)",
+		'test -n "$(cat .env)"',
+		"ls `cat .env`",
+	]) {
+		assert.match(bash(read) ?? "", /secret/, read);
+	}
+	for (const unread of [
+		"cp .env.example .env",
+		"echo 'KEY=1' >> .env",
+		"test -f .env && echo set",
+		"git check-ignore .env",
+		"touch .env",
+		"[ -f .env ] && echo set",
+	]) {
+		assert.equal(bash(unread), undefined, unread);
+	}
 });
 
 test("the Claude copy of a hook stands down when Cursor or Copilot runs it, and the hooks find mise by name", {

@@ -56,6 +56,20 @@ if (process.argv.includes("--wait")) {
 const targets = ["src", "projects"].filter((dir) => fs.existsSync(dir));
 if (targets.length === 0) process.exit(0);
 
+/** Prints the problems one a line, `file:line  message  rule`, from the root, and exits. */
+function report(
+	results: { filePath: string; messages: { line: number; ruleId: string | null; message: string }[] }[],
+): never {
+	const problems = results.flatMap(({ filePath, messages }) =>
+		messages.map(
+			({ line, ruleId, message }) => `${path.relative(root, filePath)}:${line}  ${message}  ${ruleId ?? ""}`,
+		),
+	);
+	if (problems.length === 0) process.exit(0);
+	console.log(`${problems.join("\n")}\n\n✖ ${problems.length} problem${problems.length === 1 ? "" : "s"}`);
+	process.exit(1);
+}
+
 // The check's other steps read the files before these fixes; it checks them again (scripts/check.ts).
 const FIXED = "@eslint-fixed";
 
@@ -67,16 +81,7 @@ if (viaServer) {
 	const results = reply !== undefined && "results" in reply ? reply.results : undefined;
 	if (results !== undefined) {
 		if (changedFiles(before, snapshot(root)).length > 0) console.log(FIXED);
-		const problems = results.flatMap(({ filePath, messages }) =>
-			messages.map(
-				({ line, ruleId, message }) => `${path.relative(root, filePath)}:${line}  ${message}  ${ruleId ?? ""}`,
-			),
-		);
-		if (problems.length > 0) {
-			console.log(`${problems.join("\n")}\n\n✖ ${problems.length} problem${problems.length === 1 ? "" : "s"}`);
-			process.exit(1);
-		}
-		process.exit(0);
+		report(results);
 	}
 }
 
@@ -92,8 +97,4 @@ if (fix && results.some((result) => result.output !== undefined)) {
 	await ESLint.outputFixes(results);
 	console.log(FIXED);
 }
-const problems = results.reduce((sum, result) => sum + result.errorCount + result.warningCount, 0);
-if (problems > 0) {
-	process.stdout.write(await (await linter.loadFormatter("stylish")).format(results));
-	process.exit(1);
-}
+report(results);

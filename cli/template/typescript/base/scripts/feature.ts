@@ -108,6 +108,70 @@ export function addImport(source: string, specifier: string): string {
 	return lines.join("\n");
 }
 
+/** The feature's end-to-end test: a client asks for its value through the real server and remotes. */
+export function e2eFile(name: string): string {
+	const Name = pascal(name);
+	return `-- End-to-end: the ${name} feature's requests through the real server and remotes, the way a
+-- player's client sends them. Test each request a client sends here; \`scripts/test.ts\` runs every
+-- file in this folder.
+
+-- A harness replaces the place's own boot, so start the server's entry script ourselves.
+local function bootServer()
+	local main = game:GetService("ServerScriptService").app.main
+	local run = assert(loadstring(main.Source, "=" .. main:GetFullName()))
+	setfenv(run, setmetatable({ script = main }, { __index = getfenv(0) }))
+	task.spawn(run)
+end
+
+-- Wait for a condition rather than a fixed time: fixed waits make tests slow and flaky.
+local function waitFor<T>(what: string, check: () -> T?, seconds: number?): T
+	local deadline = os.clock() + (seconds or 5)
+	while os.clock() < deadline do
+		local value = check()
+		if value then
+			return value
+		end
+		task.wait()
+	end
+	error(\`timed out waiting for {what}\`)
+end
+
+-- Flamework creates the feature's remotes as the server starts, in a folder named after its network file.
+local function remote(name: string): RemoteEvent
+	return waitFor(\`the ${name} {name} remote\`, function()
+		for _, folder in game:GetService("ReplicatedStorage"):GetChildren() do
+			if folder:IsA("Folder") and string.find(folder.Name, "/${name}-network@${Name}Network", 1, true) then
+				local found = folder:FindFirstChild(name)
+				if found and found:IsA("RemoteEvent") then
+					return found
+				end
+			end
+		end
+		return nil
+	end)
+end
+
+return {
+	Server = function()
+		bootServer()
+	end,
+
+	Client = function()
+		local values = {}
+		remote("changed").OnClientEvent:Connect(function(value)
+			table.insert(values, value)
+		end)
+		remote("request"):FireServer()
+		waitFor("the server's answer", function()
+			return #values >= 1
+		end)
+		assert(values[1] == 0, \`expected 0, got {values[1]}\`)
+		print("@done")
+	end,
+}
+`;
+}
+
 /** Creates the feature under `cwd`, and returns the files it wrote or changed. */
 export function createFeature(cwd: string, name: string, place?: string): string[] {
 	if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(name)) {
@@ -136,6 +200,20 @@ export function createFeature(cwd: string, name: string, place?: string): string
 		fs.mkdirSync(path.dirname(path.join(cwd, target)), { recursive: true });
 		fs.writeFileSync(path.join(cwd, target), text);
 		written.push(target);
+	}
+
+	// Its end-to-end test goes where the tests of its code run: in a multi-place game, a shared
+	// feature's in the place that runs the shared code's tests.
+	const testPlace = place ?? (places.includes("game") ? "game" : places[0]);
+	const e2e = at(
+		multi && testPlace !== undefined ? at("projects", testPlace, "tests") : "tests",
+		"e2e",
+		`${name}.luau`,
+	);
+	if (!fs.existsSync(path.join(cwd, e2e))) {
+		fs.mkdirSync(path.dirname(path.join(cwd, e2e)), { recursive: true });
+		fs.writeFileSync(path.join(cwd, e2e), e2eFile(name));
+		written.push(e2e);
 	}
 
 	const entryRoots = multi ? (place === undefined ? places : [place]).map((p) => at("projects", p, "src")) : ["src"];

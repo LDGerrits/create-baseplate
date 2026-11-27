@@ -62,6 +62,7 @@ test("starts a feature in a single-place game and imports it in the entry script
 	]) {
 		assert.ok(fs.existsSync(path.join(dir, "src/features/daily-reward", file)), file);
 	}
+	assert.match(read(dir, "tests/e2e/daily-reward.luau"), /\/daily-reward-network@DailyRewardNetwork/);
 	const service = read(dir, "src/features/daily-reward/server/daily-reward-service.ts");
 	assert.match(service, /export class DailyRewardService/);
 	assert.match(service, /\/\/ trusts-client: /);
@@ -84,6 +85,7 @@ test("puts a multi-place feature in the shared code and imports it in every plac
 	});
 	createFeature(dir, "shop");
 	assert.ok(fs.existsSync(path.join(dir, "projects/common/src/features/shop/server/shop-service.ts")));
+	assert.ok(fs.existsSync(path.join(dir, "projects/game/tests/e2e/shop.luau")));
 	for (const place of ["lobby", "game"]) {
 		assert.match(
 			read(dir, `projects/${place}/src/app/server/main.server.ts`),

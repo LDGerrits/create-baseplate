@@ -2,9 +2,10 @@
 // rather than with their edit tools, and then the edit hook and the language server never see them.
 // The guard, which runs before each shell command, stamps the time; after the command, the edit hook
 // takes the game's files written since then and checks them as it checks an edit.
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import type { Payload } from "./guard.ts";
+import { GENERATED, type Payload } from "./guard.ts";
 
 // Each agent tool's shell tool: Claude Code's and Codex's Bash, Gemini CLI's run_shell_command,
 // Copilot's bash and powershell, Cursor's Shell and its afterShellExecution hook.
@@ -81,4 +82,58 @@ export function writtenSince(root: string, since: number): string[] {
 	walk(""); // the root's own files, not its folders
 	for (const dir of SOURCES) walk(dir);
 	return found;
+}
+
+/**
+ * After mise.toml changed, records the tools' new pins and checksums in mise.lock, as a package
+ * manager updates its lockfile: mise installs only what the lock lists. Returns what went wrong, if
+ * anything (it takes a fraction of a second when nothing changed, and needs the network when a pin did).
+ */
+export function lockTools(root: string, written: string[]): string[] {
+	if (!written.includes("mise.toml")) return [];
+	// Only when its text changed since the last lock: a checkout or a pull touches the file too.
+	const stamp = path.join(root, "node_modules", ".cache", "baseplate-mise-toml");
+	let text = "";
+	try {
+		text = fs.readFileSync(path.join(root, "mise.toml"), "utf8");
+		if (fs.readFileSync(stamp, "utf8") === text) return [];
+	} catch {}
+	const run = spawnSync("mise", ["lock"], {
+		cwd: root,
+		encoding: "utf8",
+		shell: process.platform === "win32",
+		// Well inside the hook's own limit (Codex gives it 30 seconds), leaving time for the lint.
+		timeout: 15_000,
+	});
+	if (run.status === 0) {
+		try {
+			fs.mkdirSync(path.dirname(stamp), { recursive: true });
+			fs.writeFileSync(stamp, text);
+		} catch {}
+		return [];
+	}
+	const said = `${run.stdout ?? ""}${run.stderr ?? ""}`
+		.split("\n")
+		.filter((line) => line.trim() !== "" && !/\bWARN\b/.test(line))
+		.slice(-5)
+		.join("\n");
+	return [
+		`mise.toml: \`mise lock\` failed, so mise won't install the new pin until it passes:\n${said || (run.error?.message ?? "")}`,
+	];
+}
+
+/** Tools that write generated files as they should: a shell command that runs one wrote them on purpose. */
+const GENERATORS =
+	/\b(mise|rogen|rojo|wally|pnpm|npm|npx|sloptor|rbxtsc|forge|lune|stylua|selene|biome|eslint|node|git)\b/;
+
+/**
+ * Generated files a shell command wrote by hand (with `sed`, `echo >`, `cp`), which their
+ * generator overwrites: the guard stops an edit tool from writing them, but can't see into a script.
+ */
+export function generatedWrites(command: string, written: string[]): string[] {
+	if (GENERATORS.test(command)) return [];
+	return written.flatMap((file) => {
+		const fix = GENERATED.find(([pattern]) => pattern.test(file))?.[1];
+		return fix === undefined ? [] : [`${file} is generated, so this edit will be overwritten; ${fix}.`];
+	});
 }

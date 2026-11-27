@@ -5,7 +5,7 @@ description: Build, restyle or check the game's UI: components, their stories an
 
 # Build UI
 
-Vide from `@rbxts/vide`. Components are functions that run once and return instances. State lives in sources, read by calling them (`clicks()`), and a prop given a function updates when the sources it reads change (`` Text={() => `Clicks: ${clicks()}`} ``). Make state with `source`, derive values with `derive`, run code when sources change with `effect`, and dispose of subscriptions with `cleanup`. Give each component worth looking at a story beside it, `<component>.story.tsx`, made with `CreateVideStory` from `@rbxts/ui-labs`. A story renders the component alone, so pass in through props what comes from controllers.
+Vide from `@rbxts/vide`. Components are functions that run once and return instances. State lives in sources, read by calling them (`clicks()`), and a prop given a function updates when the sources it reads change (`` Text={() => `Clicks: ${clicks()}`} ``). Make state with `source`, derive values with `derive`, run code when sources change with `effect`, and dispose of subscriptions with `cleanup`. Each component has a story beside it, `<component>.story.tsx`, made with `CreateVideStory` from `@rbxts/ui-labs`. A story renders the component alone, so pass in through props what comes from controllers.
 
 The game starts with no UI mounted. To add one, write the root component (`src/app/client/app.tsx`, a `<screengui ResetOnSpawn={false}>` holding your components) and mount it from a controller that `main.client.ts` imports:
 

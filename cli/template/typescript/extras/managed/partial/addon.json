@@ -6,7 +6,7 @@
 		"scripts/publish.test.ts",
 		"scripts/snapshot.ts",
 		".github/workflows/publish.yml",
-		".agents/skills/edit-world"
+		".agents/skills/edit-world", ".claude/rules/edit-world.md", ".cursor/rules/edit-world.mdc", ".github/instructions/edit-world.instructions.md"
 	],
 	"removeMiseTasks": [
 		"sync",
@@ -124,11 +124,6 @@
 			"file": "AGENTS.md",
 			"from": "a hook stops `mise run publish`, Studio's Open Cloud tools and Luau run in Studio that reaches the live game's data. Read `.agents/skills/release/SKILL.md`",
 			"to": "the place is published from Studio, and a hook stops `rojo upload`, Studio's Open Cloud tools and Luau run in Studio that reaches the live game's data. Read `.agents/skills/release/SKILL.md`"
-		},
-		{
-			"file": "AGENTS.md",
-			"from": "`game.project.json`, `test.project.json` and `src/world.d.ts` (`mise run check`, from the code and `world/`)",
-			"to": "`game.project.json` and `test.project.json` (`mise run check`, from the code)"
 		},
 		{
 			"file": ".agents/skills/write-tests/SKILL.md",

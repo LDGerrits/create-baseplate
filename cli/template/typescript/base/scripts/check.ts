@@ -19,6 +19,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { CHECK_RECORD, partId, readRecord, stateId, writeRecord } from "../.agents/hooks/fingerprint.ts";
+import { hintsFor } from "../.agents/hooks/hints.ts";
 
 // The locked packages first, before this script or any step loads one: a new clone or worktree has
 // none yet, and another branch's lockfile may differ. Instant when they already match.
@@ -184,6 +185,8 @@ function start(step: Step): Started {
 const ROOT = path.resolve(import.meta.dirname, "..");
 const ci = process.argv.includes("--ci");
 const verbose = process.argv.includes("--verbose");
+/** How much of a failed step's output the check prints, unless it runs for CI or --verbose. */
+const STEP_LINES = 40;
 const everything = process.argv.includes("--all") || (process.env.CI ?? "") !== "";
 
 // What the fixing steps changed, so a person sees it: the game's own source files, by content.
@@ -308,10 +311,21 @@ for (const step of list) {
 	if (!outcome.ok || verbose) {
 		console.log(`${outcome.ok ? "✓" : "✗"} ${step.name} (${outcome.seconds.toFixed(1)}s): ${step.command}`);
 		const text = outcome.output.trim();
-		if (text !== "") console.log(`${text}\n`);
+		// Each failed step keeps its start, where its first problems are: a cut across the whole
+		// output (as a hook's message makes) would drop the first step's instead of the last's.
+		const lines = text.split("\n");
+		const shown = ci || verbose || lines.length <= STEP_LINES ? text : lines.slice(0, STEP_LINES).join("\n");
+		const more = lines.length - STEP_LINES;
+		if (text !== "") {
+			console.log(
+				`${shown}${shown === text ? "" : `\n… ${more} more lines: run \`${step.command}\` for all of them`}\n`,
+			);
+		}
 	}
 }
 if (failed.length > 0) {
+	const hints = hintsFor(failed.map((step) => outcomes.get(step.name)?.output ?? "").join("\n"));
+	if (hints.length > 0) console.log(`${hints.join("\n")}\n`);
 	const blocked = failed.filter((step) => outcomes.get(step.name)?.skipped !== undefined).map((step) => step.name);
 	const own = failed.filter((step) => !blocked.includes(step.name)).map((step) => step.name);
 	console.log(

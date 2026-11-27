@@ -149,17 +149,6 @@ export function makeMultiPlaceLuau(dir: string, name: string, managed: Managed) 
 	fs.writeFileSync(at(".vscode", "settings.json"), json(settings));
 
 	let agents = read("AGENTS.md");
-	const fromWorld = managed === "full" ? " and `world/`" : "";
-	agents = replaceIn(
-		agents,
-		`\`default.project.json\` (Rogen), \`game.project.json\`, \`test.project.json\` and \`sourcemap.json\` (\`mise run generate\`, from the code${fromWorld})`,
-		`\`<place>.project.json\` at the root (Rogen, from \`<place>.rogen.json\`), each place's \`game.project.json\`, \`test.project.json\` and \`sourcemap.json\`, and \`test.<place>.project.json\` and \`sourcemap.json\` at the root (\`mise run generate\`, from the code${fromWorld})`,
-	);
-	agents = replaceIn(
-		agents,
-		"Add each to the list in `src/app/server/Main.server.luau` or `src/app/client/Start.luau`, or it never starts;",
-		"Add each to the list in `src/app/server/Main.server.luau` or `src/app/client/Start.luau` of every place that uses it, or it never starts there;",
-	);
 	if (managed === "full") {
 		agents = replaceIn(
 			agents,

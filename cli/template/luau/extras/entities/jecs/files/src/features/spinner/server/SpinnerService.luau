@@ -1,4 +1,5 @@
 -- Keeps a Jecs world of the parts tagged `Spinner` (tag a part in Studio) and runs the spinner system on it each frame.
+-- no-spec: it only feeds tagged parts to the spinner system, whose spec and end-to-end test cover it
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")

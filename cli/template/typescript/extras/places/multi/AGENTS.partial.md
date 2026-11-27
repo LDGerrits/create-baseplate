@@ -15,7 +15,7 @@ The four layers sit in each source root, `projects/common/src` and `projects/<pl
 - `game/<system>/`: the always-on systems and what features build on; it never imports a feature or `app`.
 - `platform/<module>/`: game-agnostic code that would move unchanged to another game; it imports none of the others.
 
-A feature or a system? Delete the folder: if the game still works, it's a feature; if other code breaks, it belongs in `game/`. The children of `game/` and `platform/` are folders named for what they hold: no loose files there, and no `util(s)` or `lib(s)`.
+A feature or a system? Delete the folder: if the game still works, it's a feature; if other code breaks, it belongs in `game/`.
 
 Inside a feature or module, and in `app/`, the folder a file sits in decides where it runs:
 
@@ -25,8 +25,6 @@ Inside a feature or module, and in `app/`, the folder a file sits in decides whe
 
 Code meets in three ways: a direct import by default; a registry in `game/` when one owner has many contributors (the one `ProcessReceipt` handler, with the features registering their product handlers), so `game/` never imports a feature; a typed signal the emitter exports, for a fact others react to. Never a string-keyed event bus.
 
-Side folders sit only at `app/<side>/` and `<layer>/<module>/<side>/`, and a file outside one isn't placed in the game.
-
-`mise run check` builds, checks and tests every place; `mise run dev` names the place it serves: `mise run dev lobby`. Files are kebab-case, named after what they hold: `inventory-service.ts`.
+`mise run check` builds, checks and tests every place; `mise run dev` names the place it serves: `mise run dev lobby`. Name each file after what it holds: `inventory-service.ts`.
 
 Each place compiles from its own `tsconfig.<place>.json` at the root (the place's `tsconfig.json` extends it, for editors) into `out/<place>/`; `mise run check` also type-checks the shared code on its own. `mise run test:engine` runs each place's specs in turn, in the one test place set in `.env`.

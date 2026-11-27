@@ -180,11 +180,6 @@ function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 			"utf8",
 		);
 	let agents = replaceSection(read("AGENTS.md"), "Where code goes", extra("AGENTS.md"));
-	agents = replaceIn(
-		agents,
-		"Import each in `src/app/server/main.server.ts` or `src/app/client/main.client.ts`",
-		"Import each in the entry script of every place that uses it, `projects/<place>/src/app/server/main.server.ts` or `projects/<place>/src/app/client/main.client.ts`",
-	);
 	agents = replaceIn(agents, "`tests/e2e/<feature>.luau`", "`projects/<place>/tests/e2e/<feature>.luau`");
 	if (managed === "full") {
 		agents = replaceIn(

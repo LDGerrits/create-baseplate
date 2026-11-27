@@ -101,6 +101,9 @@ export default defineConfig(
 				{ name: "process", message: "There's no Node: the code runs in Roblox." },
 				{ name: "require", message: "Import with import; roblox-ts compiles it to a require." },
 			],
+			// roblox-ts's Promise isn't the built-in one, so without checkThenables the rule sees no promises:
+			// an unhandled rejection then only logs, and a fire-and-forget save fails silently.
+			"@typescript-eslint/no-floating-promises": ["error", { checkThenables: true }],
 			// It flags ordinary generic helpers (a factory whose type parameter appears once) and can't fix them.
 			"@typescript-eslint/no-unnecessary-type-parameters": "off",
 			// `os.clock()` and Roblox APIs return numbers; templates are fine.
@@ -111,7 +114,7 @@ export default defineConfig(
 	...sideRestrictions(roots),
 	{
 		// Specs: no focused or skipped tests left behind, and every test asserts something.
-		files: ["src/**/*.spec.ts", "src/**/*.spec.tsx"],
+		files: roots.flatMap((root) => [`${root}/**/*.spec.ts`, `${root}/**/*.spec.tsx`]),
 		...jest.configs["flat/recommended"],
 		// The specs import Jest's functions from @rbxts/jest-globals, not from globals.
 		settings: { jest: { globalPackage: "@rbxts/jest-globals", version: 29 } },

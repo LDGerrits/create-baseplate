@@ -1,3 +1,4 @@
+// no-spec: it only feeds tagged parts to the spinner system, whose spec and end-to-end test cover it
 import { type OnStart, Service } from "@flamework/core";
 import { type Entity, world } from "@rbxts/jecs";
 import { CollectionService, RunService } from "@rbxts/services";
