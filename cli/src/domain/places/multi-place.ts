@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { templateExtras } from "../../base/template.ts";
+import { replaceExact, replaceSection } from "../../base/text-edit.ts";
 import type { Language } from "../add-ons/language.ts";
 import type { Managed } from "../add-ons/questions.ts";
 import { makeMultiPlaceLuau } from "./multi-place-luau.ts";
@@ -42,10 +43,7 @@ function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 	const at = (...parts: string[]) => path.join(dir, ...parts);
 	const read = (file: string) => fs.readFileSync(at(file), "utf8");
 	// The template's text this relies on; fail rather than leave a half-converted game.
-	const replaceIn = (text: string, from: string, to: string) => {
-		if (!text.includes(from)) throw new Error(`places: the template no longer has: ${from}`);
-		return text.replace(from, to);
-	};
+	const replaceIn = (text: string, from: string, to: string) => replaceExact(text, from, to, "places: the template");
 	const common = at("projects", "common", "src");
 	fs.mkdirSync(common, { recursive: true });
 
@@ -170,7 +168,7 @@ function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 			),
 			"utf8",
 		);
-	let agents = replaceSection(read("AGENTS.md"), "Where code goes", extra("AGENTS.md"));
+	let agents = replaceSection(read("AGENTS.md"), "Where code goes", extra("AGENTS.md"), "places: AGENTS.md");
 	agents = replaceIn(agents, "`tests/e2e/<feature>.luau`", "`projects/<place>/tests/e2e/<feature>.luau`");
 	if (managed === "full") {
 		agents = replaceIn(
@@ -189,7 +187,7 @@ function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 	if (managed === "full") agents = agents.replaceAll("under `world/`", "under a place's `world/`");
 	fs.writeFileSync(at("AGENTS.md"), agents);
 
-	let readme = replaceSection(read("README.md"), "Layout", extra("README-layout.md"));
+	let readme = replaceSection(read("README.md"), "Layout", extra("README-layout.md"), "places: README.md");
 	readme = replaceIn(readme, "mise run dev       #", "mise run dev lobby #");
 	if (managed === "full") readme = replaceIn(readme, "mise run sync      #", "mise run sync lobby #");
 	if (managed === "full") {
@@ -233,12 +231,3 @@ const skillNote = (managed: Managed) =>
 	managed === "full"
 		? "> This game has several places (see `AGENTS.md`). Below, `world/`, `src/app/`, `src/world.d.ts`, `tests/e2e/`, `build/` and `game.project.json` are each place's, under `projects/<place>/`, and shared features are in `projects/common/src/features/`. Run forge, ror and rojo from the place's folder, and name the place: `mise run dev <place>`, `mise run sync <place>`."
 		: "> This game has several places (see `AGENTS.md`). Below, `src/app/`, `tests/e2e/`, `build/` and `game.project.json` are each place's, under `projects/<place>/`, and shared features are in `projects/common/src/features/`. Run forge, ror and rojo from the place's folder, and name the place: `mise run dev <place>`.";
-
-/** Replaces the section under `## <heading>` with `section`, up to the next `## ` heading. */
-export function replaceSection(text: string, heading: string, section: string) {
-	const start = text.indexOf(`\n## ${heading}\n`) + 1;
-	if (start === 0) throw new Error(`places: no "## ${heading}" section to replace`);
-	const next = text.indexOf("\n## ", start);
-	const end = next === -1 ? text.length : next + 1;
-	return `${text.slice(0, start)}${section.trim()}\n${next === -1 ? "" : "\n"}${text.slice(end)}`;
-}

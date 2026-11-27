@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { templateExtras } from "../../base/template.ts";
+import { replaceExact, replaceSection } from "../../base/text-edit.ts";
 import type { Language } from "./language.ts";
 import { manifestOf } from "./manifest.ts";
 import { type AddOnChoices, addOnsByLanguage, managedOf } from "./questions.ts";
@@ -39,14 +40,11 @@ export function installAddOns(dir: string, language: Language, chosen: AddOnChoi
 		if (fs.existsSync(mise)) addMise(dir, fs.readFileSync(mise, "utf8"));
 		for (const [file, imports] of Object.entries(manifest.imports ?? {})) addImports(path.join(dir, file), imports);
 		const agents = fs.readFileSync(path.join(from, managedVariant?.agents ?? variant?.agents ?? "AGENTS.md"), "utf8");
-		if (manifest.replaceAgentsSection === undefined) addAgentsSection(dir, agents);
-		else replaceAgentsSection(dir, manifest.replaceAgentsSection, agents);
+		const heading = manifest.replaceAgentsSection;
+		if (heading === undefined) addAgentsSection(dir, agents);
+		else editFile(dir, "AGENTS.md", (text) => replaceSection(text, heading, agents, "AGENTS.md"));
 		for (const { file, from: text, to } of manifest.replaceText ?? []) {
-			const at = path.join(dir, file);
-			const content = fs.readFileSync(at, "utf8");
-			// A base change the manifest doesn't know about; fail rather than leave the old text.
-			if (!content.includes(text)) throw new Error(`${name}: ${file} no longer has the text to replace: ${text}`);
-			fs.writeFileSync(at, content.replace(text, to));
+			editFile(dir, file, (content) => replaceExact(content, text, to, `${name}: ${file}`));
 		}
 	}
 }
@@ -144,16 +142,10 @@ function removeMiseTask(dir: string, name: string) {
 	fs.writeFileSync(file, `${mise.slice(0, start)}${next === -1 ? "" : mise.slice(next + 1)}`.replace(/\n+$/, "\n"));
 }
 
-/** Replaces the section under `## <heading>` with the add-on's, up to the next `## ` heading. */
-function replaceAgentsSection(dir: string, heading: string, section: string) {
-	const file = path.join(dir, "AGENTS.md");
-	const agents = fs.readFileSync(file, "utf8");
-	const start = agents.indexOf(`\n## ${heading}\n`) + 1;
-	if (start === 0) throw new Error(`AGENTS.md has no "## ${heading}" section to replace`);
-	const next = agents.indexOf("\n## ", start + 1);
-	const end = next === -1 ? agents.length : next + 1;
-	fs.writeFileSync(file, `${agents.slice(0, start)}${section.trim()}\n\n${agents.slice(end)}`);
-}
+const editFile = (dir: string, file: string, edit: (text: string) => string) => {
+	const at = path.join(dir, file);
+	fs.writeFileSync(at, edit(fs.readFileSync(at, "utf8")));
+};
 
 /** Puts the add-on's section before the Rogen section, which Rogen manages at the end of AGENTS.md. */
 function addAgentsSection(dir: string, section: string) {

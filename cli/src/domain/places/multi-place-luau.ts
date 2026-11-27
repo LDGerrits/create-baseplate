@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { templateExtras } from "../../base/template.ts";
+import { replaceExact, replaceSection } from "../../base/text-edit.ts";
 import type { Managed } from "../add-ons/questions.ts";
-import { PLACES, replaceSection, SHARED_TESTS_PLACE } from "./multi-place.ts";
+import { PLACES, SHARED_TESTS_PLACE } from "./multi-place.ts";
 
 /** Each place's builds and session state, and its world's project files when Rojo manages the world. */
 const gitignore = (managed: Managed) => `
@@ -29,10 +30,7 @@ export function makeMultiPlaceLuau(dir: string, name: string, managed: Managed) 
 	const at = (...parts: string[]) => path.join(dir, ...parts);
 	const read = (file: string) => fs.readFileSync(at(file), "utf8");
 	// The template's text this relies on; fail rather than leave a half-converted game.
-	const replaceIn = (text: string, from: string, to: string) => {
-		if (!text.includes(from)) throw new Error(`places: the template no longer has: ${from}`);
-		return text.replaceAll(from, to);
-	};
+	const replaceIn = (text: string, from: string, to: string) => replaceExact(text, from, to, "places: the template");
 	// The sections that name the world have a variant for a game whose world lives in Studio.
 	const extra = (file: string) =>
 		fs.readFileSync(
@@ -175,10 +173,10 @@ export function makeMultiPlaceLuau(dir: string, name: string, managed: Managed) 
 		.replaceAll("`tests/e2e/", "`projects/<place>/tests/e2e/")
 		.replaceAll("`world/", "`projects/<place>/world/");
 	// The section names the new layout's paths itself.
-	agents = replaceSection(agents, "Where code goes", extra("AGENTS.md"));
+	agents = replaceSection(agents, "Where code goes", extra("AGENTS.md"), "places: AGENTS.md");
 	fs.writeFileSync(at("AGENTS.md"), agents);
 
-	let readme = replaceSection(read("README.md"), "Layout", extra("README-layout.md"));
+	let readme = replaceSection(read("README.md"), "Layout", extra("README-layout.md"), "places: README.md");
 	readme = replaceIn(readme, "mise run dev       #", "mise run dev lobby #");
 	if (managed === "full") readme = replaceIn(readme, "mise run sync      #", "mise run sync lobby #");
 	if (managed === "full") {
