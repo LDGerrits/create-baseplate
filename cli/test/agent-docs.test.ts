@@ -5,17 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import { create, tempDir } from "./helpers.ts";
-
-const VARIANTS = [
-	[],
-	["--language", "luau"],
-	["--managed", "partial"],
-	["--language", "luau", "--managed", "partial"],
-	["--places", "multi"],
-	["--language", "luau", "--places", "multi"],
-	["--ui", "vide"],
-	["--language", "luau", "--ui", "vide"],
-];
+import { MAIN_VARIANTS } from "./variants.ts";
 
 /** The game's mise tasks, by name. */
 const taskNames = (miseToml: string) =>
@@ -32,7 +22,7 @@ function docs(dir: string): [string, string][] {
 	return files.map((file) => [file, fs.readFileSync(path.join(dir, file), "utf8")]);
 }
 
-for (const flags of VARIANTS) {
+for (const flags of MAIN_VARIANTS) {
 	test(`what the docs name exists in a game made with ${flags.join(" ") || "the defaults"}`, () => {
 		const cwd = tempDir();
 		const run = create(cwd, "game", ...flags);

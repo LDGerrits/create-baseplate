@@ -15,3 +15,7 @@ run = "node scripts/check.ts"
 [tasks.ci]
 description = "check, without writing fixes: fails on unformatted code"
 run = "node scripts/check.ts --ci"
+
+[tasks.try]
+description = "Build the CLI and create a game with the flags after --, or one of each main variant with --matrix, and say whether each passes its check; --keep keeps the games"
+run = "node scripts/try.ts"

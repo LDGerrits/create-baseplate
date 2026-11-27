@@ -17,16 +17,39 @@ import { commitSkip, stagedFiles } from "../.agents/hooks/fingerprint.ts";
 
 const quoted = (files: string[]) => files.map((file) => JSON.stringify(file)).join(" ");
 
+// Windows refuses a command line over 8,191 characters, which the first commit's few hundred files
+// pass as absolute paths: each command gets paths from here, in groups well under that.
+const MAX_LINE = 6000;
+const commands = (prefix: string, files: string[]) => {
+	const groups: string[][] = [[]];
+	let length = prefix.length;
+	for (const file of files.map((one) => path.relative(process.cwd(), one))) {
+		const last = groups.at(-1) ?? [];
+		if (last.length > 0 && length + file.length + 3 > MAX_LINE) {
+			groups.push([file]);
+			length = prefix.length + file.length + 3;
+		} else {
+			last.push(file);
+			length += file.length + 3;
+		}
+	}
+	return groups.filter((group) => group.length > 0).map((group) => `${prefix} ${quoted(group)}`);
+};
+// .baseplate holds what create-baseplate records and its docs: nothing to format.
+const ours = (file: string) => !path.relative(process.cwd(), file).split(path.sep).includes(".baseplate");
+
 /** The format commands for the staged files still on disk. */
 function format(files: readonly string[]) {
-	const present = files.filter((file) => fs.existsSync(file));
-	const luau = present.filter((file) => /\.luau?$/.test(file));
-	const other = present.filter((file) => !/\.luau?$/.test(file));
+	const present = files.filter((file) => fs.existsSync(file) && ours(file));
 	return [
-		...(luau.length === 0 ? [] : [`stylua ${quoted(luau)}`]),
-		...(other.length === 0
-			? []
-			: [`biome check --write --no-errors-on-unmatched --files-ignore-unknown=true ${quoted(other)}`]),
+		...commands(
+			"stylua",
+			present.filter((file) => /\.luau?$/.test(file)),
+		),
+		...commands(
+			"biome check --write --no-errors-on-unmatched --files-ignore-unknown=true",
+			present.filter((file) => !/\.luau?$/.test(file)),
+		),
 	];
 }
 
