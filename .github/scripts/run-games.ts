@@ -104,6 +104,7 @@ export interface Created {
 	ok?: boolean;
 	created?: boolean;
 	committed?: boolean;
+	checked?: boolean;
 	error?: string;
 	warnings?: string[];
 }
@@ -179,7 +180,7 @@ export async function checkGame(
 		};
 	}
 	let note: string;
-	if (created.result?.committed === true) {
+	if (created.result?.checked === true) {
 		const hooks = await steps.hooksPath(dir);
 		if (hooks !== ".githooks") {
 			return {

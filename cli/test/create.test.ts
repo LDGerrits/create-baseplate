@@ -184,10 +184,17 @@ test("creates into a freshly cloned repo, and commits there", () => {
 
 	const run = create(cwd, "coin-rush", "--state", "none");
 	assert.equal(run.status, 0, run.stderr);
-	const result = JSON.parse(run.stdout) as { ok: boolean; git: boolean; committed: boolean; warnings: string[] };
+	const result = JSON.parse(run.stdout) as {
+		ok: boolean;
+		git: boolean;
+		committed: boolean;
+		checked: boolean;
+		warnings: string[];
+	};
 	assert.equal(result.ok, true);
 	assert.equal(result.git, true);
 	assert.equal(result.committed, true);
+	assert.equal(result.checked, false, "nothing installed, so no hook checked the commit");
 	assert.equal(fs.readFileSync(path.join(dir, "LICENSE"), "utf8"), "My license\n", "keeps the repo's license");
 	assert.match(fs.readFileSync(path.join(dir, "README.md"), "utf8"), /^# coin-rush\n\nA Roblox game/m);
 	assert.match(result.warnings.join("\n"), /Replaced README\.md/);

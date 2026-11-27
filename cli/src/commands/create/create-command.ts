@@ -9,6 +9,7 @@ import { type Rendered, renderGame } from "../../domain/game/render.ts";
 import { PLACES } from "../../domain/places/place-steps.ts";
 import { logNextSteps, nextSteps } from "./next-steps.ts";
 import { runCli } from "./options.ts";
+import { type Commit, firstCommit, type Git, type Install } from "./outcome.ts";
 
 let json = false;
 
@@ -46,60 +47,35 @@ async function create(version: string, keepToolingTests: boolean) {
 	const place = isMultiPlace(options.addOns) ? (PLACES[0] ?? "") : "";
 	logger.success(`Created ${options.name} in ${options.dir}`);
 
-	const warnings: string[] = [];
-	if (replaced.length > 0) {
-		warnings.push(`Replaced ${replaced.join(", ")} with the template's; git history still has the originals.`);
-	}
-	const gitSkipped = options.git ? initGit(options.dir) : undefined;
-	if (gitSkipped !== undefined) warnings.push(gitSkipped);
-	const git = options.git && gitSkipped === undefined;
+	const git = makeRepo(options.dir, options.git);
+	const install = await installGame(options.dir, options.install, options.json, stale.tools);
+	const plan = firstCommit(git, install, stale);
+	const commit: Commit = plan.state === "now" ? await commitGame(options.dir, plan.checked, options.json) : plan;
 
-	let installed = false;
-	if (options.install) {
-		if (isMiseInstalled()) {
-			const spinner = options.json ? undefined : p.spinner();
-			spinner?.start("Installing the tools and packages with mise");
-			const error = await installDependencies(options.dir, stale.tools, (step) => spinner?.message(step));
-			spinner?.stop(error === undefined ? "Installed the tools and packages" : "Install failed");
-			if (error === undefined) installed = true;
-			else warnings.push(error);
-		} else {
-			warnings.push("mise isn't installed, so nothing was installed: https://mise.jdx.dev/getting-started.html");
-		}
-	}
-
-	let committed = false;
-	let commitError: string | undefined;
-	// Committed now, pnpm-lock.yaml wouldn't match package.json, or mise.lock wouldn't record the
-	// add-ons' tools, and the game's install (locked, frozen) fails on that; or wally.lock wouldn't
-	// list the add-ons' Wally packages, and the first install would leave it changed.
-	const waitForInstall = git && !installed && (stale.packages || stale.wally || stale.tools);
-	if (waitForInstall) {
-		const unlocked = [
-			...(stale.tools ? ["mise.lock doesn't record the add-ons' tools until `mise lock`"] : []),
-			...(stale.packages ? ["pnpm-lock.yaml doesn't list the add-ons' packages until `pnpm install`"] : []),
-			...(stale.wally ? ["wally.lock doesn't list the add-ons' packages until `mise run install`"] : []),
-		];
-		warnings.push(`Nothing is committed yet: ${unlocked.join(", and ")}. Run the next steps, then commit.`);
-	} else if (git) {
-		const spinner = options.json || !installed ? undefined : p.spinner();
-		spinner?.start("Making the first commit; its hook runs the game's check");
-		const error = await commitAll(options.dir, "Initial commit from create-baseplate");
-		spinner?.stop(error === undefined ? "Made the first commit; the check passed" : "The first commit failed");
-		if (error === undefined) committed = true;
-		else commitError = error;
-	}
-
+	const warnings = [
+		...(replaced.length > 0
+			? [`Replaced ${replaced.join(", ")} with the template's; git history still has the originals.`]
+			: []),
+		...(git.state === "skipped" ? [git.reason] : []),
+		...(install.state === "failed" ? [install.error] : []),
+		...(install.state === "no-mise"
+			? ["mise isn't installed, so nothing was installed: https://mise.jdx.dev/getting-started.html"]
+			: []),
+		...(commit.state === "waiting"
+			? [`Nothing is committed yet: ${commit.unlocked.join(", and ")}. Run the next steps, then commit.`]
+			: []),
+	];
 	for (const warning of warnings) logger.warn(warning);
 	const failure =
-		commitError === undefined
-			? undefined
-			: `The first commit failed, so the game is created in ${options.dir} but nothing is committed. Its commit hook runs the game's check; fix what this reports (\`mise run check\` in the folder shows it again), then commit:\n${commitError}`;
+		commit.state === "failed"
+			? `The first commit failed, so the game is created in ${options.dir} but nothing is committed. Its commit hook runs the game's check; fix what this reports (\`mise run check\` in the folder shows it again), then commit:\n${commit.error}`
+			: undefined;
+	const installed = install.state === "installed";
 	const steps = {
 		installed,
 		packagesChanged: stale.packages,
 		toolsChanged: stale.tools,
-		commit: waitForInstall || failure !== undefined,
+		commit: commit.state === "waiting" || commit.state === "failed",
 		place,
 	};
 	if (options.json) {
@@ -109,8 +85,9 @@ async function create(version: string, keepToolingTests: boolean) {
 				...(failure === undefined ? {} : { created: true, error: failure }),
 				name: options.name,
 				dir: options.dir,
-				git,
-				committed,
+				git: git.state === "repo",
+				committed: commit.state === "committed",
+				checked: commit.state === "committed" && commit.checked,
 				installed,
 				language: options.language,
 				addOns: options.addOns,
@@ -124,4 +101,28 @@ async function create(version: string, keepToolingTests: boolean) {
 		logger.info(pc.dim(`create-baseplate ${version}`));
 	}
 	if (failure !== undefined) process.exitCode = 1;
+}
+
+function makeRepo(dir: string, wanted: boolean): Git {
+	if (!wanted) return { state: "off" };
+	const reason = initGit(dir);
+	return reason === undefined ? { state: "repo" } : { state: "skipped", reason };
+}
+
+async function installGame(dir: string, wanted: boolean, json: boolean, lock: boolean): Promise<Install> {
+	if (!wanted) return { state: "off" };
+	if (!isMiseInstalled()) return { state: "no-mise" };
+	const spinner = json ? undefined : p.spinner();
+	spinner?.start("Installing the tools and packages with mise");
+	const error = await installDependencies(dir, lock, (step) => spinner?.message(step));
+	spinner?.stop(error === undefined ? "Installed the tools and packages" : "Install failed");
+	return error === undefined ? { state: "installed" } : { state: "failed", error };
+}
+
+async function commitGame(dir: string, checked: boolean, json: boolean): Promise<Commit> {
+	const spinner = json || !checked ? undefined : p.spinner();
+	spinner?.start("Making the first commit; its hook runs the game's check");
+	const error = await commitAll(dir, "Initial commit from create-baseplate");
+	spinner?.stop(error === undefined ? "Made the first commit; the check passed" : "The first commit failed");
+	return error === undefined ? { state: "committed", checked } : { state: "failed", error };
 }
