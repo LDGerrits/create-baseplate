@@ -7,14 +7,14 @@ import { type DailyRewardController } from "./daily-reward-controller";
  * component takes the controller's value and subscribes to it in an effect.
  */
 export function DailyRewardPanel({ controller }: { controller: DailyRewardController }) {
-	const [secondsLeft, setSecondsLeft] = useState(controller.secondsLeft);
+	const [reward, setReward] = useState(controller.reward);
 	useEffect(() => {
-		setSecondsLeft(controller.secondsLeft);
-		return controller.subscribe(setSecondsLeft);
+		setReward(controller.reward);
+		return controller.subscribe(setReward);
 	}, [controller]);
 	return (
 		<DailyRewardButton
-			secondsLeft={secondsLeft}
+			reward={reward}
 			onClaim={() => {
 				controller.claim();
 			}}

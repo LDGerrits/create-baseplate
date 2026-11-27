@@ -249,16 +249,20 @@ if (before !== undefined) {
 		.map(([file]) => file);
 	if (fixed.length > 0) console.log(`Fixed formatting or lint in: ${fixed.join(", ")}`);
 }
-const lint = outcomes.get("lint");
-if (lint?.output.includes("@eslint-fixed") === true) {
-	lint.output = lint.output.replace("@eslint-fixed\n", "");
-	if (!ci && process.env.BASEPLATE_CHECK_AGAIN === undefined) {
-		const again = spawnSync(process.execPath, process.argv.slice(1), {
-			stdio: "inherit",
-			env: { ...process.env, BASEPLATE_CHECK_AGAIN: "1" },
-		});
-		process.exit(again.status ?? 1);
-	}
+// What the check saw: the files as formatting left them, unless something changed them after.
+const after = stateId(ROOT, "files");
+const files: { state: "unknown" } | { state: "settled"; id: string } | { state: "changed" } =
+	formatted?.files === undefined
+		? { state: "unknown" }
+		: formatted.files === after
+			? { state: "settled", id: formatted.files }
+			: { state: "changed" };
+if (files.state === "changed" && !ci && process.env.BASEPLATE_CHECK_AGAIN === undefined) {
+	const again = spawnSync(process.execPath, process.argv.slice(1), {
+		stdio: "inherit",
+		env: { ...process.env, BASEPLATE_CHECK_AGAIN: "1" },
+	});
+	process.exit(again.status ?? 1);
 }
 const failed = list.filter((step) => outcomes.get(step.name)?.ok !== true);
 const seconds = ((performance.now() - started) / 1000).toFixed(1);
@@ -293,10 +297,13 @@ if (failed.length > 0) {
 	process.exit(1);
 }
 
-const after = stateId(ROOT, "files");
-if (formatted?.files !== undefined && formatted.files === after) {
-	writeRecord(ROOT, CHECK_RECORD, after);
-	if (formatted.tooling !== undefined) writeRecord(ROOT, TOOLING_RECORD, formatted.tooling);
+if (files.state === "changed" && !ci) {
+	console.log("✗ check: files changed while it ran, so it saw none of them whole; run it again.");
+	process.exit(1);
+}
+if (files.state === "settled") {
+	writeRecord(ROOT, CHECK_RECORD, files.id);
+	if (formatted?.tooling !== undefined) writeRecord(ROOT, TOOLING_RECORD, formatted.tooling);
 }
 const skipped = list.filter((step) => outcomes.get(step.name)?.skipped !== undefined).map((step) => step.name);
 console.log(

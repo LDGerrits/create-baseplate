@@ -43,6 +43,7 @@ Without a terminal, as when an agent or CI runs it, it asks nothing and takes th
 	"language": "luau",
 	"git": true,
 	"committed": true,
+	"checked": true,
 	"installed": true,
 	"addOns": { "ui": "vide", "places": "single", "managed": "full", "state": "charm", "data": "none", "entities": "none", "assets": "none", "release": "none" },
 	"warnings": [],
@@ -50,7 +51,7 @@ Without a terminal, as when an agent or CI runs it, it asks nothing and takes th
 }
 ```
 
-`git` says whether the game is a git repo of its own, and `committed` whether the first commit is made. With `--no-install` and add-ons that change the packages or bring a tool (the default state add-on alone adds packages; Asphalt and Darklua bring tools), the commit waits for the next steps, which bring them into `pnpm-lock.yaml` and `mise.lock`: `nextSteps` holds the commit. `warnings` says why git or a step was skipped.
+`git` says whether the game is a git repo of its own, `committed` whether the first commit is made, and `checked` whether its commit hook ran the game's check on it, which needs the install: with `--no-install` the commit is made unchecked, so run `mise run check` once the next steps are done. With `--no-install` and add-ons that change the packages or bring a tool (the default state add-on alone adds packages; Asphalt and Darklua bring tools), the commit waits for the next steps, which bring them into `pnpm-lock.yaml` and `mise.lock`: `nextSteps` holds the commit. `warnings` says why git or a step was skipped.
 
 If the first commit fails (its hook runs the game's check), the game stays in its folder, uncommitted, and the CLI exits with 1: the JSON has `"ok": false`, `"created": true`, an `error` with what the hook printed, and `nextSteps` ending in the commit command to run once the check passes.
 

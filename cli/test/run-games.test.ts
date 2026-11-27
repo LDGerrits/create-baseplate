@@ -26,7 +26,7 @@ const quietly = async <T>(body: () => Promise<T>): Promise<{ result: T; log: str
 };
 
 function fakeSteps(options: {
-	create?: (flags: string) => { code: number | null; committed?: boolean; created?: boolean };
+	create?: (flags: string) => { code: number | null; committed?: boolean; checked?: boolean; created?: boolean };
 	exits?: (args: string[], dir: string) => number | null;
 	hooks?: string;
 }): Steps & { calls: string[] } {
@@ -35,8 +35,8 @@ function fakeSteps(options: {
 		calls,
 		create: async (flags) => {
 			calls.push(`create ${flags}`);
-			const { code, committed, created } = options.create?.(flags) ?? { code: 0, committed: true };
-			return { code, result: committed === undefined ? undefined : { committed, created } };
+			const { code, committed, checked = committed, created } = options.create?.(flags) ?? { code: 0, committed: true };
+			return { code, result: committed === undefined ? undefined : { committed, checked, created } };
 		},
 		mise: async (args, dir) => {
 			calls.push(`mise ${args.join(" ")} in ${dir.split("/").slice(-3).join("/")}`);
@@ -68,6 +68,16 @@ test("a game left uncommitted is checked after it is created, and a release game
 	assert.deepEqual(
 		steps.calls.map((call) => call.replace(/ in .*/, "")),
 		["create --release darklua", "mise run ci", "mise run release"],
+	);
+});
+
+test("a game committed before its hooks were set up is checked after it is created", async () => {
+	const steps = fakeSteps({ create: () => ({ code: 0, committed: true, checked: false }) });
+	const { result } = await quietly(() => checkGame("", "/g/0/coin-rush", steps));
+	assert.equal(result.failure, undefined);
+	assert.deepEqual(
+		steps.calls.map((call) => call.replace(/ in .*/, "")),
+		["create ", "mise run ci"],
 	);
 });
 

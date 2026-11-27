@@ -240,10 +240,21 @@ if (failed.length > 0) {
 	process.exit(1);
 }
 
+// What the check saw: the files as formatting left them, unless something changed them after.
 const after = stateId(ROOT, "files");
-if (formatted?.files !== undefined && formatted.files === after) {
-	writeRecord(ROOT, CHECK_RECORD, after);
-	if (formatted.tooling !== undefined) writeRecord(ROOT, TOOLING_RECORD, formatted.tooling);
+const files: { state: "unknown" } | { state: "settled"; id: string } | { state: "changed" } =
+	formatted?.files === undefined
+		? { state: "unknown" }
+		: formatted.files === after
+			? { state: "settled", id: formatted.files }
+			: { state: "changed" };
+if (files.state === "changed" && !ci) {
+	console.log("✗ check: files changed while it ran, so it saw none of them whole; run it again.");
+	process.exit(1);
+}
+if (files.state === "settled") {
+	writeRecord(ROOT, CHECK_RECORD, files.id);
+	if (formatted?.tooling !== undefined) writeRecord(ROOT, TOOLING_RECORD, formatted.tooling);
 }
 const skipped = list.filter((step) => outcomes.get(step.name)?.skipped !== undefined).map((step) => step.name);
 console.log(

@@ -152,6 +152,22 @@ test("takes over the socket a crashed server left behind", { skip: process.platf
 	});
 });
 
+test("a server that stops leaves the socket of the one that replaced it", {
+	skip: process.platform === "win32",
+}, async () => {
+	await inProject(async (root) => {
+		const old = start(root, 300);
+		await old.up;
+		// What an old server's exit does after a new one was started: the old socket is gone.
+		fs.rmSync(socketPath(root));
+		const replacement = start(root, 1000);
+		await replacement.up;
+		await old.stopped;
+		assert.ok("results" in ((await ask(root, ["src/a.ts"])) ?? {}), "the replacement still answers");
+		await replacement.stopped;
+	});
+});
+
 test("a linter that throws is reported, and the server carries on", async () => {
 	await inProject(async (root) => {
 		let first = true;

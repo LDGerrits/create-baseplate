@@ -100,6 +100,20 @@ export async function serve({ root, linter, idleMs = IDLE_MS, onListening }: Ser
 	let idle: NodeJS.Timeout | undefined;
 	let busy = false;
 	let queue: Promise<unknown> = Promise.resolve();
+	// The socket file this server made. A new server can take the path once this one has replied
+	// stale or lost its file, and Node's server.close() unlinks the path whoever's socket is there,
+	// so a server whose socket was replaced leaves without closing its handle.
+	let own: fs.Stats | undefined;
+	const ownsSocket = () => {
+		if (process.platform === "win32" || own === undefined) return true;
+		try {
+			const now = fs.statSync(where);
+			return now.ino === own.ino && now.dev === own.dev && now.ctimeMs === own.ctimeMs;
+		} catch {
+			return false;
+		}
+	};
+	let finished = () => {};
 
 	const server = net.createServer((connection) => {
 		let text = "";
@@ -115,12 +129,16 @@ export async function serve({ root, linter, idleMs = IDLE_MS, onListening }: Ser
 	const stop = () => {
 		if (idle !== undefined) clearTimeout(idle);
 		clearInterval(watch);
-		if (process.platform !== "win32") fs.rmSync(where, { force: true });
-		server.close();
+		if (ownsSocket()) {
+			server.close();
+		} else {
+			server.unref();
+			finished();
+		}
 	};
 	for (const signal of ["SIGTERM", "SIGINT", "SIGHUP"] as const) process.once(signal, () => process.exit(0));
 	process.once("exit", () => {
-		if (process.platform !== "win32") fs.rmSync(where, { force: true });
+		if (process.platform !== "win32" && own !== undefined && ownsSocket()) fs.rmSync(where, { force: true });
 	});
 	const arm = () => {
 		if (idle !== undefined) clearTimeout(idle);
@@ -178,11 +196,13 @@ export async function serve({ root, linter, idleMs = IDLE_MS, onListening }: Ser
 				listen();
 			});
 			server.listen(where, () => {
+				if (process.platform !== "win32") own = fs.statSync(where);
 				arm();
 				onListening?.();
 			});
 		};
 		listen();
+		finished = resolve;
 		server.on("close", resolve);
 	});
 }

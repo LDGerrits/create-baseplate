@@ -7,11 +7,27 @@ const FOLDERS = ["Packages", "ServerPackages", "DevPackages"];
 // What this script keeps, beside Roblox's types: outside the package folders, which
 // wally-package-types reads whole.
 const CACHE = ".luau-lsp";
-const STAMP = path.join(CACHE, "packages-installed");
-const UNTYPED = path.join(CACHE, "packages-untyped");
-const TYPING = "typing";
+const MARKER = path.join(CACHE, "packages.json");
 const DEFINITIONS = path.join(CACHE, "globalTypes.d.luau");
 const DEFINITIONS_VERSION = path.join(CACHE, "version");
+
+/** The packages of one manifest: installed, then typed. A typing that stops halfway leaves "typing". */
+interface Packages {
+	hash: string;
+	state: "installed" | "typing" | "typed";
+}
+
+const readPackages = (): Packages | undefined => {
+	try {
+		return JSON.parse(fs.readFileSync(MARKER, "utf8")) as Packages;
+	} catch {
+		return undefined;
+	}
+};
+const writePackages = (packages: Packages) => {
+	fs.mkdirSync(CACHE, { recursive: true });
+	fs.writeFileSync(MARKER, `${JSON.stringify(packages)}\n`);
+};
 
 const runQuiet = (command: string, args: string[]) => {
 	const result = spawnSync(command, args, {
@@ -167,15 +183,14 @@ function install() {
 }
 
 if (!process.argv.includes("--types")) {
+	const packages = readPackages();
 	if (
-		read(STAMP) !== manifestHash() ||
-		neededFolders().some((folder) => !fs.existsSync(folder)) ||
-		read(UNTYPED) === TYPING
+		packages?.hash !== manifestHash() ||
+		packages.state === "typing" ||
+		neededFolders().some((folder) => !fs.existsSync(folder))
 	) {
 		install();
-		fs.mkdirSync(CACHE, { recursive: true });
-		fs.writeFileSync(STAMP, manifestHash());
-		fs.writeFileSync(UNTYPED, "installed");
+		writePackages({ hash: manifestHash(), state: "installed" });
 	}
 	fixJestSuccess();
 } else {
@@ -197,12 +212,13 @@ if (!process.argv.includes("--types")) {
 	}
 	// Wally's package files only point at the package; this copies the package's types into them, so
 	// `require(ReplicatedStorage.Packages.Vide)` is typed. It reads the instance paths from the sourcemap.
-	if (fs.existsSync(UNTYPED)) {
-		fs.writeFileSync(UNTYPED, TYPING);
+	const packages = readPackages();
+	if (packages !== undefined && packages.state !== "typed") {
+		writePackages({ ...packages, state: "typing" });
 		for (const folder of FOLDERS) {
 			if (fs.existsSync(folder)) runQuiet("wally-package-types", ["--sourcemap", "sourcemap.json", `${folder}/`]);
 		}
-		fs.rmSync(UNTYPED);
+		writePackages({ ...packages, state: "typed" });
 	}
 	const version = spawnSync("luau-lsp", ["--version"], {
 		encoding: "utf8",

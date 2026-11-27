@@ -1,18 +1,29 @@
 import React from "@rbxts/react";
+import { type DailyReward } from "./daily-reward-controller";
 
 export interface DailyRewardButtonProps {
-	secondsLeft: number;
+	reward: DailyReward;
 	onClaim: () => void;
 }
 
-export function DailyRewardButton({ secondsLeft, onClaim }: DailyRewardButtonProps) {
-	const ready = secondsLeft === 0;
-	const text =
-		secondsLeft < 0
-			? "…"
-			: ready
-				? "Claim 100 coins"
-				: string.format("%02d:%02d", math.floor(secondsLeft / 3600), math.floor((secondsLeft % 3600) / 60));
+const labelOf = (reward: DailyReward) => {
+	switch (reward.status) {
+		case "loading":
+			return "…";
+		case "ready":
+			return "Claim 100 coins";
+		case "cooldown":
+			return string.format(
+				"%02d:%02d",
+				math.floor(reward.secondsLeft / 3600),
+				math.floor((reward.secondsLeft % 3600) / 60),
+			);
+	}
+};
+
+export function DailyRewardButton({ reward, onClaim }: DailyRewardButtonProps) {
+	const ready = reward.status === "ready";
+	const text = labelOf(reward);
 	return (
 		<textbutton
 			key="claim"

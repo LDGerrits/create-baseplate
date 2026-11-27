@@ -24,9 +24,13 @@ A story is a module that returns `CreateVideStory` with its controls and a funct
 ```lua
 return UILabs.CreateVideStory({
 	vide = Vide,
-	controls = { count = UILabs.Number(0, 0) },
+	controls = { secondsLeft = UILabs.Number(0, 0) },
 }, function(props)
-	return Counter({ count = props.controls.count })
+	return Counter({
+		reward = function()
+			return DailyReward.fromSecondsLeft(props.controls.secondsLeft())
+		end,
+	})
 end)
 ```
 

@@ -1,18 +1,11 @@
 #!/bin/sh
-# Mesa's software Vulkan driver, which rur needs to render the stories on GitHub's Linux machines
-# (they have no GPU). The install takes 6 to 39 seconds, more than anything else a job sets up, and
-# nothing needs it before the first check, so `start` runs it in the background while the job sets up
-# its tools and creates the first game, and `wait` (before that check) blocks until it is done.
-# The runner's package lists are usually fresh enough; `apt-get update` takes most of an install, so
-# it runs only when the install fails without it.
-# The downloaded .deb files are kept in $MESA_DEBS (default: mesa-debs in the runner's temp folder),
-# which the workflow caches by runner image version (`key` prints the cache key). With them present the
-# install uses them and needs no download; when they're missing, or don't install, it's the plain
-# install above, which then fills the folder for the next run.
+# Mesa's software Vulkan driver, which rur needs to render the stories on GitHub's Linux runners
+# (they have no GPU). `start` installs it in the background and `wait` blocks until it is done. The
+# .deb files are kept in $MESA_DEBS, which the workflow caches under `key`, so a cached run downloads
+# nothing.
 #   sh mesa.sh key >> "$GITHUB_OUTPUT"
 #   sh mesa.sh start
 #   sh mesa.sh wait
-# Baseplate's own workflows and the games' (scripts/mesa.sh in each template) use this same file.
 set -u
 dir="${RUNNER_TEMP:-${TMPDIR:-/tmp}}"
 status="$dir/mesa.status"

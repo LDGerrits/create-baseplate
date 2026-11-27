@@ -108,10 +108,11 @@ jobs:
   prod:
     name: Publish the tag to prod
     needs: [verify, stable]
-    # After stable when it's set up; stable is optional, so a skipped stable doesn't hold prod back.
+    # After stable when it's set up; stable is optional, so a skipped stable doesn't hold prod back,
+    # but a failed or cancelled one does.
     if: >-
       !cancelled() && github.event_name == 'push' && needs.verify.result == 'success' &&
-      needs.stable.result != 'failure' && vars.ROBLOX_PROD_PLACE_ID != ''
+      (needs.stable.result == 'success' || needs.stable.result == 'skipped') && vars.ROBLOX_PROD_PLACE_ID != ''
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: prod

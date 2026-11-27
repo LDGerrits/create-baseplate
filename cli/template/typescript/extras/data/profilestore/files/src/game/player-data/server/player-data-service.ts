@@ -42,6 +42,8 @@ export class PlayerDataService implements OnStart {
 		profile.AddUserId(userId);
 		profile.Reconcile();
 		profile.OnSessionEnd.Connect(() => {
+			const releasedHere = this.profiles.get(userId) !== profile;
+			if (releasedHere) return;
 			this.profiles.delete(userId);
 			// The session ended without a release, as when another server took it: the player's
 			// changes would no longer save, so they rejoin with the latest data.
@@ -63,7 +65,8 @@ export class PlayerDataService implements OnStart {
 	}
 
 	release(userId: number) {
-		this.profiles.get(userId)?.EndSession();
+		const profile = this.profiles.get(userId);
 		this.profiles.delete(userId);
+		profile?.EndSession();
 	}
 }

@@ -53,7 +53,7 @@ Every published version should come from a commit, so you can publish any of the
 | --- | --- | --- |
 | dev | each push to main, once CI passes on it | the latest code, to try together |
 | stable (optional) | a version tag, `git tag v1.2.0 && git push origin v1.2.0` | testers playing the release before players do |
-| prod | the same tag, after stable if you use it, once someone approves it | the game players join |
+| prod | the same tag, after stable if you use it (a stable publish that fails or is cancelled holds it back), once someone approves it | the game players join |
 
 A tag publishes only a commit whose CI passed on main: the workflow waits for that commit's run if it is still going, and stops when there is none or it failed. Tag a commit that has merged to main.
 

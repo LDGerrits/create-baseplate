@@ -5,7 +5,7 @@ import { type DailyRewardController } from "./daily-reward-controller";
 import { DailyRewardPanel } from "./daily-reward-panel";
 
 const controller = {
-	secondsLeft: 3700,
+	reward: { status: "cooldown", secondsLeft: 3700 },
 	subscribe() {
 		return () => {};
 	},

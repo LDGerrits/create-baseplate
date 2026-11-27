@@ -2,7 +2,7 @@ import fs from "node:fs";
 import net from "node:net";
 import path from "node:path";
 import { ESLint } from "eslint";
-import { ask, changedFiles, fixable, snapshot, socketPath } from "../.agents/hooks/eslint-server.ts";
+import { ask, fixable, socketPath } from "../.agents/hooks/eslint-server.ts";
 
 const fix = process.argv.includes("--fix");
 const root = process.cwd();
@@ -51,16 +51,10 @@ function report(
 	process.exit(1);
 }
 
-const FIXED = "@eslint-fixed";
-
 if (viaServer) {
-	const before = snapshot(root);
 	const reply = await ask(root, targets, 120_000, true);
 	const results = reply !== undefined && "results" in reply ? reply.results : undefined;
-	if (results !== undefined) {
-		if (changedFiles(before, snapshot(root)).length > 0) console.log(FIXED);
-		report(results);
-	}
+	if (results !== undefined) report(results);
 }
 
 const linter =
@@ -72,6 +66,5 @@ const linter =
 const results = await linter.lintFiles(targets);
 if (fix && results.some((result) => result.output !== undefined)) {
 	await ESLint.outputFixes(results);
-	console.log(FIXED);
 }
 report(results);
