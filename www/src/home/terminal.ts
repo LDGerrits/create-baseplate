@@ -8,7 +8,6 @@ const term = document.getElementById("term") as HTMLElement;
 const command = document.getElementById("term-cmd") as HTMLElement;
 const commandTyped = command.querySelector("[data-cmdty]") as HTMLElement;
 const control = document.getElementById("term-ctl") as HTMLButtonElement;
-const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const COMMAND = "pnpm create baseplate";
 interface Option {
@@ -36,7 +35,7 @@ const language = () => (root.dataset.lang === "ts" ? "ts" : "luau");
 
 let run = 0;
 let visible = false;
-let paused = reduce;
+let paused = false;
 
 class Stopped extends Error {}
 // Waits, unless a newer run started meanwhile.
@@ -193,7 +192,7 @@ async function play() {
 	}
 }
 
-// The finished run, drawn at once: for the reserved height and for reduced motion.
+// The finished run, drawn at once: for the reserved height and while paused.
 function finalState() {
 	run += 1;
 	const lang = language();
@@ -232,11 +231,8 @@ const setControl = () => {
 
 measure();
 setControl();
-if (reduce) control.hidden = true;
-else {
-	term.innerHTML = "";
-	commandTyped.textContent = "";
-}
+term.innerHTML = "";
+commandTyped.textContent = "";
 new IntersectionObserver(
 	(entries) => {
 		for (const entry of entries) {

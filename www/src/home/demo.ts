@@ -116,7 +116,7 @@ const showUI = (i: number, on: boolean) => {
 
 let index = 0;
 let position = 0;
-let userPaused = reduce;
+let userPaused = false;
 let seen = false;
 let last = 0;
 
@@ -244,14 +244,7 @@ const setControl = () => {
 	(control.querySelector("span") as HTMLElement).textContent = userPaused ? "Play" : "Pause";
 };
 
-if (reduce) {
-	control.hidden = true;
-	for (const [i, t] of timed.entries()) instant(sessionEls[i] as HTMLElement, () => draw(i, t.look));
-	go(0, timed[0]?.look ?? 0, false);
-	instant(ui, () => showUI(0, true));
-} else {
-	go(0, 0);
-}
+go(0, 0);
 control.addEventListener("click", () => {
 	userPaused = !userPaused;
 	setControl();
