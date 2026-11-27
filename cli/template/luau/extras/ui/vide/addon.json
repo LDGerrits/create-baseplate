@@ -32,8 +32,8 @@
 		},
 		{
 			"file": "selene.toml",
-			"from": "[lints]\n",
-			"to": "[lints]\n# Vide takes an instance's properties and its children in one table.\nmixed_table = \"allow\"\n"
+			"from": "std = \"roblox\"\n",
+			"to": "std = \"roblox\"\n\n[lints]\n# Vide takes an instance's properties and its children in one table.\nmixed_table = \"allow\"\n"
 		}
 	]
 }
