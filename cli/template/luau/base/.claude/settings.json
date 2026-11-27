@@ -51,6 +51,15 @@
 						"timeout": 900
 					}
 				]
+			},
+			{
+				"matcher": "compact",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "sh \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/run skill-rules.ts claude"
+					}
+				]
 			}
 		],
 		"PreToolUse": [

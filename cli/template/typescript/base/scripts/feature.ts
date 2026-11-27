@@ -14,8 +14,14 @@ const ENTRIES = { server: "app/server/main.server.ts", client: "app/client/main.
 
 const pascal = (name: string) => name.replace(/(^|-)([a-z0-9])/g, (_, __, letter: string) => letter.toUpperCase());
 
-/** The files of a feature, by path from its folder. */
-export function featureFiles(name: string): Record<string, string> {
+/**
+ * The files of a feature, by path from its folder. `rateLimitFrom` is the rate limiter's module, as
+ * the service imports it.
+ */
+export function featureFiles(
+	name: string,
+	rateLimitFrom = "../../../platform/network/server/rate-limit",
+): Record<string, string> {
 	const Name = pascal(name);
 	return {
 		[`shared/${name}-network.ts`]: `import { Networking } from "@flamework/networking";
@@ -31,9 +37,12 @@ interface ServerToClient {
 export const ${Name}Network = Networking.createEvent<ClientToServer, ServerToClient>();
 `,
 		[`server/${name}-service.ts`]: `import { type OnStart, Service } from "@flamework/core";
+import { rateLimit } from "${rateLimitFrom}";
 import { ${Name}Network } from "../shared/${name}-network";
 
-const events = ${Name}Network.createServer({});
+// Each event a client sends goes through middleware that limits how often it may: a client can send
+// anything, as often as it likes.
+const events = ${Name}Network.createServer({ middleware: { request: [rateLimit(0.2)] } });
 
 /** Owns every player's ${name} state. Clients ask; this service decides. */
 @Service()
@@ -41,7 +50,6 @@ export class ${Name}Service implements OnStart {
 	private readonly values = new Map<number, number>();
 
 	onStart() {
-		// trusts-client: it only reads. An event that changes state needs middleware that rate-limits it, and a check here.
 		events.request.connect((player) => {
 			events.changed.fire(player, this.getValue(player.UserId));
 		});
@@ -195,7 +203,9 @@ export function createFeature(cwd: string, name: string, place?: string): string
 	if (fs.existsSync(path.join(cwd, featureRoot))) throw new Error(`${featureRoot} already exists.`);
 
 	const written: string[] = [];
-	for (const [file, text] of Object.entries(featureFiles(name))) {
+	const limiter = at(sharedRoot, "platform", "network", "server", "rate-limit");
+	const rateLimitFrom = path.posix.relative(at(featureRoot, "server"), limiter);
+	for (const [file, text] of Object.entries(featureFiles(name, rateLimitFrom))) {
 		const target = at(featureRoot, file);
 		fs.mkdirSync(path.dirname(path.join(cwd, target)), { recursive: true });
 		fs.writeFileSync(path.join(cwd, target), text);
