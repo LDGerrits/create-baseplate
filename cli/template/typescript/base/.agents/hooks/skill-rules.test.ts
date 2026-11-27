@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { globPattern, newSkills, readRules } from "./skill-rules.ts";
+import { forgetSkills, globPattern, newSkills, readRules } from "./skill-rules.ts";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 
@@ -39,6 +39,9 @@ test("names each skill once per session", () => {
 		assert.deepEqual(newSkills(root, ["src/b.spec.ts"], "s2"), ["write-tests"]);
 		assert.deepEqual(newSkills(root, ["src/a.ts"], "s3"), []);
 		assert.deepEqual(newSkills(root, ["src/a.spec.ts"], undefined), []);
+		// After a compaction the session starts over.
+		forgetSkills(root, "s1");
+		assert.deepEqual(newSkills(root, ["src/b.spec.ts"], "s1"), ["write-tests"]);
 	} finally {
 		fs.rmSync(root, { recursive: true, force: true });
 	}

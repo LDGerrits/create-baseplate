@@ -4,6 +4,8 @@
 // for them the edit hook names the skill the first time in a session the agent writes such a file.
 import fs from "node:fs";
 import path from "node:path";
+import type { Payload } from "./guard.ts";
+import { projectRoot } from "./project.ts";
 
 /** A glob as the rules write it (`**`, `*`), as a regular expression over a path from the root. */
 export function globPattern(glob: string): RegExp {
@@ -37,6 +39,10 @@ export function readRules(root: string): { skill: string; globs: string[] }[] {
 		});
 }
 
+/** Where a session's named skills are kept. */
+const recordOf = (root: string, session: string) =>
+	path.join(root, "node_modules", ".cache", "baseplate-skills", `${session}.json`);
+
 /**
  * The skills that cover these files (paths from the root) and haven't been named yet in this
  * session, recording them as named. Without a session there's nothing to remember them by: none.
@@ -47,7 +53,7 @@ export function newSkills(root: string, files: string[], session: string | undef
 		.filter(({ globs }) => files.some((file) => globs.some((glob) => globPattern(glob).test(file))))
 		.map(({ skill }) => skill);
 	if (skills.length === 0) return [];
-	const record = path.join(root, "node_modules", ".cache", "baseplate-skills", `${session}.json`);
+	const record = recordOf(root, session);
 	let named: string[] = [];
 	try {
 		named = JSON.parse(fs.readFileSync(record, "utf8")) as string[];
@@ -65,3 +71,20 @@ export function newSkills(root: string, files: string[], session: string | undef
 /** The note for the agent about each skill. */
 export const skillNote = (skill: string) =>
 	`Before you go on, read .agents/skills/${skill}/SKILL.md: it covers the kind of file you just wrote.`;
+
+/** Forgets the skills named in a session, so each is named again. */
+export function forgetSkills(root: string, session: string | undefined) {
+	if (session !== undefined && /^[\w-]+$/.test(session)) fs.rmSync(recordOf(root, session), { force: true });
+}
+
+// When the conversation is compacted, what the skills said is summarized away; Claude Code loads its
+// own path rules again then, so the skills this hook named are named again too.
+if (import.meta.main) {
+	let payload: Payload = {};
+	try {
+		payload = JSON.parse(fs.readFileSync(0, "utf8")) as Payload;
+	} catch {}
+	const root = projectRoot(payload.cwd ?? process.cwd());
+	const session = payload.session_id;
+	if (root !== undefined) forgetSkills(root, session);
+}
