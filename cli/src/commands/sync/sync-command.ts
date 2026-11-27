@@ -16,7 +16,8 @@ import {
 	writeBase,
 } from "../../domain/agent-files/agent-files.ts";
 import { pinVersion, readOrigin } from "../../domain/game/origin.ts";
-import { type GameSpec, renderGame } from "../../domain/game/render.ts";
+import { renderGame } from "../../domain/game/render.ts";
+import type { GameSpec } from "../../domain/game/spec.ts";
 
 /** Whether `dir` is a game create-baseplate made, where `create-baseplate sync` applies. */
 export const isGame = (dir: string) => readOrigin(dir) !== undefined;

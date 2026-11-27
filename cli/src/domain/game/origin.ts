@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { AddOnChoices } from "../add-ons/questions.ts";
+import type { GameSpec } from "./spec.ts";
 
 /**
  * What a game records in its package.json's `baseplate` field: which create-baseplate made it, in
@@ -23,8 +24,8 @@ const packageOf = (dir: string) => {
 /** The game's origin, or undefined when `dir` isn't a game create-baseplate made. */
 export function readOrigin(dir: string): Origin | undefined {
 	const pkg = packageOf(dir);
-	if (pkg === undefined || !("baseplate" in pkg)) return undefined;
-	const origin = (pkg.baseplate ?? {}) as { version?: string; language?: string; addOns?: Partial<AddOnChoices> };
+	if (typeof pkg?.baseplate !== "object" || pkg.baseplate === null) return undefined;
+	const origin = pkg.baseplate as { version?: string; language?: string; addOns?: Partial<AddOnChoices> };
 	return {
 		name: typeof pkg.name === "string" ? pkg.name : undefined,
 		version: origin.version,
@@ -34,10 +35,10 @@ export function readOrigin(dir: string): Origin | undefined {
 	};
 }
 
-export function writeOrigin(dir: string, version: string, language: string, addOns: AddOnChoices) {
+export function writeOrigin(dir: string, spec: GameSpec) {
 	const file = path.join(dir, "package.json");
 	const pkg = packageOf(dir) ?? {};
-	pkg.baseplate = { version, language, addOns };
+	pkg.baseplate = { version: spec.version, language: spec.language, addOns: spec.choices };
 	fs.writeFileSync(file, `${JSON.stringify(pkg, undefined, "\t")}\n`);
 }
 

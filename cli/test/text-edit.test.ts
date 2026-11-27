@@ -32,3 +32,7 @@ test("replaceExact replaces the text, and fails when it's gone", () => {
 		message: "tsconfig.json no longer has the text to replace: x",
 	});
 });
+
+test("replaceExact keeps a $ in the new text as it is", () => {
+	assert.equal(replaceExact("a = 1", "1", "$&$1", "x.luau"), "a = $&$1");
+});

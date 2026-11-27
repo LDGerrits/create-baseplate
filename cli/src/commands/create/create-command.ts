@@ -6,8 +6,7 @@ import { recordAgentFiles } from "../../domain/agent-files/agent-files.ts";
 import { nameProblem } from "../../domain/game/app-name.ts";
 import { commitAll, initGit } from "../../domain/game/git.ts";
 import { installDependencies, isMiseInstalled } from "../../domain/game/install-dependencies.ts";
-import { renderGame } from "../../domain/game/render.ts";
-import { folderProblem } from "../../domain/game/scaffold.ts";
+import { type Rendered, renderGame } from "../../domain/game/render.ts";
 import { PLACES } from "../../domain/places/multi-place.ts";
 import { logNextSteps, nextSteps } from "./next-steps.ts";
 import { runCli } from "./options.ts";
@@ -30,7 +29,7 @@ async function create(version: string, keepToolingTests: boolean) {
 	if (options === undefined) return;
 	json = options.json;
 	if (options.json) logToStderr();
-	const fail = (message: string) => {
+	const fail = (message: string): never => {
 		if (options.json) printJsonError(message);
 		else logger.error(message);
 		process.exit(1);
@@ -42,13 +41,14 @@ async function create(version: string, keepToolingTests: boolean) {
 	const conflict = findConflict(options.language, options.addOns);
 	if (conflict !== undefined) fail(conflict);
 
-	const folder = folderProblem(options.dir);
-	if (folder !== undefined) fail(folder);
-	const { replaced, stale } = renderGame(
-		options.dir,
-		{ name: options.name, language: options.language, choices: options.addOns, version },
-		{ keepToolingTests },
-	);
+	let rendered: Rendered;
+	try {
+		const spec = { name: options.name, language: options.language, choices: options.addOns, version };
+		rendered = renderGame(options.dir, spec, { keepToolingTests });
+	} catch (error) {
+		return fail(error instanceof Error ? error.message : String(error));
+	}
+	const { replaced, stale } = rendered;
 	recordAgentFiles(options.dir, version);
 	// In a multi-place game, Studio commands name a place.
 	const place = isMultiPlace(options.addOns) ? (PLACES[0] ?? "") : "";

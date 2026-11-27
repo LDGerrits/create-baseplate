@@ -10,5 +10,5 @@ export const DEFAULT_LANGUAGE: Language = "luau";
 
 export const isLanguage = (value: string): value is Language => languages.some((language) => language.value === value);
 
-const LANGUAGE_NAMES: Record<Language, string> = { typescript: "TypeScript", luau: "Luau" };
-export const languageName = (language: Language) => LANGUAGE_NAMES[language];
+export const languageName = (language: Language) =>
+	languages.find((option) => option.value === language)?.label ?? language;

@@ -1,28 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
 import { installAddOns } from "../add-ons/apply.ts";
-import type { Language } from "../add-ons/language.ts";
-import { type AddOnChoices, isMultiPlace, managedOf } from "../add-ons/questions.ts";
+import { isMultiPlace, managedOf } from "../add-ons/questions.ts";
 import { makeMultiPlace } from "../places/multi-place.ts";
 import { writeOrigin } from "./origin.ts";
 import { setProjectName } from "./project-name.ts";
 import { dropToolingTests, scaffoldProject } from "./scaffold.ts";
-
-/** What a game is made from. */
-export interface GameSpec {
-	name: string;
-	language: Language;
-	choices: AddOnChoices;
-	/** The create-baseplate that makes it. */
-	version: string;
-}
+import type { GameSpec } from "./spec.ts";
 
 export interface Rendered {
 	/** Files the folder already had that the template replaced. */
 	replaced: string[];
 	/**
 	 * Lockfiles the add-ons left behind until an install: pnpm-lock.yaml (packages), wally.lock
-	 * (a Luau game's Wally packages) and mise.lock (tools). The template's lock the base only.
+	 * (a Luau game's Wally packages) and mise.lock (tools). The template's lockfiles lock the base only.
 	 */
 	stale: { packages: boolean; wally: boolean; tools: boolean };
 }
@@ -53,7 +44,7 @@ export function renderGame(dir: string, spec: GameSpec, options: { keepToolingTe
 	installAddOns(dir, spec.language, spec.choices);
 	if (isMultiPlace(spec.choices)) makeMultiPlace(dir, spec.name, spec.language, managedOf(spec.choices));
 	if (!options.keepToolingTests) dropToolingTests(dir);
-	writeOrigin(dir, spec.version, spec.language, spec.choices);
+	writeOrigin(dir, spec);
 	return {
 		replaced,
 		stale: {
