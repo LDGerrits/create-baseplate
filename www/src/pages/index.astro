@@ -1,0 +1,187 @@
+---
+// The home page, on its own rather than in Starlight's layout. The docs' index.md is a draft so
+// Starlight leaves this route alone; it is still the home page's Markdown copy for agents
+// (/index.md, and first in llms.txt).
+import Act from "../home/Act.astro";
+import Agents from "../home/Agents.astro";
+import "../home/home.css";
+import Plate from "../home/Plate.astro";
+import PlateDefs from "../home/PlateDefs.astro";
+import PlayPause from "../home/PlayPause.astro";
+import { REPOSITORY } from "../site.ts";
+
+const title = "Create Baseplate";
+const description =
+	"Start a full-stack, typesafe Roblox game, in Luau or roblox-ts, set up for your coding agent: one check, tests and UI without Studio, and hooks that hand its mistakes back to it.";
+---
+<!doctype html>
+<html lang="en" data-mode="run">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap"
+			rel="stylesheet"
+		/>
+		<script is:inline>
+			// Before the first paint: the docs' theme choice (Starlight's key) and the language last picked.
+			try {
+				const theme = localStorage.getItem("starlight-theme");
+				if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+				document.documentElement.dataset.lang = localStorage.getItem("baseplate-language") === "ts" ? "ts" : "luau";
+			} catch {
+				document.documentElement.dataset.lang = "luau";
+			}
+		</script>
+	</head>
+	<body>
+		<PlateDefs />
+		<header class="wrap nav">
+			<a class="mark" href="/">Create Baseplate</a>
+			<a href="/getting-started/">Docs</a>
+			<a href={REPOSITORY}>GitHub</a>
+			<button class="theme" id="theme" type="button" aria-label="Switch to dark theme">
+				<svg viewBox="0 0 16 16" aria-hidden="true"
+					><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.25"></circle><path
+						d="M8 1.75a6.25 6.25 0 0 1 0 12.5z"
+						fill="currentColor"></path></svg
+				>
+			</button>
+		</header>
+		<main>
+			<section class="hero" aria-labelledby="h1">
+				<h1 id="h1" class="wrap">The Roblox starter template built for AI coding agents.</h1>
+				<p class="sub wrap">Start a full-stack, typesafe Roblox game, set up for your coding agent.</p>
+				<div class="wrap"><Act /></div>
+				<Plate />
+			</section>
+
+			<section class="demo" id="demo" aria-labelledby="s-demo">
+				<div class="wrap">
+					<h2 id="s-demo">From a prompt to a tested feature.</h2>
+					<div class="win" id="win">
+						<div class="tabs" role="tablist" aria-label="Sessions" id="tabs"></div>
+						<div class="panes">
+							<div class="left" id="left"></div>
+							<div class="screen" id="screen">
+								<img
+									class="world"
+									src="/home/baseplate.jpg"
+									alt="A Baseplate place: a grey baseplate with a grid, a spawn pad, and sky"
+								/>
+								<div class="ui cut" id="ui"><img alt="" /></div>
+								<p class="tag" id="tag"></p>
+							</div>
+						</div>
+					</div>
+					<div class="demo-foot">
+						<p>Recorded sessions, sped up.</p>
+						<PlayPause id="ctl" />
+					</div>
+				</div>
+			</section>
+
+			<section class="why" id="why" aria-labelledby="s-why">
+				<div class="wrap">
+					<h2 id="s-why">Built for agents.</h2>
+					<ul class="beats">
+						<li class="beat">
+							<h3>One check, a few seconds.</h3>
+							<p>Formats, type-checks, lints, builds, tests and renders the UI.</p>
+						</li>
+						<li class="beat">
+							<h3>Tests without Studio.</h3>
+							<p>Specs and end-to-end tests run in an emulated Roblox engine.</p>
+						</li>
+						<li class="beat">
+							<h3>It sees its own UI.</h3>
+							<p>Every UI story renders to a picture the agent can look at.</p>
+						</li>
+						<li class="beat">
+							<h3>Same result every run.</h3>
+							<p>Every tool is pinned and locked.</p>
+						</li>
+					</ul>
+				</div>
+			</section>
+
+			<section class="setup" id="setup" aria-labelledby="s-setup">
+				<div class="wrap setup-grid">
+					<div>
+						<h2 id="s-setup">One command sets it up.</h2>
+						<p class="aside">You or your agent can swap any part. <a href="/add-ons/">See the add-ons</a></p>
+					</div>
+					<figure class="term-fig">
+						<div
+							class="term"
+							role="img"
+							aria-label="create-baseplate asking its questions, taking the recommended libraries and tools, and installing them"
+						>
+							<div class="term-cmd" id="term-cmd" aria-hidden="true">
+								<span class="p">$ </span><span data-cmdty></span><span class="caret"></span>
+							</div>
+							<div class="term-body" id="term" aria-hidden="true"></div>
+						</div>
+						<div class="term-foot"><PlayPause id="term-ctl" /></div>
+					</figure>
+				</div>
+			</section>
+
+			<section class="stack" id="stack" aria-labelledby="s-stack">
+				<div class="wrap stack-grid">
+					<div>
+						<h2 id="s-stack">The recommended stack.</h2>
+					</div>
+					<ul class="tools" aria-label="The recommended stack">
+						<li data-only="luau">Luau <span>type-checked by luau-lsp</span></li>
+						<li data-only="luau">React <span>UI, with react-lua</span></li>
+						<li data-only="luau">Charm <span>client state</span></li>
+						<li data-only="luau">Remo <span>typed networking</span></li>
+						<li data-only="luau">Wally <span>packages</span></li>
+						<li data-only="luau">StyLua, Selene <span>format and lint</span></li>
+						<li data-only="ts">roblox-ts <span>compiled by Sloptor</span></li>
+						<li data-only="ts">Flamework <span>services and typed networking</span></li>
+						<li data-only="ts">React <span>UI</span></li>
+						<li data-only="ts">Reflex <span>client state</span></li>
+						<li data-only="ts">pnpm <span>packages</span></li>
+						<li data-only="ts">ESLint, Biome <span>lint and format</span></li>
+						<li>Rojo, Rogen <span>sync with Studio</span></li>
+						<li>Jest in ree <span>tests, without Studio</span></li>
+						<li>rur <span>UI stories, as pictures</span></li>
+						<li>GitHub Actions <span>CI</span></li>
+						<li>mise <span>every tool, pinned and locked</span></li>
+						<li>Renovate <span>updates</span></li>
+					</ul>
+				</div>
+			</section>
+
+			<section class="start" id="start" aria-labelledby="s-start">
+				<div class="wrap">
+					<h2 id="s-start">Start on an empty baseplate.</h2>
+					<Act />
+					<Agents />
+					<p class="needs">Needs mise, git and Node with pnpm. <a href="/getting-started/">Read the docs</a></p>
+				</div>
+				<Plate class="start-stage" />
+			</section>
+		</main>
+		<footer>
+			<div class="wrap foot">
+				<a class="mark" href="/">Create Baseplate</a>
+				<a href="/getting-started/">Docs</a>
+				<a href={REPOSITORY}>GitHub</a>
+				<span>For agents: <a href="/llms.txt">/llms.txt</a></span>
+			</div>
+		</footer>
+		<script>
+			import "../home/page.ts";
+			import "../home/demo.ts";
+			import "../home/terminal.ts";
+		</script>
+	</body>
+</html>

@@ -1,0 +1,33 @@
+---
+// The way in: the language, the create command (or a prompt for an agent) and a copy button. Every
+// state shares one box, so switching never moves the page.
+---
+<div class="act">
+	<span class="lang" role="radiogroup" aria-label="Language">
+		<button type="button" role="radio" aria-checked="true" data-lang-set="luau">Luau</button>
+		<button type="button" role="radio" aria-checked="false" data-lang-set="ts">roblox-ts</button>
+	</span>
+	<div class="line">
+		<div class="vals">
+			<code class="val" data-v="run-luau">pnpm create baseplate my-game <span class="t">--language luau</span></code>
+			<code class="val" data-v="run-ts">pnpm create baseplate my-game</code>
+			<p class="val ask" data-v="ask-luau">
+				Create a Roblox game: run <code>pnpm create baseplate my-game <span class="t">--language luau</span>
+				<span class="t">--json</span></code>, then read the game's AGENTS.md.
+			</p>
+			<p class="val ask" data-v="ask-ts">
+				Create a Roblox game: run <code>pnpm create baseplate my-game <span class="t">--json</span></code>, then read the
+				game's AGENTS.md.
+			</p>
+		</div>
+		<button class="copy" type="button" aria-label="Copy">
+			<svg class="idle" viewBox="0 0 16 16" aria-hidden="true"
+				><rect x="5.5" y="5.5" width="8.5" height="8.5" rx="1.75"></rect><path
+					d="M10.5 3.5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v6.5a1 1 0 0 0 1 1h.5"></path></svg
+			>
+			<svg class="done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.5"></path></svg>
+			<span class="tip" role="status">Copy</span>
+		</button>
+	</div>
+	<button class="mode" type="button">Or give your agent a prompt</button>
+</div>

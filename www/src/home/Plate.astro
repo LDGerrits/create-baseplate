@@ -1,0 +1,9 @@
+---
+// A strip of the baseplate: the grid running to the horizon, with the spawn pad (PlateDefs draws it).
+const { class: className } = Astro.props;
+---
+<div class:list={["stage", className]}>
+	<div class="ground">
+		<svg viewBox="0 75 1440 900" aria-hidden="true"><use href="#plate" x="0" y="75" width="1440" height="900"></use></svg>
+	</div>
+</div>
