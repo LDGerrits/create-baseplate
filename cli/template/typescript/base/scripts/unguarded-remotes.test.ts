@@ -33,7 +33,7 @@ test("a remote with no middleware fails, and the message says what to do", () =>
 	assert.deepEqual(remotes(errors), ["click", "buy", "shop"]);
 	assert.match(
 		errors[0] ?? "",
-		/^src\/features\/shop\/server\/shop-service\.ts: .*Flamework middleware that rate-limits it, `middleware: \{ click: \[\.\.\.\] \}`.*trusts-client/,
+		/^src\/features\/shop\/server\/shop-service\.ts: .*middleware that rate-limits it, `middleware: \{ click: \[rateLimit\(0\.5\)\] \}`.*trusts-client/,
 	);
 });
 

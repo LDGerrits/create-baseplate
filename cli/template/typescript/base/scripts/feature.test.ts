@@ -65,7 +65,8 @@ test("starts a feature in a single-place game and imports it in the entry script
 	assert.match(read(dir, "tests/e2e/daily-reward.luau"), /\/daily-reward-network@DailyRewardNetwork/);
 	const service = read(dir, "src/features/daily-reward/server/daily-reward-service.ts");
 	assert.match(service, /export class DailyRewardService/);
-	assert.match(service, /\/\/ trusts-client: /);
+	assert.match(service, /createServer\(\{ middleware: \{ request: \[rateLimit\(0\.2\)\] \} \}\)/);
+	assert.match(service, /from "\.\.\/\.\.\/\.\.\/platform\/network\/server\/rate-limit"/);
 	assert.match(
 		read(dir, "src/app/server/main.server.ts"),
 		/import "\.\.\/\.\.\/features\/daily-reward\/server\/daily-reward-service";/,
@@ -103,6 +104,10 @@ test("keeps a --place feature to that place", () => {
 	});
 	createFeature(dir, "queue", "lobby");
 	assert.ok(fs.existsSync(path.join(dir, "projects/lobby/src/features/queue/server/queue-service.ts")));
+	assert.match(
+		read(dir, "projects/lobby/src/features/queue/server/queue-service.ts"),
+		/from "\.\.\/\.\.\/\.\.\/\.\.\/\.\.\/common\/src\/platform\/network\/server\/rate-limit"/,
+	);
 	assert.match(read(dir, "projects/lobby/src/app/server/main.server.ts"), /features\/queue\/server\/queue-service/);
 	assert.doesNotMatch(read(dir, "projects/game/src/app/server/main.server.ts"), /queue/);
 });

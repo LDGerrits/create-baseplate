@@ -35,6 +35,6 @@ Code meets in three ways: a direct import by default; a registry in `game/` when
 
 ## The rules
 
-- **Never trust the client.** Clients ask; services decide, and check every request. `mise run check` fails on a client-to-server event or function the server takes without middleware: give it Flamework middleware that rate-limits it, or mark its handler `// trusts-client: <why>`. A rate limit is a floor; the service still checks the request.
+- **Never trust the client.** Clients ask; services decide, and check every request. `mise run check` fails on a client-to-server event or function the server takes without middleware: give it the template's `rateLimit` middleware (`src/platform/network/server/rate-limit.ts`; `rateLimitFunction` for a function), or mark its handler `// trusts-client: <why>`. A rate limit is a floor; the service still checks the request.
 - **Services own server state.** Other code calls their methods.
 - **Controllers run the client side** and keep what the UI shows.

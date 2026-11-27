@@ -40,6 +40,18 @@
 					}
 				]
 			}
+		],
+		"PreCompress": [
+			{
+				"hooks": [
+					{
+						"name": "skills",
+						"type": "command",
+						"command": "sh \"$GEMINI_PROJECT_DIR\"/.agents/hooks/run skill-rules.ts gemini",
+						"timeout": 10000
+					}
+				]
+			}
 		]
 	}
 }

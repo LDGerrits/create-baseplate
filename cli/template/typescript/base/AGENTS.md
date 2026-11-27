@@ -63,7 +63,7 @@ Start one with `mise run feature <name>`, and read `.agents/skills/add-feature/S
 
 The rules the code follows:
 
-- **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. Flamework checks the types of remote arguments, not whether the request is allowed.
+- **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. Flamework checks the types of remote arguments, not whether the request is allowed. Limit how often each client-to-server remote may come with `rateLimit` (events) or `rateLimitFunction` from `src/platform/network/server/rate-limit.ts`, as the service `mise run feature` writes does.
 - **Services own server state.** Only a service changes its state; other code calls its methods. Depend on another service through the constructor: `constructor(private readonly data: PlayerDataService) {}`.
 - **Controllers run the client side.** A controller handles input and the server's events and keeps what the UI shows; the root component subscribes to it.
 
