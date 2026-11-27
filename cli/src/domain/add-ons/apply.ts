@@ -156,6 +156,12 @@ function addAgentsSection(dir: string, section: string) {
 	fs.writeFileSync(file, `${agents.slice(0, at)}${section.trim()}\n\n${agents.slice(at)}`);
 }
 
+/** A mise.toml's [tools] table, up to the next table or the end of the file. */
+const TOOLS = /^\[tools\]\n([\s\S]*?)(?=^\[|$(?![\s\S]))/m;
+
+/** The lines of a mise.toml's [tools] table, which its mise.lock covers. */
+export const miseTools = (mise: string) => TOOLS.exec(mise)?.[1];
+
 /**
  * Adds an add-on's mise.toml to the game's: the lines of its [tools] at the end of the game's
  * [tools], and its other tables, such as tasks, at the end of the file. Renovate updates the pins
@@ -164,7 +170,7 @@ function addAgentsSection(dir: string, section: string) {
 function addMise(dir: string, fragment: string) {
 	const file = path.join(dir, "mise.toml");
 	let mise = fs.readFileSync(file, "utf8");
-	const tools = /^\[tools\]\n([\s\S]*?)(?=^\[|$(?![\s\S]))/m.exec(fragment);
+	const tools = TOOLS.exec(fragment);
 	if (tools !== null) {
 		const start = mise.indexOf("[tools]\n");
 		if (start === -1) throw new Error("mise.toml has no [tools] table");

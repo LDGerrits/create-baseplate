@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { installAddOns } from "../add-ons/apply.ts";
+import { installAddOns, miseTools } from "../add-ons/apply.ts";
 import { isMultiPlace } from "../add-ons/questions.ts";
 import { makeMultiPlace } from "../places/multi-place.ts";
 import { writeOrigin } from "./origin.ts";
@@ -29,8 +29,7 @@ const wallyPackages = (dir: string) => {
 	return fs.existsSync(wally) ? fs.readFileSync(wally, "utf8") : undefined;
 };
 /** The [tools] of mise.toml, which the template's mise.lock covers until an add-on brings a tool. */
-const tools = (dir: string) =>
-	/^\[tools\]\n([\s\S]*?)(?=^\[)/m.exec(fs.readFileSync(path.join(dir, "mise.toml"), "utf8"))?.[1];
+const tools = (dir: string) => miseTools(fs.readFileSync(path.join(dir, "mise.toml"), "utf8"));
 
 /**
  * Makes the game `spec` describes in `dir`, which must be missing, empty or a new repo: the
