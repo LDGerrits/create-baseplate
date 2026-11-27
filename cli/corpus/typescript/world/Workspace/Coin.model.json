@@ -1,0 +1,15 @@
+{
+	"className": "Part",
+	"properties": {
+		"Anchored": true,
+		"CanCollide": false,
+		"CFrame": [0.0, 3.0, -14.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+		"Color": {
+			"Color3uint8": [255, 196, 37]
+		},
+		"Material": "Metal",
+		"Shape": "Cylinder",
+		"Size": [0.5, 4.0, 4.0],
+		"Tags": ["Coin"]
+	}
+}

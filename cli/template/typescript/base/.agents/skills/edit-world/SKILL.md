@@ -47,7 +47,7 @@ A copy placed by hand is a separate instance: changing the original leaves it as
 2. Where it stands, place a marker: an anchored, invisible, non-colliding Part named after the asset, tagged `Prop`, its pivot where the asset's goes.
 3. A server service swaps each marker for the asset when the game starts: for each part `CollectionService` tags `Prop`, clone the model of its name, `PivotTo` the marker's pivot, parent it where the marker was, and destroy the marker. Give it a spec, and fail loudly on a marker whose asset is missing.
 
-Changing the asset then changes every place it stands, and the world's files stay small.
+Changing the asset then changes every place it stands, and the world's files stay small. A render of `build/game.rbxl` shows the markers, not the assets: they're swapped in only when the game runs.
 
 ## Gotchas
 

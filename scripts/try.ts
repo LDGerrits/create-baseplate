@@ -1,12 +1,14 @@
-// `mise run try -- [--matrix] [--keep] [create-baseplate's flags]`: builds the CLI, creates a game
-// with those flags (or, with --matrix, one of each main variant, a few at a time), and says whether
-// each passed. Creating a game commits it, and the commit hook runs the game's check, so a passing
+// `mise run try -- [--matrix | --corpus] [--keep] [create-baseplate's flags]`: builds the CLI,
+// creates a game with those flags (or, with --matrix, one of each main variant, a few at a time), and
+// says whether each passed. With --corpus, it makes a game of each language, copies the corpus of
+// correct code over it (scripts/corpus.ts) and runs its check, which must pass. Creating a game commits it, and the commit hook runs the game's check, so a passing
 // game is a checked one. The games register no Claude Code plugin, and the ones that pass are
 // deleted unless --keep; a failed one stays, with its path and the end of what failed.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { MAIN_VARIANTS } from "../cli/test/variants.ts";
+import { applyCorpus, corpusFlags, type Language } from "./corpus.ts";
 import { run } from "./run.ts";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
@@ -15,12 +17,23 @@ const AT_ONCE = 4;
 const args = process.argv.slice(2).filter((arg) => arg !== "--");
 const keep = args.includes("--keep");
 const matrix = args.includes("--matrix");
-const flags = args.filter((arg) => arg !== "--keep" && arg !== "--matrix");
+const corpus = args.includes("--corpus");
+const flags = args.filter((arg) => arg !== "--keep" && arg !== "--matrix" && arg !== "--corpus");
+if (corpus && (matrix || flags.length > 0)) {
+	console.log("✗ --corpus makes one game of each language with no add-ons, as CI does; it takes no other flags.");
+	process.exit(1);
+}
 // With --matrix, the given flags go to every variant that doesn't set the same question itself.
 const given = new Set(flags.filter((flag) => flag.startsWith("--")));
-const variants = matrix
-	? MAIN_VARIANTS.filter((variant) => !variant.some((flag) => given.has(flag))).map((variant) => [...variant, ...flags])
-	: [flags];
+const languages: Language[] = ["typescript", "luau"];
+const variants = corpus
+	? languages.map(corpusFlags)
+	: matrix
+		? MAIN_VARIANTS.filter((variant) => !variant.some((flag) => given.has(flag))).map((variant) => [
+				...variant,
+				...flags,
+			])
+		: [flags];
 
 const build = await run("pnpm", ["--filter", "create-baseplate", "build"], ROOT, { echo: "none" });
 if (build.code !== 0) {
@@ -39,13 +52,23 @@ async function tryOne(variant: string[], index: number): Promise<boolean> {
 		env,
 		echo: "none",
 	});
-	const seconds = ((performance.now() - started) / 1000).toFixed(1);
+	let seconds = ((performance.now() - started) / 1000).toFixed(1);
 	let result: { ok?: boolean; error?: string } = {};
 	try {
 		result = JSON.parse(created.stdout.slice(created.stdout.indexOf("{")));
 	} catch {}
+	if (created.code === 0 && result.ok === true && corpus) {
+		applyCorpus(dir, variant.includes("luau") ? "luau" : "typescript");
+		const checked = await run("mise", ["run", "ci"], dir, { env, echo: "none" });
+		seconds = ((performance.now() - started) / 1000).toFixed(1);
+		if (checked.code !== 0) {
+			const why = checked.output.trim().split("\n").slice(-25).join("\n  ");
+			console.log(`✗ the corpus in ${name} (${seconds}s): ${dir}\n  ${why}`);
+			return false;
+		}
+	}
 	if (created.code === 0 && result.ok === true) {
-		console.log(`✓ ${name} (${seconds}s)${keep ? `: ${dir}` : ""}`);
+		console.log(`✓ ${corpus ? "the corpus in " : ""}${name} (${seconds}s)${keep ? `: ${dir}` : ""}`);
 		if (!keep) fs.rmSync(dir, { recursive: true, force: true });
 		return true;
 	}

@@ -41,6 +41,9 @@ test("names each skill once per session", () => {
 		assert.deepEqual(newSkills(root, ["src/a.spec.ts"], undefined), []);
 		// After a compaction the session starts over.
 		forgetSkills(root, "s1");
+		assert.deepEqual(newSkills(root, ["src/a.spec.ts"], "abc.1/../x"), ["write-tests"]);
+		forgetSkills(root, "abc.1/../x");
+		assert.deepEqual(newSkills(root, ["src/a.spec.ts"], "abc.1/../x"), ["write-tests"]);
 		assert.deepEqual(newSkills(root, ["src/b.spec.ts"], "s1"), ["write-tests"]);
 	} finally {
 		fs.rmSync(root, { recursive: true, force: true });

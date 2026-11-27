@@ -70,12 +70,15 @@ export default defineConfig(
 			"roblox-ts/lua-truthiness": "off",
 			"@typescript-eslint/strict-boolean-expressions": [
 				"error",
-				{ allowString: false, allowNumber: false, allowNullableObject: true },
+				{ allowString: false, allowNumber: false, allowNullableObject: true, allowNullableBoolean: true },
 			],
 			"@typescript-eslint/switch-exhaustiveness-check": "error",
 			"@typescript-eslint/consistent-type-imports": ["error", { fixStyle: "inline-type-imports" }],
 			// Flamework lifecycle classes (services, controllers) often have no fields.
 			"@typescript-eslint/no-extraneous-class": "off",
+			// Its fix, useSyncExternalStore, is React 18's; react-lua is React 17, where a component
+			// subscribes to a controller by setting its state in an effect.
+			"react-x/set-state-in-effect": "off",
 			// JavaScript's runtime isn't there: the code runs as Luau in Roblox. Each message names what to use.
 			"no-restricted-globals": [
 				"error",
@@ -110,6 +113,11 @@ export default defineConfig(
 			"@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
 		},
 	},
+	{
+		// A network the server only broadcasts on gives Flamework an empty interface for what clients send.
+		files: roots.map((root) => `${root}/**/shared/*-network.ts`),
+		rules: { "@typescript-eslint/no-empty-object-type": ["error", { allowInterfaces: "always" }] },
+	},
 	// Roblox APIs that work on one side only, kept out of the other side's folders (scripts/sides.ts).
 	...sideRestrictions(roots),
 	{
@@ -118,5 +126,12 @@ export default defineConfig(
 		...jest.configs["flat/recommended"],
 		// The specs import Jest's functions from @rbxts/jest-globals, not from globals.
 		settings: { jest: { globalPackage: "@rbxts/jest-globals", version: 29 } },
+		rules: {
+			...jest.configs["flat/recommended"].rules,
+			// A skipped test shows in the results; a spec may skip outside the engine on purpose.
+			"jest/no-disabled-tests": "off",
+			// Assertions through a helper, such as expectBalance(), count.
+			"jest/expect-expect": ["error", { assertFunctionNames: ["expect", "expect*"] }],
+		},
 	},
 );

@@ -35,7 +35,7 @@ export function unguardedRemotes(sources: Map<string, string>): string[] {
 			for (const remote of clientToServer(definition.text, definition.interfaceName)) {
 				if (guarded.has(remote) || trustedHandler(text, remote)) continue;
 				errors.push(
-					`${file}: ${network}.createServer takes "${remote}" from clients (${definition.file}) with no middleware, so a client can send it as often as it likes. Give it middleware that rate-limits it, \`middleware: { ${remote}: [rateLimit(0.5)] }\` (\`rateLimitFunction\` for a function; both in platform/network/server/rate-limit.ts), and validate the request in the service; or, if any client may send it freely, put \`// trusts-client: <why>\` on the line above its handler.`,
+					`${file}: ${network}.createServer takes "${remote}" from clients (${definition.file}) with no middleware, so a client can send it as often as it likes. Give it middleware that rate-limits it, \`middleware: { ${remote}: [rateLimit(0.5)] }\` (\`rateLimitFunction\` for a function; both in the shared code's platform/network/server/rate-limit.ts), and validate the request in the service; or, if any client may send it freely, put \`// trusts-client: <why>\` on the line above its handler.`,
 				);
 			}
 		}

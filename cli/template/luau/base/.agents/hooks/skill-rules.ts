@@ -41,14 +41,14 @@ export function readRules(root: string): { skill: string; globs: string[] }[] {
 
 /** Where a session's named skills are kept. */
 const recordOf = (root: string, session: string) =>
-	path.join(root, "node_modules", ".cache", "baseplate-skills", `${session}.json`);
+	path.join(root, "node_modules", ".cache", "baseplate-skills", `${encodeURIComponent(session)}.json`);
 
 /**
  * The skills that cover these files (paths from the root) and haven't been named yet in this
  * session, recording them as named. Without a session there's nothing to remember them by: none.
  */
 export function newSkills(root: string, files: string[], session: string | undefined): string[] {
-	if (session === undefined || !/^[\w-]+$/.test(session)) return [];
+	if (session === undefined || session === "") return [];
 	const skills = readRules(root)
 		.filter(({ globs }) => files.some((file) => globs.some((glob) => globPattern(glob).test(file))))
 		.map(({ skill }) => skill);
@@ -74,7 +74,7 @@ export const skillNote = (skill: string) =>
 
 /** Forgets the skills named in a session, so each is named again. */
 export function forgetSkills(root: string, session: string | undefined) {
-	if (session !== undefined && /^[\w-]+$/.test(session)) fs.rmSync(recordOf(root, session), { force: true });
+	if (session !== undefined && session !== "") fs.rmSync(recordOf(root, session), { force: true });
 }
 
 // When the conversation is compacted, what the skills said is summarized away; Claude Code loads its

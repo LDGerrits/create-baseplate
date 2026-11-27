@@ -48,6 +48,22 @@ export function specErrors(files: string[], read: (file: string) => string): str
 }
 
 /**
+ * Whether a network file has remotes clients send: a function, or an event whose first type
+ * argument (what clients send) has a member. A network the server only broadcasts on needs no
+ * end-to-end test of requests.
+ */
+export function clientSends(network: string): boolean {
+	if (/\bNetworking\.createFunction\b/.test(network)) return true;
+	const sent = /\bNetworking\.createEvent\s*<\s*(\w+|\{)/.exec(network)?.[1];
+	if (sent === undefined) return false;
+	const body =
+		sent === "{"
+			? network.slice(network.indexOf("{", network.indexOf("createEvent")))
+			: (new RegExp(`(?:interface|type)\\s+${sent}\\b[^{;\\n]*\\{([^}]*)\\}`).exec(network)?.[1] ?? "x");
+	return /\w+\s*[(:]/.test(body.slice(0, body.indexOf("}") === -1 ? undefined : body.indexOf("}") + 1));
+}
+
+/**
  * A feature with remotes and no end-to-end test. `testFolder` names the folder whose tests run the
  * feature's code: `tests/e2e`, or in a multi-place game the place's (`projects/<place>/tests/e2e`).
  */
@@ -60,7 +76,7 @@ export function e2eErrors(
 	const present = new Set(tests);
 	return files.flatMap((file) => {
 		const feature = /(?:^|\/)features\/([^/]+)\/shared\/[^/]+-network\.ts$/.exec(file)?.[1];
-		if (feature === undefined || optedOut(read(file), "no-e2e")) return [];
+		if (feature === undefined || optedOut(read(file), "no-e2e") || !clientSends(read(file))) return [];
 		const test = `${testFolder(file)}/${feature}.luau`;
 		if (present.has(test)) return [];
 		return [
@@ -72,23 +88,39 @@ export function e2eErrors(
 /** A component with no story beside it: the story is how its picture is rendered and checked. */
 export function storyErrors(files: string[], read: (file: string) => string): string[] {
 	const present = new Set(files);
-	return files
-		.filter((file) => file.endsWith(".tsx") && !/\.(story|spec)\.tsx$/.test(file))
-		.filter((file) => !present.has(file.replace(/\.tsx$/, ".story.tsx")) && !optedOut(read(file), "no-story"))
-		.map(
-			(file) =>
-				`${file}: a component has a story beside it, ${path.posix.basename(file, ".tsx")}.story.tsx, which \`mise run ui\` renders (see .agents/skills/build-ui/SKILL.md). If the file draws nothing on its own, say so at its top: \`// no-story: <why>\`.`,
-		);
+	return (
+		files
+			// The UI root in app/ and the controllers that mount it draw nothing a story could show.
+			.filter((file) => file.endsWith(".tsx") && !/\.(story|spec)\.tsx$|-controller\.tsx$|(^|\/)app\//.test(file))
+			.filter((file) => !present.has(file.replace(/\.tsx$/, ".story.tsx")) && !optedOut(read(file), "no-story"))
+			.map(
+				(file) =>
+					`${file}: a component has a story beside it, ${path.posix.basename(file, ".tsx")}.story.tsx, which \`mise run ui\` renders (see .agents/skills/build-ui/SKILL.md). If the file draws nothing on its own, say so at its top: \`// no-story: <why>\`.`,
+			)
+	);
 }
 
-/** Runtime packages that won't run in Roblox: only `@rbxts` and `@flamework` packages do. */
-export function packageErrors(packageJson: string): string[] {
+/** The npm scopes the project files mount in the game, as `"@scope": { "$path": "node_modules/@scope" }`. */
+export function mountedScopes(projectFiles: string[]): Set<string> {
+	return new Set(
+		projectFiles.flatMap((text) =>
+			[...text.matchAll(/"\$path"\s*:\s*"[^"]*node_modules\/(@[\w.-]+)"/g)].map(([, scope = ""]) => scope),
+		),
+	);
+}
+
+/**
+ * Runtime packages that won't run in Roblox: a package runs only from a scope the project files
+ * mount, as they do `@rbxts` and `@flamework`.
+ */
+export function packageErrors(packageJson: string, mounted: Set<string>): string[] {
 	const { dependencies = {} } = JSON.parse(packageJson) as { dependencies?: Record<string, string> };
 	return Object.keys(dependencies)
-		.filter((name) => !/^@(rbxts|rbxts-js|flamework)\//.test(name))
-		.map(
-			(name) =>
-				`package.json: ${name} is a plain npm package, which doesn't run in Roblox. Use an @rbxts package, or move a build tool to devDependencies (pnpm add -D).`,
+		.filter((name) => !mounted.has(name.split("/")[0] ?? ""))
+		.map((name) =>
+			name.startsWith("@")
+				? `package.json: ${name} is from a scope the game doesn't mount. If it's a roblox-ts package, mount ${name.split("/")[0]} under ReplicatedStorage.rbxts_include.node_modules in default.rogen.json, like @rbxts; if it's a build tool, move it to devDependencies (pnpm add -D).`
+				: `package.json: ${name} is a plain npm package, which doesn't run in Roblox. Use an @rbxts package, or move a build tool to devDependencies (pnpm add -D).`,
 		);
 }
 

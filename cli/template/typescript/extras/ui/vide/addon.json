@@ -83,6 +83,11 @@
 			"file": ".github/renovate.json",
 			"from": "\t\t{\n\t\t\t\"description\": \"pretty-react-hooks is built for Ripple 0.9, and the game loads one copy (AGENTS.md, Packages)\",\n\t\t\t\"matchPackageNames\": [\"@rbxts/ripple\"],\n\t\t\t\"allowedVersions\": \"<0.10.0\"\n\t\t},\n",
 			"to": ""
+		},
+		{
+			"file": "eslint.config.ts",
+			"from": "\t\t\t// Its fix, useSyncExternalStore, is React 18's; react-lua is React 17, where a component\n\t\t\t// subscribes to a controller by setting its state in an effect.\n\t\t\t\"react-x/set-state-in-effect\": \"off\",\n",
+			"to": ""
 		}
 	]
 }

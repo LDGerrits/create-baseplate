@@ -20,7 +20,9 @@ _G.__DEV__ = RunService:IsStudio()
 -- In Start.start(), after the controllers:
 local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 local root = ReactRoblox.createRoot(Instance.new("Folder"))
-root:render(React.createElement(React.StrictMode, nil, ReactRoblox.createPortal(React.createElement(App), playerGui)))
+root:render(
+	React.createElement(React.StrictMode, nil, ReactRoblox.createPortal(React.createElement(App), playerGui))
+)
 ```
 
 A story is a module that returns `CreateReactStory` with its controls and a function that renders the component:

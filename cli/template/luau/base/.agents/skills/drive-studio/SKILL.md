@@ -40,8 +40,6 @@ The MCP can change the place in ways this project doesn't keep, so leave these a
 4. `execute_luau` runs Luau when the tools above can't answer. It needs `datamodel_type` (`Edit`, or `Server`/`Client` during a playtest) and runs as a plugin, so its `_G` isn't the game's.
 5. For debugging with breakpoints, profiling or other devices, Studio serves Roblox's own skills: list them with its tool that lists Roblox skills (Roblox renames these tools, so go by what it offers), then load `rbx-debug`, `rbx-perf-profiling`, `rbx-device-simulator-lua` or `rbx-scene-analysis`. Leave its `rbx-unit-test` alone: this game's tests run in ree (the `write-tests` skill). For API facts, `http_get` reads Roblox's documentation.
 
-Edits made during a playtest are lost when it stops.
-
 ## Finish
 
 Turn what you found into a test where you can (the `write-tests` skill), so it's checked without Studio from then on. Then end the session if it's yours, and tell the user what you played and saw.

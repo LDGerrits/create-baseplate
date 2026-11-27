@@ -4,6 +4,7 @@ Thanks for helping. [AGENTS.md](AGENTS.md) explains the repo's parts and how to 
 
 - **Set up:** install [mise](https://mise.jdx.dev/getting-started.html), then `mise install`, `pnpm install` and `git config core.hooksPath .githooks`, which turns on the commit hook.
 - **Check:** `mise run check` at the root; in `cli/template/<language>/base`, its own `mise run check`. The commit hook runs both as needed; don't skip it.
+- **A rule or a skill example:** a rule the check enforces must accept the corpus of correct code in `cli/corpus/<language>/` (`mise run try -- --corpus`; CI runs it). When you add or tighten a rule, add to the corpus the legitimate code it must let through, such as a file that rightly opts out; a skill's code example must appear in a corpus file (`cli/test/corpus.test.ts`), so it passes the check and the formatter too.
 - **Changesets:** a change to `cli/src` or `cli/template` needs one: `pnpm changeset`, pick the bump, and say what changed for someone creating a game. CI fails without it.
 - **Bugs:** open an issue with the `baseplate` block from your game's `package.json`; the template asks for the rest.
 

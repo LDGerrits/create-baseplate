@@ -40,8 +40,6 @@ export const ${Name}Network = Networking.createEvent<ClientToServer, ServerToCli
 import { rateLimit } from "${rateLimitFrom}";
 import { ${Name}Network } from "../shared/${name}-network";
 
-// Each event a client sends goes through middleware that limits how often it may: a client can send
-// anything, as often as it likes.
 const events = ${Name}Network.createServer({ middleware: { request: [rateLimit(0.2)] } });
 
 /** Owns every player's ${name} state. Clients ask; this service decides. */
@@ -145,10 +143,12 @@ local function waitFor<T>(what: string, check: () -> T?, seconds: number?): T
 end
 
 -- Flamework creates the feature's remotes as the server starts, in a folder named after its network file.
+local NETWORK = "/${name}-network@${Name}Network"
+
 local function remote(name: string): RemoteEvent
 	return waitFor(\`the ${name} {name} remote\`, function()
 		for _, folder in game:GetService("ReplicatedStorage"):GetChildren() do
-			if folder:IsA("Folder") and string.find(folder.Name, "/${name}-network@${Name}Network", 1, true) then
+			if folder:IsA("Folder") and string.find(folder.Name, NETWORK, 1, true) then
 				local found = folder:FindFirstChild(name)
 				if found and found:IsA("RemoteEvent") then
 					return found
@@ -204,6 +204,11 @@ export function createFeature(cwd: string, name: string, place?: string): string
 
 	const written: string[] = [];
 	const limiter = at(sharedRoot, "platform", "network", "server", "rate-limit");
+	if (!fs.existsSync(path.join(cwd, `${limiter}.ts`))) {
+		throw new Error(
+			`The feature's service rate-limits its event with ${limiter}.ts, which this game doesn't have. Restore it, or a newer create-baseplate creates games with it (\`create-baseplate sync\` updates only the agent files).`,
+		);
+	}
 	const rateLimitFrom = path.posix.relative(at(featureRoot, "server"), limiter);
 	for (const [file, text] of Object.entries(featureFiles(name, rateLimitFrom))) {
 		const target = at(featureRoot, file);

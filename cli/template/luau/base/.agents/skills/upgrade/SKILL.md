@@ -24,4 +24,4 @@ A tool's pin in `mise.toml` is locked: `mise install` refuses a tool the lock do
 
 ## Packages
 
-Wally packages are pinned in `wally.toml` and recorded in `wally.lock`; after changing one, run `mise run install`, which runs `wally install`, and commit the lock. Never edit `Packages/`, `ServerPackages/` or `DevPackages/`: Wally writes them. Node tools (`pnpm add -D <name>`) install only versions published at least two weeks ago; when pnpm refuses one, pick an older version. After an update, read the package's changelog for breaking changes, then run `mise run check` and play the parts that use it.
+Wally packages are pinned in `wally.toml` and recorded in `wally.lock`; after changing one, run `mise run install`, which runs `wally install`, and commit the lock. Never edit `Packages/`, `ServerPackages/` or `DevPackages/`: Wally writes them. Node tools (`pnpm add -D <name>`) install only versions published at least two weeks ago; when pnpm refuses one, pick an older version. After an update, run `mise run check` and play the parts that use it.

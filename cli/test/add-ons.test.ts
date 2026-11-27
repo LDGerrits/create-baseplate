@@ -328,7 +328,7 @@ test("lays out a multi-place game in projects/", () => {
 		assert.ok(!exists(gone), `${gone} moved into the places`);
 	}
 	assert.ok(exists("projects/common/src/game/player-data/server/player-data-service.ts"), "add-ons are shared");
-	assert.match(read("tsconfig.json"), /"include": \["projects\/common\/src", "projects\/common\/shared\.d\.ts"\]/);
+	assert.match(read("tsconfig.json"), /"include": \["projects\/common\/src"\]/);
 
 	for (const place of ["lobby", "game"]) {
 		const rogen = JSON.parse(read(`projects/${place}/default.rogen.json`));

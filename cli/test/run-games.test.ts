@@ -47,6 +47,7 @@ function fakeSteps(options: {
 			return options.exits?.(args, dir) ?? 0;
 		},
 		hooksPath: async () => options.hooks ?? ".githooks",
+		applyCorpus: (dir, language) => void calls.push(`corpus ${language} in ${dir.split("/").slice(-2).join("/")}`),
 	};
 }
 
@@ -122,9 +123,12 @@ test("a batch of passing games passes, and the first batch checks its template f
 		"mise run install in t/typescript/base",
 		"mise run ci in t/typescript/base",
 		"create ",
+		"corpus typescript in corpus/coin-rush",
+		"mise run ci in g/corpus/coin-rush",
+		"create ",
 		"create --ui vide",
 	]);
-	assert.match(log, /3 of 3 passed/);
+	assert.match(log, /4 of 4 passed/);
 });
 
 test("a failing template fails the batch but the games still run", async () => {
@@ -133,6 +137,13 @@ test("a failing template fails the batch but the games still run", async () => {
 	assert.equal(result, 1);
 	assert.deepEqual(steps.calls.at(-1), "create ");
 	assert.match(log, /::error title=template typescript::mise run ci failed/);
+});
+
+test("a corpus the check rejects fails the batch, and says so", async () => {
+	const steps = fakeSteps({ exits: (args, dir) => (args[1] === "ci" && dir.includes("corpus") ? 1 : 0) });
+	const { result, log } = await quietly(() => runBatch(batch([""], true), "/g", steps, "/t"));
+	assert.equal(result, 1);
+	assert.match(log, /::error title=corpus typescript::mise run ci failed on the corpus/);
 });
 
 test("the summary names each game, and marks failures", () => {

@@ -90,10 +90,9 @@ The map and lighting live in `world/` as files; luau-lsp types them from `source
 
 luau-lsp and Selene catch most mistakes. These they don't explain:
 
-- Arrays start at 1, `#` counts only up to the first `nil`, and `nil` in a table removes the key. Use `table.insert`, `table.remove` and `table.clear`; iterate with `for i, v in list do`.
+- `#` is unreliable on a table with `nil` holes: setting an array element to `nil` leaves a hole, so remove it with `table.remove`.
 - Only `nil` and `false` are falsy: `0` and `""` are true.
 - A function passed to `pcall` must return the same types on every path; `pcall` returns `ok`, then those values or the error.
-- Yielding functions (`task.wait`, `WaitForChild`, `InvokeServer`, DataStore calls) pause the thread: never call them where the order of events matters without saying so, and use `task.spawn` or `task.defer` to run something alongside.
 
 ## Player data
 

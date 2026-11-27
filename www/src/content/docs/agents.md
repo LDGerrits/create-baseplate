@@ -16,10 +16,10 @@ Models know roblox-ts, Flamework and Rogen poorly, and the Roblox API changes fa
 Rules an agent would otherwise have to remember are part of the check, each failing with the fix in its message:
 
 - **Layers and sides**: imports only go down the four layers, never in a cycle between features; each side's APIs stay on its side; files sit in side folders, named kebab-case (PascalCase in Luau).
-- **What never runs**: a spec named or placed where Jest doesn't find it, a service or controller no entry script starts, a focused test (in TypeScript, a skipped one too).
-- **What's untested or unseen**: a service without a spec, a feature with remotes and no end-to-end test, a component without a story. A file that rightly has none says why, such as `// no-spec: it only starts the spinner system`.
+- **What never runs**: a spec named or placed where Jest doesn't find it, a service or controller no entry script starts, a focused test.
+- **What's untested or unseen**: a service without a spec, a feature whose clients send remotes and that has no end-to-end test, a component without a story (the UI root in `app/` and the controllers that mount it need none). A file that rightly has none says why, such as `// no-spec: it only starts the spinner system`.
 - **Trust and data**: a client-to-server remote with no rate limit, player data saved with `DataStoreService` by hand instead of through a data library.
-- **Packages**: a plain npm package among a TypeScript game's runtime packages, and one of the game's packages installed in two versions.
+- **Packages**: a runtime package from a scope the game doesn't mount (in a TypeScript game), and one of the game's packages installed in two versions.
 - **Silenced tools**: a lint disable (`eslint-disable`, `selene: allow`) or a Luau `:: any` with no reason after ` -- `.
 
 In a TypeScript game ESLint also names the Roblox API to use for each JavaScript global an agent reaches for (`console`, `setTimeout`, `JSON`, `Object`), and the check adds a hint to the compiler errors whose message doesn't say the fix.

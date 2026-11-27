@@ -24,4 +24,4 @@ A tool's pin in `mise.toml` is locked: `mise install` refuses a tool the lock do
 
 ## Packages
 
-`pnpm add <name>` (`-D` for tools) installs only versions published at least two weeks ago; when pnpm refuses one, pick an older version. After an update, read the package's changelog for breaking changes, then run `mise run check` and play the parts that use it.
+`pnpm add <name>` (`-D` for tools) installs only versions published at least two weeks ago; when pnpm refuses one, pick an older version. After an update, run `mise run check` and play the parts that use it.

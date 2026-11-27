@@ -14,6 +14,7 @@ import net from "node:net";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
+import { applyCorpus, corpusFlags } from "../../scripts/corpus.ts";
 import { type Outcome, run as runCommand } from "../../scripts/run.ts";
 import type { Batch } from "./generate-matrix.ts";
 
@@ -129,6 +130,8 @@ export interface Steps {
 	hooksPath(dir: string): Promise<string>;
 	/** Calls a TypeScript game's edit hook twice on a file with a lint problem; see `editHookFailure`. */
 	probeEditHook?(dir: string): Promise<EditHookProbe>;
+	/** Copies the language's corpus of correct code over the game in `dir` (scripts/corpus.ts). */
+	applyCorpus(dir: string, language: Batch["language"]): void;
 }
 
 /** What calling a game's edit hook twice, on the same edited file, printed, and whether its ESLint server was up after. */
@@ -231,6 +234,25 @@ export async function runBatch(batch: Batch, gamesDir: string, steps: Steps, tem
 							return `mise ${args.join(" ")} failed${code === null ? "" : ` (exit ${code})`}; the output is above`;
 					}
 					return undefined;
+				}),
+			),
+		);
+	}
+	// The corpus of correct code (scripts/corpus.ts) in a game with no add-ons: every rule the check
+	// enforces must accept it, so a rule that fires on legitimate code fails here.
+	if (batch.template) {
+		const name = `corpus ${batch.language}`;
+		rows.push(
+			await group(name, () =>
+				timed(name, async () => {
+					const dir = path.join(gamesDir, "corpus", "coin-rush");
+					const created = await steps.create(corpusFlags(batch.language).join(" "), dir);
+					if (created.code !== 0) return "creating the corpus's game failed; the output is above";
+					steps.applyCorpus(dir, batch.language);
+					const code = await steps.mise(["run", "ci"], dir);
+					return code === 0
+						? undefined
+						: `mise run ci failed on the corpus${code === null ? "" : ` (exit ${code})`}; the output is above`;
 				}),
 			),
 		);
@@ -396,6 +418,7 @@ if (import.meta.main) {
 		mise: async (args, dir) => (await run("mise", args, dir)).code,
 		hooksPath: async (dir) => (await run("git", ["config", "core.hooksPath"], dir, { quiet: true })).stdout.trim(),
 		probeEditHook,
+		applyCorpus,
 	};
 	if (mode === "check") {
 		process.exitCode = await runBatch(JSON.parse(need("GAMES")) as Batch, gamesDir, steps, templateDir);
