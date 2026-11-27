@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { installAddOns } from "../add-ons/apply.ts";
-import { isMultiPlace, managedOf } from "../add-ons/questions.ts";
+import { isMultiPlace } from "../add-ons/questions.ts";
 import { makeMultiPlace } from "../places/multi-place.ts";
 import { writeOrigin } from "./origin.ts";
 import { setProjectName } from "./project-name.ts";
@@ -42,7 +42,7 @@ export function renderGame(dir: string, spec: GameSpec, options: { keepToolingTe
 	setProjectName(dir, spec.name);
 	const before = { packages: packages(dir), wally: wallyPackages(dir), tools: tools(dir) };
 	installAddOns(dir, spec.language, spec.choices);
-	if (isMultiPlace(spec.choices)) makeMultiPlace(dir, spec.name, spec.language, managedOf(spec.choices));
+	if (isMultiPlace(spec.choices)) makeMultiPlace(dir, spec.name, spec.language, spec.choices);
 	if (!options.keepToolingTests) dropToolingTests(dir);
 	writeOrigin(dir, spec);
 	return {
