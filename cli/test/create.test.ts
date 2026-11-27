@@ -32,6 +32,30 @@ test("creates a named project an agent can read", () => {
 	}
 });
 
+for (const language of ["typescript", "luau"]) {
+	test(`${language}: leaves the tooling's own tests out of the game, unless BASEPLATE_TOOLING_TESTS=1 keeps them`, () => {
+		const cwd = tempDir();
+		const testsIn = (game: string) =>
+			[".agents/hooks", "scripts"].flatMap((folder) =>
+				fs.readdirSync(path.join(cwd, game, folder)).filter((file) => file.endsWith(".test.ts")),
+			);
+		const { BASEPLATE_TOOLING_TESTS: _, ...env } = process.env;
+		for (const [game, keep] of [
+			["lean", undefined],
+			["kept", "1"],
+		] as const) {
+			const run = spawnSync(
+				"node",
+				[CLI, game, "--language", language, "--managed", "partial", "--json", "--no-install", "--no-git"],
+				{ cwd, encoding: "utf8", env: keep === undefined ? env : { ...env, BASEPLATE_TOOLING_TESTS: keep } },
+			);
+			assert.equal(run.status, 0, run.stderr);
+		}
+		assert.deepEqual(testsIn("lean"), []);
+		assert.ok(testsIn("kept").includes("hooks.test.ts"), "kept, with the add-ons' edits");
+	});
+}
+
 test("records which CLI and add-ons made the game", () => {
 	const cwd = tempDir();
 	const run = create(cwd, "coin-rush", "--no-git", "--language", "typescript", "--state", "charm");

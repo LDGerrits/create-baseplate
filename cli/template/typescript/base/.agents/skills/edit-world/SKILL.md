@@ -5,8 +5,6 @@ description: Change or inspect the game's world, the map, lighting and placed mo
 
 # Edit the world
 
-Run `forge`, `ror` and the other tools below as `mise x -- forge …` when your shell doesn't activate mise (see `AGENTS.md`).
-
 The world lives in `world/` as files, apart from the code:
 
 - `world/default.project.json` maps each world service (`Workspace`, `Lighting`) to a project file beside it, which holds the service's properties, and a folder of its instances. An instance is a `.model.json`; Terrain is an `.rbxm`.

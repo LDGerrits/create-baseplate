@@ -485,10 +485,11 @@ test("knows each tool's shell, and leaves commands that run a mise task to the t
 	assert.equal(movesFiles("cat > src/a.ts"), false);
 });
 
-// The check runs `rogen check`, so Rogen's own stop hook (rogen-check.mjs, which stays as Rogen writes it)
-// would run it a second time at every stop.
+// The check runs `rogen check`, so Rogen's own stop hook (`rogen init --agent-hook`) would run it a
+// second time at every stop.
 test("no agent tool starts Rogen's stop hook beside the check", () => {
 	const folder = path.join(import.meta.dirname, "../..");
+	assert.equal(fs.existsSync(path.join(folder, ".agents/hooks/rogen-check.mjs")), false);
 	for (const file of [".claude/settings.json", ".codex/hooks.json", ".cursor/hooks.json", ".gemini/settings.json"]) {
 		assert.doesNotMatch(fs.readFileSync(path.join(folder, file), "utf8"), /rogen-check/, file);
 	}

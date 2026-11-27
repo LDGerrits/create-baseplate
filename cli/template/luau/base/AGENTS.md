@@ -58,11 +58,9 @@ Require by instance path, the way `rogen where <file>` prints it: `require(Repli
 
 Code meets in three ways. Require directly by default: a feature requires the service it needs. When one owner has many contributors, put a registry in `game/`: the one `ProcessReceipt` handler lives there, and each feature registers its product handlers with it, so `game/` never requires a feature. For a fact that others react to, the emitter exports a typed signal that listeners subscribe to. Never a string-keyed event bus.
 
-## Adding a feature
+## Server and client
 
-Start one with `mise run feature <name>`, and read `.agents/skills/add-feature/SKILL.md` before you build on it. It writes the feature's remotes, a service with its spec, a controller, an end-to-end test, and the entry scripts' lines that start them. Remotes are [Remo](https://github.com/littensy/remo)'s, as its network module shows; Remo has no README: its API and types are in `Packages/_Index/littensy_remo@*/remo/src/types.luau`.
-
-The rules the code follows:
+Remotes are [Remo](https://github.com/littensy/remo)'s, as its network module shows; Remo has no README: its API and types are in `Packages/_Index/littensy_remo@*/remo/src/types.luau`.
 
 - **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. The server takes what clients send only through Remo remotes, whose validators drop calls with the wrong arguments and whose throttle drops floods; the throttle fits the action (a purchase is one a second, not twenty).
 - **Services own server state.** A service keeps its state in its module and only it changes it; other code calls its functions. Depend on another service by requiring it.
@@ -76,15 +74,15 @@ The rules the code follows:
 - A client's request through the real server and remotes: an end-to-end test, `tests/e2e/<feature>.luau`.
 - Characters, physics, collisions or real DataStore limits, which ree doesn't emulate: an engine spec, `<Name>.engine.spec.luau`, run in real Roblox by `mise run test:engine`.
 
-A failing test's trace names the instance and the file: `ServerScriptService.features.shop.ShopService.spec:22 → src/features/shop/server/ShopService.spec.luau:22`. Before writing a test or debugging a failing one, read `.agents/skills/write-tests/SKILL.md`.
+A failing test's trace names the instance and the file: `ServerScriptService.features.shop.ShopService.spec:22 → src/features/shop/server/ShopService.spec.luau:22`.
 
 ## UI
 
-Vide from `ReplicatedStorage.Packages.Vide`. Look at each component's picture: `mise run ui` renders its story offline. Before you build, restyle or check UI, read `.agents/skills/build-ui/SKILL.md`: mounting the UI root, writing stories, looking at their pictures on any screen size, clicking into them, and before and after.
+Vide from `ReplicatedStorage.Packages.Vide`. Look at each component's picture: `mise run ui` renders its story offline.
 
 ## World and Studio
 
-The map and lighting live in `world/` as files; luau-lsp types them from `sourcemap.json`, so `workspace.SpawnLocation` is a `SpawnLocation` and a part that isn't there fails the check. To change or look at the world, read `.agents/skills/edit-world/SKILL.md`. To run the game in real Studio, for a playtest, characters, physics, its output or a screenshot, read `.agents/skills/drive-studio/SKILL.md`.
+The map and lighting live in `world/` as files; luau-lsp types them from `sourcemap.json`, so `workspace.SpawnLocation` is a `SpawnLocation` and a part that isn't there fails the check.
 
 ## Luau gotchas
 
@@ -104,7 +102,7 @@ The game's Roblox packages come from Wally: add one to `wally.toml` under `[depe
 
 ## Releases and updates
 
-You make a release ready and the user ships it: a hook stops `mise run publish`, Studio's Open Cloud tools and Luau run in Studio that reaches the live game's data. Read `.agents/skills/release/SKILL.md` to prepare one. After the user has published to dev, `mise run errors -- <version>` reads the new errors, with stack traces, with a read-only key. For a Renovate update, a `*.baseplate-new` file or a failing `agent-files` check, read `.agents/skills/upgrade/SKILL.md`.
+You make a release ready and the user ships it: a hook stops `mise run publish`, Studio's Open Cloud tools and Luau run in Studio that reaches the live game's data. Read `.agents/skills/release/SKILL.md` to prepare one. After the user has published to dev, `mise run errors -- <version>` reads the new errors, with stack traces, with a read-only key.
 
 ## Writing for people
 

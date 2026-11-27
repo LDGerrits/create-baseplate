@@ -57,11 +57,7 @@ Name each file after what it holds: `inventory-service.ts`.
 
 Code meets in three ways. Import directly by default: a feature imports the service it needs. When one owner has many contributors, put a registry in `game/`: the one `ProcessReceipt` handler lives there, and each feature registers its product handlers with it, so `game/` never imports a feature. For a fact that others react to, the emitter exports a typed signal that listeners subscribe to. Never a string-keyed event bus.
 
-## Adding a feature
-
-Start one with `mise run feature <name>`, and read `.agents/skills/add-feature/SKILL.md` before you build on it. It writes the feature's network events, a service with its spec, a controller, an end-to-end test, and the entry scripts' imports that start them.
-
-The rules the code follows:
+## Server and client
 
 - **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. Flamework checks the types of remote arguments, not whether the request is allowed. Limit how often each client-to-server remote may come with `rateLimit` (events) or `rateLimitFunction` from `src/platform/network/server/rate-limit.ts`, as the service `mise run feature` writes does.
 - **Services own server state.** Only a service changes its state; other code calls its methods. Depend on another service through the constructor: `constructor(private readonly data: PlayerDataService) {}`.
@@ -75,15 +71,13 @@ The rules the code follows:
 - A client's request through the real server and remotes: an end-to-end test, `tests/e2e/<feature>.luau`.
 - Characters, physics, collisions or real DataStore limits, which ree doesn't emulate: an engine spec, `<name>.engine.spec.ts`, run in real Roblox by `mise run test:engine`.
 
-Before writing a test or debugging a failing one, read `.agents/skills/write-tests/SKILL.md`.
-
 ## UI
 
-React from `@rbxts/react`. Look at each component's picture: `mise run ui` renders its story offline. Before you build, restyle or check UI, read `.agents/skills/build-ui/SKILL.md`: mounting the UI root, writing stories, looking at their pictures on any screen size, clicking into them, and before and after.
+React from `@rbxts/react`. Look at each component's picture: `mise run ui` renders its story offline.
 
 ## World and Studio
 
-The map and lighting live in `world/` as files; code reaches them through the types in `src/world.d.ts`, such as `Workspace.SpawnLocation`. To change or look at the world, read `.agents/skills/edit-world/SKILL.md`. To run the game in real Studio, for a playtest, characters, physics, its output or a screenshot, read `.agents/skills/drive-studio/SKILL.md`.
+The map and lighting live in `world/` as files; code reaches them through the types in `src/world.d.ts`, such as `Workspace.SpawnLocation`.
 
 ## roblox-ts is not JavaScript
 
@@ -103,7 +97,7 @@ Add one with `pnpm add <name>` (`-D` for build tools). pnpm installs only versio
 
 ## Releases and updates
 
-You make a release ready and the user ships it: a hook stops `mise run publish`, Studio's Open Cloud tools and Luau run in Studio that reaches the live game's data. Read `.agents/skills/release/SKILL.md` to prepare one. After the user has published to dev, `mise run errors -- <version>` reads the new errors, with stack traces, with a read-only key. For a Renovate update, a `*.baseplate-new` file or a failing `agent-files` check, read `.agents/skills/upgrade/SKILL.md`.
+You make a release ready and the user ships it: a hook stops `mise run publish`, Studio's Open Cloud tools and Luau run in Studio that reaches the live game's data. Read `.agents/skills/release/SKILL.md` to prepare one. After the user has published to dev, `mise run errors -- <version>` reads the new errors, with stack traces, with a read-only key.
 
 ## Writing for people
 

@@ -100,7 +100,7 @@ function checkCommand(command: string): string | undefined {
 		return "This project's packages are pnpm's: `pnpm add <package>` (or `pnpm add -D`), `pnpm install --frozen-lockfile`.";
 	}
 	if (/(^|[\s;&|(])(npx|bunx|rbxtsc|pnpm dlx|bun x)\s/.test(bare)) {
-		return "Run tools through the project: `mise run check` compiles with Sloptor; other tools with `mise x -- <tool>`, which finds both the npm ones and the mise ones.";
+		return "`mise run check` compiles with Sloptor; run other tools by name: mise puts both the npm ones and its own on the PATH (`mise x -- <tool>` where your shell doesn't activate mise).";
 	}
 	// Each command of a plain chain on its own, so `ls .env && cat package.json` passes; a pipe stays
 	// whole, as `ls .env | xargs cat` reads it. Quotes, variables, escapes or an inline script

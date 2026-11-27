@@ -11,7 +11,7 @@ import { commitAll, initGit } from "./helpers/git.ts";
 import { installDependencies, isMiseInstalled } from "./helpers/installDependencies.ts";
 import { logNextSteps, nextSteps } from "./helpers/logNextSteps.ts";
 import { makeMultiPlace, managedOf, PLACES } from "./helpers/makeMultiPlace.ts";
-import { scaffoldProject } from "./helpers/scaffoldProject.ts";
+import { dropToolingTests, scaffoldProject } from "./helpers/scaffoldProject.ts";
 import { recordOrigin, setProjectName } from "./helpers/setProjectName.ts";
 import { findConflict, installAddOns } from "./installers/index.ts";
 import { isGame, recordAgentFiles, runSync } from "./sync/command.ts";
@@ -72,6 +72,7 @@ async function main() {
 	installAddOns(options.dir, options.language, options.addOns);
 	if (options.addOns.places === "multi")
 		makeMultiPlace(options.dir, options.name, options.language, managedOf(options.addOns));
+	dropToolingTests(options.dir);
 	recordOrigin(options.dir, version, options.language, options.addOns);
 	recordAgentFiles(options.dir, version);
 	// The template's lockfile lists the base's packages only, until an install adds the add-ons'.

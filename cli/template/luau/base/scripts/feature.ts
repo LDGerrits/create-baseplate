@@ -1,4 +1,4 @@
-// `mise run feature <name>`: starts a feature the way AGENTS.md's "Adding a feature" describes, so
+// `mise run feature <name>`: starts a feature the way the add-feature skill describes, so
 // its folders, its throttled remote and its entry-script entries are right from the first line.
 //
 //   node scripts/feature.ts <name> [<place>]

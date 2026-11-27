@@ -41,4 +41,4 @@ The managed question's `partial` choice is the one add-on that changes the other
 
 Pin packages in `addon.json` and tools in the add-on's `mise.toml`, where Renovate finds them; Renovate reads Wally pins (`@=`) from Wally's registry. A tool that must skip the two-week wait goes in both `minimumReleaseAgeExclude` in `pnpm-workspace.yaml` and Renovate's rule.
 
-Develop the add-on in a game created by the CLI (`pnpm --filter create-baseplate build`, then `node cli/dist/index.js <folder> --language <language> --<question> <choice>`), where its check runs, and copy the files back. Add a test to `cli/test/create.test.ts` that creates a game with it.
+Develop the add-on in a game created by the CLI (`pnpm --filter create-baseplate build`, then `BASEPLATE_TOOLING_TESTS=1 node cli/dist/index.js <folder> --language <language> --<question> <choice>`, which keeps the hooks' and scripts' own tests in the game), where its check runs, and copy the files back. Add a test to `cli/test/create.test.ts` that creates a game with it.

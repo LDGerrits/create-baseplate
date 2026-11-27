@@ -110,7 +110,7 @@ function checkCommand(command: string): string | undefined {
 		return "The game's Roblox packages are Wally's: add them to wally.toml and run `mise run install`. Its Node tools are pnpm's: `pnpm add -D <package>`.";
 	}
 	if (/(^|[\s;&|(])(npx|bunx|pnpm dlx|bun x)\s/.test(bare)) {
-		return "Run tools through the project: `mise x -- <tool>`, which finds both the npm ones and the mise ones.";
+		return "Run the project's tools by name: mise puts both the npm ones and its own on the PATH (`mise x -- <tool>` where your shell doesn't activate mise).";
 	}
 	if (/\b(rokit|aftman|foreman)\s+(add|install|init|update)\b/.test(command)) {
 		return "This project's tools are mise's: pin a tool in mise.toml, then `mise lock` and `mise install`.";

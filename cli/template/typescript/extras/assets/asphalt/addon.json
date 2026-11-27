@@ -7,8 +7,8 @@
 		},
 		{
 			"file": "biome.json",
-			"from": "\"!**/*.md\"\n\t\t]",
-			"to": "\"!**/*.md\",\n\t\t\t\"!**/src/game/assets/shared/assets.d.ts\"\n\t\t]"
+			"from": "\"!**/*.md\"]",
+			"to": "\"!**/*.md\", \"!**/src/game/assets/shared/assets.d.ts\"]"
 		},
 		{
 			"file": "eslint.config.ts",
