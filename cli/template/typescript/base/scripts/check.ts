@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { CHECK_RECORD, partId, readRecord, stateId, writeRecord } from "../.agents/hooks/fingerprint.ts";
 import { hintsFor } from "../.agents/hooks/hints.ts";
+import { type Finished, type Launched, runSteps, type Status, type Step } from "./steps.ts";
 
 const deps = spawnSync("mise", ["run", "--quiet", "deps"], {
 	cwd: path.resolve(import.meta.dirname, ".."),
@@ -18,16 +19,6 @@ if (deps.status !== 0) {
 	process.exit(1);
 }
 const { default: spawn } = await import("cross-spawn");
-
-interface Step {
-	name: string;
-	command: string;
-	needs: string[];
-	fixCommand?: string;
-	format?: boolean;
-	tooling?: boolean;
-	warm?: boolean;
-}
 
 function workflows() {
 	const folder = path.join(import.meta.dirname, "..", ".github", "workflows");
@@ -103,28 +94,14 @@ const TOOLING_RECORD = "check-tooling-passed";
 
 const words = (command: string) => [...command.matchAll(/"([^"]*)"|(\S+)/g)].map((match) => match[1] ?? match[2] ?? "");
 
-interface Outcome {
-	step: Step;
-	ok: boolean;
-	output: string;
-	seconds: number;
-	skipped?: string;
-}
-
-interface Started {
-	done: Promise<Outcome>;
-	go: () => void;
-	cancel: () => void;
-}
-
-function start(step: Step): Started {
+function start(step: Step): Launched {
 	let since = performance.now();
 	let go = () => {};
 	let cancel = () => {};
-	const done = new Promise<Outcome>((resolve) => {
+	const done = new Promise<Finished>((resolve) => {
 		const [command = "", ...args] = words(step.command);
 		let output = "";
-		const done = (ok: boolean) => resolve({ step, ok, output, seconds: (performance.now() - since) / 1000 });
+		const done = (ok: boolean) => resolve({ ok, output, seconds: (performance.now() - since) / 1000 });
 		const child = spawn(command, args, { cwd: ROOT, stdio: [step.warm === true ? "pipe" : "ignore", "pipe", "pipe"] });
 		// A warm step that already exited (its startup failed) has no input left to write to.
 		child.stdin?.on("error", () => {});
@@ -189,58 +166,24 @@ const before = ci ? undefined : sourceHashes();
 const started = performance.now();
 const list = steps.map((step) => ({ ...step, command: (!ci && step.fixCommand) || step.command }));
 
-const outcomes = new Map<string, Outcome>();
-const running = new Map<string, Promise<void>>();
-const warm = new Map(list.filter((step) => step.warm === true).map((step) => [step.name, start(step)]));
 let formatted: { files?: string; tooling?: string } | undefined;
 let toolingUnchanged = false;
 
 function noteFormatted() {
-	if (formatted !== undefined) return;
 	const files = stateId(ROOT, "files");
 	const tree = files === undefined ? undefined : partId(ROOT, files, toolingFile);
 	formatted = { files, tooling: tree };
 	toolingUnchanged = !everything && tree !== undefined && readRecord(ROOT, TOOLING_RECORD) === tree;
 }
 
-await new Promise<void>((finish) => {
-	const settle = () => {
-		for (const step of list) {
-			if (outcomes.has(step.name) || running.has(step.name)) continue;
-			const needs = step.needs.map((need) => outcomes.get(need));
-			if (needs.some((need) => need === undefined)) continue;
-			if (needs.some((need) => need?.ok !== true)) {
-				warm.get(step.name)?.cancel();
-				outcomes.set(step.name, { step, ok: false, output: "", seconds: 0, skipped: "a step it needs failed" });
-				continue;
-			}
-			if (step.tooling === true && toolingUnchanged) {
-				warm.get(step.name)?.cancel();
-				outcomes.set(step.name, {
-					step,
-					ok: true,
-					output: "",
-					seconds: 0,
-					skipped: "tooling unchanged since it last passed",
-				});
-				continue;
-			}
-			const launched = warm.get(step.name) ?? start(step);
-			launched.go();
-			running.set(
-				step.name,
-				launched.done.then((outcome) => {
-					outcomes.set(step.name, outcome);
-					if (list.every((one) => one.format !== true || outcomes.get(one.name)?.ok === true)) noteFormatted();
-					running.delete(step.name);
-					settle();
-				}),
-			);
-		}
-		if (running.size === 0) finish();
-	};
-	settle();
+const statuses = await runSteps(list, {
+	launch: start,
+	unchanged: (step) =>
+		step.tooling === true && toolingUnchanged ? "tooling unchanged since it last passed" : undefined,
+	onFormatted: noteFormatted,
 });
+const named = (state: Status["state"]) =>
+	list.filter((step) => statuses.get(step.name)?.state === state).map((step) => step.name);
 
 if (before !== undefined) {
 	const after = sourceHashes();
@@ -264,18 +207,18 @@ if (files.state === "changed" && !ci && process.env.BASEPLATE_CHECK_AGAIN === un
 	});
 	process.exit(again.status ?? 1);
 }
-const failed = list.filter((step) => outcomes.get(step.name)?.ok !== true);
 const seconds = ((performance.now() - started) / 1000).toFixed(1);
 for (const step of list) {
-	const outcome = outcomes.get(step.name);
-	if (outcome === undefined) continue;
-	if (outcome.skipped !== undefined) {
-		if (verbose) console.log(`- ${step.name}: skipped, ${outcome.skipped}`);
-		continue;
-	}
-	if (!outcome.ok || verbose) {
-		console.log(`${outcome.ok ? "✓" : "✗"} ${step.name} (${outcome.seconds.toFixed(1)}s): ${step.command}`);
-		const text = outcome.output.trim();
+	const status = statuses.get(step.name);
+	if (status?.state === "blocked") {
+		if (verbose) console.log(`- ${step.name}: not run, ${status.by} didn't pass`);
+	} else if (status?.state === "unchanged") {
+		if (verbose) console.log(`- ${step.name}: skipped, ${status.why}`);
+	} else if (status?.state === "failed" || (status?.state === "passed" && verbose)) {
+		console.log(
+			`${status.state === "passed" ? "✓" : "✗"} ${step.name} (${status.seconds.toFixed(1)}s): ${step.command}`,
+		);
+		const text = status.output.trim();
 		const lines = text.split("\n");
 		const shown = ci || verbose || lines.length <= STEP_LINES ? text : lines.slice(0, STEP_LINES).join("\n");
 		const more = lines.length - STEP_LINES;
@@ -286,13 +229,14 @@ for (const step of list) {
 		}
 	}
 }
-if (failed.length > 0) {
-	const hints = hintsFor(failed.map((step) => outcomes.get(step.name)?.output ?? "").join("\n"));
+const failed = named("failed");
+const blocked = named("blocked");
+if (failed.length > 0 || blocked.length > 0) {
+	const outputs = [...statuses.values()].map((status) => (status.state === "failed" ? status.output : ""));
+	const hints = hintsFor(outputs.join("\n"));
 	if (hints.length > 0) console.log(`${hints.join("\n")}\n`);
-	const blocked = failed.filter((step) => outcomes.get(step.name)?.skipped !== undefined).map((step) => step.name);
-	const own = failed.filter((step) => !blocked.includes(step.name)).map((step) => step.name);
 	console.log(
-		`✗ ${ci ? "ci" : "check"} failed in ${seconds}s: ${own.join(", ")}${blocked.length > 0 ? ` (not run: ${blocked.join(", ")})` : ""}`,
+		`✗ ${ci ? "ci" : "check"} failed in ${seconds}s: ${failed.join(", ")}${blocked.length > 0 ? ` (not run: ${blocked.join(", ")})` : ""}`,
 	);
 	process.exit(1);
 }
@@ -305,7 +249,7 @@ if (files.state === "settled") {
 	writeRecord(ROOT, CHECK_RECORD, files.id);
 	if (formatted?.tooling !== undefined) writeRecord(ROOT, TOOLING_RECORD, formatted.tooling);
 }
-const skipped = list.filter((step) => outcomes.get(step.name)?.skipped !== undefined).map((step) => step.name);
+const skipped = named("unchanged");
 console.log(
 	`✓ ${ci ? "ci" : "check"} passed in ${seconds}s (${list.length - skipped.length} steps${skipped.length > 0 ? `; skipped, unchanged: ${skipped.join(", ")}` : ""})`,
 );
