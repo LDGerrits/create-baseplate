@@ -1,14 +1,6 @@
-// `mise run publish`: uploads a built place file to Roblox through Open Cloud and publishes it.
-//
-//   node scripts/publish.ts <place file>
-//
-// Reads ROBLOX_PUBLISH_API_KEY (a key with universe-places:write on the experience),
-// ROBLOX_PUBLISH_UNIVERSE_ID and ROBLOX_PUBLISH_PLACE_ID. A multi-place game gives each place its
-// ID, as `lobby=123,game=456`; scripts/each-place.ts names the place in PLACE.
 import fs from "node:fs";
 import path from "node:path";
 
-/** The place ID for `place` from ROBLOX_PUBLISH_PLACE_ID: a bare ID, or `<place>=<id>` pairs. */
 export function placeIdFor(setting: string, place: string, multi: boolean): string {
 	const value = setting.trim();
 	if (value === "") throw new Error("Set ROBLOX_PUBLISH_PLACE_ID to the ID of the place to publish to.");

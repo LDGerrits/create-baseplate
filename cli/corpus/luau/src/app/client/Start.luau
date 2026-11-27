@@ -1,6 +1,3 @@
--- Starts the client: every controller. Main.client.luau calls it, and so can tests. Add a feature's
--- controllers to the list to start them; the check fails on a controller that isn't here.
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")

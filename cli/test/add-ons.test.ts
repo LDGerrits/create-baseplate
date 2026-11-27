@@ -1,4 +1,3 @@
-// The add-on choices, and the shape of the game they make, through the built CLI.
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -8,7 +7,6 @@ import { parseNameAndPath } from "../src/commands/create/parse-name-and-path.ts"
 import { validateAppName } from "../src/domain/game/app-name.ts";
 import { create, tempDir } from "./helpers.ts";
 
-/** Why the created game's guard blocks an edit of `file`, or undefined when it lets it through. */
 async function guardsEdit(dir: string, file: string): Promise<string | undefined> {
 	const guard = (await import(pathToFileURL(path.join(dir, ".agents/hooks/guard.ts")).href)) as {
 		guardReason: (payload: object, root: string, start: string) => string | undefined;
@@ -363,7 +361,6 @@ test("lays out a multi-place game in projects/", () => {
 		assert.match(read(`projects/${place}/rbx-forge.config.ts`), /node \.\.\/\.\.\/scripts\/game-project\.ts/);
 	}
 	assert.match(read(".gitignore"), /\/projects\/\*\/build/);
-	// Shared tests run once, in the game place; each place keeps its own tests folder.
 	assert.ok(exists("projects/game/tests/e2e/.gitkeep"));
 	assert.ok(exists("projects/lobby/tests/e2e/.gitkeep"));
 	assert.equal(JSON.parse(read("tsconfig.game.json")).exclude, undefined);
@@ -395,7 +392,6 @@ test("uploads assets with Asphalt", async () => {
 	const dir = path.join(cwd, "my-game");
 	const read = (file: string) => fs.readFileSync(path.join(dir, file), "utf8");
 
-	// The game's developer names the creator; the template leaves the ID unset.
 	assert.match(read("asphalt.toml"), /\[creator\]\ntype = "user"\nid = 0\n/);
 	assert.match(read("asphalt.toml"), /output_path = "src\/game\/assets\/shared"/);
 	for (const file of ["src/game/assets/shared/assets.luau", "src/game/assets/shared/assets.d.ts"]) {
@@ -406,7 +402,6 @@ test("uploads assets with Asphalt", async () => {
 	const mise = read("mise.toml");
 	assert.match(mise, /\[tools\][^[]*"github:jackTabsCode\/asphalt" = "\d[^"]*"\n/, "the tool joins [tools]");
 	assert.match(mise, /\n\[tasks\.assets\]\n/);
-	// check and ci (one list of steps) fail on assets that aren't uploaded yet.
 	assert.equal(read("scripts/check.ts").match(/node scripts\/assets\.ts --check/g)?.length, 1);
 	assert.match(read("biome.json"), /src\/game\/assets\/shared\/assets\.d\.ts/, "Biome leaves Asphalt's code alone");
 	assert.match(read("eslint.config.ts"), /src\/game\/assets\/shared\/assets\.d\.ts/);

@@ -18,7 +18,6 @@ export function projectRoot(sessionDir: string): string | undefined {
 	const sessionTop = toplevel(sessionDir);
 	if (hereTop !== undefined && sessionTop !== undefined) return path.join(sessionTop, path.relative(hereTop, here));
 	if (hereTop !== undefined) return undefined;
-	// Outside git, the project holding these hooks, when the session is in it.
 	try {
 		const inside = path.relative(here, fs.realpathSync(path.resolve(sessionDir)));
 		return inside.startsWith("..") || path.isAbsolute(inside) ? undefined : here;
@@ -35,12 +34,6 @@ export function formatArg(arg: string | undefined): Format {
 	return arg === "cursor" || arg === "copilot" || arg === "gemini" ? arg : "claude";
 }
 
-/**
- * Whether Claude Code runs the game's language server, which reports type errors after each edit
- * itself: `scripts/setup.ts` enables it in the main checkout's .claude/settings.local.json, under a
- * marketplace named after that checkout's path. It isn't there when `claude` wasn't installed when
- * the game's tools were, or a person skipped it.
- */
 export function languageServerOn(root: string): boolean {
 	try {
 		// A git hook's variables (GIT_DIR, GIT_INDEX_FILE) would point git at another repository.
@@ -50,7 +43,6 @@ export function languageServerOn(root: string): boolean {
 		const common = git("--git-common-dir").stdout.trim();
 		const own = git("--git-dir").stdout.trim();
 		const prefix = spawnSync("git", ["rev-parse", "--show-prefix"], { cwd: root, encoding: "utf8", env }).stdout.trim();
-		// In a linked worktree the main checkout registers it, for every worktree.
 		const linked =
 			common !== "" && own !== "" && path.resolve(common) !== path.resolve(own) && path.basename(common) === ".git";
 		const main = fs.realpathSync.native(linked ? path.join(path.dirname(common), prefix) : root);

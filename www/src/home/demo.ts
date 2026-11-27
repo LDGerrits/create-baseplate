@@ -1,6 +1,3 @@
-// Replays the recorded sessions (sessions.ts), one after another: the task typed in, the steps
-// landing at their recorded times, sped up, then the UI the agent built on a Baseplate place.
-
 import { RENDER, SESSIONS, type Session } from "./sessions.ts";
 
 const TYPE_AT = 0.5;
@@ -17,14 +14,12 @@ const mmss = (seconds: number) => {
 };
 const escapeHtml = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
 
-/** A session on the page's clock: when it starts, when each step and the picture land, when it ends. */
 interface Timed {
 	readonly session: Session;
 	readonly typed: number;
 	readonly steps: readonly number[];
 	readonly look: number;
 	readonly total: number;
-	/** Page time and recorded time at each landing, for the running clock. */
 	readonly keys: readonly (readonly [number, number])[];
 }
 
@@ -74,7 +69,6 @@ const tabEls = [...tabs.children] as HTMLElement[];
 const sessionEls = [...left.children] as HTMLElement[];
 const barOf = (i: number) => tabEls[i]?.querySelector(".bar i") as HTMLElement;
 
-// The UI goes where it sat in rur's picture, in a view of that picture scaled to the screen.
 let shown = -1;
 const layout = () => {
 	const session = SESSIONS[shown];
@@ -139,7 +133,6 @@ const draw = (i: number, p: number) => {
 	(el.querySelector(".ty") as HTMLElement).textContent = task.slice(0, typedChars);
 	(el.querySelector(".rest") as HTMLElement).textContent = task.slice(typedChars);
 	el.classList.toggle("typing", p > 0.15 && p < t.typed);
-	// The next step's time runs as a clock until the step lands at its recorded time.
 	const next = t.steps.findIndex((at) => p < at);
 	el.querySelectorAll(".step").forEach((row, j) => {
 		const at = t.steps[j] ?? 0;
@@ -155,7 +148,6 @@ const draw = (i: number, p: number) => {
 	if (!bar.classList.contains("out")) bar.style.setProperty("--p", Math.min(1, p / t.total).toFixed(4));
 };
 
-// Applies a change without its transition.
 const instant = (el: HTMLElement, change: () => void) => {
 	el.classList.add("reset");
 	change();
@@ -177,7 +169,6 @@ const go = (i: number, p = 0, animate = !reduce) => {
 		el.classList.add("on");
 		return;
 	}
-	// A finished bar hands over by sliding out to the right; an interrupted one fades with its track.
 	const bar = barOf(previous);
 	const finished = Number.parseFloat(bar.style.getPropertyValue("--p") || "0") > 0.97;
 	if (finished && animate) {

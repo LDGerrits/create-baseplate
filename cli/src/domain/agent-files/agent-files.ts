@@ -7,17 +7,13 @@ import { DOCS_DIR } from "../../base/template.ts";
 /** Files by path from the game's root, with `/` between folders. */
 export type Files = Record<string, string>;
 
-/**
- * What the template ships for agents, and keeps current in a game: its instructions, skills,
- * hooks, the agent tools' settings, and the scripts that run this update and print the docs.
- * Everything else in a game is the game's own once created. Workflows stay out: pushing one needs a
- * GitHub App with the Workflows permission, which the update's workflow doesn't ask for.
- */
+// Workflows stay out: pushing one needs a GitHub App with the Workflows permission, which the
+// update's workflow doesn't ask for.
+const MOVED_SINCE_0_3_0 = [/^CLAUDE\.md$/];
 const AGENT_FILES = [
+	...MOVED_SINCE_0_3_0,
 	/^AGENTS\.md$/,
 	/^\.claude\/CLAUDE\.md$/,
-	// Where it sat until 0.3.0: listed still, so a sync deletes it from a game that left it alone.
-	/^CLAUDE\.md$/,
 	/^\.agents\//,
 	/^\.claude\/settings\.json$/,
 	/^\.claude\/plugins\//,
@@ -31,7 +27,6 @@ const AGENT_FILES = [
 	/^scripts\/agent-files\.ts$/,
 	/^scripts\/doc\.ts$/,
 ];
-/** The folders that hold them, besides the root's own files. */
 const AGENT_FOLDERS = [
 	".agents",
 	".claude",
@@ -115,9 +110,7 @@ export function writeBase(dir: string, base: Base) {
 		path.join(dir, path.dirname(BASE_FILE), ".ignore"),
 		`# What create-baseplate sync merges against, and this version's docs (\`mise run doc\` reads them);\n# not for searching.\n${path.basename(BASE_FILE)}\ndocs/\n`,
 	);
-	// This version's docs, for `mise run doc` (the game's scripts/doc.ts) to read without the network.
 	const docs = path.join(dir, path.dirname(BASE_FILE), "docs");
-	// A CLI without its built docs (run from source) leaves the game's copy as it is.
 	if (fs.existsSync(DOCS_DIR)) {
 		fs.rmSync(docs, { recursive: true, force: true });
 		fs.cpSync(DOCS_DIR, docs, { recursive: true });
@@ -171,8 +164,6 @@ export function planSync(
 	unmerged: string[] = [],
 ): SyncPlan {
 	const plan: SyncPlan = { write: {}, remove: [], conflicts: [], base: {} };
-	// The base moves on to the template's version, so once a person merges the two by hand and deletes
-	// the .baseplate-new file, the next update keeps their result.
 	const clash = (file: string, theirsText: string) => {
 		plan.write[file + CLASH_SUFFIX] = theirsText;
 		plan.conflicts.push(file);
@@ -181,12 +172,10 @@ export function planSync(
 	for (const file of [...new Set([...Object.keys(base), ...Object.keys(ours), ...Object.keys(theirs)])].sort()) {
 		const [b, o, t] = [base[file], ours[file], theirs[file]];
 		if (t === undefined) {
-			// The template dropped it: delete it unless the game changed it, which makes it the game's own.
 			if (o !== undefined && o === b) plan.remove.push(file);
 			continue;
 		}
 		if (o === undefined) {
-			// New in the template, or deleted by the game: add the first, remember the second.
 			if (b === undefined) plan.write[file] = t;
 			plan.base[file] = t;
 			continue;
@@ -212,8 +201,6 @@ export function planSync(
 			plan.base[file] = t;
 		}
 	}
-	// An earlier clash no one merged: show the template's version as it is now, or drop it once the
-	// game's file matches the template's anyway.
 	for (const file of unmerged) {
 		if (plan.conflicts.includes(file)) continue;
 		const t = theirs[file];
@@ -241,7 +228,6 @@ export function applyPlan(dir: string, plan: SyncPlan, executable: Set<string>) 
 	}
 	for (const file of plan.remove) {
 		fs.rmSync(path.join(dir, file));
-		// Up through the folders the deletion emptied, as git would leave them.
 		for (let folder = path.dirname(file); folder !== "."; folder = path.dirname(folder)) {
 			const at = path.join(dir, folder);
 			if (fs.readdirSync(at).length > 0) break;

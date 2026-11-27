@@ -1,16 +1,7 @@
-// Finds client-to-server remotes the server takes without a guard. Flamework's types let
-// `createServer` leave out any remote's middleware, so a remote can reach a service with no rate
-// limit at all, and missing server checks are how games get exploited. Each remote in a network's
-// ClientToServer interface needs, where the server creates that network:
-// - an entry in `createServer({ middleware: { <remote>: [...] } })`, Flamework middleware that rate-limits it; or
-// - `// trusts-client: <why>` on the line above its handler (`.<remote>.connect(` or
-//   `.<remote>.setCallback(`), or above or inside the `createServer(` call for the whole network.
-// check-sources.ts runs it on the game's sources.
 import path from "node:path";
 
 const TRUSTS = /\/\/\s*trusts-client:\s*\S/;
 
-/** Errors for the remotes that `sources` (path from the repo root → text) take unguarded. */
 export function unguardedRemotes(sources: Map<string, string>): string[] {
 	const errors: string[] = [];
 	for (const [file, text] of sources) {
@@ -43,7 +34,6 @@ export function unguardedRemotes(sources: Map<string, string>): string[] {
 	return errors;
 }
 
-/** The index of the bracket that closes the one at `open`, skipping strings and comments. */
 function closing(text: string, open: number): number {
 	let depth = 0;
 	for (let i = open; i < text.length; i++) {
@@ -64,7 +54,6 @@ function closing(text: string, open: number): number {
 	return text.length - 1;
 }
 
-/** `text` without comments and with the inside of every nested bracket emptied: `a(b), { c }` → `a(), {}`. */
 function flatten(text: string): string {
 	let flat = text.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
 	for (let previous = ""; previous !== flat; ) {
@@ -77,7 +66,6 @@ function flatten(text: string): string {
 	return flat;
 }
 
-/** The keys of the `middleware` object in a `createServer(...)` call's text, except those given an empty `[]` or `{}`. */
 function middlewareKeys(config: string): string[] {
 	const start = /\bmiddleware\s*:\s*\{/.exec(config);
 	if (start === null) return [];
@@ -90,7 +78,6 @@ function middlewareKeys(config: string): string[] {
 		.flatMap((entry) => /^\s*["']?(\w+)/.exec(entry)?.[1] ?? []);
 }
 
-/** Where `network` is created, in `file` or a source it imports, with its ClientToServer interface's name. */
 function findNetwork(sources: Map<string, string>, file: string, text: string, network: string) {
 	const candidates = [{ file, name: network }];
 	for (const [, names, specifier] of text.matchAll(
@@ -119,7 +106,6 @@ function findNetwork(sources: Map<string, string>, file: string, text: string, n
 	return undefined;
 }
 
-/** The remotes a ClientToServer interface (or type literal) declares: its members' names. */
 function clientToServer(text: string, name: string): string[] {
 	const start = new RegExp(`\\b(?:interface\\s+${name}\\b[^{]*|type\\s+${name}\\s*=\\s*)\\{`).exec(text);
 	if (start === null) return [];
@@ -130,7 +116,6 @@ function clientToServer(text: string, name: string): string[] {
 		.flatMap((member) => /^\s*(?:readonly\s+)?["']?(\w+)["']?\??\s*[(<:]/.exec(member)?.[1] ?? []);
 }
 
-/** Whether the line above `remote`'s handler in `text` says `// trusts-client: <why>`. */
 function trustedHandler(text: string, remote: string): boolean {
 	const lines = text.split("\n");
 	const handler = new RegExp(`\\.${remote}\\s*\\.\\s*(?:connect|setCallback)\\s*\\(`);

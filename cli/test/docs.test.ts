@@ -1,4 +1,3 @@
-// Every language and add-on question's flag and choice is documented where people and agents look for them.
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";

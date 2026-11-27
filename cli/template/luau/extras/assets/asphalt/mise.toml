@@ -1,5 +1,4 @@
 [tools]
-# Asphalt uploads assets/ to Roblox and writes their IDs as a Luau module.
 "github:jackTabsCode/asphalt" = "2.0.2"
 
 [tasks.assets]

@@ -1,6 +1,3 @@
-# The game's Roblox packages, from Wally. `mise run install` installs them into Packages/ (shared),
-# ServerPackages/ (server only) and DevPackages/ (tests and stories), which default.rogen.json
-# mounts. Pin exact versions (`=`); wally.lock records what they resolve to.
 [package]
 name = "local/game"
 version = "0.1.0"

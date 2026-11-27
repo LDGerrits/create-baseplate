@@ -12,7 +12,6 @@ interface Call {
 	body: unknown;
 }
 
-/** A fetch that answers the two endpoints `errors` reads, and logs each request. */
 function fakeApi(options: { pending?: boolean; logs?: Record<string, object>; status?: number } = {}) {
 	const calls: Call[] = [];
 	const counts = { "11": 40, "22": 7, "33": 3 };

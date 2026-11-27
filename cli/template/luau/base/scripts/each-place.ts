@@ -1,18 +1,3 @@
-// Runs steps in each place of the game: the root, for a single-place game, or each projects/<place>/
-// for a multi-place one, where a place is a folder of projects/ with a <place>.rogen.json at the root
-// (projects/common, the shared code, has none). The mise tasks run their per-place steps through it,
-// so they work the same on Windows, macOS and Linux: no shell runs the steps.
-//
-//   node scripts/each-place.ts "<step>" ["<step>"...] [-- <extra args for the last step>]
-//   node scripts/each-place.ts --one <place> "<step>"...   only that place; a multi-place game needs it
-//   node scripts/each-place.ts --if-multi "<step>"...      once, at the root, in a multi-place game only
-//   node scripts/each-place.ts --parallel "<step>"...      the places at the same time; each place's output is
-//                                                          held and printed whole, in the places' order
-//
-// A step is a command and its arguments, split at spaces; "double quotes" keep spaces in one argument.
-// Each runs only if the one before it passed. In a step, {root} is the repo root, {dir} the place's
-// folder and {place} its name. `mkdir <folder>` makes a folder and the folders above it. The steps
-// also get ROOT and PLACE as environment variables.
 import fs from "node:fs";
 import path from "node:path";
 import spawn from "cross-spawn";
@@ -69,14 +54,10 @@ if (steps.length === 0) {
 }
 if (ifMulti && !multi) process.exit(0);
 
-/** A step's words: split at spaces, with "double quotes" holding one word together. */
 const words = (step: string) => [...step.matchAll(/"([^"]*)"|(\S+)/g)].map((match) => match[1] ?? match[2] ?? "");
 
-/** Where steps run: a place, or the repo root, which is the place in a single-place game. */
 interface Target {
-	/** The folder the steps run in. */
 	dir: string;
-	/** The place's name; the game's, for the root. */
 	place: string;
 }
 const root: Target = { dir: ROOT, place: path.basename(ROOT) };
@@ -95,7 +76,6 @@ for (const signal of ["SIGTERM", "SIGHUP"] as const) {
 	});
 }
 
-/** Runs the steps in one place, writing what they print through `write`; the code to exit with, or 0. */
 async function runTarget(target: Target, write: (text: string) => void, inherit: boolean): Promise<number> {
 	const placeholders: Record<string, string> = { root: ROOT, ...target };
 	if (perPlace) write(`── ${target.place}\n`);

@@ -10,11 +10,9 @@ const events = DailyRewardNetwork.createServer({
 	middleware: { request: [rateLimit(0.2)], claim: [rateLimit(1)] },
 });
 
-/** Gives each player a reward once a day. Clients ask; this service decides, by its own clock. */
 @Service()
 export class DailyRewardService implements OnStart {
 	private readonly claimedAt = new Map<number, number>();
-	/** Who claimed in this server's session, for the welcome message: a nullable boolean in a condition. */
 	private readonly claimedHere = new Map<number, boolean>();
 
 	constructor(private readonly currency: CurrencyService) {}
@@ -29,7 +27,6 @@ export class DailyRewardService implements OnStart {
 		});
 	}
 
-	/** Claims the reward if a day has passed since the last claim; `now` is `os.time()` unless a spec passes one. */
 	claim(userId: number, now = os.time()): boolean {
 		if (this.secondsLeft(userId, now) > 0) return false;
 		this.claimedAt.set(userId, now);

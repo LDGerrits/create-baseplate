@@ -1,6 +1,3 @@
-// What CI's batch job does with its games (.github/scripts/run-games.ts): one game's failure doesn't
-// hide the others, the first commit's hook is the game's check, and the engine run retries Roblox's own
-// failures and nothing else.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
@@ -28,7 +25,6 @@ const quietly = async <T>(body: () => Promise<T>): Promise<{ result: T; log: str
 	}
 };
 
-/** Steps whose games are created, committed or not, and whose mise tasks exit as `exits` says. */
 function fakeSteps(options: {
 	create?: (flags: string) => { code: number | null; committed?: boolean; created?: boolean };
 	exits?: (args: string[], dir: string) => number | null;
@@ -171,12 +167,10 @@ test("tells Roblox's own failures from a spec's", () => {
 	assert.equal(isInfrastructureFailure(2, outage), true);
 	assert.equal(isInfrastructureFailure(2, " Backend Error \n [0] NetworkError: fetch failed"), true);
 	assert.equal(isInfrastructureFailure(2, " Backend Error \n [0] PollTimeoutError: gave up"), true);
-	// A bad key, a missing place or a config error is ours to fix.
 	assert.equal(isInfrastructureFailure(2, " Backend Error \n [0] ApiError: HTTP 403 Forbidden"), false);
 	assert.equal(isInfrastructureFailure(2, " Backend Error \n [0] ApiError: HTTP 404 Not Found"), false);
 	assert.equal(isInfrastructureFailure(2, " Config Error \n bad"), false);
 	assert.equal(isInfrastructureFailure(3, " Missing Gap Record \n x"), false);
-	// A failing spec exits 1, whatever it prints.
 	assert.equal(isInfrastructureFailure(1, `${infra}\n${outage}\n× HTTP 503 in a test`), false);
 	assert.equal(isInfrastructureFailure(0, infra), false);
 	assert.equal(isInfrastructureFailure(null, infra), false);

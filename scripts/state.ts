@@ -1,11 +1,3 @@
-// "The same state" for the repository's own check, so it runs once per state: a state is a git tree
-// id, of the files on disk (the tree `git add -A` would stage, built in a copy of the index, so the
-// real one doesn't change) or of the index (what a commit would hold). A pass is recorded in this
-// worktree's own git folder, which no commit holds.
-//
-// A created game does the same in its own `.agents/hooks/fingerprint.ts`, which ships with the game
-// and so can't be imported from here. The Stop hook reads a template's `check-passed` record against
-// `stateId` below, so the two must give a state the same id: cli/test/repo-check.test.ts checks it.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";

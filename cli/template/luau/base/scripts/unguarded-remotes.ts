@@ -1,34 +1,17 @@
-// Finds code that takes what clients send unguarded. A remote declared with Remo runs its validators
-// on what a client sends, and its throttle middleware drops floods; a remote taken directly has
-// neither, and lets a client flood the server or send it anything. So it fails on:
-// - any use of `OnServerEvent` or `OnServerInvoke` in the game's own code;
-// - a Remo remote that clients send (`Remo.ClientToServer` or `Remo.ServerAsync` in the `Remotes`
-//   type) declared without `throttleMiddleware`, or without validators when it takes arguments,
-//   unless the line above it says `-- trusts-client: <why>`;
-// - a `Remo.createRemotes` with no such type, which leaves no way to tell what clients send.
-// `scripts/check-sources.ts` runs it.
-
-/**
- * Blanks out Luau's comments, keeping line breaks, so a remote named in one isn't counted, and `--`
- * inside a string doesn't hide the code after it.
- */
 const codeOnly = (code: string) =>
 	code.replace(
 		/--\[(=*)\[[\s\S]*?\]\1\]|--[^\n]*|\[(=*)\[[\s\S]*?\]\2\]|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`/g,
 		(match) => {
 			const blank = match.replace(/[^\n]/g, " ");
-			// A string stays a string, so `remote["OnServerEvent"]` still reads as one.
 			return /^["'`]/.test(match) ? match : blank;
 		},
 	);
 
-/** One line per unguarded remote: `<file>:<line>: ...`, from each file's path and code. */
 export function unguardedRemotes(files: Map<string, string>): string[] {
 	const problems: string[] = [];
 	for (const [file, code] of files) {
 		const lines = codeOnly(code).split("\n");
 		lines.forEach((line, index) => {
-			// Any use of the name, however it's reached: `.OnServerEvent`, `["OnServerEvent"]`, across lines.
 			const taken = /\bOnServer(Event|Invoke)\b/.exec(line)?.[0];
 			if (taken === undefined) return;
 			problems.push(
@@ -41,13 +24,11 @@ export function unguardedRemotes(files: Map<string, string>): string[] {
 
 const TRUSTS = /--\s*trusts-client:\s*\S/;
 
-/** The text from `open` (an opening bracket) to its closing one, inclusive; to the end if unclosed. */
 function balanced(code: string, open: number): string {
 	const pairs: Record<string, string> = { "(": ")", "<": ">", "{": "}" };
 	const close = pairs[code[open] ?? ""];
 	let depth = 0;
 	for (let at = open; at < code.length; at++) {
-		// A function type's arrow isn't a closing `>`.
 		if (code[at] === ">" && code[at - 1] === "-") continue;
 		if (code[at] === code[open]) depth++;
 		else if (code[at] === close && --depth === 0) return code.slice(open, at + 1);
@@ -55,7 +36,6 @@ function balanced(code: string, open: number): string {
 	return code.slice(open);
 }
 
-/** The parts of `list` (without its brackets) between its top-level commas. */
 function topLevel(list: string): string[] {
 	const parts: string[] = [];
 	let depth = 0;
@@ -73,10 +53,6 @@ function topLevel(list: string): string[] {
 	return parts.map((part) => part.trim()).filter((part) => part !== "");
 }
 
-/**
- * The remote's declaration from `start`: up to the comma or brace that ends its entry in a table, or
- * the end of its line, unless the next line goes on with a method (`.middleware(...)`).
- */
 function declaration(code: string, start: number): string {
 	let depth = 0;
 	for (let at = start; at < code.length; at++) {
@@ -91,10 +67,6 @@ function declaration(code: string, start: number): string {
 	return code.slice(start);
 }
 
-/**
- * The keys of the tables around `at`, outermost first: `shop.buy` for a field `buy` in
- * `shop = Remo.namespace({ ... })` or in `shop: { ... }`.
- */
 function pathAt(code: string, at: number): string[] {
 	const keys: string[] = [];
 	let depth = 0;
@@ -104,7 +76,6 @@ function pathAt(code: string, at: number): string[] {
 			depth = 0;
 			const before = code.slice(Math.max(0, index - 200), index);
 			const key = /(\w+)\s*[:=]\s*(?:Remo\.namespace\s*\(\s*)?$/.exec(before)?.[1];
-			// The outermost table: a type's (`type Remotes = {`) or createRemotes' own.
 			if (key === undefined || /\btype\s+\w+\s*=\s*$/.test(before)) break;
 			keys.unshift(key);
 		}
@@ -112,7 +83,6 @@ function pathAt(code: string, at: number): string[] {
 	return keys;
 }
 
-/** Remo remotes that clients send, declared without a throttle or without validators. */
 function unthrottledRemotes(files: Map<string, string>): string[] {
 	const problems: string[] = [];
 	for (const [file, original] of files) {
@@ -124,7 +94,6 @@ function unthrottledRemotes(files: Map<string, string>): string[] {
 		const trusted = (at: number) =>
 			TRUSTS.test(lines[lineOf(at) - 2] ?? "") || TRUSTS.test(lines[lineOf(at) - 1] ?? "");
 
-		// The types clients send through, as written or behind a local alias: what each one sends.
 		const KIND = /Remo\.(ClientToServer|ServerAsync)\s*</y;
 		const sends = (at: number): string[] => {
 			const args = topLevel(balanced(code, code.indexOf("<", at)).slice(1, -1));
@@ -135,7 +104,6 @@ function unthrottledRemotes(files: Map<string, string>): string[] {
 		for (const match of code.matchAll(/\btype\s+(\w+)\s*=\s*(?=Remo\.(?:ClientToServer|ServerAsync)\s*<)/g)) {
 			aliases.set(match[1] ?? "", sends((match.index ?? 0) + match[0].length));
 		}
-		// Each remote a client sends, by its path, and what it sends.
 		const sent = new Map<string, string[]>();
 		for (const match of code.matchAll(/\b(\w+)\s*:\s*(\w+(?:\.\w+)?)/g)) {
 			const at = (match.index ?? 0) + match[0].length - (match[2] ?? "").length;
@@ -152,8 +120,6 @@ function unthrottledRemotes(files: Map<string, string>): string[] {
 			continue;
 		}
 
-		// Each remote's declaration in createRemotes, by its path: `Remo.remote(...)...`, or a local
-		// declared above with one.
 		const body = balanced(code, create.index + create[0].length - 1);
 		const declared = new Map<string, { at: number; text: string }>();
 		for (const match of body.matchAll(/\b(\w+)\s*=\s*(?!Remo\.namespace\b)(\S)/g)) {

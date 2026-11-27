@@ -12,7 +12,6 @@ describe("CoinPickupController", () => {
 
 		new CoinPickupController().onTick(0.5);
 
-		// Half a second is a quarter turn.
 		expect(coin.CFrame.RightVector.Z).toBeCloseTo(-1);
 		expect(coin.Position).toEqual(new Vector3(1, 2, 3));
 		coin.Destroy();

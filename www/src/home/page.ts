@@ -1,6 +1,3 @@
-// The home page's controls: the theme (shared with the docs), the language, the command or the
-// agent prompt, and copying it.
-
 const root = document.documentElement;
 
 const store = {

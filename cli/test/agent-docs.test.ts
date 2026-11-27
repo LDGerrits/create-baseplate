@@ -1,5 +1,3 @@
-// What a created game's AGENTS.md, skills and README name must exist in that game: an agent follows
-// a stale pointer into a dead end, and these files are edited by hand in many places.
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -7,11 +5,9 @@ import { test } from "node:test";
 import { create, tempDir } from "./helpers.ts";
 import { MAIN_VARIANTS } from "./variants.ts";
 
-/** The game's mise tasks, by name. */
 const taskNames = (miseToml: string) =>
 	new Set([...miseToml.matchAll(/^\[tasks\.("?)([\w:-]+)\1\]/gm)].map((match) => match[2] ?? ""));
 
-/** The files an agent reads for instructions, and the README a person reads. */
 function docs(dir: string): [string, string][] {
 	const skills = path.join(dir, ".agents", "skills");
 	const files = [
@@ -47,7 +43,6 @@ for (const flags of MAIN_VARIANTS) {
 				if (!fs.existsSync(path.join(dir, script))) missing.push(`${file}: ${script}`);
 			}
 		}
-		// And the other way: each skill is in the index, or agents aren't pointed to it.
 		const agents = fs.readFileSync(path.join(dir, "AGENTS.md"), "utf8");
 		for (const skill of skills) {
 			if (!agents.includes(`- \`${skill}\`:`)) missing.push(`AGENTS.md: skill ${skill} missing from the index`);

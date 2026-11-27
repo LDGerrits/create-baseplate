@@ -1,4 +1,3 @@
--- Keeps a Jecs world of the parts tagged `Spinner` (tag a part in Studio) and runs the spinner system on it each frame.
 -- no-spec: it only feeds tagged parts to the spinner system, whose spec and end-to-end test cover it
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,8 +8,7 @@ local SpinnerSystem = require(script.Parent.SpinnerSystem)
 
 local SpinnerService = {}
 
--- How fast spinners turn, in radians per second.
-SpinnerService.SPIN_SPEED = math.pi / 2
+SpinnerService.SPIN_RADIANS_PER_SECOND = math.pi / 2
 
 local world = Jecs.world()
 local entities: { [Instance]: Jecs.Entity<nil> } = {}
@@ -21,7 +19,7 @@ local function add(instance: Instance)
 	end
 	local entity = world:entity()
 	world:set(entity, SpinnerSystem.Part, instance)
-	world:set(entity, SpinnerSystem.Spin, SpinnerService.SPIN_SPEED)
+	world:set(entity, SpinnerSystem.Spin, SpinnerService.SPIN_RADIANS_PER_SECOND)
 	entities[instance] = entity
 end
 
@@ -33,7 +31,6 @@ local function remove(instance: Instance)
 	end
 end
 
--- Main.server.luau calls this once, after every service has loaded.
 function SpinnerService.start()
 	for _, instance in CollectionService:GetTagged("Spinner") do
 		add(instance)

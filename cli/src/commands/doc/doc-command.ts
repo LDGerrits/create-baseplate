@@ -13,7 +13,6 @@ interface Index {
 	topics: Topic[];
 }
 
-/** The number of single-letter edits between two words. */
 function distance(a: string, b: string): number {
 	let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
 	for (let i = 1; i <= a.length; i++) {
@@ -34,7 +33,6 @@ function distance(a: string, b: string): number {
 export function closestTopic(name: string, topics: readonly string[]): string | undefined {
 	const prefixed = topics.find((topic) => topic.startsWith(name));
 	if (prefixed !== undefined) return prefixed;
-	// A misspelt start of a topic counts too: `publsh` is two edits from `publis`hing.
 	const edits = (topic: string) => Math.min(distance(name, topic), distance(name, topic.slice(0, name.length)));
 	const ranked = topics.map((topic) => ({ topic, edits: edits(topic) })).sort((a, b) => a.edits - b.edits)[0];
 	return ranked !== undefined && ranked.edits <= Math.max(2, Math.floor(name.length / 3)) ? ranked.topic : undefined;

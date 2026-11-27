@@ -1,7 +1,3 @@
-// Writes release.project.json: game.project.json with the game's code read from dist/, where
-// `mise run release` puts the code Darklua processed, in place of out/. Runs in each place.
-// Rogen could write it from a second config with compiledPath "dist", but that file would repeat
-// default.rogen.json's routes and tree; this keeps default.rogen.json the one source.
 import fs from "node:fs";
 
 const toDist = (mount: string) => mount.replace(/^((?:\.\.\/)*)out(?=\/|$)/, "$1dist");

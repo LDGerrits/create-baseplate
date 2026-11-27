@@ -1,5 +1,3 @@
-// jest-roblox runs every spec of this place in a real Roblox engine: `mise run test:engine`.
-// It picks Roblox Studio when installed and Open Cloud otherwise; see AGENTS.md.
 import fs from "node:fs";
 import { defineConfig } from "@isentinel/jest-roblox";
 
@@ -32,9 +30,7 @@ collect(fs.existsSync(projectFile) ? JSON.parse(fs.readFileSync(projectFile, "ut
 export default defineConfig({
 	rootDir: "../..",
 	placeFile: "projects/PLACE/build/test.rbxl",
-	// The whole place as the tests in ree see it, with the loadstring() Jest needs.
 	rojoProject: project,
-	// Jest from Wally's dev packages; the specs are Luau as written, so there's no source map to follow.
 	jestPath: "ReplicatedStorage/DevPackages/Jest",
 	sourceMap: false,
 	luauRoots: mounts,

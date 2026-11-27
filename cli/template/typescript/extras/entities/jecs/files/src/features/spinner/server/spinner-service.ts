@@ -4,12 +4,8 @@ import { type Entity, world } from "@rbxts/jecs";
 import { CollectionService, RunService } from "@rbxts/services";
 import { Part, Spin, spinnerSystem } from "./spinner-system";
 
-/** How fast spinners turn, in radians per second. */
-export const SPIN_SPEED = math.pi / 2;
+export const SPIN_RADIANS_PER_SECOND = math.pi / 2;
 
-/**
- * Keeps a Jecs world of the parts tagged `Spinner` (tag a part in Studio) and runs the spinner system on it each frame.
- */
 @Service()
 export class SpinnerService implements OnStart {
 	private readonly world = world();
@@ -34,7 +30,7 @@ export class SpinnerService implements OnStart {
 		if (!instance.IsA("BasePart")) return;
 		const entity = this.world.entity();
 		this.world.set(entity, Part, instance);
-		this.world.set(entity, Spin, SPIN_SPEED);
+		this.world.set(entity, Spin, SPIN_RADIANS_PER_SECOND);
 		this.entities.set(instance, entity);
 	}
 }

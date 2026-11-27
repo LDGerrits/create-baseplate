@@ -22,7 +22,6 @@ local function whileSimulating(name: string, tests: () -> ())
 end
 
 describe("PlayerDataService", function()
-	-- Each test gets its own collection, so documents don't carry over between tests.
 	local collections = 0
 	beforeEach(function()
 		collections += 1

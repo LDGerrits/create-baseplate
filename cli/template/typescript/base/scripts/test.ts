@@ -1,7 +1,3 @@
-// Runs the tests offline in ree, the Roblox engine emulator: the Jest specs, then every end-to-end
-// harness in tests/e2e. Run it through `mise run test`, which compiles first. It runs the game of
-// game.project.json, or of the project file given: `node scripts/test.ts <project.json>`. Arguments
-// after `--` pick what runs (scripts/test-filter.ts): `mise run test -- shop`, `mise run test -- -t "adds"`.
 // A run fails on a non-zero exit, on any script error (ree counts errors from scripts other than the
 // harness without failing the run), on reaching an engine member ree doesn't emulate, and, for an
 // end-to-end test, when it never prints "@done".
@@ -32,9 +28,6 @@ interface ReeSummary {
 	unemulated?: { member: string; first: string | null }[];
 }
 
-// Whether the game holds any spec ree runs: a compiled *.spec.luau in a folder its project mounts.
-// A place of a multi-place game may hold none (shared specs run in one place), and then the Jest
-// run is skipped rather than started for nothing.
 const mounts: string[] = [];
 const collectMounts = (node: unknown) => {
 	if (typeof node !== "object" || node === null) return;
@@ -46,7 +39,6 @@ const collectMounts = (node: unknown) => {
 const filter = parseTestArgs(process.argv.slice(2));
 const project = filter.project ?? "game.project.json";
 collectMounts(JSON.parse(fs.readFileSync(project, "utf8")));
-// Only the game's code: packages in node_modules carry specs of their own.
 const hasSpecs = mounts.some(
 	(mount) =>
 		!/(^|\/)node_modules(\/|$)/.test(mount) &&
@@ -78,9 +70,6 @@ const runs: Run[] = [
 		})),
 ];
 
-// Traces name the game's instances (`ServerScriptService.features.shop.shop-service.spec:17`), at
-// lines of the compiled Luau. Each such frame gets the TypeScript file and line it came from, through
-// the project file (instance to compiled file) and the compiler's source map beside that file.
 const compiledFiles = new Map<string, string>();
 const indexTree = (node: unknown, names: string[]) => {
 	if (typeof node !== "object" || node === null) return;
@@ -113,7 +102,6 @@ const fixtures = new Map(
 );
 
 const BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-/** The source file and 1-based line a compiled line comes from, through `<file>.map`. */
 function sourceOf(compiled: string, line: number): string | undefined {
 	let map: { sources: string[]; mappings: string };
 	try {
@@ -152,7 +140,6 @@ function sourceOf(compiled: string, line: number): string | undefined {
 	return undefined;
 }
 
-/** Adds the TypeScript location after each frame in the game's own code. */
 const withSources = (text: string) =>
 	text.replace(/[\w@-]+(?:\.[\w@-]+)+:(\d+)/g, (frame, line: string) => {
 		const name = frame.slice(0, frame.lastIndexOf(":"));
@@ -163,13 +150,9 @@ const withSources = (text: string) =>
 		return source ? `${frame} → ${source}` : frame;
 	});
 
-// Jest colours its report; the reader here is often an agent, or a log.
 const plain = (text: string) => text.replace(/\x1b\[[0-9;]*m/g, "");
 
-// Jest's report and traces run through its own code, the packages' and the test harness's; only the
-// game's lines say where the failure is.
 const NOT_OURS = /rbxts_include|node_modules|_Index|DevPackages|\brur\.\w+:|RURFixtures\.jest\b/;
-// Only a frame line goes, never a message, which can name a package's file too.
 const FRAME = /^\s*\S+:\d+(\s|$)/;
 const ownLines = (text: string) =>
 	text
@@ -177,7 +160,6 @@ const ownLines = (text: string) =>
 		.filter((line, index) => index === 0 || !(FRAME.test(line) && NOT_OURS.test(line)))
 		.join("\n");
 
-// In a multi-place game a place without tests of its own is normal: the shared ones run in one place.
 const inMultiPlace = fs.existsSync(path.join(process.env.ROOT ?? ".", "projects"));
 if (
 	runs.length === 0 &&
@@ -235,7 +217,6 @@ for (const run of runs) {
 	failed++;
 	console.log(`✗ ${run.name}: ${problems.join("; ")}`);
 	for (const line of output) {
-		// The harness's own "Jest: tests failed" repeats the report above it.
 		if (line.message === "@done" || line.message.startsWith("@jest ") || line.message === "Jest: tests failed")
 			continue;
 		const side = line.side ? `[${line.side}] ` : "";
@@ -243,7 +224,6 @@ for (const run of runs) {
 		console.log(`  ${side}${kind}${withSources(ownLines(plain(line.message))).replaceAll("\n", "\n  ")}`);
 		if (line.trace) console.log(`    ${withSources(ownLines(plain(line.trace)).trim()).replaceAll("\n", "\n    ")}`);
 	}
-	// A test that waited for something that never came: it timed out, or ran out its seconds.
 	const timedOut =
 		output.some((line) => line.kind !== "print" && /timed out/i.test(line.message)) ||
 		(summary.errors === 0 && problems.some((problem) => String(problem).includes("@done")));
@@ -254,8 +234,6 @@ for (const run of runs) {
 	}
 }
 
-// A filter that matches nothing is a typo more often than a pass. In a multi-place game a test lives
-// in one place, so another place matching nothing is fine.
 const multiPlace = fs.existsSync(path.join(process.env.ROOT ?? ".", "projects"));
 const filtered = filter.testPathPattern !== undefined || filter.testNamePattern !== undefined;
 if (failed === 0 && ran === 0 && filtered && !multiPlace) {

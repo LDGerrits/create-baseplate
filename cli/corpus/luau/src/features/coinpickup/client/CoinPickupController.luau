@@ -1,11 +1,9 @@
--- Spins the coin on this player's device, which is smoother than replicating it from the server.
 local RunService = game:GetService("RunService")
 
 local TURNS_PER_SECOND = 0.5
 
 local CoinPickupController = {}
 
--- Start.luau calls this once, after every controller has loaded.
 function CoinPickupController.start()
 	RunService.RenderStepped:Connect(function(deltaTime)
 		-- Looked up every frame: streaming can remove the coin and bring it back.

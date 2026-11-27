@@ -1,5 +1,3 @@
-// The repository's own local loop (scripts/repo-check.ts): what a change needs checked, a failure's
-// short form, and checking exactly what is staged.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";

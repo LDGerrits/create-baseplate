@@ -1,13 +1,3 @@
-// Run after each file edit, and after each shell command, for every agent tool that runs hooks:
-// formats the written files (StyLua for Luau, Biome for JSON and the TypeScript tooling), lints the
-// Luau with Selene and hands what's left to the agent at once, so a problem surfaces while the agent
-// is in those files, not only at the stop check. When no language server saw the write (a shell
-// command wrote the files, or the tool has none), it also type-checks the written Luau with luau-lsp,
-// type errors first. It never lints other files: the stop check does.
-// `.agents/hooks/run` starts it, with the tool's reply format as the argument: claude (also
-// Codex's), cursor, copilot or gemini. Cursor shows nothing of what a hook prints after an edit, so
-// there the formatting applies silently.
-
 import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
@@ -18,19 +8,14 @@ import { type Format, formatArg, languageServerOn, projectRoot } from "./project
 import { newSkills, skillNote } from "./skill-rules.ts";
 import { generatedWrites, isShell, lockTools, movesFiles, runsTask, shellStarted, writtenSince } from "./written.ts";
 
-// What StyLua formats; Selene lints those under src/, projects/ or tests/, as the check does.
 const LUAU = /\.luau?$/;
 const LINTS = /^(src|projects|tests)\/.+\.luau?$/;
-// What changes the instances the sourcemaps map: a place's code (Luau and Rojo's JSON files), its
-// world, and the *.rogen.json files that route the code.
 const MAPPED = /^(projects\/[^/]+\/)?src\/.+\.(luau?|json)$/;
 const RESHAPES = /^(projects\/[^/]+\/)?(world\/|[^/]+\.rogen\.json$)/;
-// What Biome formats.
 const BIOME = /\.(ts|js|mjs|cjs|json|jsonc)$/;
 
 const MAX_PROBLEMS = 10;
 
-/** The files this edit wrote, as the tool names them: relative to `start` or absolute. */
 export function editedFiles(payload: Payload): string[] {
 	const input = toolInput(payload);
 	// Codex reports its edits as one apply_patch call, the patch in `command`.
@@ -40,7 +25,6 @@ export function editedFiles(payload: Payload): string[] {
 	return namedFiles(payload, input);
 }
 
-/** The edited files this hook handles, relative to the project root: inside it, not generated, of a kind StyLua or Biome formats. */
 export function filesToCheck(files: string[], root: string, start: string): string[] {
 	const relative = files.map((file) => path.relative(root, path.resolve(start, file)).split(path.sep).join("/"));
 	return [...new Set(relative)].filter(
@@ -52,7 +36,6 @@ export function filesToCheck(files: string[], root: string, start: string): stri
 	);
 }
 
-/** The files a sourcemap at `from` (a folder, from the project root) lists, from the project root. */
 export function sourcemapFiles(sourcemap: unknown, from: string): string[] {
 	const files: string[] = [];
 	const visit = (node: { filePaths?: string[]; children?: unknown[] }) => {
@@ -66,27 +49,15 @@ export function sourcemapFiles(sourcemap: unknown, from: string): string[] {
 	return files;
 }
 
-/**
- * Whether the edited files (from the project root) change what the sourcemaps map: a code file none
- * of them lists, the world, or the routes. luau-lsp types every instance from sourcemap.json, so
- * until it's written again a new module or part is "not found" there. `known` holds the files the
- * sourcemaps list, from the project root or absolute; with none, there's nothing to keep current yet.
- */
 export function sourcemapStale(files: string[], known: Set<string>, root: string): boolean {
 	if (known.size === 0) return false;
 	const listed = (file: string) => known.has(file) || known.has(path.posix.join(root.replaceAll("\\", "/"), file));
 	return files.some((file) => RESHAPES.test(file) || (MAPPED.test(file) && !listed(file)));
 }
 
-/**
- * Writes the sourcemaps again, in the background, so the edit's reply doesn't wait: one run at a
- * time per project, and once more after it when another edit asked meanwhile.
- */
-/** Where the regeneration for `root` keeps its lock. */
 const regenerateLock = (root: string) =>
 	path.join(os.tmpdir(), `baseplate-generate-${createHash("sha256").update(root).digest("hex").slice(0, 8)}`);
 
-/** Waits, up to ten seconds, until no regeneration of `root` runs or is asked for. */
 export async function regenerated(root: string) {
 	const lock = regenerateLock(root);
 	for (const until = Date.now() + 10_000; Date.now() < until; ) {
@@ -102,7 +73,6 @@ export function regenerate(root: string) {
 		try {
 			fs.mkdirSync(lock);
 		} catch {
-			// Another run holds it and will see the request, unless it died long ago.
 			if (Date.now() - (fs.statSync(lock, { throwIfNoEntry: false })?.mtimeMs ?? 0) < 60_000) return;
 			fs.rmSync(lock, { recursive: true, force: true });
 			continue;
@@ -123,10 +93,8 @@ export function regenerate(root: string) {
 	}
 }
 
-/** What to print for the tool, given the problems left after the fixes, or undefined to print nothing. */
 export function editedOutput(format: Format, problems: string[], notes: string[] = []): object | undefined {
 	if ((problems.length === 0 && notes.length === 0) || format === "cursor") return undefined;
-	// A hint says how to fix the problems above it, so it's never among those cut.
 	const hints = problems.filter((problem) => problem.startsWith("Hint: "));
 	const listed = problems.filter((problem) => !problem.startsWith("Hint: "));
 	const shown = listed.slice(0, MAX_PROBLEMS);
@@ -147,7 +115,6 @@ export function editedOutput(format: Format, problems: string[], notes: string[]
 	}
 }
 
-/** Biome's `--reporter=github` lines as `file:line biome(<category>): message`, relative to the root. */
 export function biomeProblems(output: string, root: string): string[] {
 	return [...output.matchAll(/^::error title=([^,\n]*),file=([^,\n]+),line=(\d+)[^\n]*?::(.*)$/gm)].map(
 		([, title, file = "", line, message]) =>
@@ -155,7 +122,6 @@ export function biomeProblems(output: string, root: string): string[] {
 	);
 }
 
-/** StyLua's parse errors, `could not format file <file>: error parsing: ...`, as `file:line stylua: message`. */
 export function styluaProblems(output: string, root: string): string[] {
 	const problems: string[] = [];
 	for (const [, file = "", detail = ""] of output.matchAll(
@@ -177,7 +143,6 @@ interface SeleneDiagnostic {
 	primary_label?: { filename?: string; span?: { start_line?: number } };
 }
 
-/** Selene's `--display-style=json2` lines as `file:line selene(<code>): message`. */
 export function seleneProblems(output: string): string[] {
 	return output.split(/\r?\n/).flatMap((line) => {
 		let diagnostic: SeleneDiagnostic;
@@ -193,7 +158,6 @@ export function seleneProblems(output: string): string[] {
 	});
 }
 
-/** Runs a tool on the files and returns what it printed; nothing when it isn't installed. */
 function output(command: string, args: string[], stream: "stdout" | "stderr" | "both"): Promise<string> {
 	return new Promise((resolve) => {
 		const child = spawn(command, args, { shell: process.platform === "win32", stdio: ["ignore", "pipe", "pipe"] });
@@ -212,7 +176,6 @@ function output(command: string, args: string[], stream: "stdout" | "stderr" | "
  * The skills to name for these written files. Claude Code, Cursor and Copilot load the path rules in
  * .claude/rules (and their copies) themselves, but only when their own tools touch a file: a file a
  * shell command wrote (`cat > file <<EOF`) loads none, and Codex and Gemini CLI have no such rules.
- * Each skill is named once a session.
  */
 function skillNotes(root: string, files: string[], payload: Payload, shell: boolean): string[] {
 	const native = !shell && process.argv[3] !== "codex" && formatArg(process.argv[2]) !== "gemini";
@@ -242,7 +205,6 @@ if (import.meta.main && process.argv[2] === "--regenerate") {
 		if (since === undefined) process.exit(0);
 		raw = writtenSince(root, since);
 		if (runsTask(command)) {
-			// The task reports the problems itself; what's left to say is which skill covers what it wrote.
 			const output = editedOutput(replyFormat, [], skillNotes(root, raw, payload, true));
 			if (output !== undefined) console.log(JSON.stringify(output));
 			process.exit(0);
@@ -268,7 +230,6 @@ if (import.meta.main && process.argv[2] === "--regenerate") {
 	const wantsTypes = noServer && replyFormat !== "cursor";
 	const files = written.filter((file) => fs.existsSync(path.join(root, file)));
 	if (files.length === 0) {
-		// A move or a delete changes what the sourcemap maps, though it leaves no new file.
 		if (moved)
 			spawn(process.execPath, [import.meta.filename, "--regenerate", root], {
 				detached: true,
@@ -283,7 +244,6 @@ if (import.meta.main && process.argv[2] === "--regenerate") {
 	const luau = files.filter((file) => LUAU.test(file));
 	const other = files.filter((file) => BIOME.test(file));
 	const problems: string[] = [...locked];
-	// StyLua and Biome touch different files, so they run at once; Selene reads the Luau once StyLua is done.
 	const [stylua, biome] = await Promise.all([
 		luau.length === 0 ? "" : output("stylua", luau, "stderr"),
 		other.length === 0
@@ -303,14 +263,12 @@ if (import.meta.main && process.argv[2] === "--regenerate") {
 	]);
 	const unparsed = styluaProblems(stylua, root);
 	problems.push(...unparsed, ...biomeProblems(biome, root));
-	// A file StyLua couldn't parse, Selene can't either; the parse error says enough.
 	const linted = luau.filter((file) => LINTS.test(file) && !unparsed.some((p) => p.startsWith(`${file}:`)));
 	if (linted.length > 0) {
 		problems.push(
 			...seleneProblems(await output("selene", ["--display-style=json2", "--no-summary", ...linted], "stdout")),
 		);
 	}
-	// The language server reads the sourcemap again when it changes (.agents/hooks/luau-lsp.ts).
 	const known = new Set<string>();
 	for (const from of [
 		".",
@@ -321,19 +279,14 @@ if (import.meta.main && process.argv[2] === "--regenerate") {
 			for (const file of sourcemapFiles(sourcemap, from === "." ? "" : from)) known.add(file);
 		} catch {}
 	}
-	// Claude Code's language server type-checks what its edit tools write; nothing does for the rest.
 	if (linted.length > 0 && wantsTypes) {
-		// luau-lsp needs the sourcemap to know a new module, so it's written first, here; and when
-		// another run is writing it, this waits for that one.
 		if (sourcemapStale(files, known, root)) regenerate(root);
 		await regenerated(root);
-		// --parallel: every place reports, not only the first that fails.
 		const analyzed = await output(
 			"node",
 			["scripts/each-place.ts", "--parallel", "node {root}/scripts/analyze.ts", "--", ...linted],
 			"both",
 		);
-		// Shared code is checked in every place, which report its problems alike: each once.
 		problems.unshift(
 			...new Set(analyzed.split(/\r?\n/).filter((line) => line.trim() !== "" && !line.startsWith("──"))),
 		);

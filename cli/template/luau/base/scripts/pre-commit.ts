@@ -1,11 +1,3 @@
-// The pre-commit hook (.githooks/pre-commit): runs lint-staged on exactly what is being committed,
-// with unstaged changes and untracked files set aside, so the check sees only the commit. StyLua
-// formats the staged Luau and Biome the other files, and lint-staged re-stages them; then the whole
-// check runs once, because type errors and failing tests reach past the staged files. Deleted files
-// count, so a commit that only deletes is checked too.
-// It skips the check when only Markdown is staged, or when the check already passed on exactly the
-// files being committed (the index, not what else is on disk); see .agents/hooks/fingerprint.ts.
-//
 // Git's stash, which lint-staged uses for that, deletes a file whose deletion is staged but that
 // is still on disk, such as `.env` after `git rm --cached .env`, and lint-staged drops the stash
 // once the check passes. So copy those files first and put back any that went missing.
@@ -35,10 +27,8 @@ const commands = (prefix: string, files: string[]) => {
 	}
 	return groups.filter((group) => group.length > 0).map((group) => `${prefix} ${quoted(group)}`);
 };
-// .baseplate holds what create-baseplate records and its docs: nothing to format.
 const ours = (file: string) => !path.relative(process.cwd(), file).split(path.sep).includes(".baseplate");
 
-/** The format commands for the staged files still on disk. */
 function format(files: readonly string[]) {
 	const present = files.filter((file) => fs.existsSync(file) && ours(file));
 	return [

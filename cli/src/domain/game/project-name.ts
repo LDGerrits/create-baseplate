@@ -1,9 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-/** The template's own name, which a new project replaces with its name. */
 const TEMPLATE_NAME = "my-game";
-/** Files that hold the template's name, in either language's template. */
 const NAMED_FILES = [
 	"package.json",
 	"default.rogen.json",

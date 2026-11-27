@@ -43,7 +43,6 @@ async function create(version: string, keepToolingTests: boolean) {
 	}
 	const { replaced, stale } = rendered;
 	recordAgentFiles(options.dir, version);
-	// In a multi-place game, Studio commands name a place.
 	const place = isMultiPlace(options.addOns) ? (PLACES[0] ?? "") : "";
 	logger.success(`Created ${options.name} in ${options.dir}`);
 
@@ -83,7 +82,6 @@ async function create(version: string, keepToolingTests: boolean) {
 		];
 		warnings.push(`Nothing is committed yet: ${unlocked.join(", and ")}. Run the next steps, then commit.`);
 	} else if (git) {
-		// Once installed, this commit goes through the project's commit hook, which runs its check.
 		const spinner = options.json || !installed ? undefined : p.spinner();
 		spinner?.start("Making the first commit; its hook runs the game's check");
 		const error = await commitAll(options.dir, "Initial commit from create-baseplate");
@@ -93,8 +91,6 @@ async function create(version: string, keepToolingTests: boolean) {
 	}
 
 	for (const warning of warnings) logger.warn(warning);
-	// The first commit's hook runs the game's check, so a failure means the game doesn't pass it as
-	// created. The game stays, uncommitted; the exit code says the job isn't done.
 	const failure =
 		commitError === undefined
 			? undefined

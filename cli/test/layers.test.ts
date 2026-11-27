@@ -19,7 +19,6 @@ test("src's layers import only the layers below them", () => {
 		for (const [, spec] of fs.readFileSync(file, "utf8").matchAll(/from "(\.{1,2}\/[^"]+)"/g)) {
 			const target = path.resolve(path.dirname(file), spec ?? "");
 			const sameModule = path.dirname(path.relative(SRC, target)) === path.dirname(entry);
-			// A layer imports the ones below it; a command only its own folder, never another command.
 			const allowed = rank(target) < rank(file) || (rank(target) === rank(file) && (rank(file) !== 2 || sameModule));
 			if (!allowed) problems.push(`${entry} imports ${path.relative(SRC, target)}`);
 		}

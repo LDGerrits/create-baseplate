@@ -1,7 +1,3 @@
-# Asphalt uploads the files in assets/ to Roblox (`mise run assets`) and writes their IDs as a Luau
-# module, src/game/assets/shared/Assets.luau (the input's name, in output_path). Commit that module and
-# asphalt.lock.toml, which records what is uploaded.
-
 # Who owns the uploads: a Roblox user (type = "user") or group (type = "group"), by its ID. The key
 # in .env, ASPHALT_API_KEY, must belong to the same creator. `mise run assets` refuses to upload
 # while the ID is 0.
@@ -10,14 +6,9 @@ type = "user"
 id = 0
 
 [codegen]
-# assets/icons/coin.png is Assets.icons.coin.
 style = "nested"
 strip_extensions = true
 
 [inputs.Assets]
 path = "assets/**/*"
 output_path = "src/game/assets/shared"
-
-# Assets already on Roblox, by their path under assets/, to use in code like the uploaded ones:
-# [inputs.Assets.web]
-# "icons/badge.png" = { id = 1234567890 }

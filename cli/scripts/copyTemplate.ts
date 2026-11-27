@@ -1,6 +1,4 @@
-// Copies the template into dist/template, the folder the published CLI copies projects from.
-// Only files git tracks or would track: no node_modules, build output or .env. npm doesn't pack
-// .gitignore files or symbolic links, so .gitignore becomes _gitignore and links go in a list.
+// npm doesn't pack .gitignore files or symbolic links, so .gitignore becomes _gitignore and links go in a list.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -14,13 +12,11 @@ const listed = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--ex
 if (listed.status !== 0) throw new Error(`git ls-files failed: ${listed.stderr}`);
 
 fs.rmSync(OUT, { recursive: true, force: true });
-/** Symbolic links by the folder whose _symlinks.json lists them: a language's base, or an add-on choice. */
 const links: Record<string, Record<string, string>> = {};
 const languages = new Set<string>();
 for (const file of listed.stdout.split("\0").filter((f) => f !== "" && fs.existsSync(f))) {
 	const relative = path.relative(SOURCE, file);
 	const parts = relative.split(path.sep);
-	// template/<language>/base/..., template/<language>/extras/<question>/<choice>/...
 	if (parts.length > 2) languages.add(parts[0] ?? "");
 	const stat = fs.lstatSync(file);
 	if (stat.isSymbolicLink()) {
@@ -31,7 +27,6 @@ for (const file of listed.stdout.split("\0").filter((f) => f !== "" && fs.exists
 		continue;
 	}
 	const name = path.basename(file) === ".gitignore" ? "_gitignore" : path.basename(file);
-	// A file directly in template/, such as its LICENSE, stays there.
 	const to = path.join(OUT, path.dirname(relative), name);
 	fs.mkdirSync(path.dirname(to), { recursive: true });
 	fs.copyFileSync(file, to);

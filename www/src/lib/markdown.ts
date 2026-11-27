@@ -1,9 +1,6 @@
-// A docs page as plain Markdown, for agents: its title, a splash page's tagline, then its source
-// without frontmatter. Links to other pages point at their Markdown copies.
 import { type CollectionEntry, getEntry } from "astro:content";
 import { SIDEBAR } from "../sidebar.ts";
 
-// `](/cli/)` and `](/cli/#flags)` become `](/cli.md)` and `](/cli.md#flags)`.
 const toMarkdownLinks = (body: string) => body.replace(/\]\(\/([\w/-]+?)\/(#[^)]*)?\)/g, "](/$1.md$2)");
 
 export function markdownOf(entry: CollectionEntry<"docs">): string {

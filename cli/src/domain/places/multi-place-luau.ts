@@ -11,7 +11,6 @@ import {
 	SHARED_TESTS_PLACE,
 } from "./place-steps.ts";
 
-/** Each place's builds and session state, and its world's project files when Rojo manages the world. */
 const gitignore = (managed: Managed) => `
 # Each place's builds and session state
 /projects/*/build
@@ -36,7 +35,6 @@ export function makeMultiPlaceLuau(dir: string, name: string, choices: AddOnChoi
 	const managed = managedOf(choices);
 	const at = (...parts: string[]) => path.join(dir, ...parts);
 	const read = (file: string) => fs.readFileSync(at(file), "utf8");
-	// The template's text this relies on; fail rather than leave a half-converted game.
 	const replaceIn = (text: string, from: string, to: string) => replaceExact(text, from, to, "places: the template");
 	const extra = (file: string) => placesExtra("luau", managed, file);
 	const json = (value: unknown) => `${JSON.stringify(value, undefined, "\t")}\n`;
@@ -69,7 +67,6 @@ export function makeMultiPlaceLuau(dir: string, name: string, choices: AddOnChoi
 				`rojoProjectPath: "../../${place}.project.json"`,
 			),
 		);
-		// The shared code's specs run in one place; the others leave them out, so each runs once.
 		const ignored = [...((globIgnorePaths as string[] | undefined) ?? []), "projects/common/src/**/*.spec.luau"];
 		fs.writeFileSync(
 			at(`${place}.rogen.json`),
@@ -103,7 +100,6 @@ export function makeMultiPlaceLuau(dir: string, name: string, choices: AddOnChoi
 		at("scripts/check.ts"),
 		replaceIn(read("scripts/check.ts"), '"selene src tests"', '"selene projects"'),
 	);
-	// Asphalt, from the root, writes the assets' IDs into the shared code.
 	if (fs.existsSync(at("asphalt.toml"))) {
 		fs.writeFileSync(
 			at("asphalt.toml"),
@@ -148,8 +144,6 @@ export function makeMultiPlaceLuau(dir: string, name: string, choices: AddOnChoi
 		);
 	}
 	agents = replaceIn(agents, "builds the place", "builds every place");
-	// Darklua's section names the folders its script processes, which the paths below would
-	// rewrite to the shared code alone.
 	if (choices.release === "darklua") {
 		agents = replaceIn(
 			agents,
@@ -157,17 +151,13 @@ export function makeMultiPlaceLuau(dir: string, name: string, choices: AddOnChoi
 			"it processes each place's code in `projects/<place>/src/`, the shared code's included, and the packages",
 		);
 	}
-	// The spinner's end-to-end test is only in the game place.
 	agents = agents.replaceAll("`tests/e2e/spinner.luau`", `\`projects/${SHARED_TESTS_PLACE}/tests/e2e/spinner.luau\``);
-	// Single-place paths, in the template's sections and the add-ons': a place's entry scripts,
-	// world and tests are in its folder, and everything else in src/ is shared.
 	agents = agents
 		.replaceAll("`src/app/", "`projects/<place>/src/app/")
 		.replaceAll("`src/", "`projects/common/src/")
 		.replaceAll("→ src/", "→ projects/common/src/")
 		.replaceAll("`tests/e2e/", "`projects/<place>/tests/e2e/")
 		.replaceAll("`world/", "`projects/<place>/world/");
-	// The section names the new layout's paths itself.
 	agents = replaceSection(agents, "Where code goes", extra("AGENTS.md"), "places: AGENTS.md");
 	fs.writeFileSync(at("AGENTS.md"), agents);
 

@@ -1,4 +1,3 @@
-// src/app/client/ui-controller.tsx
 import { Controller, type OnStart } from "@flamework/core";
 import React, { StrictMode } from "@rbxts/react";
 import { createPortal, createRoot } from "@rbxts/react-roblox";

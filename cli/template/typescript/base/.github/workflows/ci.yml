@@ -4,14 +4,11 @@ on:
   push:
     branches: [main]
   pull_request:
-  # Run it by hand (Actions > CI > Run workflow) for the engine job on a branch.
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# A new push to a pull request cancels its older run. Main's runs are one each (the commit in the group
-# name) and finish, so a tag on an older commit of main still finds its CI (publish.yml's verify job).
 concurrency:
   group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -27,7 +24,6 @@ jobs:
           persist-credentials: false
       # rur renders the stories in the check; GitHub's Linux machines have no GPU, so it needs Mesa's software
       # Vulkan driver. It installs while the rest sets up; `wait` blocks until it is done.
-      # Its .deb files are cached by runner image version, so most runs need no download.
       - id: mesa
         run: sh scripts/mesa.sh key >> "$GITHUB_OUTPUT"
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -35,7 +31,6 @@ jobs:
           path: ${{ runner.temp }}/mesa-debs
           key: ${{ steps.mesa.outputs.key }}
       - run: sh scripts/mesa.sh start
-      # mise's version is the one .agents/hooks/cloud-setup.sh pins, which create-baseplate sync keeps current.
       - id: mise
         run: bash .agents/hooks/cloud-setup.sh --pin >> "$GITHUB_OUTPUT"
       - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
@@ -58,7 +53,6 @@ jobs:
     needs: check
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Runs share the test place, so one at a time.
     concurrency:
       group: roblox-open-cloud
       cancel-in-progress: false
@@ -80,7 +74,6 @@ jobs:
       - run: mise run compile
       - run: mise run --skip-deps test:engine
         env:
-          # The key only here: the steps before run installs and tools, which never see it.
           ROBLOX_OPEN_CLOUD_API_KEY: ${{ secrets.ROBLOX_OPEN_CLOUD_API_KEY }}
           ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
           ROBLOX_PLACE_ID: ${{ vars.ROBLOX_PLACE_ID }}

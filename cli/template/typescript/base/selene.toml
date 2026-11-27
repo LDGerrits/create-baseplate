@@ -1,3 +1,1 @@
-# Selene lints the game's Luau in `mise run check`. `roblox` knows Roblox's globals and API, from
-# roblox.yml, which the check writes the first time.
 std = "roblox"

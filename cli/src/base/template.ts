@@ -2,10 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-// The build puts the template and the docs beside the bundle: dist/index.js, dist/template/<language>/
-// and dist/docs/.
 const DIST = path.dirname(fileURLToPath(import.meta.url));
-// Run from source (cli/src/base), as CI's matrix script does, the template is cli/template.
 const TEMPLATE = fs.existsSync(path.join(DIST, "template"))
 	? path.join(DIST, "template")
 	: path.join(DIST, "..", "..", "template");

@@ -1,7 +1,6 @@
 import { type OnStart, Service } from "@flamework/core";
 import { Players } from "@rbxts/services";
 
-/** Owns every player's coins, shown on the leaderboard. They last until the player leaves: nothing saves them. */
 @Service()
 export class CurrencyService implements OnStart {
 	private readonly counters = new Map<Player, IntValue>();

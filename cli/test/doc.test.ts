@@ -1,4 +1,3 @@
-// `create-baseplate doc`, through the built CLI and the docs it ships.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";

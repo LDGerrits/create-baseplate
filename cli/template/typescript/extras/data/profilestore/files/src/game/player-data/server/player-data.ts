@@ -1,4 +1,3 @@
-/** What the game saves for each player. Add fields here; players who saved before get their defaults. */
 export interface PlayerData {
 	coins: number;
 }

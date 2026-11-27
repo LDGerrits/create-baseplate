@@ -10,13 +10,11 @@ import tseslint from "typescript-eslint";
 import { layerZones } from "./scripts/layers.ts";
 import { sideRestrictions } from "./scripts/sides.ts";
 
-// The source roots: src, or in a multi-place game the shared code's and each place's.
 const places = fs.existsSync("projects")
 	? fs.readdirSync("projects").filter((place) => place !== "common" && fs.existsSync(`projects/${place}/src`))
 	: [];
 const roots = places.length > 0 ? ["projects/common/src", ...places.map((place) => `projects/${place}/src`)] : ["src"];
 
-/** Where code runs. Rogen sends `server/` to the server only and `shared/` to both sides. */
 const sideZones = [
 	{
 		target: "./**/shared/**",
@@ -35,7 +33,6 @@ const sideZones = [
 	},
 ];
 
-/** Which layer may import which: app, then features, game and platform; see scripts/layers.ts. */
 const zones = [...sideZones, ...layerZones(roots, places)];
 
 export default defineConfig(
@@ -79,7 +76,6 @@ export default defineConfig(
 			// Its fix, useSyncExternalStore, is React 18's; react-lua is React 17, where a component
 			// subscribes to a controller by setting its state in an effect.
 			"react-x/set-state-in-effect": "off",
-			// JavaScript's runtime isn't there: the code runs as Luau in Roblox. Each message names what to use.
 			"no-restricted-globals": [
 				"error",
 				{ name: "console", message: "There's no console in Roblox: use print, warn or error." },
@@ -107,9 +103,7 @@ export default defineConfig(
 			// roblox-ts's Promise isn't the built-in one, so without checkThenables the rule sees no promises:
 			// an unhandled rejection then only logs, and a fire-and-forget save fails silently.
 			"@typescript-eslint/no-floating-promises": ["error", { checkThenables: true }],
-			// It flags ordinary generic helpers (a factory whose type parameter appears once) and can't fix them.
 			"@typescript-eslint/no-unnecessary-type-parameters": "off",
-			// `os.clock()` and Roblox APIs return numbers; templates are fine.
 			"@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
 		},
 	},
@@ -118,19 +112,14 @@ export default defineConfig(
 		files: roots.map((root) => `${root}/**/shared/*-network.ts`),
 		rules: { "@typescript-eslint/no-empty-object-type": ["error", { allowInterfaces: "always" }] },
 	},
-	// Roblox APIs that work on one side only, kept out of the other side's folders (scripts/sides.ts).
 	...sideRestrictions(roots),
 	{
-		// Specs: no focused or skipped tests left behind, and every test asserts something.
 		files: roots.flatMap((root) => [`${root}/**/*.spec.ts`, `${root}/**/*.spec.tsx`]),
 		...jest.configs["flat/recommended"],
-		// The specs import Jest's functions from @rbxts/jest-globals, not from globals.
 		settings: { jest: { globalPackage: "@rbxts/jest-globals", version: 29 } },
 		rules: {
 			...jest.configs["flat/recommended"].rules,
-			// A skipped test shows in the results; a spec may skip outside the engine on purpose.
 			"jest/no-disabled-tests": "off",
-			// Assertions through a helper, such as expectBalance(), count.
 			"jest/expect-expect": ["error", { assertFunctionNames: ["expect", "expect*"] }],
 		},
 	},

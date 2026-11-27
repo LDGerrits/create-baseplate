@@ -18,7 +18,7 @@ export function installAddOns(dir: string, language: Language, chosen: AddOnChoi
 		const name = addOn.name;
 		const value = chosen[name] ?? addOn.defaultValue;
 		const manifest = manifestOf(language, name, value);
-		if (manifest === undefined) continue; // "none", or the base's own choice
+		if (manifest === undefined) continue;
 		const from = path.join(templateExtras(language), name, value);
 		const variant = manifest.byUi?.[chosen.ui ?? ""];
 		const managedVariant = manifest.byManaged?.[managedOf(chosen)];
@@ -63,10 +63,6 @@ function editPackage(dir: string, add: Record<string, string>, remove: string[])
 	fs.writeFileSync(file, `${JSON.stringify(pkg, undefined, "\t")}\n`);
 }
 
-/**
- * Adds what a main file starts. TypeScript: side-effect imports after its last import, so Flamework
- * starts what they define. Luau: `require(...)` entries after the last one in its list of modules.
- */
 function addImports(file: string, imports: string[]) {
 	const lines = fs.readFileSync(file, "utf8").split("\n");
 	if (file.endsWith(".luau")) {
@@ -75,7 +71,6 @@ function addImports(file: string, imports: string[]) {
 			const indent = /^\s+/.exec(lines[last] ?? "")?.[0] ?? "\t";
 			lines.splice(last + 1, 0, ...imports.map((module) => `${indent}require(${module}),`));
 		} else {
-			// An empty list, `= {}`: open it, and get the service the modules' paths start from.
 			const empty = lines.findIndex((line) => /^local \w+: .* = \{\}$/.test(line));
 			if (empty === -1) throw new Error(`${file} has no list of required modules to add to`);
 			const service = "ServerScriptService";
@@ -98,10 +93,6 @@ function addImports(file: string, imports: string[]) {
 	fs.writeFileSync(file, lines.join("\n"));
 }
 
-/**
- * Adds packages to a table of wally.toml (`Charm = "littensy/charm@=0.11.1"`), sorted by alias, and
- * drops the aliases in `remove`. Adds the table when it's missing and has something to hold.
- */
 function editWally(dir: string, table: string, add: Record<string, string>, remove: string[]) {
 	const file = path.join(dir, "wally.toml");
 	const toml = fs.readFileSync(file, "utf8");
@@ -131,7 +122,6 @@ function editWally(dir: string, table: string, add: Record<string, string>, remo
 	);
 }
 
-/** Removes `[tasks.<name>]` from the game's mise.toml, up to the next table. */
 function removeMiseTask(dir: string, name: string) {
 	const file = path.join(dir, "mise.toml");
 	const mise = fs.readFileSync(file, "utf8");
@@ -156,17 +146,11 @@ function addAgentsSection(dir: string, section: string) {
 	fs.writeFileSync(file, `${agents.slice(0, at)}${section.trim()}\n\n${agents.slice(at)}`);
 }
 
-/** A mise.toml's [tools] table, up to the next table or the end of the file. */
 const TOOLS = /^\[tools\]\n([\s\S]*?)(?=^\[|$(?![\s\S]))/m;
 
 /** The lines of a mise.toml's [tools] table, which its mise.lock covers. */
 export const miseTools = (mise: string) => TOOLS.exec(mise)?.[1];
 
-/**
- * Adds an add-on's mise.toml to the game's: the lines of its [tools] at the end of the game's
- * [tools], and its other tables, such as tasks, at the end of the file. Renovate updates the pins
- * in the add-on's file as it does any mise.toml.
- */
 function addMise(dir: string, fragment: string) {
 	const file = path.join(dir, "mise.toml");
 	let mise = fs.readFileSync(file, "utf8");

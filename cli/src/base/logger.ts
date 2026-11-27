@@ -1,6 +1,5 @@
 import pc from "picocolors";
 
-// With --json, stdout carries only the result, so everything else goes to stderr.
 let toStderr = false;
 export const logToStderr = () => {
 	toStderr = true;

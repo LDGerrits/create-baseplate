@@ -1,5 +1,4 @@
-# Prepares GitHub Copilot's cloud coding agent: the pinned tools and packages, so it can run
-# `mise run check` like any other agent. GitHub runs the job named copilot-setup-steps.
+# GitHub runs the job named copilot-setup-steps.
 name: Copilot setup steps
 
 on:
@@ -26,7 +25,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: mise run install
         working-directory: cli/template/typescript/base
-      # The Luau template pins its own tools beside the TypeScript one's.
       - run: mise trust --quiet . && mise install && mise run install
         working-directory: cli/template/luau/base
         env:

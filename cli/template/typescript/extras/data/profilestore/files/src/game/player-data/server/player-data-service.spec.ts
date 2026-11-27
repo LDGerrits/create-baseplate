@@ -3,7 +3,6 @@ import ProfileStore from "@rbxts/profile-store";
 import { DEFAULT_PLAYER_DATA } from "./player-data";
 import { PlayerDataService } from "./player-data-service";
 
-// Each test gets its own store name, so profiles don't carry over between tests.
 let stores = 0;
 const newService = () => PlayerDataService.withStore(ProfileStore.New(`Test_${++stores}`, DEFAULT_PLAYER_DATA).Mock);
 

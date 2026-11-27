@@ -16,6 +16,8 @@ export interface Origin {
 	addOns: Partial<AddOnChoices>;
 }
 
+const LANGUAGE_BEFORE_THE_LANGUAGE_QUESTION = "typescript";
+
 const packageOf = (dir: string) => {
 	const file = path.join(dir, "package.json");
 	return fs.existsSync(file) ? (JSON.parse(fs.readFileSync(file, "utf8")) as Record<string, unknown>) : undefined;
@@ -29,8 +31,7 @@ export function readOrigin(dir: string): Origin | undefined {
 	return {
 		name: typeof pkg.name === "string" ? pkg.name : undefined,
 		version: origin.version,
-		// Games made before the language question are TypeScript.
-		language: origin.language ?? "typescript",
+		language: origin.language ?? LANGUAGE_BEFORE_THE_LANGUAGE_QUESTION,
 		addOns: origin.addOns ?? {},
 	};
 }

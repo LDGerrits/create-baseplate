@@ -19,7 +19,6 @@ describe("DailyRewardService", function()
 		expect(after.history).toEqual({ 1, 2 })
 	end)
 
-	-- A skipped test shows in the results; the check lets it through.
 	describe.skip("in the player's time zone", function()
 		it("resets at midnight", function()
 			expect(true).toBe(true)

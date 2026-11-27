@@ -1,7 +1,3 @@
-// `mise run doc [topic] [--json]`: Baseplate's docs for the create-baseplate version this game's
-// agent files come from, printed as Markdown. Without a topic, lists them. The CLI keeps a copy in
-// .baseplate/docs when it creates the game and on each `create-baseplate sync`, so this works
-// offline; without that copy it asks the pinned create-baseplate, which pnpm fetches once.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -10,10 +6,8 @@ const DOCS = path.join(".baseplate", "docs");
 const args = process.argv.slice(2);
 const json = args.includes("--json");
 const [given, ...extra] = args.filter((arg) => arg !== "--json");
-// The pages link to each other as the CLI's command; in the game, it's this task.
 const inGame = (text: string) => text.replaceAll("create-baseplate doc ", "mise run doc ");
 
-/** The number of single-letter edits between two words. */
 function distance(a: string, b: string): number {
 	let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
 	for (let i = 1; i <= a.length; i++) {
@@ -30,7 +24,6 @@ function distance(a: string, b: string): number {
 	return previous[b.length] ?? 0;
 }
 
-/** The topic `name` was likely meant to be: one it starts, or one a few letters from it or its start. */
 function closestTopic(name: string, topics: readonly string[]): string | undefined {
 	const prefixed = topics.find((topic) => topic.startsWith(name));
 	if (prefixed !== undefined) return prefixed;
@@ -86,7 +79,6 @@ const doc = spawnSync("pnpm", ["dlx", `create-baseplate@${pin ?? "latest"}`, "do
 	shell: process.platform === "win32",
 });
 process.stdout.write(inGame(doc.stdout ?? ""));
-// Only when pnpm couldn't fetch it: create-baseplate's own refusals say why themselves.
 const fetchable = () =>
 	spawnSync("pnpm", ["view", `create-baseplate@${pin ?? "latest"}`, "version"], {
 		stdio: "ignore",

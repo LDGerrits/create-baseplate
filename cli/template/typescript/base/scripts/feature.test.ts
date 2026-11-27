@@ -18,13 +18,11 @@ const CLIENT = `import { Flamework } from "@flamework/core";
 Flamework.ignite();
 `;
 
-// Each test's folder, removed when the file's tests end.
 const temps: string[] = [];
 after(() => {
 	for (const dir of temps) fs.rmSync(dir, { recursive: true, force: true });
 });
 
-/** A game with these files, and the rate limiter where the template puts it (in the shared code, when there are places). */
 function game(files: Record<string, string>, limiter = true) {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "feature-"));
 	temps.push(dir);

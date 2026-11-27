@@ -1,6 +1,3 @@
-// The fix for the errors agents meet most whose message doesn't say it, matched against what the
-// compiler, ESLint and the tests print. The check prints each hint once after what failed, and the
-// edit hook after the problems in what was just written.
 export const HINTS: [RegExp, string][] = [
 	[
 		/non-method where method was expected|expectedMethodGotFunction/,
@@ -20,7 +17,6 @@ export const HINTS: [RegExp, string][] = [
 	],
 ];
 
-/** The hints for this output, each once, in the order above. */
 export function hintsFor(output: string): string[] {
 	return HINTS.filter(([pattern]) => pattern.test(output)).map(([, hint]) => `Hint: ${hint}`);
 }

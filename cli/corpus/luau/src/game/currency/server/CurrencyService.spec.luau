@@ -10,7 +10,6 @@ local jest = JestGlobals.jest
 describe("CurrencyService", function()
 	local CurrencyService
 
-	-- A fresh copy of the service for each test, so state doesn't carry over.
 	beforeEach(function()
 		jest.resetModules()
 		CurrencyService = require(script.Parent.CurrencyService)

@@ -1,6 +1,3 @@
-// Edits of the template's text. Each fails when the text it expects is gone, so a change to the
-// template that an edit doesn't know about stops the CLI rather than leaving the old text in a game.
-
 /**
  * Replaces the Markdown section under `## <heading>`, up to the next `## ` heading, with `section`.
  * `where` names the text in the error.

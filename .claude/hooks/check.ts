@@ -1,9 +1,3 @@
-// Claude Code's Stop hook for this repo: when files changed, run the root check (the CLI and the docs
-// site) and, for each template whose code changed (cli/template/<language>/base), that template's
-// check, and hand a failure back to the agent before it ends its turn, as a created game's hook does.
-// A check that already passed on exactly these files is skipped. Only what fails is handed back,
-// shortened to its end; if the agent already had its chance in this stop, it may stop, so the hook
-// can't loop, and the user is told the check fails.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";

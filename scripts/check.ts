@@ -1,9 +1,3 @@
-// The check for the CLI and the docs site, as `mise run check` (fixes formatting) and `mise run ci`
-// (`--ci`: fails on unformatted code) run it, and as the hooks do.
-//   node scripts/check.ts [--ci] [--quiet] [--scope full|docs] [--no-install] [--no-record]
-// --quiet prints only a failure; --scope docs runs the docs site's tasks and the CLI's tests that
-// read the docs; --no-install and --no-record are for a copy of the staged files with its packages
-// linked in. A pass of the whole check is recorded (scripts/state.ts).
 import fs from "node:fs";
 import { DOCS_RECORD, ROOT_RECORD, type Scope, shorten } from "./repo-check.ts";
 import { run } from "./run.ts";
@@ -16,7 +10,6 @@ const scope = (process.argv[process.argv.indexOf("--scope") + 1] === "docs" ? "d
 const root = process.cwd();
 const started = performance.now();
 
-// The tests' own reporter prints a dot for each pass and the details of each failure only.
 const env = quiet
 	? { ...process.env, NODE_OPTIONS: "--test-reporter=dot", NO_COLOR: "1", FORCE_COLOR: "0" }
 	: process.env;
@@ -27,7 +20,6 @@ const turbo = (...args: string[]) => [
 	...(quiet ? ["--output-logs=errors-only", "--log-order=grouped"] : []),
 ];
 
-/** The workflows actionlint checks: this repository's and each template's. */
 const workflowFiles = (dir: string) =>
 	[
 		".github/workflows",
@@ -73,11 +65,9 @@ for (const [index, step] of [...commands, ...afterFormat].entries()) {
 		);
 		process.exit(1);
 	}
-	// Formatting is done: these are the files the rest checks.
 	if (index === commands.length - 1) formatted = stateId(root, "files");
 }
 
-// Record the pass only for a state that held from the end of formatting to the end of the check.
 if (!flag("no-record") && formatted !== undefined && stateId(root, "files") === formatted) {
 	writeRecord(root, scope === "docs" ? DOCS_RECORD : ROOT_RECORD, formatted);
 }

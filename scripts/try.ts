@@ -1,9 +1,3 @@
-// `mise run try -- [--matrix | --corpus] [--keep] [create-baseplate's flags]`: builds the CLI,
-// creates a game with those flags (or, with --matrix, one of each main variant, a few at a time), and
-// says whether each passed. With --corpus, it makes a game of each language, copies the corpus of
-// correct code over it (scripts/corpus.ts) and runs its check, which must pass. Creating a game commits it, and the commit hook runs the game's check, so a passing
-// game is a checked one. The games register no Claude Code plugin, and the ones that pass are
-// deleted unless --keep; a failed one stays, with its path and the end of what failed.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -23,7 +17,6 @@ if (corpus && (matrix || flags.length > 0)) {
 	console.log("✗ --corpus makes one game of each language with no add-ons, as CI does; it takes no other flags.");
 	process.exit(1);
 }
-// With --matrix, the given flags go to every variant that doesn't set the same question itself.
 const given = new Set(flags.filter((flag) => flag.startsWith("--")));
 const languages: Language[] = ["typescript", "luau"];
 const variants = corpus
@@ -42,7 +35,6 @@ if (build.code !== 0) {
 }
 
 const base = fs.mkdtempSync(path.join(os.tmpdir(), "baseplate-try-"));
-// The games keep the tooling's own tests, as CI's do, so the add-ons' edits to the hooks are tested.
 const env = { ...process.env, BASEPLATE_NO_CLAUDE_PLUGIN: "1", BASEPLATE_TOOLING_TESTS: "1" };
 
 async function tryOne(variant: string[], index: number): Promise<boolean> {

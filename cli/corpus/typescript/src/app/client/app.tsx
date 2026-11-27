@@ -3,7 +3,6 @@ import React from "@rbxts/react";
 import { type DailyRewardController } from "../../features/daily-reward/client/daily-reward-controller";
 import { DailyRewardPanel } from "../../features/daily-reward/client/daily-reward-panel";
 
-/** The UI root: a ScreenGui holding the screens, which a story couldn't show, so it has none. */
 export function App() {
 	const dailyReward = Dependency<DailyRewardController>();
 	return (

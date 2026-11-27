@@ -1,26 +1,3 @@
-// Catches source mistakes that pass the type checker and every test, because the code they concern
-// never runs:
-// - a test named *.test.luau: Jest here runs *.spec.luau files only, and skips the rest without a word;
-// - a spec outside the source folders: no project file mounts it, so it never runs;
-// - a service or controller no entry script lists: nothing requires it, so it never starts.
-//   Services (*Service.luau that Rogen routes to the server: under a server/ folder, at any depth,
-//   or named *Service@server) start from src/app/server/Main.server.luau, controllers
-//   (*Controller.luau routed to the client) from src/app/client/Start.luau;
-// - a remote the server takes directly instead of through Remo, with no validators or throttle
-//   (see unguarded-remotes.ts).
-// - code outside the four layers (app, features, game, platform), a side folder at the wrong depth, a
-//   layer that requires one above it, and a cycle between feature folders (see layers.ts); the
-//   requires are read through the sourcemap `mise run generate` writes.
-// - a Roblox API on the wrong side: client-only ones in server/ code, server-only ones in client/ code,
-//   both in shared/ (see sides.ts).
-// - a file name that isn't PascalCase, a `selene: allow` that doesn't say why, and a `:: any` cast
-//   that doesn't say why;
-// - a service with no spec, a feature with remotes and no end-to-end test, a component with no story
-//   (each may opt out with `-- no-spec: <why>`, `-- no-e2e: <why>`, `-- no-story: <why>`), player
-//   data saved with DataStoreService by hand, and a runtime package installed in two versions (see
-//   source-rules.ts).
-// `mise run check` runs it. In a multi-place game, a place's entry scripts start its own code and
-// the shared code; shared code passes when one place lists it.
 import fs from "node:fs";
 import path from "node:path";
 import { cycleErrors, layerErrors, requireEdges, type SourcemapNode, structureErrors } from "./layers.ts";
@@ -85,7 +62,6 @@ for (const file of filesUnder(".")) {
 	}
 }
 
-/** Without comments, so a module named in one isn't counted as listed. */
 const code = (file: string) =>
 	fs.existsSync(file) ? fs.readFileSync(file, "utf8").replace(/--\[(=*)\[[\s\S]*?\]\1\]|--.*$/gm, "") : "";
 
@@ -123,7 +99,6 @@ function routeOf(file: string): { side: string; names: string[] } | undefined {
 	return side === undefined ? undefined : { side, names };
 }
 
-/** Whether an entry script's code requires the module: its parent and name, as `shop.ShopService)`. */
 function lists(entry: string, names: string[]): boolean {
 	const tail = names.slice(-2).map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
 	return new RegExp(`\\b${tail.join("\\s*\\.\\s*")}\\s*\\)`).test(entry);
@@ -139,7 +114,6 @@ for (const file of sources) {
 				? "client"
 				: undefined;
 	if (route === undefined || side === undefined) continue;
-	// A place's own file must be started by that place; shared code by any place.
 	const owners = entries.filter(
 		(entry) => !multi || file.startsWith("projects/common/") || file.startsWith(`${entry.root}/`),
 	);
@@ -161,7 +135,6 @@ for (const file of sources) {
 	}
 }
 
-// The requires between the game's files, as each place's sourcemap resolves them.
 const sourceSet = new Set(sources);
 const edgeKeys = new Set<string>();
 const edges: [string, string][] = [];
@@ -184,7 +157,6 @@ errors.push(...layerErrors(edges, sourceRoots), ...cycleErrors(edges, sourceRoot
 errors.push(...unguardedRemotes(new Map(sources.map((file) => [file, fs.readFileSync(file, "utf8")]))));
 const read = (file: string) => fs.readFileSync(file, "utf8");
 const testDirs = multi ? places.map((place) => `projects/${place}/tests/e2e`) : ["tests/e2e"];
-// The shared code's tests run in the game place (or the first), a place's own in that place.
 const testFolder = (file: string) => {
 	if (!multi) return "tests/e2e";
 	const place = file.split("/")[1] ?? "";

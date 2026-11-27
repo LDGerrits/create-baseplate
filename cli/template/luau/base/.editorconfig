@@ -1,4 +1,3 @@
-# For editors other than VS Code; Biome formats the code either way.
 root = true
 
 [*]

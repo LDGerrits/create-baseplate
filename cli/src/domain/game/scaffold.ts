@@ -3,9 +3,7 @@ import path from "node:path";
 import { SYMLINKS_FILE, templateBase } from "../../base/template.ts";
 import type { Language } from "../add-ons/language.ts";
 
-/** What a new repo may already hold, from `git init`, GitHub's "Create repository" or the OS: kept. */
 const KEPT = new Set([".git", "LICENSE", "LICENSE.md", "LICENSE.txt", ".DS_Store", "Thumbs.db"]);
-/** Files GitHub can create that the template has its own of: replaced. */
 const REPLACED = new Set(["README.md", ".gitignore", ".gitattributes"]);
 
 /** Why the game can't be created in `dir`, if it can't. */

@@ -1,5 +1,3 @@
--- The coin in the world: a character that touches it earns its player coins, and it is gone for
--- everyone until it respawns.
 local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
 
@@ -12,7 +10,6 @@ local CoinPickupService = {}
 
 local availableAt = 0
 
--- Takes the coin for the player, unless someone took it less than RESPAWN_SECONDS ago.
 function CoinPickupService.collect(player: Player, now: number?): boolean
 	local time = now or os.clock()
 	if time < availableAt then
@@ -28,7 +25,6 @@ local function setShown(coin: BasePart, shown: boolean)
 	coin.CanTouch = shown
 end
 
--- Main.server.luau calls this once, after every service has loaded.
 function CoinPickupService.start()
 	local coin = workspace.Coin
 	coin.Touched:Connect(function(hit)

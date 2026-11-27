@@ -1,11 +1,3 @@
-// The commit hook (.githooks/pre-commit): checks what is being committed, only as far as the commit
-// reaches, and says nothing about what passes.
-// - A template's code staged: that template's own hook (cli/template/<language>/base/scripts/pre-commit.ts).
-// - Anything the CLI's or the docs site's check reads: the root check, in full, or for a change to the
-//   docs only, the docs site and the CLI's tests of the docs (scopeOf in scripts/repo-check.ts).
-// The root check runs on the index, not on the disk: when the disk differs, from an unstaged edit or an
-// untracked file, on a copy of what the index holds, so the working tree is never stashed or touched.
-// It is skipped when it already passed on exactly the staged files (the Stop hook's pass counts).
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { DOCS_RECORD, exportIndex, ROOT_RECORD, scopeOf, shorten, templatesOf, withoutGitEnv } from "./repo-check.ts";
@@ -29,9 +21,8 @@ for (const base of templatesOf(stagedFiles(top))) {
 	}
 }
 
-// The template's hook may have formatted and re-staged files.
-const files = stagedFiles(top);
-const scope = scopeOf(files);
+const stagedAfterTemplateHooks = stagedFiles(top);
+const scope = scopeOf(stagedAfterTemplateHooks);
 if (scope === "none") {
 	console.log("pre-commit: nothing staged that the check reads.");
 	process.exit(0);

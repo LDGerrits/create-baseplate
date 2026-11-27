@@ -1,15 +1,6 @@
 import { type Language, languageName } from "./language.ts";
 import { manifestOf } from "./manifest.ts";
 
-// Add-ons, the way create-t3-app's installers work: each question offers the most popular
-// libraries, plus "none" where the game can go without. The first question is the language, a fork
-// in the road: TypeScript (roblox-ts) and Luau each have their own template,
-// template/<language>/base, and their own questions, with the tools that language's developers use.
-// A choice is a folder in template/<language>/extras/<question>/<choice>/ holding addon.json (see
-// Manifest), AGENTS.md (its section for the game's AGENTS.md), files/ (copied over the game) and,
-// for a choice that brings a tool, mise.toml (its pinned tools and tasks, added to the game's). The
-// base template is the default choice of a question without "none" (the UI: React in TypeScript,
-// Vide in Luau), so that choice has no folder.
 export interface AddOn {
 	/** The flag and the key in results, such as "state". */
 	readonly name: string;

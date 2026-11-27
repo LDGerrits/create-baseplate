@@ -1,13 +1,3 @@
-// The game's Roblox packages and the types luau-lsp reads.
-//
-//   node scripts/packages.ts           Install the Wally packages, when wally.toml or wally.lock
-//                                      changed since the last install; instant otherwise.
-//   node scripts/packages.ts --types   Once sourcemap.json is written (in a multi-place game, it
-//                                      writes the editor's first): give newly installed packages
-//                                      their types (wally-package-types), and fetch Roblox's type
-//                                      definitions for the pinned luau-lsp into .luau-lsp/.
-//
-// The mise tasks run both, so every task runs on the locked packages.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
@@ -23,9 +13,7 @@ const TYPING = "typing";
 const DEFINITIONS = path.join(CACHE, "globalTypes.d.luau");
 const DEFINITIONS_VERSION = path.join(CACHE, "version");
 
-/** Runs a tool that logs every file it touches on stdout: that shows only when it fails. */
 const runQuiet = (command: string, args: string[]) => {
-	// Its warnings, on stderr, still show.
 	const result = spawnSync(command, args, {
 		encoding: "utf8",
 		stdio: ["ignore", "pipe", "inherit"],
@@ -72,7 +60,6 @@ function fixJestSuccess() {
 const manifestHash = () =>
 	createHash("sha256").update(read("wally.toml")).update("\0").update(read("wally.lock")).digest("hex");
 
-/** The package folders wally.toml fills: one per table with packages in it. */
 const neededFolders = () => {
 	const tables: Record<string, string> = {
 		dependencies: "Packages",
@@ -111,9 +98,7 @@ for (const started = Date.now(); ; ) {
 	} catch {
 		const owner = Number(read(OWNER));
 		const age = Date.now() - (fs.statSync(LOCK, { throwIfNoEntry: false })?.mtimeMs ?? 0);
-		// A lock without its owner's pid yet is being taken right now, unless it's old.
 		if ((owner > 0 && !alive(owner)) || (!(owner > 0) && age > 10_000)) {
-			// Moved aside in one step, so of two runs that both found it stale, only one takes it over.
 			const aside = `${LOCK}.stale-${process.pid}`;
 			try {
 				fs.renameSync(LOCK, aside);
@@ -125,7 +110,6 @@ for (const started = Date.now(); ; ) {
 		} else await new Promise((resolve) => setTimeout(resolve, 200));
 	}
 }
-// Only this run's own lock: one that a run took over meanwhile belongs to that run.
 const release = () => {
 	if (read(OWNER) === String(process.pid)) fs.rmSync(LOCK, { recursive: true, force: true });
 };
@@ -138,10 +122,6 @@ for (const [signal, code] of [
 	process.on(signal, () => process.exit(code));
 }
 
-/**
- * Installs the packages beside the old ones and swaps them in only once Wally succeeds, so a failed
- * install (offline, a registry error) leaves the game with the packages it had.
- */
 function install() {
 	const staging = path.join(CACHE, "install");
 	fs.rmSync(staging, { recursive: true, force: true });
@@ -187,9 +167,6 @@ function install() {
 }
 
 if (!process.argv.includes("--types")) {
-	// Install when the manifest or lock changed, a package folder went missing (deleted by hand), or
-	// typing began and never finished: wally-package-types can't type a folder twice, so the packages
-	// start over. A fresh install that isn't typed yet is left for the typing step.
 	if (
 		read(STAMP) !== manifestHash() ||
 		neededFolders().some((folder) => !fs.existsSync(folder)) ||
@@ -221,15 +198,12 @@ if (!process.argv.includes("--types")) {
 	// Wally's package files only point at the package; this copies the package's types into them, so
 	// `require(ReplicatedStorage.Packages.Vide)` is typed. It reads the instance paths from the sourcemap.
 	if (fs.existsSync(UNTYPED)) {
-		// Until it finishes, a typing that stops partway leaves folders it can't type again, and the
-		// next run installs them anew.
 		fs.writeFileSync(UNTYPED, TYPING);
 		for (const folder of FOLDERS) {
 			if (fs.existsSync(folder)) runQuiet("wally-package-types", ["--sourcemap", "sourcemap.json", `${folder}/`]);
 		}
 		fs.rmSync(UNTYPED);
 	}
-	// Roblox's API as luau-lsp types it, from the luau-lsp release mise pins, for game scripts.
 	const version = spawnSync("luau-lsp", ["--version"], {
 		encoding: "utf8",
 		shell: process.platform === "win32",

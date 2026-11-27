@@ -18,7 +18,6 @@ describe("CoinPickupService", function()
 	local CoinPickupService
 	local CurrencyService
 
-	-- A fresh copy of the services for each test, so state doesn't carry over.
 	beforeEach(function()
 		jest.resetModules()
 		CoinPickupService = require(script.Parent.CoinPickupService)

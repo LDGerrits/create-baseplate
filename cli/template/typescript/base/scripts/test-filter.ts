@@ -1,10 +1,3 @@
-// What `mise run test` takes after `--`: which specs to run, as Jest's own command line does.
-//
-//   mise run test -- shop                  specs, and end-to-end tests, whose path matches the regex
-//   mise run test -- shop quests           any of them
-//   mise run test -- -t "refuses a rival"  specs with a test whose name matches; no end-to-end tests
-//
-// `--testPathPattern <regex>` and `--testNamePattern <regex>` are the long forms.
 export interface TestArgs {
 	project?: string;
 	testPathPattern?: string;
@@ -34,7 +27,6 @@ export function parseTestArgs(args: string[]): TestArgs {
 	return result;
 }
 
-/** Whether the end-to-end test at `file` (such as `tests/e2e/shop.luau`) runs for this filter. */
 export function e2eSelected(file: string, filter: TestArgs): boolean {
 	if (filter.testNamePattern !== undefined) return false;
 	return filter.testPathPattern === undefined || new RegExp(filter.testPathPattern).test(file);

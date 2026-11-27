@@ -7,7 +7,6 @@ import path from "node:path";
 import type { Payload } from "./guard.ts";
 import { projectRoot } from "./project.ts";
 
-/** A glob as the rules write it (`**`, `*`), as a regular expression over a path from the root. */
 export function globPattern(glob: string): RegExp {
 	let pattern = "";
 	for (let i = 0; i < glob.length; i++) {
@@ -24,7 +23,6 @@ export function globPattern(glob: string): RegExp {
 	return new RegExp(`^${pattern}$`);
 }
 
-/** Each rule's skill and the globs of the files it covers. */
 export function readRules(root: string): { skill: string; globs: string[] }[] {
 	const dir = path.join(root, ".claude", "rules");
 	if (!fs.existsSync(dir)) return [];
@@ -39,14 +37,9 @@ export function readRules(root: string): { skill: string; globs: string[] }[] {
 		});
 }
 
-/** Where a session's named skills are kept. */
 const recordOf = (root: string, session: string) =>
 	path.join(root, "node_modules", ".cache", "baseplate-skills", `${encodeURIComponent(session)}.json`);
 
-/**
- * The skills that cover these files (paths from the root) and haven't been named yet in this
- * session, recording them as named. Without a session there's nothing to remember them by: none.
- */
 export function newSkills(root: string, files: string[], session: string | undefined): string[] {
 	if (session === undefined || session === "") return [];
 	const skills = readRules(root)
@@ -68,11 +61,9 @@ export function newSkills(root: string, files: string[], session: string | undef
 	return fresh;
 }
 
-/** The note for the agent about each skill. */
 export const skillNote = (skill: string) =>
 	`Before you go on, read .agents/skills/${skill}/SKILL.md: it covers the kind of file you just wrote.`;
 
-/** Forgets the skills named in a session, so each is named again. */
 export function forgetSkills(root: string, session: string | undefined) {
 	if (session !== undefined && session !== "") fs.rmSync(recordOf(root, session), { force: true });
 }

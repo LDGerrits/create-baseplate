@@ -1,7 +1,3 @@
--- End-to-end: the real server boots, and the part tagged Spinner in the world turns.
--- `scripts/test.ts` runs every file here.
-
--- A harness replaces the place's own boot, so start the server's entry script ourselves.
 local function bootServer()
 	local main = game:GetService("ServerScriptService").app.main
 	local run = assert(loadstring(main.Source, "=" .. main:GetFullName()))
@@ -9,7 +5,6 @@ local function bootServer()
 	task.spawn(run)
 end
 
--- Wait for a condition rather than a fixed time: fixed waits make tests slow and flaky.
 local function waitFor<T>(what: string, check: () -> T?, seconds: number?): T
 	local deadline = os.clock() + (seconds or 5)
 	while os.clock() < deadline do

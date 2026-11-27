@@ -1,4 +1,3 @@
-// Processes the compiled code in out/ into dist/ with Darklua, by the rules in .darklua.json.
 // Darklua turns every file it reads into a Lua module, data and Rojo files too (init.meta.json
 // becomes init.meta.lua), so those are copied over as they are, in place of what it made of them.
 // UI stories, and their source maps, stay out of the release: only Studio and `mise run ui` use them, and rur's sweep, which

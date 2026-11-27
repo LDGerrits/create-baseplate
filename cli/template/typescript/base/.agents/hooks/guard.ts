@@ -1,7 +1,3 @@
-// Guard run before each command and edit, for every agent tool that runs hooks. It turns the rules
-// agents most often break here into blocks whose message says what to do instead. `.agents/hooks/run`
-// starts it, with the tool's reply format as the argument: claude (also Codex's), cursor, copilot
-// or gemini.
 import fs from "node:fs";
 import path from "node:path";
 import { type Format, formatArg, projectRoot } from "./project.ts";
@@ -44,7 +40,6 @@ export const GENERATED: [RegExp, string][] = [
 	],
 ];
 
-// `.env` and its variants hold keys; `.env.example` only lists their names.
 const SECRET_IN_COMMAND = /(^|[\s/'"<=`(])\.env(\.(?!example\b)[\w.-]+)?(?=$|[\s'"`\\;|&)])/;
 // A glob counts too, as Gemini's read_many_files takes: `.env*` or `.env.*` reaches the keys.
 const isSecretFile = (file: string) => /(^|[/\\])\.env(\.(?!example$)[\w.*-]+|\*+)?$/.test(file);
@@ -76,12 +71,10 @@ function publishes(command: string): boolean {
 }
 
 function checkCommand(command: string): string | undefined {
-	// Quoted text, such as a commit message, isn't flags.
 	const bare = command.replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, '""');
 	if (/\bgit\b[^|;&]*\bcommit\b[^|;&]*(\s--no-v[a-z-]*|\s-[A-Za-z]*n[A-Za-z]*)(?=\s|$)/.test(bare)) {
 		return "The commit hook runs the check on what you commit; commit without --no-verify, and fix what it reports.";
 	}
-	// Quoted text counts here, as in `sh -c "mise run publish"`; only a commit message doesn't.
 	const unmessaged = command.replace(/(\s(?:-[A-Za-z]*m\s*|--message(?:=|\s+)))("(?:[^"\\]|\\.)*"|'[^']*')/g, '$1""');
 	if (publishes(unmessaged)) {
 		return "Publishing replaces the game players join. Only a person publishes, with `mise run publish` or a tag (see `mise run doc publishing`): tell the user it's ready.";
@@ -89,7 +82,6 @@ function checkCommand(command: string): string | undefined {
 	if (/\b(node|bun|deno|tsx)\b[^|;&\n]*with-env\.ts\b/.test(command)) {
 		return "scripts/with-env.ts hands .env's keys to the command after it; only mise's tasks run it. Run the task that needs them (`mise run test:engine`, `ui`, `errors`), or ask the user.";
 	}
-	// Turning the hooks off: pointing core.hooksPath elsewhere or unsetting it, not reading it.
 	if (
 		/\bHUSKY=0\b|--unset(-all)?\s+core\.hooksPath\b/.test(unmessaged) ||
 		/core\.hooksPath(?:=|\s+)(?!\.githooks(?=["'\s]|$))[^\s-]/.test(unmessaged)
@@ -102,9 +94,6 @@ function checkCommand(command: string): string | undefined {
 	if (/(^|[\s;&|(])(npx|bunx|rbxtsc|pnpm dlx|bun x)\s/.test(bare)) {
 		return "`mise run check` compiles with Sloptor; run other tools by name: mise puts both the npm ones and its own on the PATH (`mise x -- <tool>` where your shell doesn't activate mise).";
 	}
-	// Each command of a plain chain on its own, so `ls .env && cat package.json` passes; a pipe stays
-	// whole, as `ls .env | xargs cat` reads it. Quotes, variables, escapes or an inline script
-	// (`python3 -c "…"`) can hide what a part reads, so such a command is judged whole.
 	const plain = !/["'`$\\]|\b(python3?|node|bun|deno|ruby|perl|sh|bash|zsh|pwsh)(\s+-\w+)*\s+-[ce]\b/.test(command);
 	const parts = plain ? command.split(/;|&&|\|\||\n/) : [command];
 	if (parts.some((part) => SECRET_IN_COMMAND.test(part) && !leavesSecretUnread(part))) return SECRET;
@@ -117,16 +106,9 @@ export const patched = (patch: string) =>
 		(m[1] ?? m[2] ?? "").trim(),
 	);
 
-/**
- * Whether a command that names .env leaves its keys unread: checking the file is there, or writing
- * to it (`cp .env.example .env`, `echo KEY= >> .env`). Any other command that names it may print it
- * (`cat`, `diff`, `sort`, `jq`, a copy elsewhere), so the guard stops it.
- */
 export function leavesSecretUnread(part: string): boolean {
 	const command = part.trim();
-	// Only a single, simple command: a `$`, a backtick, a chain or a pipe can make it read the file.
 	if (!/[$`|;&<()]/.test(command)) {
-		// Commands that name the file without reading it.
 		if (
 			!/['"]/.test(command) &&
 			/^(ls|test|\[|stat|touch|rm|git\s+(check-ignore|status|ls-files|rm))(?=\s|$)/.test(command)
@@ -135,9 +117,7 @@ export function leavesSecretUnread(part: string): boolean {
 		}
 		// `git log -- .env` lists commits; with -p it would print what they changed.
 		if (/^git\s+log(?=\s)/.test(command) && !/\s(-p|--patch|-u)(?=\s|$)/.test(command)) return true;
-		// echo and printf print their arguments, not files: `echo .env >> .gitignore`.
 		if (/^(echo|printf)(?=\s)/.test(command)) return true;
-		// grep with .env as the pattern, searching other files: `grep -n .env .gitignore`.
 		if (/^(grep|rg)(?=\s)/.test(command)) {
 			const args = command
 				.split(/\s+/)
@@ -147,7 +127,6 @@ export function leavesSecretUnread(part: string): boolean {
 			if (args.length >= 2 && !args.slice(1).some((arg) => SECRET_IN_COMMAND.test(arg))) return true;
 		}
 	}
-	// Where it's only the target of a redirect or of a copy or move, nothing reads it.
 	const written = command
 		.replace(/>>?\s*\S*\.env[\w.-]*/g, "")
 		.replace(/^((cp|mv)\b(\s+-\w+)*\s+(\S+\s+)+)\S*\.env[\w.-]*\s*$/, "$1");
@@ -173,7 +152,6 @@ export function toolInput(payload: Payload): Record<string, unknown> {
 	return typeof input === "object" && input !== null ? (input as Record<string, unknown>) : {};
 }
 
-/** The files a tool call names in its arguments, or Cursor in its payload. */
 export function namedFiles(payload: Payload, input = toolInput(payload)): string[] {
 	return [
 		payload.file_path,
@@ -188,7 +166,6 @@ export function namedFiles(payload: Payload, input = toolInput(payload)): string
 // Roblox Studio's MCP server reaches the live game. Each agent tool names its tools its own way
 // (mcp__Roblox_Studio__execute_luau, Roblox_Studio-execute_luau, execute_luau): the tool is the end.
 const STUDIO_TOOL = /(?:^|[_\-:/.])(open_cloud_invoke|execute_luau)$/;
-// Luau that, run in Studio, reads or writes the published game's real data or reaches the internet.
 const LIVE_LUAU =
 	/DataStoreService|MemoryStoreService|MessagingService|GetSecret|RequestAsync|PostAsync|HttpService\W[\s\S]*GetAsync/;
 
@@ -202,7 +179,6 @@ function checkStudioTool(tool: string, input: Record<string, unknown>): string |
 	return undefined;
 }
 
-/** The reason to block this tool call, or undefined to let it through. */
 export function guardReason(payload: Payload, root: string, start: string): string | undefined {
 	const checkFile = (file: string): string | undefined => {
 		const relative = path.relative(root, path.resolve(start, file)).split(path.sep).join("/");
@@ -234,7 +210,6 @@ export function guardReason(payload: Payload, root: string, start: string): stri
 	);
 }
 
-/** What to print for the tool, or undefined to print nothing (no opinion). */
 export function guardOutput(format: Format, reason: string | undefined): object | undefined {
 	switch (format) {
 		case "cursor":
@@ -273,7 +248,6 @@ if (import.meta.main) {
 	const start = payload.cwd ?? payload.workspace_roots?.[0] ?? process.cwd();
 	const root = projectRoot(start) ?? start;
 	const reason = guardReason(payload, root, start);
-	// What an allowed shell command writes, the edit hook checks after it (written.ts).
 	if (reason === undefined && isShell(payload)) stampShell(root);
 	const output = guardOutput(formatArg(process.argv[2]), reason);
 	if (output !== undefined) console.log(JSON.stringify(output));
