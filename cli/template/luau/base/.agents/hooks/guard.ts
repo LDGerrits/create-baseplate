@@ -99,13 +99,17 @@ function checkCommand(command: string): string | undefined {
 	if (/\b(node|bun|deno|tsx)\b[^|;&\n]*with-env\.ts\b/.test(command)) {
 		return "scripts/with-env.ts hands .env's keys to the command after it; only mise's tasks run it. Run the task that needs them (`mise run test:engine`, `ui`, `errors`), or ask the user.";
 	}
-	if (/core\.hooksPath|HUSKY=0|LINT_STAGED/.test(command)) {
+	// Turning the hooks off: pointing core.hooksPath elsewhere or unsetting it, not reading it.
+	if (
+		/\bHUSKY=0\b|--unset(-all)?\s+core\.hooksPath\b/.test(unmessaged) ||
+		/core\.hooksPath(?:=|\s+)(?!\.githooks(?=["'\s]|$))[^\s-]/.test(unmessaged)
+	) {
 		return "Leave the commit hook on; commit normally and fix what it reports.";
 	}
-	if (/\b(npm|yarn|bun)\s+(i|install|add|ci|remove|rm|uninstall|update|up)\b/.test(command)) {
+	if (/\b(npm|yarn|bun)\s+(i|install|add|ci|remove|rm|uninstall|update|up)\b/.test(bare)) {
 		return "The game's Roblox packages are Wally's: add them to wally.toml and run `mise run install`. Its Node tools are pnpm's: `pnpm add -D <package>`.";
 	}
-	if (/(^|[\s;&|(])(npx|bunx|pnpm dlx|bun x)\s/.test(command)) {
+	if (/(^|[\s;&|(])(npx|bunx|pnpm dlx|bun x)\s/.test(bare)) {
 		return "Run tools through the project: `mise x -- <tool>`, which finds both the npm ones and the mise ones.";
 	}
 	if (/\b(rokit|aftman|foreman)\s+(add|install|init|update)\b/.test(command)) {
@@ -133,12 +137,28 @@ export const patched = (patch: string) =>
  */
 export function leavesSecretUnread(part: string): boolean {
 	const command = part.trim();
-	// Only a single, simple command: a quote, `$`, a backtick, a chain or a pipe can make it read the file.
-	if (
-		!/[$`'"|;&<()]/.test(command) &&
-		/^(ls|test|\[|stat|touch|git\s+(check-ignore|status|ls-files))(?=\s|$)/.test(command)
-	) {
-		return true;
+	// Only a single, simple command: a `$`, a backtick, a chain or a pipe can make it read the file.
+	if (!/[$`|;&<()]/.test(command)) {
+		// Commands that name the file without reading it.
+		if (
+			!/['"]/.test(command) &&
+			/^(ls|test|\[|stat|touch|rm|git\s+(check-ignore|status|ls-files|rm))(?=\s|$)/.test(command)
+		) {
+			return true;
+		}
+		// `git log -- .env` lists commits; with -p it would print what they changed.
+		if (/^git\s+log(?=\s)/.test(command) && !/\s(-p|--patch|-u)(?=\s|$)/.test(command)) return true;
+		// echo and printf print their arguments, not files: `echo .env >> .gitignore`.
+		if (/^(echo|printf)(?=\s)/.test(command)) return true;
+		// grep with .env as the pattern, searching other files: `grep -n .env .gitignore`.
+		if (/^(grep|rg)(?=\s)/.test(command)) {
+			const args = command
+				.split(/\s+/)
+				.slice(1)
+				.filter((arg) => !arg.startsWith("-"))
+				.map((arg) => arg.replace(/^['"]|['"]$/g, ""));
+			if (args.length >= 2 && !args.slice(1).some((arg) => SECRET_IN_COMMAND.test(arg))) return true;
+		}
 	}
 	// Where it's only the target of a redirect or of a copy or move, nothing reads it.
 	const written = command

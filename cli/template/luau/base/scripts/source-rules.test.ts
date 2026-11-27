@@ -56,9 +56,10 @@ test("a service has a spec, unless it says why not", () => {
 
 test("a feature with remotes has an end-to-end test, unless it says why not", () => {
 	const [files, read] = sources({
-		"src/features/shop/shared/ShopNetwork.luau": "",
-		"src/features/bank/shared/BankNetwork.luau": "",
-		"src/features/log/shared/LogNetwork.luau": "-- no-e2e: the server only broadcasts",
+		"src/features/shop/shared/ShopNetwork.luau": "request: Remo.ClientToServer<()>",
+		"src/features/bank/shared/BankNetwork.luau": "deposit: Remo.ClientToServer<number>",
+		"src/features/log/shared/LogNetwork.luau": "-- no-e2e: tested by hand\nsend: Remo.ClientToServer<string>",
+		"src/features/round/shared/RoundNetwork.luau": "tick: Remo.ServerToClient<number>",
 	});
 	assert.deepEqual(e2eErrors(files, ["tests/e2e/shop.luau"], read).map(firstPart), [
 		"src/features/bank/shared/BankNetwork.luau",

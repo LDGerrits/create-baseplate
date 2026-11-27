@@ -67,7 +67,14 @@ export function e2eErrors(
 	const present = new Set(tests);
 	return files.flatMap((file) => {
 		const feature = /(?:^|\/)features\/([^/]+)\/shared\/[^/]+Network\.luau$/.exec(file)?.[1];
-		if (feature === undefined || optedOut(read(file), "no-e2e")) return [];
+		// Only remotes clients send (Remo's ClientToServer and ServerAsync) need requests tested.
+		if (
+			feature === undefined ||
+			optedOut(read(file), "no-e2e") ||
+			!/\bRemo\.(ClientToServer|ServerAsync)\b/.test(read(file))
+		) {
+			return [];
+		}
 		const test = `${testFolder(file)}/${feature}.luau`;
 		if (present.has(test)) return [];
 		return [
@@ -76,8 +83,8 @@ export function e2eErrors(
 	});
 }
 
-/** Client modules that aren't components: they start, or mount, what the player sees. */
-const NOT_COMPONENT = /(Controller|\.story|\.storybook|\.spec|\.server|\.client|\/Start)\.luau$/;
+/** Client modules that aren't components: they start, or mount, what the player sees; the UI root in app/ too. */
+const NOT_COMPONENT = /(Controller|\.story|\.storybook|\.spec|\.server|\.client|\/Start)\.luau$|(^|\/)app\//;
 
 /** A component (a client module that creates UI elements) with no story beside it. */
 export function storyErrors(files: string[], read: (file: string) => string): string[] {

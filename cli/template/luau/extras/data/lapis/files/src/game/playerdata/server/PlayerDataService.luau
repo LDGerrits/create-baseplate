@@ -72,7 +72,7 @@ function PlayerDataService.get(userId: number): PlayerData?
 	return if document then document:read() else nil
 end
 
--- Replaces the player's data with what `change` returns, a changed copy (`table.clone(data)`).
+-- Replaces the player's data with what `change` returns, a changed copy: `table.clone(data)`, and a clone of each nested table it changes.
 -- Returns false when it isn't loaded.
 function PlayerDataService.update(userId: number, change: (data: PlayerData) -> PlayerData): boolean
 	local document = documents[userId]

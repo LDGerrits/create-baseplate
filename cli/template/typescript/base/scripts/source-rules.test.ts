@@ -4,6 +4,7 @@ import {
 	disableErrors,
 	duplicateErrors,
 	e2eErrors,
+	mountedScopes,
 	namingErrors,
 	packageErrors,
 	specErrors,
@@ -59,8 +60,11 @@ test("a service has a spec, unless it says why not", () => {
 test("a feature with remotes has an end-to-end test, unless it says why not", () => {
 	const [files, read] = sources({
 		"src/features/shop/shared/shop-network.ts": "",
-		"src/features/bank/shared/bank-network.ts": "",
-		"src/features/log/shared/log-network.ts": "// no-e2e: the server only broadcasts",
+		"src/features/bank/shared/bank-network.ts":
+			"interface ClientToServer { deposit(amount: number): void; }\nexport const BankNetwork = Networking.createEvent<ClientToServer, {}>();",
+		"src/features/log/shared/log-network.ts": "// no-e2e: tested by hand",
+		"src/features/round/shared/round-network.ts":
+			"interface ClientToServer {}\ninterface ServerToClient { tick(left: number): void; }\nexport const RoundNetwork = Networking.createEvent<ClientToServer, ServerToClient>();",
 		"projects/common/src/features/queue/shared/queue-network.ts": "",
 	});
 	assert.deepEqual(
@@ -76,7 +80,9 @@ test("a component has a story, unless it says why not", () => {
 		"src/features/shop/client/shop-panel.tsx": "",
 		"src/features/shop/client/shop-panel.story.tsx": "",
 		"src/features/shop/client/price-tag.tsx": "",
-		"src/app/client/ui-root.tsx": "// no-story: it only mounts the screens, which have their own",
+		"src/app/client/app.tsx": "",
+		"src/features/shop/client/shop-controller.tsx": "",
+		"src/features/shop/client/frame-wrapper.tsx": "// no-story: it only passes its children through",
 	});
 	assert.deepEqual(
 		storyErrors(files, read).map((error) => error.split(":")[0]),
@@ -84,10 +90,18 @@ test("a component has a story, unless it says why not", () => {
 	);
 });
 
-test("runtime packages come from @rbxts or @flamework", () => {
-	const json = JSON.stringify({ dependencies: { "@rbxts/react": "1", "@flamework/core": "1", lodash: "4" } });
-	assert.equal(packageErrors(json).length, 1);
-	assert.match(packageErrors(json)[0] ?? "", /lodash is a plain npm package/);
+test("runtime packages come from a scope the game mounts", () => {
+	const mounted = mountedScopes([
+		'{ "@rbxts": { "$path": "node_modules/@rbxts" }, "@quenty": { "$path": "node_modules/@quenty" } }',
+	]);
+	const json = JSON.stringify({
+		dependencies: { "@rbxts/react": "1", "@quenty/loader": "1", "@flamework/core": "1", lodash: "4" },
+	});
+	assert.deepEqual(
+		packageErrors(json, mounted).map((error) => error.split(" ")[1]),
+		["@flamework/core", "lodash"],
+	);
+	assert.match(packageErrors(json, mounted)[0] ?? "", /mount @flamework/);
 });
 
 test("a package whose state the game shares, in two versions, is an error; a stateless one isn't", () => {

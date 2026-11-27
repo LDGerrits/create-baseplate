@@ -22,6 +22,7 @@ import {
 	disableErrors,
 	duplicateErrors,
 	e2eErrors,
+	mountedScopes,
 	namingErrors,
 	packageErrors,
 	specErrors,
@@ -138,7 +139,19 @@ errors.push(
 	...specErrors(sources, read),
 	...e2eErrors(sources, e2eTests, read, testFolder),
 	...storyErrors(sources, read),
-	...packageErrors(read("package.json")),
+	...packageErrors(
+		read("package.json"),
+		mountedScopes(
+			[".", ...places.map((place) => `projects/${place}`)].flatMap((dir) =>
+				fs.existsSync(dir)
+					? fs
+							.readdirSync(dir)
+							.filter((file) => file.endsWith(".rogen.json"))
+							.map((file) => read(path.posix.join(dir, file)))
+					: [],
+			),
+		),
+	),
 	...(fs.existsSync("pnpm-lock.yaml") ? duplicateErrors(read("pnpm-lock.yaml")) : []),
 );
 

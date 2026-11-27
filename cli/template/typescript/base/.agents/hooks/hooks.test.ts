@@ -337,6 +337,10 @@ test("the guard judges each command of a chain on its own for .env, keeping pipe
 		"ls $(cat .env)",
 		'test -n "$(cat .env)"',
 		"ls `cat .env`",
+		"git log -p -- .env",
+		"grep KEY .env",
+		"grep -n KEY .env .env.example",
+		"echo $(cat .env)",
 	]) {
 		assert.match(bash(read) ?? "", /secret/, read);
 	}
@@ -347,6 +351,12 @@ test("the guard judges each command of a chain on its own for .env, keeping pipe
 		"git check-ignore .env",
 		"touch .env",
 		"[ -f .env ] && echo set",
+		"echo .env >> .gitignore",
+		"printf '.env\\n' >> .gitignore",
+		"grep -n .env .gitignore",
+		"git rm --cached .env",
+		"git log --oneline -- .env",
+		"rm .env",
 	]) {
 		assert.equal(bash(unread), undefined, unread);
 	}
@@ -487,4 +497,27 @@ test("the guard reads a list of files, as Gemini's read_many_files takes", () =>
 		reason({ tool_name: "read_many_files", tool_input: { paths: ["src"], include: [".env.*"] } }) ?? "",
 		/secret/,
 	);
+});
+
+test("a commit message or a plain read doesn't trip the guard's rules for tools", () => {
+	const bash = (command: string) => guardReason({ tool_name: "Bash", tool_input: { command } }, "/game", "/game");
+	for (const allowed of [
+		'git commit -m "Install with pnpm, not npm install"',
+		'git commit -m "Stop using npx for tools"',
+		"git config --get core.hooksPath",
+		"git config core.hooksPath .githooks",
+		"grep -rn LINT_STAGED scripts",
+	]) {
+		assert.equal(bash(allowed), undefined, allowed);
+	}
+	for (const blocked of [
+		"git config core.hooksPath /dev/null",
+		"git -c core.hooksPath=/tmp commit -m x",
+		"git config --unset core.hooksPath",
+		"HUSKY=0 git commit -m x",
+		"npm install lodash",
+		"npx eslint src",
+	]) {
+		assert.notEqual(bash(blocked), undefined, blocked);
+	}
 });

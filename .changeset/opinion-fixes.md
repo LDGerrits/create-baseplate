@@ -1,0 +1,5 @@
+---
+"create-baseplate": patch
+---
+
+Rules and advice that were wrong or fired on legitimate code are fixed. The Luau gotcha about `#` was wrong (Luau counts past a `nil`) and now says `#` is unreliable with holes; the data add-ons say to copy nested tables, which `table.clone` doesn't. The story check skips the UI root in `app/` and the controllers that mount it, which the `build-ui` skill itself tells agents to write; the end-to-end check fires only for remotes clients send; a runtime package passes when its scope is mounted in the project file, as the docs say. TypeScript allows `boolean | undefined` in conditions, skipped tests and assertions through `expect*` helpers, and React 17's subscribe-in-an-effect pattern; Selene allows shadowing. The guard no longer blocks commands that only name `.env` (`echo .env >> .gitignore`, `grep -n .env .gitignore`, `git rm --cached .env`, `rm .env`), nor commit messages or reads that mention npm, npx or `core.hooksPath`. Lines a model already knows are gone from `AGENTS.md` and the skills.
