@@ -403,7 +403,9 @@ if (import.meta.main) {
 			process.execPath,
 			[cli(), dir, "--json", ...flags.split(" ").filter((flag) => flag !== "")],
 			process.cwd(),
-			{ quiet: true },
+			// The games keep the tooling's own tests, so each game's check tests the hooks and scripts as
+			// its add-ons left them, on each platform.
+			{ quiet: true, env: { ...process.env, BASEPLATE_TOOLING_TESTS: "1" } },
 		);
 		const result = lastJson(stdout);
 		if (result === undefined) console.log(stdout);

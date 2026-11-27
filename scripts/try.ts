@@ -42,7 +42,8 @@ if (build.code !== 0) {
 }
 
 const base = fs.mkdtempSync(path.join(os.tmpdir(), "baseplate-try-"));
-const env = { ...process.env, BASEPLATE_NO_CLAUDE_PLUGIN: "1" };
+// The games keep the tooling's own tests, as CI's do, so the add-ons' edits to the hooks are tested.
+const env = { ...process.env, BASEPLATE_NO_CLAUDE_PLUGIN: "1", BASEPLATE_TOOLING_TESTS: "1" };
 
 async function tryOne(variant: string[], index: number): Promise<boolean> {
 	const dir = path.join(base, `game-${index + 1}`);

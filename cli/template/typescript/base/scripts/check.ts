@@ -89,7 +89,8 @@ const steps: Step[] = [
 	// The workflows in .github/workflows: expressions, job and step names, the actions' inputs. Named
 	// one by one: with none named, actionlint looks for them through git, and the game may not be a repo.
 	{ name: "workflows", command: `actionlint ${workflows()}`, needs: ["format"], tooling: true },
-	// The agent hooks' and scripts' own tests.
+	// The agent hooks' and scripts' own tests. A game created for use has none (only Baseplate's
+	// template and the games its CI creates keep them), and the step then passes.
 	{
 		name: "tooling-tests",
 		command: 'node --test --test-reporter=dot ".agents/hooks/*.test.ts" "scripts/*.test.ts"',
