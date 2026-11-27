@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { templateExtras } from "../consts.ts";
+import { templateExtras } from "../../base/template.ts";
 
 // Add-ons, the way create-t3-app's installers work: each question offers the most popular
 // libraries, plus "none" where the game can go without. The first question is the language, a fork

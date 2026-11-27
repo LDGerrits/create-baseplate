@@ -1,6 +1,6 @@
 import path from "node:path";
 import pc from "picocolors";
-import { logger } from "../utils/logger.ts";
+import { logger } from "../../base/logger.ts";
 
 export interface NextStepsState {
 	/** The tools and packages are installed. */

@@ -1,7 +1,6 @@
 import * as p from "@clack/prompts";
 import { Command, CommanderError, Option } from "commander";
-import { DEFAULT_APP_NAME } from "../consts.ts";
-import { folderProblem } from "../helpers/scaffoldProject.ts";
+import { DEFAULT_APP_NAME } from "../../base/template.ts";
 import {
 	type AddOn,
 	type AddOnChoices,
@@ -16,9 +15,10 @@ import {
 	type Language,
 	languages,
 	NONE,
-} from "../installers/index.ts";
-import { nameProblem } from "../utils/appName.ts";
-import { parseNameAndPath } from "../utils/parseNameAndPath.ts";
+} from "../../domain/add-ons/add-ons.ts";
+import { nameProblem } from "../../domain/game/app-name.ts";
+import { folderProblem } from "../../domain/game/scaffold.ts";
+import { parseNameAndPath } from "./parse-name-and-path.ts";
 
 export interface CliResults {
 	name: string;

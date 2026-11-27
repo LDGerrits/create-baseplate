@@ -1,6 +1,6 @@
 // create-baseplate as a person runs it: its own questions, options, hints and spinner messages
-// (cli/src/cli/index.ts, cli/src/installers/index.ts, cli/src/index.ts and
-// cli/src/helpers/installDependencies.ts), answered with the defaults and the recommended libraries
+// (cli/src/commands/create/, cli/src/domain/add-ons/add-ons.ts and
+// cli/src/domain/game/install-dependencies.ts), answered with the defaults and the recommended libraries
 // and tools, up to the install.
 
 const root = document.documentElement;

@@ -1,35 +1,33 @@
-#!/usr/bin/env node
 import fs from "node:fs";
-import { createRequire } from "node:module";
 import path from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
-import { runCli } from "./cli/index.ts";
-import { DOCS_DIR } from "./consts.ts";
-import { runDoc } from "./doc/command.ts";
-import { commitAll, initGit } from "./helpers/git.ts";
-import { installDependencies, isMiseInstalled } from "./helpers/installDependencies.ts";
-import { logNextSteps, nextSteps } from "./helpers/logNextSteps.ts";
-import { makeMultiPlace, managedOf, PLACES } from "./helpers/makeMultiPlace.ts";
-import { dropToolingTests, scaffoldProject } from "./helpers/scaffoldProject.ts";
-import { recordOrigin, setProjectName } from "./helpers/setProjectName.ts";
-import { findConflict, installAddOns } from "./installers/index.ts";
-import { isGame, recordAgentFiles, runSync } from "./sync/command.ts";
-import { nameProblem } from "./utils/appName.ts";
-import { logger, logToStderr } from "./utils/logger.ts";
-
-const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
+import { logger, logToStderr } from "../../base/logger.ts";
+import { findConflict, installAddOns } from "../../domain/add-ons/add-ons.ts";
+import { recordAgentFiles } from "../../domain/agent-files/agent-files.ts";
+import { nameProblem } from "../../domain/game/app-name.ts";
+import { commitAll, initGit } from "../../domain/game/git.ts";
+import { installDependencies, isMiseInstalled } from "../../domain/game/install-dependencies.ts";
+import { recordOrigin, setProjectName } from "../../domain/game/project-name.ts";
+import { dropToolingTests, scaffoldProject } from "../../domain/game/scaffold.ts";
+import { makeMultiPlace, managedOf, PLACES } from "../../domain/places/multi-place.ts";
+import { logNextSteps, nextSteps } from "./next-steps.ts";
+import { runCli } from "./options.ts";
 
 let json = false;
 
-async function main() {
-	// `create-baseplate sync [--check]`, in a game: update its agent files to this version's template.
-	// Elsewhere, `sync` is the folder of a new game.
-	if (process.argv[2] === "sync" && isGame(process.cwd())) {
-		process.exit(runSync(process.cwd(), version, process.argv.includes("--check")));
+/** `create-baseplate [folder]`: asks what to create, unless the flags say, and creates the game. */
+export async function runCreate(version: string) {
+	try {
+		await create(version);
+	} catch (error) {
+		if (json) console.log(JSON.stringify({ ok: false, error: error instanceof Error ? error.message : String(error) }));
+		logger.error(error instanceof Error ? (error.stack ?? error.message) : String(error));
+		process.exit(1);
 	}
-	// `create-baseplate doc [topic]`: this version's docs, offline. A game named doc is `./doc`.
-	if (process.argv[2] === "doc") process.exit(runDoc(DOCS_DIR, process.argv.slice(3)));
+}
+
+async function create(version: string) {
 	const options = await runCli(version);
 	if (options === undefined) return;
 	json = options.json;
@@ -159,9 +157,3 @@ async function main() {
 	}
 	if (failure !== undefined) process.exitCode = 1;
 }
-
-main().catch((error: unknown) => {
-	if (json) console.log(JSON.stringify({ ok: false, error: error instanceof Error ? error.message : String(error) }));
-	logger.error(error instanceof Error ? (error.stack ?? error.message) : String(error));
-	process.exit(1);
-});

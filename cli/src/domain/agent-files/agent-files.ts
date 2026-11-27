@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { DOCS_DIR } from "../consts.ts";
+import { DOCS_DIR } from "../../base/template.ts";
 
 /** Files by path from the game's root, with `/` between folders. */
 export type Files = Record<string, string>;
@@ -248,4 +248,9 @@ export function applyPlan(dir: string, plan: SyncPlan, executable: Set<string>) 
 			fs.rmdirSync(at);
 		}
 	}
+}
+
+/** Records the agent files a new game starts with, the base its later updates merge against. */
+export function recordAgentFiles(dir: string, version: string) {
+	writeBase(dir, { version, files: readAgentFiles(dir).files });
 }

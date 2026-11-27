@@ -1,5 +1,5 @@
 import spawn from "cross-spawn";
-import { run } from "./run.ts";
+import { run } from "../../base/run.ts";
 
 export const isMiseInstalled = () => spawn.sync("mise", ["--version"]).status === 0;
 

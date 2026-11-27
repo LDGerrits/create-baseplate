@@ -21,9 +21,9 @@ after(() => {
 });
 
 test("a change to the CLI, a template or the tooling needs the whole check", () => {
-	assert.equal(scopeOf(["cli/src/utils/appName.ts"]), "full");
+	assert.equal(scopeOf(["cli/src/domain/game/app-name.ts"]), "full");
 	assert.equal(scopeOf(["cli/template/typescript/base/AGENTS.md"]), "full", "a template's Markdown ships in games");
-	assert.equal(scopeOf(["www/src/content/docs/faq.md", "cli/src/index.ts"]), "full");
+	assert.equal(scopeOf(["www/src/content/docs/faq.md", "cli/src/main.ts"]), "full");
 	assert.equal(scopeOf([".github/scripts/run-games.ts"]), "full");
 	assert.equal(scopeOf(["turbo.json", "AGENTS.md"]), "full");
 });
@@ -38,11 +38,11 @@ test("a docs change needs the docs site and the tests that read the docs, not th
 test("Markdown that nothing reads needs no check", () => {
 	assert.equal(scopeOf([]), "none");
 	assert.equal(scopeOf(["AGENTS.md", "CONTRIBUTING.md", ".changeset/quiet-lions.md", "cli/CHANGELOG.md"]), "none");
-	assert.equal(scopeOf(["AGENTS.md", "cli/src/index.ts"]), "full");
+	assert.equal(scopeOf(["AGENTS.md", "cli/src/main.ts"]), "full");
 });
 
 test("a template's check runs when its code changed, not only its Markdown", () => {
-	assert.deepEqual(templatesOf(["cli/src/index.ts", "www/src/site.ts"]), []);
+	assert.deepEqual(templatesOf(["cli/src/main.ts", "www/src/site.ts"]), []);
 	assert.deepEqual(templatesOf(["cli/template/luau/base/src/a.luau"]), ["cli/template/luau/base"]);
 	assert.deepEqual(templatesOf(["cli/template/typescript/base/AGENTS.md"]), []);
 	assert.deepEqual(

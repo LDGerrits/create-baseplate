@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { templateExtras } from "../consts.ts";
-import type { Language } from "../installers/index.ts";
-import { makeMultiPlaceLuau } from "./makeMultiPlaceLuau.ts";
+import { templateExtras } from "../../base/template.ts";
+import type { Language } from "../add-ons/add-ons.ts";
+import { makeMultiPlaceLuau } from "./multi-place-luau.ts";
 
 /** The places a multi-place game starts with. */
 export const PLACES = ["lobby", "game"];

@@ -1,4 +1,4 @@
-// The games CI creates, generated from the CLI's questions (cli/src/installers/index.ts) and the
+// The games CI creates, generated from the CLI's questions (cli/src/domain/add-ons/add-ons.ts) and the
 // manifests' `conflicts`, for each language, so a new language, question or choice is tested without
 // editing the workflow. The sets:
 // - pull: no add-ons, every question answered together (once per UI), and then as few more games as it
@@ -30,7 +30,7 @@ import {
 	type Language,
 	languages,
 	valuesOf,
-} from "../../cli/src/installers/index.ts";
+} from "../../cli/src/domain/add-ons/add-ons.ts";
 
 /** One game's answers: the value for each question, by its name. */
 export type Answers = Record<string, string>;

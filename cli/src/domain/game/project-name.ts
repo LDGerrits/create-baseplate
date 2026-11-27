@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { NAMED_FILES, TEMPLATE_NAME } from "../consts.ts";
+import { NAMED_FILES, TEMPLATE_NAME } from "../../base/template.ts";
 
 /** Replaces the template's name with the project's in the files that hold it. */
 export function setProjectName(dir: string, name: string) {

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { templateExtras } from "../consts.ts";
-import { type Managed, PLACES, replaceSection, SHARED_TESTS_PLACE } from "./makeMultiPlace.ts";
+import { templateExtras } from "../../base/template.ts";
+import { type Managed, PLACES, replaceSection, SHARED_TESTS_PLACE } from "./multi-place.ts";
 
 /** Each place's builds and session state, and its world's project files when Rojo manages the world. */
 const gitignore = (managed: Managed) => `

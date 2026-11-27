@@ -1,9 +1,6 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { makeMultiPlace, managedOf } from "../helpers/makeMultiPlace.ts";
-import { dropToolingTests, scaffoldProject } from "../helpers/scaffoldProject.ts";
-import { recordOrigin, setProjectName } from "../helpers/setProjectName.ts";
 import {
 	type AddOnChoices,
 	choicesFor,
@@ -12,7 +9,7 @@ import {
 	installAddOns,
 	isLanguage,
 	type Language,
-} from "../installers/index.ts";
+} from "../../domain/add-ons/add-ons.ts";
 import {
 	type AgentFiles,
 	applyPlan,
@@ -24,12 +21,10 @@ import {
 	readAgentFiles,
 	readBase,
 	writeBase,
-} from "./agentFiles.ts";
-
-/** Records the agent files a new game starts with, the base its later updates merge against. */
-export function recordAgentFiles(dir: string, version: string) {
-	writeBase(dir, { version, files: readAgentFiles(dir).files });
-}
+} from "../../domain/agent-files/agent-files.ts";
+import { recordOrigin, setProjectName } from "../../domain/game/project-name.ts";
+import { dropToolingTests, scaffoldProject } from "../../domain/game/scaffold.ts";
+import { makeMultiPlace, managedOf } from "../../domain/places/multi-place.ts";
 
 /** Whether `dir` is a game create-baseplate made, where `create-baseplate sync` applies. */
 export function isGame(dir: string) {
