@@ -3,12 +3,12 @@ title: Add-ons
 description: The UI library, the place layout, and the libraries and tools the CLI can add for state, player data, entities, assets and release builds; what each wires in, and how to take it out.
 ---
 
-The base game brings Flamework and React with a few small helpers they work well with, and asks about libraries for state, data and entities. The CLI first asks how many places and how much of the place Rojo manages. Then it offers the recommended libraries and tools in one answer, or asks about each, offering the most used libraries or none. The recommended stack is each question's default: none, except for the UI (React) and state (Reflex in TypeScript, Charm with Vide, which Reflex doesn't support, and Charm in Luau):
+The base game brings Flamework and React with a few small helpers they work well with, and asks about libraries for state, data and entities. The CLI first asks how many places and how much of the place Rojo manages. Then it offers the recommended libraries and tools in one answer, or asks about each, offering the most used libraries or none. The recommended stack is each question's default: none, except for the UI (Vide in Luau, React in TypeScript) and state (Charm in Luau and with Vide, which Reflex doesn't support; Reflex in TypeScript with React):
 
 | Question | Flag | Choices |
 | --- | --- | --- |
-| Language | `--language` | `typescript` (default, roblox-ts), `luau` |
-| UI | `--ui` | `react` (default, [React](https://react.dev) for Roblox), `vide` ([Vide](https://github.com/centau/vide)) |
+| Language | `--language` | `luau` (default), `typescript` (roblox-ts) |
+| UI | `--ui` | `react` ([React](https://react.dev) for Roblox; TypeScript's default), `vide` ([Vide](https://github.com/centau/vide); Luau's default) |
 | Places | `--places` | `single` (default), `multi` |
 | Managed | `--managed` | `full` (default), `partial` |
 | Client state | `--state` | `charm` ([Charm](https://github.com/littensy/charm); Luau's default), `reflex` ([Reflex](https://github.com/littensy/reflex); TypeScript only, its default), `none` |
@@ -18,14 +18,14 @@ The base game brings Flamework and React with a few small helpers they work well
 | Release builds | `--release` | `darklua` ([Darklua](https://darklua.com)), `none` |
 
 ```sh
-pnpm create baseplate my-game --state charm --data profilestore --entities components
+pnpm create baseplate my-game --language typescript --state charm --data profilestore --entities components
 ```
 
 Each add-on arrives wired in and tested, with a section in the game's `AGENTS.md` that tells agents how to use it. CI creates games with each choice alone, every question answered together, and enough combinations that every two choices meet in some game. The CLI refuses only what can't work: Reflex with Vide, Darklua with `--managed partial` (nothing publishes from git to process), and a choice the language doesn't have (Reflex and Flamework Components in a Luau game). [Folder layout](/layout/) lists the files each one adds.
 
 ## UI: Vide
 
-`--ui vide` swaps React for [Vide](https://github.com/centau/vide), fine-grained reactivity without re-renders. The JSX settings in `tsconfig.json` and the `build-ui` skill, which shows how to mount a root, become Vide's; React, its hooks, Ripple, React DevTools and React's lint rules go. [UI](/ui/#vide) has the differences. Going back to React means changing those settings and the UI's code by hand: create a game without the flag and compare.
+`--ui vide` swaps React for [Vide](https://github.com/centau/vide), fine-grained reactivity without re-renders. The JSX settings in `tsconfig.json` and the `build-ui` skill, which shows how to mount a root, become Vide's; React, its hooks, Ripple, React DevTools and React's lint rules go. [UI](/ui/#vide) has the differences. Going back to React means changing those settings and the UI's code by hand: create a game without the flag and compare. A Luau game starts with Vide; `--ui react` gives it react-lua instead (see [below](#in-a-luau-game)).
 
 ## Places: several
 
@@ -91,8 +91,8 @@ A [Luau game](/luau/) asks the same questions, with what Luau games use, and eac
 | --- | --- | --- |
 | `--managed partial` | | As in a TypeScript game: no `world/`, `sync` task, `edit-world` skill or publishing; the code alone is tested and typed |
 | `--places multi` | | Rogen's Luau layout: `<place>.rogen.json` at the root, shared code in `projects/common/src`, each place in `projects/<place>/` (see [Luau games](/luau/#several-places)) |
-| `--ui vide` | `centau/vide`, `littensy/vide-ripple`, in place of react-lua | Vide's `build-ui` skill (mounting a root, `CreateVideStory`) and UI section in `AGENTS.md`; the game starts without a UI |
-| `--state charm` | `littensy/charm`, with `littensy/react-charm` or `littensy/vide-charm` | Charm's section in `AGENTS.md`: a controller keeps a signal, and the UI reads it |
+| `--ui react` | `jsdotlua/react`, `jsdotlua/react-roblox`, `littensy/react-ripple`, in place of Vide | React's `build-ui` skill (mounting a root, `CreateReactStory`) and UI section in `AGENTS.md`; the game starts without a UI |
+| `--state charm` | `littensy/charm`, with `littensy/vide-charm` or `littensy/react-charm` | Charm's section in `AGENTS.md`: a controller keeps a signal, and the UI reads it |
 | `--data profilestore` | `lm-loleris/profilestore`, a server package | `src/game/playerdata/server/`: `PlayerData.luau`, `PlayerDataService.luau` and its spec |
 | `--data lapis` | `nezuo/lapis`, `nezuo/data-store-service-mock`, server packages | the same three files, on Lapis |
 | `--entities jecs` | `ukendio/jecs` | `src/features/spinner/server/`: `SpinnerSystem.luau` and its spec, `SpinnerService.luau`; the world part and `tests/e2e/spinner.luau` |

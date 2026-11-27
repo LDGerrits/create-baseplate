@@ -13,11 +13,10 @@ private = true
 shared-packages = "game.ReplicatedStorage.Packages"
 
 [dependencies]
-React = "jsdotlua/react@=17.2.1"
-ReactRipple = "littensy/react-ripple@=3.0.1"
-ReactRoblox = "jsdotlua/react-roblox@=17.2.1"
 Remo = "littensy/remo@=1.5.3"
 t = "osyrisrblx/t@=3.1.1"
+Vide = "centau/vide@=0.4.1"
+VideRipple = "littensy/vide-ripple@=0.10.2"
 
 [dev-dependencies]
 Jest = "jsdotlua/jest@=3.10.0"

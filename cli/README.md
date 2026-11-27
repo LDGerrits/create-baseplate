@@ -17,8 +17,8 @@ With npm, put the flags after `--`, as in `npm create baseplate@latest my-game -
 | `--no-install`         | Don't install the tools and packages (with mise).                                            |
 | `--json`               | Print one JSON result on stdout, for agents and scripts. Implies `--yes`.                    |
 | `--name <name>`        | The game's name, when the folder's name can't be it. Default: the folder's name.             |
-| `--language <language>` | `typescript` (default): roblox-ts with Flamework; or `luau`: Luau with Wally, StyLua, Selene and luau-lsp. Asked first; each language has its own questions. |
-| `--ui <library>`       | UI: `react` (default) or `vide`.                                                             |
+| `--language <language>` | `luau` (default): Luau with Wally, StyLua, Selene and luau-lsp; or `typescript`: roblox-ts with Flamework. Asked first; each language has its own questions. |
+| `--ui <library>`       | UI: `vide` (Luau's default) or `react` (TypeScript's default).                               |
 | `--places <layout>`    | `single` (default), or `multi`: a lobby and a game sharing code, each place a folder in `projects/`.     |
 | `--managed <mode>`     | `full` (default): Rojo manages the whole place, code and world, built and published from git; or `partial`: only the code, and Studio keeps the place and its world. |
 | `--state <library>`    | Client state: `reflex` (TypeScript only; its default), `charm` (Luau's default, and with Vide) or `none`. |

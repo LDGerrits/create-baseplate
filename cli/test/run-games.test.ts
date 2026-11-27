@@ -122,7 +122,7 @@ test("a batch of passing games passes, and the first batch checks its template f
 		"mise install in t/typescript/base",
 		"mise run install in t/typescript/base",
 		"mise run ci in t/typescript/base",
-		"create ",
+		"create --language typescript",
 		"corpus typescript in corpus/coin-rush",
 		"mise run ci in g/corpus/coin-rush",
 		"create ",

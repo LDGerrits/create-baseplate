@@ -85,7 +85,7 @@ test("refuses a folder with files at the prompt, before the other questions", { 
 
 test("asks the project's shape, then offers the recommended stack in one answer", { skip: !hasScript }, async () => {
 	const cwd = tempDir();
-	// The name, then Enter for TypeScript, one place, the whole place and the recommended stack.
+	// The name, then Enter for Luau, one place, the whole place and the recommended stack.
 	const { shown, status } = await atTerminal(
 		cwd,
 		"--no-install --no-git",
@@ -102,11 +102,12 @@ test("asks the project's shape, then offers the recommended stack in one answer"
 	assert.ok(shown.indexOf("One place, or several") < shown.indexOf("Which libraries and tools"), "shape first");
 	assert.match(
 		shown,
-		/The recommended ones \(React and Reflex; no player data, entities, asset uploads or release builds yet\)/,
+		/The recommended ones \(Vide and Charm; no player data, entities, asset uploads or release builds yet\)/,
 	);
 	assert.doesNotMatch(shown, /Which library for client state/, "the recommended stack skips the stack's questions");
 	const pkg = JSON.parse(fs.readFileSync(path.join(cwd, "coin-rush/package.json"), "utf8"));
-	assert.equal(pkg.baseplate.addOns.state, "reflex");
+	assert.equal(pkg.baseplate.language, "luau");
+	assert.equal(pkg.baseplate.addOns.state, "charm");
 	assert.equal(pkg.baseplate.addOns.places, "single");
 });
 

@@ -105,10 +105,21 @@ for (const language of ["typescript", "luau"]) {
 
 // The layers (app, features, game, platform) hold for every file the template and its add-ons write.
 for (const [label, args] of [
-	["a roblox-ts game", ["--data", "lapis", "--entities", "jecs", "--assets", "asphalt"]],
+	["a roblox-ts game", ["--language", "typescript", "--data", "lapis", "--entities", "jecs", "--assets", "asphalt"]],
 	[
 		"a multi-place roblox-ts game",
-		["--places", "multi", "--data", "profilestore", "--entities", "components", "--assets", "asphalt"],
+		[
+			"--language",
+			"typescript",
+			"--places",
+			"multi",
+			"--data",
+			"profilestore",
+			"--entities",
+			"components",
+			"--assets",
+			"asphalt",
+		],
 	],
 	["a Luau game", ["--language", "luau", "--data", "lapis", "--entities", "jecs", "--assets", "asphalt"]],
 	[

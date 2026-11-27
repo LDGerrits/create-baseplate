@@ -350,8 +350,8 @@ export function plan({
 		? [
 				{
 					name: `node ${MIN_NODE}`,
-					language: DEFAULT_LANGUAGE,
-					games: generators[DEFAULT_LANGUAGE].matrices.macos.map(generators[DEFAULT_LANGUAGE].flagsOf),
+					language: "typescript",
+					games: generators.typescript.matrices.macos.map(generators.typescript.flagsOf),
 					template: false,
 					node: MIN_NODE,
 				},

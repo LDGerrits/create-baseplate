@@ -219,7 +219,7 @@ if (!process.argv.includes("--types")) {
 		}
 	}
 	// Wally's package files only point at the package; this copies the package's types into them, so
-	// `require(ReplicatedStorage.Packages.React)` is typed. It reads the instance paths from the sourcemap.
+	// `require(ReplicatedStorage.Packages.Vide)` is typed. It reads the instance paths from the sourcemap.
 	if (fs.existsSync(UNTYPED)) {
 		// Until it finishes, a typing that stops partway leaves folders it can't type again, and the
 		// next run installs them anew.

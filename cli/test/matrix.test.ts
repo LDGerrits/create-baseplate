@@ -94,9 +94,9 @@ test("reads the manifests' conflicts, such as Reflex with Vide", () => {
 test("CI creates games of every language", () => {
 	for (const job of ["pull", "full"] as const) {
 		assert.ok(allMatrices[job].includes(""));
-		assert.ok(allMatrices[job].includes("--language luau"));
+		assert.ok(allMatrices[job].includes("--language typescript"));
 	}
-	assert.ok(allMatrices.windows.includes("--language luau"));
+	assert.ok(allMatrices.windows.includes("--language typescript"));
 });
 
 const games = (batches: { games: string[] }[]) => batches.flatMap((batch) => batch.games);
@@ -172,7 +172,9 @@ test("a pull request creates the pull sets, in batches of one language each, wit
 		["luau", "typescript"],
 	);
 	for (const batch of create) {
-		for (const game of batch.games) assert.equal(game.includes("--language luau"), batch.language === "luau", game);
+		for (const game of batch.games) {
+			assert.equal(game.includes("--language typescript"), batch.language === "typescript", game);
+		}
 	}
 	assert.deepEqual(games(windows).sort(), [...allMatrices.windows].sort());
 	assert.ok(windows.every((batch) => !batch.template));
@@ -200,7 +202,7 @@ test("only the nightly run and a run by hand add the macOS games and the minimum
 	assert.ok(MIN_NODE.startsWith(minimum), "the minimum is what the CLI's engines say");
 	for (const event of ["schedule", "workflow_dispatch"] as const) {
 		const { create, macos } = plan({ event, headRef: "" });
-		assert.deepEqual(games(macos).sort(), ["", "--language luau"], event);
+		assert.deepEqual(games(macos).sort(), ["", "--language typescript"], event);
 		assert.deepEqual(
 			macos.map((batch) => batch.language).sort(),
 			["luau", "typescript"],
@@ -209,7 +211,13 @@ test("only the nightly run and a run by hand add the macOS games and the minimum
 		assert.ok(macos.every((batch) => !batch.template && batch.node === undefined));
 		const old = create.filter((batch) => batch.node !== undefined);
 		assert.deepEqual(old, [
-			{ name: `node ${MIN_NODE}`, language: "typescript", games: [""], template: false, node: MIN_NODE },
+			{
+				name: `node ${MIN_NODE}`,
+				language: "typescript",
+				games: ["--language typescript"],
+				template: false,
+				node: MIN_NODE,
+			},
 		]);
 		assert.deepEqual(games(create.filter((batch) => batch.node === undefined)).sort(), [...allMatrices.full].sort());
 	}

@@ -15,11 +15,11 @@ interface Option {
 	readonly hint?: string;
 }
 const LANGUAGES: readonly Option[] = [
-	{ label: "TypeScript", hint: "roblox-ts, with Flamework" },
 	{ label: "Luau", hint: "Rojo, Wally, StyLua, Selene and luau-lsp" },
+	{ label: "TypeScript", hint: "roblox-ts, with Flamework" },
 ];
 const STACK = {
-	luau: "React and Charm; no player data, entities, asset uploads or release builds yet",
+	luau: "Vide and Charm; no player data, entities, asset uploads or release builds yet",
 	ts: "React and Reflex; no player data, entities, asset uploads or release builds yet",
 };
 const INSTALL_STEPS: readonly (readonly [string, number])[] = [
@@ -130,7 +130,7 @@ async function play() {
 		setText(a, name);
 
 		const lang = language();
-		await select(id, "Which language?", LANGUAGES, lang === "luau" ? [1] : []);
+		await select(id, "Which language?", LANGUAGES, lang === "ts" ? [1] : []);
 		await select(
 			id,
 			"One place, or several?",
