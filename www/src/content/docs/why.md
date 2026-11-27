@@ -13,7 +13,7 @@ Everything an agent needs to know whether its change works is one command, `mise
 
 ### None is a choice
 
-Like create-t3-app, each library question offers the most used libraries and "none", which is the default for player data, entities, assets and release builds; client state defaults to Reflex in a TypeScript game and Charm in a Luau game. The base game brings only what nearly every game needs (a structure for services and controllers, a UI library, the tooling) and leaves saved data, entities, assets and release builds to you. An add-on is a folder of files and a manifest, so adding one never touches the base.
+Like create-t3-app, each library question offers the most used libraries and "none", which is the default for player data, entities, assets and release builds; client state defaults to Reflex in a TypeScript game and Charm in a Luau game, whose UI defaults to Vide. The base game brings only what nearly every game needs (a structure for services and controllers, a UI library, the tooling) and leaves saved data, entities, assets and release builds to you. An add-on is a folder of files and a manifest, so adding one never touches the base.
 
 ### Pin everything, and wait
 

@@ -59,7 +59,7 @@ async function tryOne(variant: string[], index: number): Promise<boolean> {
 		result = JSON.parse(created.stdout.slice(created.stdout.indexOf("{")));
 	} catch {}
 	if (created.code === 0 && result.ok === true && corpus) {
-		applyCorpus(dir, variant.includes("luau") ? "luau" : "typescript");
+		applyCorpus(dir, variant.includes("typescript") ? "typescript" : "luau");
 		const checked = await run("mise", ["run", "ci"], dir, { env, echo: "none" });
 		seconds = ((performance.now() - started) / 1000).toFixed(1);
 		if (checked.code !== 0) {

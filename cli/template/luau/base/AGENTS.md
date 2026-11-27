@@ -1,14 +1,14 @@
 # my-game
 
-A Roblox game in Luau: Rojo serves it, Rogen places each file in the game, Wally brings the packages, and luau-lsp type-checks it in strict mode against every instance in the game. Services and controllers are plain modules; React draws the UI.
+A Roblox game in Luau: Rojo serves it, Rogen places each file in the game, Wally brings the packages, and luau-lsp type-checks it in strict mode against every instance in the game. Services and controllers are plain modules; Vide draws the UI.
 
 ## Look it up, don't recall it
 
-What you remember of Luau's type system, react-lua, Rogen and the Roblox API is likely out of date or wrong. Before you use an API you aren't sure of, read the docs that match the installed versions:
+What you remember of Luau's type system, Vide, Rogen and the Roblox API is likely out of date or wrong. Before you use an API you aren't sure of, read the docs that match the installed versions:
 
 - Roblox API: search `.luau-lsp/globalTypes.d.luau` for the class or member, as luau-lsp types it. For what it does, read its page on create.roblox.com: add `.md` to a page's link for Markdown, and start from https://create.roblox.com/docs/llms.txt rather than guessing a URL.
 - Luau itself (types, generics, `--!strict`, string interpolation): https://luau.org, and https://luau.org/typecheck for the type checker.
-- React: react-lua follows React 17; how it differs is at https://jsdotlua.github.io/react-lua/, and what it exports in `Packages/_Index/jsdotlua_react@*/react/src/init.luau`. Ripple's hooks: `Packages/_Index/littensy_react-ripple@*/`.
+- Vide: https://centau.github.io/vide/ (a crash course, then the API), and its source in `Packages/_Index/centau_vide@*/vide/src/`. Ripple's Vide hooks: `Packages/_Index/littensy_vide-ripple@*/vide-ripple/src/`; the `README.md` beside them covers Ripple's springs, tweens and their options.
 - Any other package: its folder under `Packages/_Index/` (or `ServerPackages/`, `DevPackages/`): the `README.md` when there is one, and the types its source exports.
 - Rogen: `rogen doc <topic>` and `rogen help <command> --json`. Other tools: `<tool> --help`, and the skills below for how this game uses them.
 - How this game is set up (the check, tests, UI, the world, publishing, its keys): `mise run doc <topic>`, Baseplate's docs for the version this game came from; `mise run doc` lists the topics.
@@ -78,7 +78,7 @@ A failing test's trace names the instance and the file: `ServerScriptService.fea
 
 ## UI
 
-React from `ReplicatedStorage.Packages.React` (react-lua). Look at each component's picture: `mise run ui` renders its story offline.
+Vide from `ReplicatedStorage.Packages.Vide`. Look at each component's picture: `mise run ui` renders its story offline.
 
 ## World and Studio
 

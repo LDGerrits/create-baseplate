@@ -7,7 +7,6 @@ import { recordOrigin, setProjectName } from "../helpers/setProjectName.ts";
 import {
 	type AddOnChoices,
 	choicesFor,
-	DEFAULT_LANGUAGE,
 	findConflict,
 	flagProblem,
 	installAddOns,
@@ -69,7 +68,7 @@ export function runSync(dir: string, version: string, check: boolean): number {
 		return 1;
 	}
 	// Games made before the language question are TypeScript.
-	const language = origin.language ?? DEFAULT_LANGUAGE;
+	const language = origin.language ?? "typescript";
 	if (!isLanguage(language)) {
 		console.log(`✗ This create-baseplate has no ${language} template: update create-baseplate first.`);
 		return 1;

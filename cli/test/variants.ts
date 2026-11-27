@@ -2,11 +2,11 @@
 // create. A new question whose choices change the files a game ships adds its variants here.
 export const MAIN_VARIANTS: string[][] = [
 	[],
-	["--language", "luau"],
+	["--language", "typescript"],
 	["--managed", "partial"],
-	["--language", "luau", "--managed", "partial"],
+	["--language", "typescript", "--managed", "partial"],
 	["--places", "multi"],
-	["--language", "luau", "--places", "multi"],
-	["--ui", "vide"],
-	["--language", "luau", "--ui", "vide"],
+	["--language", "typescript", "--places", "multi"],
+	["--ui", "react"],
+	["--language", "typescript", "--ui", "vide"],
 ];

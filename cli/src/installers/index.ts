@@ -9,8 +9,8 @@ import { templateExtras } from "../consts.ts";
 // A choice is a folder in template/<language>/extras/<question>/<choice>/ holding addon.json (see
 // Manifest), AGENTS.md (its section for the game's AGENTS.md), files/ (copied over the game) and,
 // for a choice that brings a tool, mise.toml (its pinned tools and tasks, added to the game's). The
-// base template is the default choice of a question without "none" (React, for the UI), so that
-// choice has no folder.
+// base template is the default choice of a question without "none" (the UI: React in TypeScript,
+// Vide in Luau), so that choice has no folder.
 export interface AddOn {
 	/** The flag and the key in results, such as "state". */
 	readonly name: string;
@@ -33,13 +33,13 @@ export interface AddOn {
 export const NONE = "none";
 
 export const languages = [
-	{ value: "typescript", label: "TypeScript", hint: "roblox-ts, with Flamework" },
 	{ value: "luau", label: "Luau", hint: "Rojo, Wally, StyLua, Selene and luau-lsp" },
+	{ value: "typescript", label: "TypeScript", hint: "roblox-ts, with Flamework" },
 ] as const;
 
 export type Language = (typeof languages)[number]["value"];
 
-export const DEFAULT_LANGUAGE: Language = "typescript";
+export const DEFAULT_LANGUAGE: Language = "luau";
 
 export const isLanguage = (value: string): value is Language => languages.some((language) => language.value === value);
 
@@ -157,10 +157,10 @@ export const addOnsByLanguage: Record<Language, readonly AddOn[]> = {
 			valueName: "library",
 			question: "Which UI library?",
 			choices: [
-				{ value: "react", label: "React", hint: "react-lua, the most used" },
 				{ value: "vide", label: "Vide", hint: "fine-grained reactivity, no re-renders" },
+				{ value: "react", label: "React", hint: "react-lua, the most used" },
 			],
-			defaultValue: "react",
+			defaultValue: "vide",
 			allowNone: false,
 		},
 		places,

@@ -9,7 +9,7 @@ import { CLI, create, GIT_IDENTITY, tempDir } from "./helpers.ts";
 
 test("creates a named project an agent can read", () => {
 	const cwd = tempDir();
-	const run = create(cwd, "games/coin-rush", "--no-git", "--state", "none");
+	const run = create(cwd, "games/coin-rush", "--no-git", "--language", "typescript", "--state", "none");
 	assert.equal(run.status, 0, run.stderr);
 	const result = JSON.parse(run.stdout) as { ok: boolean; name: string; dir: string; nextSteps: string[] };
 	assert.equal(result.ok, true);
@@ -58,7 +58,7 @@ for (const language of ["typescript", "luau"]) {
 
 test("records which CLI and add-ons made the game", () => {
 	const cwd = tempDir();
-	const run = create(cwd, "coin-rush", "--no-git", "--state", "charm");
+	const run = create(cwd, "coin-rush", "--no-git", "--language", "typescript", "--state", "charm");
 	assert.equal(run.status, 0, run.stderr);
 	const pkg = JSON.parse(fs.readFileSync(path.join(cwd, "coin-rush/package.json"), "utf8"));
 	const cli = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, "../package.json"), "utf8"));
@@ -79,7 +79,7 @@ test("makes a git repo", () => {
 
 test("leaves the first commit until an install brings the add-ons' packages into the lockfile", () => {
 	const cwd = tempDir();
-	const run = create(cwd, "my-game", "--state", "charm");
+	const run = create(cwd, "my-game", "--language", "typescript", "--state", "charm");
 	assert.equal(run.status, 0, run.stderr);
 	const result = JSON.parse(run.stdout) as {
 		git: boolean;

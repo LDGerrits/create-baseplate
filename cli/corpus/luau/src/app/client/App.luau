@@ -1,20 +1,22 @@
 -- The UI root: a ScreenGui holding the screens, which a story couldn't show, so it has none.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local React = require(ReplicatedStorage.Packages.React)
+local Vide = require(ReplicatedStorage.Packages.Vide)
 
 local Counter = require(script.Parent.Parent.features.dailyreward.Counter)
 local DailyRewardController = require(script.Parent.Parent.features.dailyreward.DailyRewardController)
 
+local create = Vide.create
+
 local function App()
-	-- React 17 has no useSyncExternalStore: take the controller's value and subscribe in an effect.
-	local secondsLeft, setSecondsLeft = React.useState(DailyRewardController.getSecondsLeft())
-	React.useEffect(function()
-		setSecondsLeft(DailyRewardController.getSecondsLeft())
-		return DailyRewardController.subscribe(setSecondsLeft)
-	end, {})
-	return React.createElement("ScreenGui", { ResetOnSpawn = false }, {
-		DailyReward = React.createElement(Counter, { count = secondsLeft }),
+	local secondsLeft = Vide.source(DailyRewardController.getSecondsLeft())
+	Vide.cleanup(DailyRewardController.subscribe(function(seconds)
+		secondsLeft(seconds)
+	end))
+	return create("ScreenGui")({
+		Name = "App",
+		ResetOnSpawn = false,
+		Counter({ count = secondsLeft }),
 	})
 end
 

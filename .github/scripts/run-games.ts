@@ -218,8 +218,6 @@ export async function checkGame(
 	return { note };
 }
 
-const isTypeScript = (flags: string) => !flags.split(" ").includes("luau");
-
 /** A batch: its template's check first, then each game. Returns the job's exit code. */
 export async function runBatch(batch: Batch, gamesDir: string, steps: Steps, templateDir: string): Promise<number> {
 	const rows: Row[] = [];
@@ -263,7 +261,7 @@ export async function runBatch(batch: Batch, gamesDir: string, steps: Steps, tem
 	for (const [index, flags] of batch.games.entries()) {
 		const name = flags === "" ? "(no add-ons)" : flags;
 		const dir = path.join(gamesDir, String(index), "coin-rush");
-		const probe = steps.probeEditHook !== undefined && !probed && isTypeScript(flags);
+		const probe = steps.probeEditHook !== undefined && !probed && batch.language === "typescript";
 		if (probe) probed = true;
 		rows.push(
 			await group(name, () =>
