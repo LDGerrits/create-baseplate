@@ -1,7 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
-import { templateExtras } from "../consts.ts";
-import { type Managed, PLACES, replaceSection, SHARED_TESTS_PLACE } from "./makeMultiPlace.ts";
+import { replaceExact, replaceSection } from "../../base/text-edit.ts";
+import { type AddOnChoices, type Managed, managedOf } from "../add-ons/questions.ts";
+import {
+	addSkillNotes,
+	copyPlaceTests,
+	multiPlaceReadme,
+	PLACES,
+	placesExtra,
+	SHARED_TESTS_PLACE,
+} from "./place-steps.ts";
 
 /** Each place's builds and session state, and its world's project files when Rojo manages the world. */
 const gitignore = (managed: Managed) => `
@@ -24,25 +32,13 @@ ${managed === "full" ? "!/projects/*/world/**/*.project.json\n" : ""}`;
  *
  * Runs after the add-ons, so everything they put in src/ but app/ becomes shared code.
  */
-export function makeMultiPlaceLuau(dir: string, name: string, managed: Managed) {
+export function makeMultiPlaceLuau(dir: string, name: string, choices: AddOnChoices) {
+	const managed = managedOf(choices);
 	const at = (...parts: string[]) => path.join(dir, ...parts);
 	const read = (file: string) => fs.readFileSync(at(file), "utf8");
 	// The template's text this relies on; fail rather than leave a half-converted game.
-	const replaceIn = (text: string, from: string, to: string) => {
-		if (!text.includes(from)) throw new Error(`places: the template no longer has: ${from}`);
-		return text.replaceAll(from, to);
-	};
-	// The sections that name the world have a variant for a game whose world lives in Studio.
-	const extra = (file: string) =>
-		fs.readFileSync(
-			path.join(
-				templateExtras("luau"),
-				"places",
-				"multi",
-				managed === "full" ? file : file.replace(/\.md$/, ".partial.md"),
-			),
-			"utf8",
-		);
+	const replaceIn = (text: string, from: string, to: string) => replaceExact(text, from, to, "places: the template");
+	const extra = (file: string) => placesExtra("luau", managed, file);
 	const json = (value: unknown) => `${JSON.stringify(value, undefined, "\t")}\n`;
 
 	const common = at("projects", "common", "src");
@@ -63,12 +59,7 @@ export function makeMultiPlaceLuau(dir: string, name: string, managed: Managed) 
 		const placeDir = at("projects", place);
 		fs.cpSync(at("src", "app"), path.join(placeDir, "src", "app"), { recursive: true });
 		if (managed === "full") fs.cpSync(at("world"), path.join(placeDir, "world"), { recursive: true });
-		// The template's end-to-end tests are the shared features'; the other places start with none.
-		if (place === SHARED_TESTS_PLACE) fs.cpSync(at("tests"), path.join(placeDir, "tests"), { recursive: true });
-		else {
-			fs.mkdirSync(path.join(placeDir, "tests", "e2e"), { recursive: true });
-			fs.writeFileSync(path.join(placeDir, "tests", "e2e", ".gitkeep"), "");
-		}
+		copyPlaceTests(dir, placeDir, place);
 		fs.writeFileSync(path.join(placeDir, "jest.config.ts"), extra("jest.config.ts").replaceAll("PLACE", place));
 		fs.writeFileSync(
 			path.join(placeDir, "rbx-forge.config.ts"),
@@ -156,15 +147,18 @@ export function makeMultiPlaceLuau(dir: string, name: string, managed: Managed) 
 			"Each place's map and lighting live in `world/` as files; luau-lsp types them from the place's `sourcemap.json`",
 		);
 	}
-	agents = agents.replaceAll("builds the place", "builds every place");
+	agents = replaceIn(agents, "builds the place", "builds every place");
 	// Darklua's section names the folders its script processes, which the paths below would
-	// rewrite to the shared code alone; and the spinner's end-to-end test is only in the game place.
-	agents = agents
-		.replace(
+	// rewrite to the shared code alone.
+	if (choices.release === "darklua") {
+		agents = replaceIn(
+			agents,
 			"it processes `src/` and the packages",
 			"it processes each place's code in `projects/<place>/src/`, the shared code's included, and the packages",
-		)
-		.replaceAll("`tests/e2e/spinner.luau`", `\`projects/${SHARED_TESTS_PLACE}/tests/e2e/spinner.luau\``);
+		);
+	}
+	// The spinner's end-to-end test is only in the game place.
+	agents = agents.replaceAll("`tests/e2e/spinner.luau`", `\`projects/${SHARED_TESTS_PLACE}/tests/e2e/spinner.luau\``);
 	// Single-place paths, in the template's sections and the add-ons': a place's entry scripts,
 	// world and tests are in its folder, and everything else in src/ is shared.
 	agents = agents
@@ -174,28 +168,13 @@ export function makeMultiPlaceLuau(dir: string, name: string, managed: Managed) 
 		.replaceAll("`tests/e2e/", "`projects/<place>/tests/e2e/")
 		.replaceAll("`world/", "`projects/<place>/world/");
 	// The section names the new layout's paths itself.
-	agents = replaceSection(agents, "Where code goes", extra("AGENTS.md"));
+	agents = replaceSection(agents, "Where code goes", extra("AGENTS.md"), "places: AGENTS.md");
 	fs.writeFileSync(at("AGENTS.md"), agents);
 
-	let readme = replaceSection(read("README.md"), "Layout", extra("README-layout.md"));
-	readme = replaceIn(readme, "mise run dev       #", "mise run dev lobby #");
-	if (managed === "full") readme = replaceIn(readme, "mise run sync      #", "mise run sync lobby #");
-	if (managed === "full") {
-		readme = replaceIn(
-			readme,
-			"`mise run build`, open `build/game.rbxl` in Studio",
-			"`mise run build`, open a place's `projects/<place>/build/game.rbxl` in Studio",
-		);
-	}
-	readme = readme.replaceAll("builds the place", "builds every place");
-	fs.writeFileSync(at("README.md"), readme);
+	const readme = multiPlaceReadme(read("README.md"), extra("README-layout.md"), managed);
+	fs.writeFileSync(at("README.md"), replaceIn(readme, "builds the place", "builds every place"));
 
-	// Skills describe one place; say how their paths map.
-	for (const skill of fs.readdirSync(at(".agents", "skills"))) {
-		const file = at(".agents", "skills", skill, "SKILL.md");
-		const text = fs.readFileSync(file, "utf8");
-		fs.writeFileSync(file, text.replace(/^(# .+\n)/m, `$1\n${skillNote(managed)}\n`));
-	}
+	addSkillNotes(dir, skillNote(managed));
 }
 
 const skillNote = (managed: Managed) =>

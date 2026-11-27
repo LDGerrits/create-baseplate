@@ -5,7 +5,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { after, test } from "node:test";
-import { type Files, mergeText, planSync } from "../src/sync/agentFiles.ts";
+import { type Files, mergeText, planSync } from "../src/domain/agent-files/agent-files.ts";
 
 const plan = (base: Files, ours: Files, theirs: Files) => planSync(base, ours, theirs, mergeText);
 

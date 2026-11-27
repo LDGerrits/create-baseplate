@@ -5,7 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import { SIDEBAR } from "../../www/src/sidebar.ts";
-import { closestTopic } from "../src/doc/command.ts";
+import { closestTopic } from "../src/commands/doc/doc-command.ts";
 
 const CLI = path.resolve(import.meta.dirname, "../dist/index.js");
 const doc = (...args: string[]) => spawnSync("node", [CLI, "doc", ...args], { encoding: "utf8" });

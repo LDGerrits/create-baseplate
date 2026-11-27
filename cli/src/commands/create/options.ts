@@ -1,24 +1,26 @@
 import * as p from "@clack/prompts";
 import { Command, CommanderError, Option } from "commander";
-import { DEFAULT_APP_NAME } from "../consts.ts";
-import { folderProblem } from "../helpers/scaffoldProject.ts";
+import { printJsonError } from "../../base/logger.ts";
+import { DEFAULT_LANGUAGE, type Language, languages } from "../../domain/add-ons/language.ts";
 import {
 	type AddOn,
 	type AddOnChoices,
 	addOnsByLanguage,
 	allAddOns,
 	choicesFor,
-	DEFAULT_LANGUAGE,
 	defaultFor,
 	findConflict,
 	flagProblem,
 	flagValuesOf,
-	type Language,
-	languages,
 	NONE,
-} from "../installers/index.ts";
-import { nameProblem } from "../utils/appName.ts";
-import { parseNameAndPath } from "../utils/parseNameAndPath.ts";
+	settleChoices,
+} from "../../domain/add-ons/questions.ts";
+import { nameProblem } from "../../domain/game/app-name.ts";
+import { folderProblem } from "../../domain/game/scaffold.ts";
+import { parseNameAndPath } from "./parse-name-and-path.ts";
+
+/** The folder, and so the name, of a game when none is given. */
+const DEFAULT_APP_NAME = "my-game";
 
 export interface CliResults {
 	name: string;
@@ -101,7 +103,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 	const taken = flagsNpmTook();
 	if (taken.length > 0) {
 		const message = `npm read ${taken.join(", ")} as its own option${taken.length > 1 ? "s" : ""}, so create-baseplate never got ${taken.length > 1 ? "them" : "it"}. With npm, put the flags after --: npm create baseplate@latest my-game -- --yes`;
-		if (process.env.npm_config_json === "true") console.log(JSON.stringify({ ok: false, error: message }));
+		if (process.env.npm_config_json === "true") printJsonError(message);
 		else console.error(message);
 		process.exit(2);
 	}
@@ -111,7 +113,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 		if (!(error instanceof CommanderError)) throw error;
 		// Commander has printed the message. With --json, the result says it too.
 		if (error.exitCode !== 0 && process.argv.includes("--json")) {
-			console.log(JSON.stringify({ ok: false, error: error.message }));
+			printJsonError(error.message);
 		}
 		process.exit(error.exitCode);
 	}
@@ -132,8 +134,8 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 	);
 	const given = program.args[0];
 	const ask = !flags.yes && !flags.json && process.stdin.isTTY && process.stdout.isTTY;
-	const refuse = (problem: string) => {
-		if (flags.json) console.log(JSON.stringify({ ok: false, error: problem }));
+	const refuse = (problem: string): never => {
+		if (flags.json) printJsonError(problem);
 		else if (ask) p.cancel(problem);
 		else console.error(problem);
 		process.exit(1);
@@ -142,9 +144,13 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 	let language = flags.language ?? DEFAULT_LANGUAGE;
 	let input = given ?? DEFAULT_APP_NAME;
 	let { git, install } = flags;
-	// A flag the language has no such choice for, such as --entities components with --language luau.
+	// Refused before a question that would have no choice left to offer.
+	const settle = (language: Language) => {
+		const settled = settleChoices(language, givenAddOns);
+		return "problem" in settled ? refuse(settled.problem) : settled.choices;
+	};
 	// Without --language, a flag only one language takes picks it in the prompt, so check it there.
-	if (!ask || flags.language !== undefined) {
+	if (ask && flags.language !== undefined) {
 		const problem = flagProblem(language, givenAddOns);
 		if (problem !== undefined) refuse(problem);
 	}
@@ -153,7 +159,7 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 		const problem = answerProblem(given, flags.name) ?? flagsConflict(flags.language, givenAddOns);
 		if (problem !== undefined) refuse(problem);
 	}
-	let chosen = choicesFor(language, givenAddOns);
+	let chosen: AddOnChoices;
 	if (ask) {
 		p.intro("create-baseplate");
 		const dir =
@@ -181,39 +187,34 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 			});
 			cancelled(answer);
 			language = answer as Language;
-			const problem = flagProblem(language, givenAddOns);
-			if (problem !== undefined) refuse(problem);
-			chosen = choicesFor(language, givenAddOns);
 		}
-		// Flags that can't go together, such as --ui vide with --state reflex, would leave a later
-		// question with no choice to offer: refuse before asking it.
-		const conflict = findConflict(language, chosen);
-		if (conflict !== undefined) refuse(conflict);
+		// The language is known only now, after its question.
+		const picked = settle(language);
 		const choose = async (addOn: AddOn) => {
 			const answer = await p.select({
 				message: addOn.question,
-				initialValue: defaultFor(language, addOn, chosen),
+				initialValue: defaultFor(language, addOn, picked),
 				options: [
 					// Leave out what can't go with the answers so far, such as Reflex with Vide.
 					...addOn.choices.filter(
-						(choice) => findConflict(language, { ...chosen, [addOn.name]: choice.value }) === undefined,
+						(choice) => findConflict(language, { ...picked, [addOn.name]: choice.value }) === undefined,
 					),
 					...(addOn.allowNone ? [{ value: NONE, label: "None", hint: "add one later yourself" }] : []),
 				],
 			});
 			cancelled(answer);
-			chosen[addOn.name] = answer as string;
+			picked[addOn.name] = answer as string;
 		};
 		const unanswered = addOnsByLanguage[language].filter((addOn) => givenAddOns[addOn.name] === undefined);
 		// The project's shape first, then the libraries and tools: the recommended ones, or each in turn.
 		for (const addOn of unanswered.filter((addOn) => addOn.shape === true)) await choose(addOn);
 		const stack = unanswered.filter((addOn) => addOn.shape !== true);
 		if (stack.length > 0) {
-			for (const addOn of stack) chosen[addOn.name] = defaultFor(language, addOn, chosen);
+			for (const addOn of stack) picked[addOn.name] = defaultFor(language, addOn, picked);
 			const answer = await p.select({
 				message: "Which libraries and tools?",
 				options: [
-					{ value: "recommended", label: "The recommended ones", hint: stackSummary(stack, chosen) },
+					{ value: "recommended", label: "The recommended ones", hint: stackSummary(stack, picked) },
 					{ value: "choose", label: "Choose each one" },
 				],
 			});
@@ -236,9 +237,15 @@ export async function runCli(version: string): Promise<CliResults | undefined> {
 				},
 			},
 		);
+		chosen = picked;
 		input = dir as string;
 		git = answers.git;
 		install = answers.install;
+	} else {
+		// The name before the choices, as the prompt asks them.
+		const problem = nameProblem(flags.name ?? parseNameAndPath(input).name);
+		if (problem !== undefined) refuse(problem);
+		chosen = settle(language);
 	}
 
 	const { name, dir } = parseNameAndPath(input);

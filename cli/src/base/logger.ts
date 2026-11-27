@@ -13,3 +13,6 @@ export const logger = {
 	warn: (text: string) => write(pc.yellow(text)),
 	error: (text: string) => process.stderr.write(`${pc.red(text)}\n`),
 };
+
+/** With --json, a failure is one JSON result on stdout, which agents and scripts read. */
+export const printJsonError = (message: string) => console.log(JSON.stringify({ ok: false, error: message }));

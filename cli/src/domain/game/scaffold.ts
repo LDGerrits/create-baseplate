@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { SYMLINKS_FILE, templateBase } from "../consts.ts";
-import type { Language } from "../installers/index.ts";
+import { SYMLINKS_FILE, templateBase } from "../../base/template.ts";
+import type { Language } from "../add-ons/language.ts";
 
 /** What a new repo may already hold, from `git init`, GitHub's "Create repository" or the OS: kept. */
 const KEPT = new Set([".git", "LICENSE", "LICENSE.md", "LICENSE.txt", ".DS_Store", "Thumbs.db"]);
@@ -54,10 +54,8 @@ export function scaffoldProject(dir: string, language: Language): string[] {
 /**
  * Removes the template's tests of its own tooling (the hooks' and scripts'), once the add-ons have
  * edited the tooling: they test Baseplate's code, which the game's developers don't change.
- * BASEPLATE_TOOLING_TESTS=1 keeps them, so CI's games test the tooling as each variant leaves it.
  */
 export function dropToolingTests(dir: string) {
-	if (process.env.BASEPLATE_TOOLING_TESTS === "1") return;
 	for (const folder of [".agents/hooks", "scripts"]) {
 		for (const file of fs.readdirSync(path.join(dir, folder))) {
 			if (file.endsWith(".test.ts")) fs.rmSync(path.join(dir, folder, file));

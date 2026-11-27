@@ -4,8 +4,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import { pathToFileURL } from "node:url";
-import { validateAppName } from "../src/utils/appName.ts";
-import { parseNameAndPath } from "../src/utils/parseNameAndPath.ts";
+import { parseNameAndPath } from "../src/commands/create/parse-name-and-path.ts";
+import { validateAppName } from "../src/domain/game/app-name.ts";
 import { create, tempDir } from "./helpers.ts";
 
 /** Why the created game's guard blocks an edit of `file`, or undefined when it lets it through. */

@@ -1,16 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
-import { templateExtras } from "../consts.ts";
-import type { Language } from "../installers/index.ts";
-import { makeMultiPlaceLuau } from "./makeMultiPlaceLuau.ts";
-
-/** The places a multi-place game starts with. */
-export const PLACES = ["lobby", "game"];
-/**
- * The place that runs the shared code's tests. Each place compiles the shared code, so its specs
- * and end-to-end tests would otherwise run once per place, for the same result.
- */
-export const SHARED_TESTS_PLACE = "game";
+import { replaceExact, replaceSection } from "../../base/text-edit.ts";
+import { type AddOnChoices, type Managed, managedOf } from "../add-ons/questions.ts";
+import {
+	addSkillNotes,
+	copyPlaceTests,
+	multiPlaceReadme,
+	PLACES,
+	placesExtra,
+	SHARED_TESTS_PLACE,
+} from "./place-steps.ts";
 
 /** Each place's generated files, and its world's project files when Rojo manages the world. */
 const gitignore = (managed: Managed) => `
@@ -32,26 +31,13 @@ ${managed === "full" ? "!/projects/*/world/**/*.project.json\n" : ""}`;
  * into a folder inside rootDir), and Sloptor writes only inside its tsconfig's folder. So each
  * place compiles from tsconfig.<place>.json at the root to out/<place>, with the root's include/.
  */
-export function makeMultiPlace(dir: string, name: string, language: Language, managed: Managed = "full") {
-	if (language === "luau") makeMultiPlaceLuau(dir, name, managed);
-	else makeMultiPlaceTypeScript(dir, name, managed);
-}
-
-/** Whether Rojo manages the whole place, world included, or only the code (see the managed question). */
-export type Managed = "full" | "partial";
-
-/** The managed question's answer in a game's add-on choices. */
-export const managedOf = (chosen: Record<string, string>): Managed =>
-	chosen.managed === "partial" ? "partial" : "full";
-
-function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
+export function makeMultiPlaceTypeScript(dir: string, name: string, choices: AddOnChoices) {
+	const managed = managedOf(choices);
 	const at = (...parts: string[]) => path.join(dir, ...parts);
 	const read = (file: string) => fs.readFileSync(at(file), "utf8");
 	// The template's text this relies on; fail rather than leave a half-converted game.
-	const replaceIn = (text: string, from: string, to: string) => {
-		if (!text.includes(from)) throw new Error(`places: the template no longer has: ${from}`);
-		return text.replace(from, to);
-	};
+	const replaceIn = (text: string, from: string, to: string) => replaceExact(text, from, to, "places: the template");
+	const extra = (file: string) => placesExtra("typescript", managed, file);
 	const common = at("projects", "common", "src");
 	fs.mkdirSync(common, { recursive: true });
 
@@ -78,31 +64,22 @@ function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 			);
 		}
 		if (managed === "full") fs.cpSync(at("world"), path.join(placeDir, "world"), { recursive: true });
-		// The template's end-to-end tests are the shared features'; the other places start with none.
-		if (place === SHARED_TESTS_PLACE) fs.cpSync(at("tests"), path.join(placeDir, "tests"), { recursive: true });
-		else {
-			fs.mkdirSync(path.join(placeDir, "tests", "e2e"), { recursive: true });
-			fs.writeFileSync(path.join(placeDir, "tests", "e2e", ".gitkeep"), "");
-		}
-		fs.writeFileSync(
-			path.join(placeDir, "jest.config.ts"),
-			fs
-				.readFileSync(path.join(templateExtras("typescript"), "places", "multi", "jest.config.ts"), "utf8")
-				.replaceAll("PLACE", place),
+		copyPlaceTests(dir, placeDir, place);
+		fs.writeFileSync(path.join(placeDir, "jest.config.ts"), extra("jest.config.ts").replaceAll("PLACE", place));
+		let forge = read("rbx-forge.config.ts").replaceAll("node scripts/", "node ../../scripts/");
+		forge = replaceIn(
+			forge,
+			'import { defineConfig } from "rbx-forge";',
+			'import { fileURLToPath } from "node:url";\nimport { defineConfig } from "rbx-forge";',
 		);
 		fs.writeFileSync(
 			path.join(placeDir, "rbx-forge.config.ts"),
-			read("rbx-forge.config.ts")
-				.replaceAll("node scripts/", "node ../../scripts/")
-				.replace(
-					'import { defineConfig } from "rbx-forge";',
-					'import { fileURLToPath } from "node:url";\nimport { defineConfig } from "rbx-forge";',
-				)
-				.replace(
-					'args: ["build", "--json"], project: "tsconfig.json"',
-					// Sloptor reads --rojo from the tsconfig's folder, the root, so the path is absolute.
-					`args: ["build", "--json", "--rojo", fileURLToPath(new URL("default.project.json", import.meta.url)), "--includePath", "../../include"], project: "../../tsconfig.${place}.json"`,
-				),
+			replaceIn(
+				forge,
+				'args: ["build", "--json"], project: "tsconfig.json"',
+				// Sloptor reads --rojo from the tsconfig's folder, the root, so the path is absolute.
+				`args: ["build", "--json", "--rojo", fileURLToPath(new URL("default.project.json", import.meta.url)), "--includePath", "../../include"], project: "../../tsconfig.${place}.json"`,
+			),
 		);
 		const config = {
 			...rogen,
@@ -110,9 +87,11 @@ function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 			sourcePaths: ["../common/src", "src"],
 			compiledPath: `../../out/${place}`,
 			tree: JSON.parse(
-				JSON.stringify(rogen.tree)
-					.replaceAll('"node_modules/', '"../../node_modules/')
-					.replace('{"optional":"include"}', '{"optional":"../../include"}'),
+				replaceIn(
+					JSON.stringify(rogen.tree).replaceAll('"node_modules/', '"../../node_modules/'),
+					'{"optional":"include"}',
+					'{"optional":"../../include"}',
+				),
 			),
 		};
 		fs.writeFileSync(path.join(placeDir, "default.rogen.json"), `${JSON.stringify(config, undefined, "\t")}\n`);
@@ -165,18 +144,7 @@ function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 		);
 	}
 
-	// The sections that name the world have a variant for a game whose world lives in Studio.
-	const extra = (file: string) =>
-		fs.readFileSync(
-			path.join(
-				templateExtras("typescript"),
-				"places",
-				"multi",
-				managed === "full" ? file : file.replace(/\.md$/, ".partial.md"),
-			),
-			"utf8",
-		);
-	let agents = replaceSection(read("AGENTS.md"), "Where code goes", extra("AGENTS.md"));
+	let agents = replaceSection(read("AGENTS.md"), "Where code goes", extra("AGENTS.md"), "places: AGENTS.md");
 	agents = replaceIn(agents, "`tests/e2e/<feature>.luau`", "`projects/<place>/tests/e2e/<feature>.luau`");
 	if (managed === "full") {
 		agents = replaceIn(
@@ -195,17 +163,7 @@ function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 	if (managed === "full") agents = agents.replaceAll("under `world/`", "under a place's `world/`");
 	fs.writeFileSync(at("AGENTS.md"), agents);
 
-	let readme = replaceSection(read("README.md"), "Layout", extra("README-layout.md"));
-	readme = replaceIn(readme, "mise run dev       #", "mise run dev lobby #");
-	if (managed === "full") readme = replaceIn(readme, "mise run sync      #", "mise run sync lobby #");
-	if (managed === "full") {
-		readme = replaceIn(
-			readme,
-			"`mise run build`, open `build/game.rbxl` in Studio",
-			"`mise run build`, open a place's `projects/<place>/build/game.rbxl` in Studio",
-		);
-	}
-	fs.writeFileSync(at("README.md"), readme);
+	fs.writeFileSync(at("README.md"), multiPlaceReadme(read("README.md"), extra("README-layout.md"), managed));
 
 	// The UI skill names the UI root's single-place paths, as AGENTS.md's add-on notes do.
 	const buildUi = at(".agents", "skills", "build-ui", "SKILL.md");
@@ -214,12 +172,7 @@ function makeMultiPlaceTypeScript(dir: string, name: string, managed: Managed) {
 		for (const [from, to] of PATHS) skill = skill.replaceAll(from, to);
 		fs.writeFileSync(buildUi, skill);
 	}
-	// Skills describe one place; say how their paths map.
-	for (const skill of fs.readdirSync(at(".agents", "skills"))) {
-		const file = at(".agents", "skills", skill, "SKILL.md");
-		const text = fs.readFileSync(file, "utf8");
-		fs.writeFileSync(file, text.replace(/^(# .+\n)/m, `$1\n${skillNote(managed)}\n`));
-	}
+	addSkillNotes(dir, skillNote(managed));
 }
 
 /** Single-place paths in add-on notes, and where they are in a multi-place game. */
@@ -239,12 +192,3 @@ const skillNote = (managed: Managed) =>
 	managed === "full"
 		? "> This game has several places (see `AGENTS.md`). Below, `world/`, `src/app/`, `src/world.d.ts`, `tests/e2e/`, `build/` and `game.project.json` are each place's, under `projects/<place>/`, and shared features are in `projects/common/src/features/`. Run forge, ror and rojo from the place's folder, and name the place: `mise run dev <place>`, `mise run sync <place>`."
 		: "> This game has several places (see `AGENTS.md`). Below, `src/app/`, `tests/e2e/`, `build/` and `game.project.json` are each place's, under `projects/<place>/`, and shared features are in `projects/common/src/features/`. Run forge, ror and rojo from the place's folder, and name the place: `mise run dev <place>`.";
-
-/** Replaces the section under `## <heading>` with `section`, up to the next `## ` heading. */
-export function replaceSection(text: string, heading: string, section: string) {
-	const start = text.indexOf(`\n## ${heading}\n`) + 1;
-	if (start === 0) throw new Error(`places: no "## ${heading}" section to replace`);
-	const next = text.indexOf("\n## ", start);
-	const end = next === -1 ? text.length : next + 1;
-	return `${text.slice(0, start)}${section.trim()}\n${next === -1 ? "" : "\n"}${text.slice(end)}`;
-}

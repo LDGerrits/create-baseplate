@@ -15,7 +15,8 @@ import {
 	outputsOf,
 	plan,
 } from "../../.github/scripts/generate-matrix.ts";
-import { addOnsByLanguage, DEFAULT_LANGUAGE, type Language } from "../src/installers/index.ts";
+import { DEFAULT_LANGUAGE, type Language } from "../src/domain/add-ons/language.ts";
+import { addOnsByLanguage } from "../src/domain/add-ons/questions.ts";
 
 for (const [language, generator] of Object.entries(generators) as [Language, (typeof generators)[Language]][]) {
 	const { allowed, allPairs, flagsOf, matrices, pairsOf, questions } = generator;
@@ -161,7 +162,7 @@ test("a pull request creates the pull sets, in batches of one language each, wit
 	const { create, windows, engine } = plan({
 		event: "pull_request",
 		headRef: "feature",
-		changedFiles: ["cli/src/index.ts"],
+		changedFiles: ["cli/src/main.ts"],
 	});
 	assert.deepEqual(games(create).sort(), [...allMatrices.pull].sort());
 	assert.deepEqual(
@@ -222,7 +223,7 @@ test("only the nightly run and a run by hand add the macOS games and the minimum
 		assert.deepEqual(games(create.filter((batch) => batch.node === undefined)).sort(), [...allMatrices.full].sort());
 	}
 	for (const event of ["push", "pull_request"] as const) {
-		const { create, macos } = plan({ event, headRef: "feature", changedFiles: ["cli/src/index.ts"] });
+		const { create, macos } = plan({ event, headRef: "feature", changedFiles: ["cli/src/main.ts"] });
 		assert.deepEqual(macos, [], event);
 		assert.ok(
 			create.every((batch) => batch.node === undefined),
@@ -257,7 +258,7 @@ test("a pull request that changes only the docs creates no game", () => {
 			engine: [],
 		});
 	}
-	assert.equal(plan({ event: "pull_request", changedFiles: [...changed, "cli/src/index.ts"] }).create.length > 0, true);
+	assert.equal(plan({ event: "pull_request", changedFiles: [...changed, "cli/src/main.ts"] }).create.length > 0, true);
 	// A push has no changed files to read, and always creates games.
 	assert.equal(plan({ event: "push", changedFiles: changed }).create.length > 0, true);
 });

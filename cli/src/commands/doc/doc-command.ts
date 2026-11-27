@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { printJsonError } from "../../base/logger.ts";
 
 export interface Topic {
 	topic: string;
@@ -49,7 +50,7 @@ export function runDoc(docsDir: string, args: readonly string[]): number {
 	const index = JSON.parse(fs.readFileSync(path.join(docsDir, "topics.json"), "utf8")) as Index;
 	const names = index.topics.map((topic) => topic.topic);
 	const fail = (message: string) => {
-		if (json) console.log(JSON.stringify({ ok: false, error: message }));
+		if (json) printJsonError(message);
 		else console.error(message);
 		return 1;
 	};
