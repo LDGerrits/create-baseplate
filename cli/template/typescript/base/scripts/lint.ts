@@ -4,7 +4,7 @@
 //   node scripts/lint.ts [--wait] [--fix]
 //
 // With --fix, as `mise run check` runs it (not `mise run ci`), it applies the fixes ESLint can make,
-// as the format step does for formatting, except those that would undo half-written code (UNFIXED).
+// as the format step does for formatting, except those that would undo half-written code (UNFIXED_BY_CHECK).
 //
 // Loading ESLint's config and plugins takes most of its time, and doesn't depend on the files it
 // lints. With --fix, the edit hook's ESLint server (.agents/hooks/eslint-server.ts) has usually
@@ -16,7 +16,7 @@ import fs from "node:fs";
 import net from "node:net";
 import path from "node:path";
 import { ESLint } from "eslint";
-import { ask, changedFiles, snapshot, socketPath, UNFIXED } from "../.agents/hooks/eslint-server.ts";
+import { ask, changedFiles, fixable, snapshot, socketPath } from "../.agents/hooks/eslint-server.ts";
 
 const fix = process.argv.includes("--fix");
 const root = process.cwd();
@@ -39,7 +39,7 @@ const eslint = viaServer
 	? undefined
 	: new ESLint({
 			errorOnUnmatchedPattern: false,
-			fix: fix ? (message) => message.ruleId === null || !UNFIXED.has(message.ruleId) : false,
+			fix: fix ? (message) => fixable(message.ruleId, true) : false,
 		});
 // Any path under src/ loads the whole config; the file needn't exist.
 await eslint?.calculateConfigForFile("src/index.ts");
@@ -63,7 +63,7 @@ if (viaServer) {
 	// Only a server that's already up and current: a stale one, or none, means linting here, so no
 	// two linters ever write fixes to the same files. A whole project may take a while.
 	const before = snapshot(root);
-	const reply = await ask(root, targets, 120_000);
+	const reply = await ask(root, targets, 120_000, true);
 	const results = reply !== undefined && "results" in reply ? reply.results : undefined;
 	if (results !== undefined) {
 		if (changedFiles(before, snapshot(root)).length > 0) console.log(FIXED);
@@ -85,7 +85,7 @@ const linter =
 	eslint ??
 	new ESLint({
 		errorOnUnmatchedPattern: false,
-		fix: fix ? (message) => message.ruleId === null || !UNFIXED.has(message.ruleId) : false,
+		fix: fix ? (message) => fixable(message.ruleId, true) : false,
 	});
 const results = await linter.lintFiles(targets);
 if (fix && results.some((result) => result.output !== undefined)) {

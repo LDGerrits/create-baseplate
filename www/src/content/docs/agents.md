@@ -11,7 +11,7 @@ Models know roblox-ts, Flamework and Rogen poorly, and the Roblox API changes fa
 
 ## The check
 
-`mise run check` formats, compiles, lints, builds the place, verifies every import in it resolves, runs the tests and renders the UI stories, in about three seconds. The agent runs it after each change. The steps that don't need each other's result run at the same time (in a multi-place game, the places too), and only a failed step's output is printed. The tooling's own type-check and tests (of `scripts/` and `.agents/hooks/`) run when those files changed since they last passed, and always on CI.
+`mise run check` formats, compiles, lints, builds the place, verifies every import in it resolves, runs the tests and renders the UI stories, in about three seconds. The agent runs it when its work is done, and again after each round of fixes; while it writes, the hooks check each file it writes, and when it stops they run the check again unless it already passed on the same files. The steps that don't need each other's result run at the same time (in a multi-place game, the places too), and only a failed step's output is printed. The tooling's own type-check and tests (of `scripts/` and `.agents/hooks/`) run when those files changed since they last passed, and always on CI.
 
 ## Hooks
 

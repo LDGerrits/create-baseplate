@@ -18,9 +18,14 @@ Before you change something, look at what's there: the code that calls it, where
 
 ## Checking your work
 
-`mise run check` is the check: it formats, compiles, lints (applying the fixes ESLint can make), builds the place, runs the tests and renders the UI stories, in about three seconds, and prints only what failed. Run it after each change and fix what it reports until it passes. Hooks help: after each file you write, from an edit tool or the shell, the problems left come back to you (not in Cursor, which shows hooks' output to no one); the check runs again when you stop, and on each commit. In a tool without hooks, run the check yourself.
+`mise run check` is the check: it formats, compiles, lints (applying the fixes ESLint can make), builds the place, runs the tests and renders the UI stories, in about three seconds, and prints only what failed. Work with it in three steps:
 
-- While iterating, narrower loops are faster: `mise run compile` for type errors, `mise run test` for the tests (`mise run test -- shop` for the specs and end-to-end tests whose path matches, `-t <name>` for one test by name), `mise run ui -- --filter <name>` for one story's picture.
+1. **While you write**, hooks check each file you write, from an edit tool or the shell, and hand you the problems left in it: fix them as you go. Don't run the whole check after each edit. To answer one question sooner, run a narrower loop: `mise run compile` for type errors, `mise run test -- shop` for the specs and end-to-end tests whose path matches (`-t <name>` for one test by name), `mise run ui -- --filter <name>` for one story's picture.
+2. **When the work is done**, run `mise run check`, and again after each round of fixes, until it passes. It writes formatting and lint fixes itself and names the files it changed: read those again before you edit them.
+3. **When you stop, and on each commit**, hooks run the check again, and skip it when it already passed on the same files.
+
+In Cursor, which shows hooks' output to no one, and in a tool without hooks, nothing comes back while you write and nothing checks when you stop: run the narrower loops while you write, and the check when you're done.
+
 - When a lint rule is wrong for one line, disable it on that line with a comment saying why.
 - The project's tools come from mise: `rogen`, `forge`, `ror`, `ree`, `rojo`, `lune` and the rest are on the PATH in Claude Code's shell (a hook adds them when the session starts) and wherever your shell activates mise. Elsewhere, run them as `mise x -- rogen where <path>`, and so on for the commands below and in the skills. To change a tool's pin in `mise.toml`, run `mise lock` after it: `mise install` refuses a tool that `mise.lock` doesn't list with its checksums.
 - `mise run dev` serves the code to Studio: it is the "serve script" that Rogen's section below refers to.

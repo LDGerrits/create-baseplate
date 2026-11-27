@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { ask, changedFiles, type Linted, serve, snapshot, socketPath } from "./eslint-server.ts";
+import { ask, changedFiles, fixable, type Linted, serve, snapshot, socketPath } from "./eslint-server.ts";
 
 /** A project folder with a source file, a config and a lockfile, removed after `body`. */
 async function inProject(body: (root: string) => Promise<void>) {
@@ -56,6 +56,40 @@ test("answers requests from one linter, so ESLint loads once", async () => {
 		assert.deepEqual(server.calls, [["src/a.ts"], ["src/b.ts"]]);
 		await server.stopped;
 	});
+});
+
+test("lints one request at a time, each with its own fixes", async () => {
+	await inProject(async (root) => {
+		const seen: [string, boolean][] = [];
+		let running = 0;
+		const linter = async (files: string[], check: boolean) => {
+			running++;
+			assert.equal(running, 1);
+			await new Promise((wait) => setTimeout(wait, 50));
+			seen.push([files[0] ?? "", check]);
+			running--;
+			return files.map(problem);
+		};
+		let listening!: () => void;
+		const up = new Promise<void>((resolve) => {
+			listening = resolve;
+		});
+		const stopped = serve({ root, linter, idleMs: 1000, onListening: listening });
+		await up;
+		await Promise.all([ask(root, ["src/a.ts"]), ask(root, ["src"], undefined, true)]);
+		assert.deepEqual(seen.toSorted(), [
+			["src", true],
+			["src/a.ts", false],
+		]);
+		await stopped;
+	});
+});
+
+test("only the check fixes an import used only as a type", () => {
+	assert.equal(fixable("@typescript-eslint/consistent-type-imports", true), true);
+	assert.equal(fixable("@typescript-eslint/consistent-type-imports", false), false);
+	assert.equal(fixable("@typescript-eslint/no-unused-vars", true), false);
+	assert.equal(fixable(null, false), true);
 });
 
 test("an edit to the requested file, even one the lint itself fixed, is no reason to restart", async () => {

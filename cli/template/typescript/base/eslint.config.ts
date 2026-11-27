@@ -76,6 +76,8 @@ export default defineConfig(
 			"@typescript-eslint/consistent-type-imports": ["error", { fixStyle: "inline-type-imports" }],
 			// Flamework lifecycle classes (services, controllers) often have no fields.
 			"@typescript-eslint/no-extraneous-class": "off",
+			// It flags ordinary generic helpers (a factory whose type parameter appears once) and can't fix them.
+			"@typescript-eslint/no-unnecessary-type-parameters": "off",
 			// `os.clock()` and Roblox APIs return numbers; templates are fine.
 			"@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
 		},

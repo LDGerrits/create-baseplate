@@ -29,7 +29,7 @@ See [the CLI](/cli/) for every flag.
 
 ## For agents
 
-To create a game for a user, run `pnpm create baseplate <name> --json`. It asks nothing, installs everything, makes the first commit, and prints one JSON result with the folder and the next steps. Then work inside that folder and read its `AGENTS.md` first: it explains the project, and `mise run check` is the check to run after each change.
+To create a game for a user, run `pnpm create baseplate <name> --json`. It asks nothing, installs everything, makes the first commit, and prints one JSON result with the folder and the next steps. Then work inside that folder and read its `AGENTS.md` first: it explains the project, and `mise run check` is the check to run when the work is done; hooks check each file as it's written.
 
 ## Then
 
