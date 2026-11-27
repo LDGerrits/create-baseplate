@@ -76,6 +76,33 @@ export default defineConfig(
 			"@typescript-eslint/consistent-type-imports": ["error", { fixStyle: "inline-type-imports" }],
 			// Flamework lifecycle classes (services, controllers) often have no fields.
 			"@typescript-eslint/no-extraneous-class": "off",
+			// JavaScript's runtime isn't there: the code runs as Luau in Roblox. Each message names what to use.
+			"no-restricted-globals": [
+				"error",
+				{ name: "console", message: "There's no console in Roblox: use print, warn or error." },
+				{ name: "setTimeout", message: "Use task.delay(seconds, fn); it returns a thread for task.cancel." },
+				{ name: "setInterval", message: "Use a loop with task.wait(seconds) in task.spawn, or RunService.Heartbeat." },
+				{ name: "clearTimeout", message: "Use task.cancel(thread) on what task.delay returned." },
+				{ name: "clearInterval", message: "Stop the loop or disconnect the Heartbeat connection." },
+				{ name: "JSON", message: "Use HttpService.JSONEncode and HttpService.JSONDecode." },
+				{ name: "fetch", message: "Use HttpService.RequestAsync, on the server." },
+				{
+					name: "Object",
+					message:
+						'Object is nil at runtime: import ObjectUtils from "@rbxts/object-utils" (the name Object is reserved).',
+				},
+				{
+					name: "RegExp",
+					message: "There are no regular expressions: use string.match, string.gsub and Lua patterns.",
+				},
+				{ name: "Date", message: "Use DateTime.now(), os.time() or os.clock()." },
+				{ name: "window", message: "There's no DOM: the code runs in Roblox." },
+				{ name: "document", message: "There's no DOM: the code runs in Roblox." },
+				{ name: "process", message: "There's no Node: the code runs in Roblox." },
+				{ name: "require", message: "Import with import; roblox-ts compiles it to a require." },
+			],
+			// It flags ordinary generic helpers (a factory whose type parameter appears once) and can't fix them.
+			"@typescript-eslint/no-unnecessary-type-parameters": "off",
 			// `os.clock()` and Roblox APIs return numbers; templates are fine.
 			"@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
 		},

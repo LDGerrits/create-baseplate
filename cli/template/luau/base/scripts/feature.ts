@@ -3,8 +3,7 @@
 //
 //   node scripts/feature.ts <name> [<place>]
 //
-// <name> is lowercase letters and digits, as Roblox paths need it: `shop` makes src/features/shop
-// with a network file, a service with a spec and a controller, and lists the service and the
+// <name> is camelCase: `shop` makes src/features/shop with a network file, a service with a spec and a controller, and lists the service and the
 // controller in the entry scripts. In a multi-place game the feature goes in projects/common/src
 // and every place lists it; naming a place keeps it to that one place's src. The UI is yours to
 // add: a component and its story.
@@ -14,10 +13,13 @@ import path from "node:path";
 const ENTRIES = { server: "app/server/Main.server.luau", client: "app/client/Start.luau" };
 
 const pascal = (name: string) => name.replace(/^./, (letter) => letter.toUpperCase());
+/** The feature's folder: lowercase, since it's part of a require path (`dailyReward` is in `dailyreward/`). */
+const folderOf = (name: string) => name.toLowerCase();
 
 /** The files of a feature, by path from its folder. */
 export function featureFiles(name: string): Record<string, string> {
 	const Name = pascal(name);
+	const folder = folderOf(name);
 	return {
 		[`shared/${Name}Network.luau`]: `-- The ${name} feature's remotes, made with Remo. The type gives both sides each remote's arguments;
 -- Remo runs the \`t\` validators on what arrives before any handler sees it, so every argument a
@@ -49,7 +51,7 @@ return remotes.${name}
 		[`server/${Name}Service.luau`]: `-- Owns every player's ${name} state. Clients ask; this service decides.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local ${Name}Network = require(ReplicatedStorage.Shared.features.${name}.${Name}Network)
+local ${Name}Network = require(ReplicatedStorage.Shared.features.${folder}.${Name}Network)
 
 local ${Name}Service = {}
 
@@ -95,7 +97,7 @@ end)
 		[`client/${Name}Controller.luau`]: `-- Asks the server for the ${name} state, and keeps its latest answer for the UI.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local ${Name}Network = require(ReplicatedStorage.Shared.features.${name}.${Name}Network)
+local ${Name}Network = require(ReplicatedStorage.Shared.features.${folder}.${Name}Network)
 
 local ${Name}Controller = {}
 
@@ -141,12 +143,11 @@ export function addEntry(source: string, line: string, list: RegExp, declaration
 
 /** Creates the feature under `cwd`, and returns the files it wrote or changed. */
 export function createFeature(cwd: string, name: string, place?: string): string[] {
-	if (!/^[a-z][a-z0-9]*$/.test(name)) {
-		throw new Error(
-			`Name the feature in lowercase letters and digits, such as "shop" or "dailyreward": not "${name}".`,
-		);
+	if (!/^[a-z][a-zA-Z0-9]*$/.test(name)) {
+		throw new Error(`Name the feature in camelCase, such as "shop" or "dailyReward": not "${name}".`);
 	}
 	const Name = pascal(name);
+	const folder = folderOf(name);
 	const at = (...parts: string[]) => path.posix.join(...parts);
 	const multi = fs.existsSync(path.join(cwd, "projects"));
 	const places = multi
@@ -163,7 +164,7 @@ export function createFeature(cwd: string, name: string, place?: string): string
 	const featureRoot = at(
 		place === undefined ? (multi ? at("projects", "common", "src") : "src") : at("projects", place, "src"),
 		"features",
-		name,
+		folder,
 	);
 	if (fs.existsSync(path.join(cwd, featureRoot))) throw new Error(`${featureRoot} already exists.`);
 
@@ -182,7 +183,7 @@ export function createFeature(cwd: string, name: string, place?: string): string
 			path.join(cwd, server),
 			addEntry(
 				fs.readFileSync(path.join(cwd, server), "utf8"),
-				`\trequire(ServerScriptService.features.${name}.${Name}Service),`,
+				`\trequire(ServerScriptService.features.${folder}.${Name}Service),`,
 				/^\trequire\(ServerScriptService\.(?:features|game|platform)\..*\),$/,
 				/^local services\b/,
 				'local ServerScriptService = game:GetService("ServerScriptService")',
@@ -194,7 +195,7 @@ export function createFeature(cwd: string, name: string, place?: string): string
 			path.join(cwd, client),
 			addEntry(
 				fs.readFileSync(path.join(cwd, client), "utf8"),
-				`\trequire(features.${name}.${Name}Controller),`,
+				`\trequire(features.${folder}.${Name}Controller),`,
 				/^\trequire\((?:features|game|platform)\..*\),$/,
 				/^local controllers\b/,
 				"-- Client code is cloned into each player at runtime, so it reaches other client code from `script`.\nlocal features = script.Parent.Parent.features",

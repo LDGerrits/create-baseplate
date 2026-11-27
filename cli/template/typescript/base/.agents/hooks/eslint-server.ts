@@ -16,9 +16,10 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 
-/** What a request asks: the files to lint, relative to the project's root. */
+/** What a request asks: the files to lint, relative to the project's root, and for the check, its fixes. */
 interface Request {
 	files: string[];
+	check?: boolean;
 }
 
 /** One file's problems, as ESLint reports them. */
@@ -29,7 +30,7 @@ export interface Linted {
 
 export type Reply = { results: Linted[] } | { stale: true } | { error: string };
 
-export type Linter = (files: string[]) => Promise<Linted[]>;
+export type Linter = (files: string[], check: boolean) => Promise<Linted[]>;
 
 // Fixes that would undo what the agent is in the middle of writing: an import it hasn't used yet
 // (no-unused-vars deletes it), a `let` it's about to reassign, an import it will use as a value
@@ -39,6 +40,16 @@ export const UNFIXED = new Set([
 	"prefer-const",
 	"@typescript-eslint/consistent-type-imports",
 ]);
+
+// The check runs on code that's meant to be finished, so it also makes an import used only as a type
+// `import type`: if the import is later used as a value, the compiler says so plainly.
+export const UNFIXED_BY_CHECK = new Set(
+	[...UNFIXED].filter((rule) => rule !== "@typescript-eslint/consistent-type-imports"),
+);
+
+/** Whether ESLint may apply a fix for this problem, in the edit hook or (check) the check. */
+export const fixable = (ruleId: string | null, check: boolean) =>
+	ruleId === null || !(check ? UNFIXED_BY_CHECK : UNFIXED).has(ruleId);
 
 const IDLE_MS = 10 * 60 * 1000;
 /** How long a caller waits for an answer before it lints on its own. */
@@ -115,6 +126,8 @@ export async function serve({ root, linter, idleMs = IDLE_MS, onListening }: Ser
 	let seen = snapshot(root);
 	let idle: NodeJS.Timeout | undefined;
 	let busy = false;
+	// One lint at a time: the fixes a request may apply are set for the whole lint.
+	let queue: Promise<unknown> = Promise.resolve();
 
 	const server = net.createServer((connection) => {
 		let text = "";
@@ -155,7 +168,7 @@ export async function serve({ root, linter, idleMs = IDLE_MS, onListening }: Ser
 				const covered = (file: string) => asked.has(file) || request.files.some((one) => file.startsWith(`${one}/`));
 				const now = snapshot(root);
 				if (changedFiles(seen, now).some((file) => !covered(file))) return { stale: true };
-				const results = await linter(request.files);
+				const results = await linter(request.files, request.check === true);
 				seen = snapshot(root);
 				return { results };
 			} catch (error) {
@@ -166,7 +179,7 @@ export async function serve({ root, linter, idleMs = IDLE_MS, onListening }: Ser
 		if (idle !== undefined) clearTimeout(idle);
 		// A lint that never ends would leave this process behind: stop it. A whole project gets longer.
 		const hung = setTimeout(() => process.exit(1), ANSWER_MS * 2 + 120_000);
-		const answer = await lint();
+		const answer = await (queue = queue.then(lint, lint));
 		clearTimeout(hung);
 		busy = false;
 		if ("stale" in answer) {
@@ -206,7 +219,7 @@ export async function serve({ root, linter, idleMs = IDLE_MS, onListening }: Ser
 }
 
 /** One request to the server: the reply, or undefined when there's no server or it didn't answer in time. */
-export function ask(root: string, files: string[], timeoutMs = ANSWER_MS): Promise<Reply | undefined> {
+export function ask(root: string, files: string[], timeoutMs = ANSWER_MS, check = false): Promise<Reply | undefined> {
 	return new Promise((resolve) => {
 		let text = "";
 		let settled = false;
@@ -220,7 +233,7 @@ export function ask(root: string, files: string[], timeoutMs = ANSWER_MS): Promi
 		const connection = net.connect(socketPath(root));
 		const timer = setTimeout(() => finish(undefined), timeoutMs);
 		connection.setEncoding("utf8");
-		connection.on("connect", () => connection.write(`${JSON.stringify({ files } satisfies Request)}\n`));
+		connection.on("connect", () => connection.write(`${JSON.stringify({ files, check } satisfies Request)}\n`));
 		connection.on("data", (chunk: string) => {
 			text += chunk;
 		});
@@ -279,11 +292,10 @@ if (import.meta.main) {
 	if (root === undefined) process.exit(1);
 	process.chdir(root);
 	const { ESLint } = await import("eslint");
-	const eslint = new ESLint({
-		fix: (message) => message.ruleId === null || !UNFIXED.has(message.ruleId),
-		warnIgnored: false,
-	});
-	const linter: Linter = async (files) => {
+	let check = false;
+	const eslint = new ESLint({ fix: (message) => fixable(message.ruleId, check), warnIgnored: false });
+	const linter: Linter = async (files, forCheck) => {
+		check = forCheck;
 		const results = await eslint.lintFiles(files);
 		await ESLint.outputFixes(results);
 		return results.map(({ filePath, messages }) => ({

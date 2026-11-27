@@ -11,7 +11,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import module from "node:module";
 import path from "node:path";
-import { type Linted, lintViaServer, UNFIXED } from "./eslint-server.ts";
+import { fixable, type Linted, lintViaServer } from "./eslint-server.ts";
 import { GENERATED, namedFiles, type Payload, patched, toolInput } from "./guard.ts";
 import { type Format, formatArg, projectRoot } from "./project.ts";
 import { isShell, movesFiles, runsTask, shellStarted, writtenSince } from "./written.ts";
@@ -104,7 +104,7 @@ async function lint(files: string[], root: string, formatted: Promise<unknown>):
 	}
 	const { ESLint } = await import("eslint");
 	const eslint = new ESLint({
-		fix: (message) => message.ruleId === null || !UNFIXED.has(message.ruleId),
+		fix: (message) => fixable(message.ruleId, false),
 		warnIgnored: false,
 	});
 	await eslint.calculateConfigForFile(files[0] ?? "");
