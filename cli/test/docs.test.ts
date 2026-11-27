@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
-import { allAddOns, flagValuesOf, languages } from "../src/domain/add-ons/add-ons.ts";
+import { languages } from "../src/domain/add-ons/language.ts";
+import { allAddOns, flagValuesOf } from "../src/domain/add-ons/questions.ts";
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
 const DOCS = ["www/src/content/docs/cli.md", "www/src/content/docs/add-ons.md", "cli/README.md", "README.md"];

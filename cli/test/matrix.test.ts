@@ -15,7 +15,8 @@ import {
 	outputsOf,
 	plan,
 } from "../../.github/scripts/generate-matrix.ts";
-import { addOnsByLanguage, DEFAULT_LANGUAGE, type Language } from "../src/domain/add-ons/add-ons.ts";
+import { DEFAULT_LANGUAGE, type Language } from "../src/domain/add-ons/language.ts";
+import { addOnsByLanguage } from "../src/domain/add-ons/questions.ts";
 
 for (const [language, generator] of Object.entries(generators) as [Language, (typeof generators)[Language]][]) {
 	const { allowed, allPairs, flagsOf, matrices, pairsOf, questions } = generator;

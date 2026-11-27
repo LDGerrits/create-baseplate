@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { templateExtras } from "../../base/template.ts";
-import type { Language, Managed } from "../add-ons/add-ons.ts";
+import type { Language } from "../add-ons/language.ts";
+import type { Managed } from "../add-ons/questions.ts";
 import { makeMultiPlaceLuau } from "./multi-place-luau.ts";
 
 /** The places a multi-place game starts with. */

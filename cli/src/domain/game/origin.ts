@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { AddOnChoices } from "../add-ons/add-ons.ts";
+import type { AddOnChoices } from "../add-ons/questions.ts";
 
 /**
  * What a game records in its package.json's `baseplate` field: which create-baseplate made it, in

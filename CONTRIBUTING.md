@@ -19,7 +19,7 @@ Add-ons belong to a language: a TypeScript choice and a Luau one are separate fo
 - `files/`: copied over the game, in place. An add-on that is only packages and an `AGENTS.md` section has none.
 - `mise.toml` (a tool only): its pinned tools, added to the game's `[tools]`, and its tasks, added at the end.
 
-A new question, or a choice of an existing one, also goes in its language's list in `addOnsByLanguage` in `cli/src/domain/add-ons/add-ons.ts` (its flag, question, choices with label and hint, default and whether it allows `none`), in `www/src/content/docs/cli.md`, `add-ons.md` and `layout.md`, and in both READMEs; a test fails until the docs name it. CI creates games with every choice, alone and with the others, from that list.
+A new question, or a choice of an existing one, also goes in its language's list in `addOnsByLanguage` in `cli/src/domain/add-ons/questions.ts` (its flag, question, choices with label and hint, default and whether it allows `none`), in `www/src/content/docs/cli.md`, `add-ons.md` and `layout.md`, and in both READMEs; a test fails until the docs name it. CI creates games with every choice, alone and with the others, from that list.
 
 ### The manifest
 

@@ -1,7 +1,7 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { logger, logToStderr } from "../../base/logger.ts";
-import { findConflict, isMultiPlace } from "../../domain/add-ons/add-ons.ts";
+import { findConflict, isMultiPlace } from "../../domain/add-ons/questions.ts";
 import { recordAgentFiles } from "../../domain/agent-files/agent-files.ts";
 import { nameProblem } from "../../domain/game/app-name.ts";
 import { commitAll, initGit } from "../../domain/game/git.ts";

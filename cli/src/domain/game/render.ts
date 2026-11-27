@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { type AddOnChoices, installAddOns, isMultiPlace, type Language, managedOf } from "../add-ons/add-ons.ts";
+import { installAddOns } from "../add-ons/apply.ts";
+import type { Language } from "../add-ons/language.ts";
+import { type AddOnChoices, isMultiPlace, managedOf } from "../add-ons/questions.ts";
 import { makeMultiPlace } from "../places/multi-place.ts";
 import { writeOrigin } from "./origin.ts";
 import { setProjectName } from "./project-name.ts";

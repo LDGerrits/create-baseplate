@@ -1,5 +1,5 @@
 // create-baseplate as a person runs it: its own questions, options, hints and spinner messages
-// (cli/src/commands/create/, cli/src/domain/add-ons/add-ons.ts and
+// (cli/src/commands/create/, cli/src/domain/add-ons/questions.ts and
 // cli/src/domain/game/install-dependencies.ts), answered with the defaults and the recommended libraries
 // and tools, up to the install.
 

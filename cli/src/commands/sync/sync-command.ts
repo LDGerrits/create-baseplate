@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { choicesFor, findConflict, flagProblem, isLanguage } from "../../domain/add-ons/add-ons.ts";
+import { isLanguage } from "../../domain/add-ons/language.ts";
+import { choicesFor, findConflict, flagProblem } from "../../domain/add-ons/questions.ts";
 import {
 	type AgentFiles,
 	applyPlan,

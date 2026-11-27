@@ -1,21 +1,19 @@
 import * as p from "@clack/prompts";
 import { Command, CommanderError, Option } from "commander";
 import { DEFAULT_APP_NAME } from "../../base/template.ts";
+import { DEFAULT_LANGUAGE, type Language, languages } from "../../domain/add-ons/language.ts";
 import {
 	type AddOn,
 	type AddOnChoices,
 	addOnsByLanguage,
 	allAddOns,
 	choicesFor,
-	DEFAULT_LANGUAGE,
 	defaultFor,
 	findConflict,
 	flagProblem,
 	flagValuesOf,
-	type Language,
-	languages,
 	NONE,
-} from "../../domain/add-ons/add-ons.ts";
+} from "../../domain/add-ons/questions.ts";
 import { nameProblem } from "../../domain/game/app-name.ts";
 import { folderProblem } from "../../domain/game/scaffold.ts";
 import { parseNameAndPath } from "./parse-name-and-path.ts";
