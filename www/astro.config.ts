@@ -7,7 +7,7 @@ export default defineConfig({
 	...(SITE_URL === undefined ? {} : { site: SITE_URL }),
 	integrations: [
 		starlight({
-			title: "Baseplate",
+			title: "Create Baseplate",
 			description: "The agent-ready way to start a Roblox game, in roblox-ts or Luau.",
 			social: [{ icon: "github", label: "GitHub", href: REPOSITORY }],
 			editLink: { baseUrl: `${REPOSITORY}/edit/main/www/` },

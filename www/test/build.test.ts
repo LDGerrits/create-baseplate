@@ -77,3 +77,10 @@ test("each page is built as HTML", () => {
 		assert.ok(fs.existsSync(path.join(DIST, html)), `${html} is missing`);
 	}
 });
+
+test("the home page is its own page, and points agents at llms.txt", () => {
+	const html = fs.readFileSync(path.join(DIST, "index.html"), "utf8");
+	assert.match(html, /<h1[^>]*>The Roblox starter template built for AI coding agents\.<\/h1>/);
+	assert.match(html, /href="\/llms\.txt"/);
+	assert.match(html, /href="\/getting-started\/"/);
+});

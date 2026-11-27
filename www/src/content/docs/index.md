@@ -1,7 +1,10 @@
 ---
 title: Baseplate
 description: The agent-ready way to start a Roblox game, in roblox-ts or Luau.
+# Shown at / by src/pages/index.astro: as a draft, Starlight leaves that route alone, and this stays
+# the home page's Markdown copy for agents (/index.md, first in llms.txt).
 template: splash
+draft: true
 hero:
   tagline: The agent-ready way to start a Roblox game, in roblox-ts or Luau. One command checks everything, tests and UI run without Studio, and hooks keep coding agents to the rules.
   actions:
