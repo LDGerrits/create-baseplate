@@ -178,6 +178,9 @@ importers:
       '@flamework/networking':
         specifier: 1.3.2
         version: 1.3.2(@flamework/core@1.3.2)
+      '@rbxts/janitor':
+        specifier: 1.18.3-ts.0
+        version: 1.18.3-ts.0
       '@rbxts/object-utils':
         specifier: 1.0.4
         version: 1.0.4
@@ -208,6 +211,9 @@ importers:
       '@rbxts/ui-labs':
         specifier: 2.4.2
         version: 2.4.2
+      '@rbxutil/signal':
+        specifier: 2.0.3
+        version: 2.0.3
     devDependencies:
       '@biomejs/biome':
         specifier: 2.6.6
@@ -992,6 +998,9 @@ packages:
   '@rbxts/emittery@3.16.0-ts.2':
     resolution: {integrity: sha512-toyHM4HrAPPqsOJaa8ffF69HMAQnbGRcKSXzyqJfucqmViiNa9tQLTADMWBpoZ9c0mOg2Trzlff6T6NLDt+9NA==}
 
+  '@rbxts/janitor@1.18.3-ts.0':
+    resolution: {integrity: sha512-xr6DBJfQ+k0hbkx1pOYteYOBfinYO/otd+NnpiDaVaR78n89cusxBzKrdImNFzBs+GDVG9qnEZb6HbRZyMkz5g==}
+
   '@rbxts/jest-globals@3.16.0-ts.2':
     resolution: {integrity: sha512-xNArx8ZCIi2hswKiuOvQXo3IMC1TpWw1EQo3iq2dT6gnMfH6s2tdgguC1xjoGzNendsoTpiB3iP67Z8yMjkI5Q==}
 
@@ -1050,6 +1059,9 @@ packages:
 
   '@rbxts/ui-labs@2.4.2':
     resolution: {integrity: sha512-9cyzDYN4mM7KSupZpbHRCUWCfSHzy8LCqa9Czys2jaKYUCn8oV4j5AE+5jTrHD/8RcltP5EvCSFIFwB0N/NfxA==}
+
+  '@rbxutil/signal@2.0.3':
+    resolution: {integrity: sha512-bjdeLbAT4NbhPDdzqILzgxI7uFm0uu7o+UjhC9eFMLJ7hfnLRLu0tm0vf9kThYgRNVxaBwssr5FE1TcxXYF7mw==}
 
   '@roblox-ts/luau-ast@2.0.1':
     resolution: {integrity: sha512-jej2mzRGwhR9wu4woAtgTwqsKADlegZYlQ+M5qVHRojvjoyJVFkLrSbhBKRr8HR+fVW5nCz0qX7kNa0tSpAY+A==}
@@ -2883,6 +2895,8 @@ snapshots:
     dependencies:
       '@rbxts-js/emittery': 3.16.0-ts.1
 
+  '@rbxts/janitor@1.18.3-ts.0': {}
+
   '@rbxts/jest-globals@3.16.0-ts.2':
     dependencies:
       '@rbxts-js/jest-globals': 3.16.0-ts.1
@@ -2949,6 +2963,8 @@ snapshots:
   '@rbxts/types@1.0.961': {}
 
   '@rbxts/ui-labs@2.4.2': {}
+
+  '@rbxutil/signal@2.0.3': {}
 
   '@roblox-ts/luau-ast@2.0.1': {}
 

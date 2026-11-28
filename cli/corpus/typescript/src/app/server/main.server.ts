@@ -5,5 +5,6 @@ import "../../features/coin-pickup/server/coin-pickup-service";
 import "../../features/daily-reward/server/daily-reward-service";
 import "../../features/round-timer/server/round-timer-service";
 import "../../features/leaderboard/server/leaderboard-service";
+import "../../features/coin-badge/server/coin-badge-service";
 
 Flamework.ignite();

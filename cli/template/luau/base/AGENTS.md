@@ -56,7 +56,7 @@ Name each file after what it holds: `InventoryService.luau`.
 
 Require by instance path, the way `rogen where <file>` prints it: `require(ReplicatedStorage.Shared.features.shop.ShopNetwork)`.
 
-Code meets in three ways. Require directly by default: a feature requires the service it needs. When one owner has many contributors, put a registry in `game/`: the one `ProcessReceipt` handler lives there, and each feature registers its product handlers with it, so `game/` never requires a feature. For a fact that others react to, the emitter exports a typed signal that listeners subscribe to. Never a string-keyed event bus.
+Code meets in three ways. Require directly by default: a feature requires the service it needs. When one owner has many contributors, put a registry in `game/`: the one `ProcessReceipt` handler lives there, and each feature registers its product handlers with it, so `game/` never requires a feature. For a fact that others react to, the emitter exports a typed signal that listeners subscribe to, made with the `Signal` package: `changed = Signal.new() :: Signal.Signal<Player, number>`. Never a string-keyed event bus.
 
 ## Server and client
 
@@ -65,6 +65,8 @@ Remotes are [Remo](https://github.com/littensy/remo)'s, as its network module sh
 - **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. The server takes what clients send only through Remo remotes, whose validators drop calls with the wrong arguments and whose throttle drops floods; the throttle fits the action (a purchase is one a second, not twenty).
 - **Services own server state.** A service keeps its state in its module and only it changes it; other code calls its functions. Depend on another service by requiring it.
 - **Controllers run the client side.** A controller handles input and the server's events and keeps what the UI shows; the UI reads it from there.
+- **Clean up what you start.** What lives as long as something else (a tagged part, a player, a round) goes in a `Janitor` from the package of that name: its connections, the threads `task.delay` returns, the instances it made. Destroy the Janitor when that thing ends. Connections to an instance end when it is destroyed.
+- **Wait with `task`** (`task.delay`, `task.wait`, `task.cancel`), not Promise: Janitor's package brings Promise along, but the game doesn't use it.
 
 ## Tests
 

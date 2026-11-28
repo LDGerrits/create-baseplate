@@ -37,6 +37,7 @@ test("refuses server-only APIs in client code", () => {
 		`HttpService:RequestAsync({ Url = "https://example.com" })`,
 		`HttpService:GetAsync("https://example.com")`,
 		`BadgeService:AwardBadge(1, 2)`,
+		`BadgeService:AwardBadgeAsync(1, 2)`,
 		`MarketplaceService.ProcessReceipt = function() end`,
 		`part:SetNetworkOwner(nil)`,
 	]) {

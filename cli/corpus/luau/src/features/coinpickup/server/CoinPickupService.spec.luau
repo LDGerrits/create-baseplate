@@ -17,6 +17,7 @@ end
 describe("CoinPickupService", function()
 	local CoinPickupService
 	local CurrencyService
+	local coin = Instance.new("Part")
 
 	beforeEach(function()
 		jest.resetModules()
@@ -25,23 +26,29 @@ describe("CoinPickupService", function()
 	end)
 
 	it("gives 10 coins for the coin", function()
-		expect(CoinPickupService.collect(fakePlayer(1), 100)).toBe(true)
+		expect(CoinPickupService.collect(coin, fakePlayer(1), 100)).toBe(true)
 		expect(CurrencyService.get(1)).toBe(10)
 	end)
 
 	it("gives nothing to anyone until the coin respawns", function()
-		CoinPickupService.collect(fakePlayer(1), 100)
+		CoinPickupService.collect(coin, fakePlayer(1), 100)
 
-		expect(CoinPickupService.collect(fakePlayer(1), 104.9)).toBe(false)
-		expect(CoinPickupService.collect(fakePlayer(2), 104.9)).toBe(false)
+		expect(CoinPickupService.collect(coin, fakePlayer(1), 104.9)).toBe(false)
+		expect(CoinPickupService.collect(coin, fakePlayer(2), 104.9)).toBe(false)
 		expect(CurrencyService.get(1)).toBe(10)
 		expect(CurrencyService.get(2)).toBe(0)
 	end)
 
-	it("can be taken again after 5 seconds", function()
-		CoinPickupService.collect(fakePlayer(1), 100)
+	it("keeps each coin's respawn apart", function()
+		CoinPickupService.collect(coin, fakePlayer(1), 100)
 
-		expect(CoinPickupService.collect(fakePlayer(1), 105)).toBe(true)
+		expect(CoinPickupService.collect(Instance.new("Part"), fakePlayer(2), 101)).toBe(true)
+	end)
+
+	it("can be taken again after 5 seconds", function()
+		CoinPickupService.collect(coin, fakePlayer(1), 100)
+
+		expect(CoinPickupService.collect(coin, fakePlayer(1), 105)).toBe(true)
 		expect(CurrencyService.get(1)).toBe(20)
 	end)
 end)

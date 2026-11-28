@@ -12,6 +12,7 @@
 			"BinaryString": ""
 		},
 		"Shape": "Cylinder",
-		"Size": [0.5, 4.0, 4.0]
+		"Size": [0.5, 4.0, 4.0],
+		"Tags": ["Coin"]
 	}
 }

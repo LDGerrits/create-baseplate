@@ -28,7 +28,13 @@ export const SERVER_ONLY_SERVICES = [
 	"ServerStorage",
 	"ServerScriptService",
 ];
-export const SERVER_ONLY_MEMBERS = ["AwardBadge", "ProcessReceipt", "SetNetworkOwner", "LoadCharacter"];
+export const SERVER_ONLY_MEMBERS = [
+	"AwardBadge",
+	"AwardBadgeAsync",
+	"ProcessReceipt",
+	"SetNetworkOwner",
+	"LoadCharacter",
+];
 export const SAVE_BY_HAND =
 	"Player data goes through a data library (ProfileStore or Lapis), not DataStoreService by hand. For another store, such as a leaderboard's, disable this rule on the line and say why.";
 export const SERVER_ONLY_HTTP = ["RequestAsync", "GetAsync", "PostAsync"];

@@ -100,7 +100,7 @@ export function packageErrors(packageJson: string, mounted: Set<string>): string
 		.filter((name) => !mounted.has(name.split("/")[0] ?? ""))
 		.map((name) =>
 			name.startsWith("@")
-				? `package.json: ${name} is from a scope the game doesn't mount. If it's a roblox-ts package, mount ${name.split("/")[0]} under ReplicatedStorage.rbxts_include.node_modules in default.rogen.json, like @rbxts; if it's a build tool, move it to devDependencies (pnpm add -D).`
+				? `package.json: ${name} is from a scope the game doesn't mount. If it's a roblox-ts package, mount ${name.split("/")[0]} under ReplicatedStorage.rbxts_include.node_modules in default.rogen.json and add it to typeRoots in tsconfig.json, like @rbxts; if it's a build tool, move it to devDependencies (pnpm add -D).`
 				: `package.json: ${name} is a plain npm package, which doesn't run in Roblox. Use an @rbxts package, or move a build tool to devDependencies (pnpm add -D).`,
 		);
 }

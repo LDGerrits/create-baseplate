@@ -29,7 +29,13 @@ export const SERVER_ONLY_SERVICES = [
 	"ServerStorage",
 	"ServerScriptService",
 ];
-export const SERVER_ONLY_MEMBERS = ["AwardBadge", "ProcessReceipt", "SetNetworkOwner", "LoadCharacter"];
+export const SERVER_ONLY_MEMBERS = [
+	"AwardBadge",
+	"AwardBadgeAsync",
+	"ProcessReceipt",
+	"SetNetworkOwner",
+	"LoadCharacter",
+];
 export const SERVER_ONLY_HTTP = ["RequestAsync", "GetAsync", "PostAsync"];
 
 export type Side = "server" | "client" | "shared";
