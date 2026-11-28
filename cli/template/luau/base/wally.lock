@@ -13,6 +13,16 @@ version = "4.0.0"
 dependencies = []
 
 [[package]]
+name = "howmanysmall/janitor"
+version = "1.18.3"
+dependencies = [["Promise", "howmanysmall/typed-promise@4.0.6"]]
+
+[[package]]
+name = "howmanysmall/typed-promise"
+version = "4.0.6"
+dependencies = [["Promise", "evaera/promise@4.0.0"]]
+
+[[package]]
 name = "jsdotlua/boolean"
 version = "1.2.7"
 dependencies = [["number", "jsdotlua/number@1.2.7"]]
@@ -270,7 +280,7 @@ dependencies = [["Ripple", "littensy/ripple@0.10.2"], ["Vide", "centau/vide@0.4.
 [[package]]
 name = "local/game"
 version = "0.1.0"
-dependencies = [["Remo", "littensy/remo@1.5.3"], ["Vide", "centau/vide@0.4.1"], ["VideRipple", "littensy/vide-ripple@0.10.2"], ["t", "osyrisrblx/t@3.1.1"], ["Jest", "jsdotlua/jest@3.10.0"], ["JestGlobals", "jsdotlua/jest-globals@3.10.0"], ["UILabs", "pepeeltoro41/ui-labs@2.4.2"]]
+dependencies = [["Janitor", "howmanysmall/janitor@1.18.3"], ["Remo", "littensy/remo@1.5.3"], ["Signal", "sleitnick/signal@2.0.3"], ["Vide", "centau/vide@0.4.1"], ["VideRipple", "littensy/vide-ripple@0.10.2"], ["t", "osyrisrblx/t@3.1.1"], ["Jest", "jsdotlua/jest@3.10.0"], ["JestGlobals", "jsdotlua/jest-globals@3.10.0"], ["UILabs", "pepeeltoro41/ui-labs@2.4.2"]]
 
 [[package]]
 name = "osyrisrblx/t"
@@ -280,4 +290,9 @@ dependencies = []
 [[package]]
 name = "pepeeltoro41/ui-labs"
 version = "2.4.2"
+dependencies = []
+
+[[package]]
+name = "sleitnick/signal"
+version = "2.0.3"
 dependencies = []

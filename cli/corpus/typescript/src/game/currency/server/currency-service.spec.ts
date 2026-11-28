@@ -15,4 +15,18 @@ describe("CurrencyService", () => {
 		expect(currency.getCoins(first)).toBe(20);
 		expect(currency.getCoins(second)).toBe(0);
 	});
+
+	it("announces each player's new balance", () => {
+		const currency = new CurrencyService();
+		const player = fakePlayer();
+		const heard: number[] = [];
+		currency.changed.Connect((who, coins) => {
+			if (who === player) heard.push(coins);
+		});
+
+		currency.add(player, 10);
+		currency.add(player, 5);
+
+		expect(heard).toEqual([10, 15]);
+	});
 });

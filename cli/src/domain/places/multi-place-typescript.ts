@@ -147,8 +147,8 @@ export function makeMultiPlaceTypeScript(dir: string, name: string, choices: Add
 	}
 	agents = replaceIn(
 		agents,
-		"in `default.rogen.json`, like the existing scopes",
-		"in each place's `default.rogen.json`, like the existing scopes",
+		"in `default.rogen.json` and add it to",
+		"in each place's `default.rogen.json` and add it to",
 	);
 	for (const [from, to] of PATHS) agents = agents.replaceAll(from, to);
 	if (managed === "full") agents = agents.replaceAll("under `world/`", "under a place's `world/`");

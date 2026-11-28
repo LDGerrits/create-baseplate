@@ -55,13 +55,14 @@ Inside a feature or module, and in `app/`, the folder a file sits in decides whe
 
 Name each file after what it holds: `inventory-service.ts`.
 
-Code meets in three ways. Import directly by default: a feature imports the service it needs. When one owner has many contributors, put a registry in `game/`: the one `ProcessReceipt` handler lives there, and each feature registers its product handlers with it, so `game/` never imports a feature. For a fact that others react to, the emitter exports a typed signal that listeners subscribe to. Never a string-keyed event bus.
+Code meets in three ways. Import directly by default: a feature imports the service it needs. When one owner has many contributors, put a registry in `game/`: the one `ProcessReceipt` handler lives there, and each feature registers its product handlers with it, so `game/` never imports a feature. For a fact that others react to, the emitter exports a typed signal that listeners subscribe to, a `Signal` from `@rbxutil/signal`: `readonly changed = new Signal<[player: Player, coins: number]>();`. Never a string-keyed event bus.
 
 ## Server and client
 
 - **Never trust the client.** Clients ask; services decide. Check every request on the server: rate limits, ownership, cost, distance, cooldowns. Flamework checks the types of remote arguments, not whether the request is allowed. Limit how often each client-to-server remote may come with `rateLimit` (events) or `rateLimitFunction` from `src/platform/network/server/rate-limit.ts`, as the service `mise run feature` writes does.
 - **Services own server state.** Only a service changes its state; other code calls its methods. Depend on another service through the constructor: `constructor(private readonly data: PlayerDataService) {}`.
 - **Controllers run the client side.** A controller handles input and the server's events and keeps what the UI shows; the root component subscribes to it.
+- **Clean up what you start.** What lives as long as something else (a tagged part, a player, a round) goes in a `Janitor` from `@rbxts/janitor`: its connections, the threads `task.delay` returns, the instances it made. Destroy the Janitor when that thing ends. Connections to an instance end when it is destroyed.
 
 ## Tests
 
@@ -93,7 +94,7 @@ This game has no data library yet. To save players' data, suggest ProfileStore (
 
 ## Packages
 
-Add one with `pnpm add <name>` (`-D` for build tools). pnpm installs only versions published at least two weeks ago; when it refuses one, pick an older version. If the package's scope is new, such as `@rbxts-js`, mount it under `ReplicatedStorage.rbxts_include.node_modules` in `default.rogen.json`, like the existing scopes.
+Add one with `pnpm add <name>` (`-D` for build tools). pnpm installs only versions published at least two weeks ago; when it refuses one, pick an older version. If the package's scope is new, such as `@rbxts-js`, mount it under `ReplicatedStorage.rbxts_include.node_modules` in `default.rogen.json` and add it to `typeRoots` in `tsconfig.json`, like the existing scopes.
 
 ## Releases and updates
 

@@ -56,6 +56,7 @@ test("refuses server-only APIs in client code", async () => {
 		`HttpService.RequestAsync({ Url: "https://example.com" });`,
 		`HttpService.GetAsync("https://example.com");`,
 		`BadgeService.AwardBadge(1, 2);`,
+		`BadgeService.AwardBadgeAsync(1, 2);`,
 		`MarketplaceService.ProcessReceipt = () => 1;`,
 		`part.SetNetworkOwner(undefined);`,
 	]) {

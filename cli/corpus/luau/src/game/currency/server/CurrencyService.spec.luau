@@ -41,4 +41,19 @@ describe("CurrencyService", function()
 		expect(CurrencyService.get(2)).toBe(0)
 		expect(coins.Value).toBe(20)
 	end)
+
+	it("announces each player's new balance", function()
+		local fake: any = { UserId = 1, FindFirstChild = function() end }
+		local heard = {}
+		CurrencyService.changed:Connect(function(player, coins)
+			if player == fake then
+				table.insert(heard, coins)
+			end
+		end)
+
+		CurrencyService.add(fake, 10)
+		CurrencyService.add(fake, 5)
+
+		expect(heard).toEqual({ 10, 15 })
+	end)
 end)

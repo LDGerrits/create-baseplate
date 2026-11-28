@@ -22,7 +22,7 @@
 		"noPropertyAccessFromIndexSignature": true,
 		"exactOptionalPropertyTypes": true,
 		"target": "ESNext",
-		"typeRoots": ["node_modules/@rbxts", "node_modules/@flamework"],
+		"typeRoots": ["node_modules/@rbxts", "node_modules/@flamework", "node_modules/@rbxutil"],
 		"types": ["compiler-types", "types"],
 		"rootDir": "src",
 		"outDir": "out",

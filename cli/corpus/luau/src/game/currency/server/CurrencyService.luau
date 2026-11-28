@@ -1,6 +1,12 @@
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local CurrencyService = {}
+local Signal = require(ReplicatedStorage.Packages.Signal)
+
+local CurrencyService = {
+	-- Fires with a player's new balance after every change.
+	changed = Signal.new() :: Signal.Signal<Player, number>,
+}
 
 local balances: { [number]: number } = {}
 
@@ -19,6 +25,7 @@ end
 function CurrencyService.add(player: Player, amount: number)
 	balances[player.UserId] = CurrencyService.get(player.UserId) + amount
 	show(player)
+	CurrencyService.changed:Fire(player, balances[player.UserId])
 end
 
 local function addLeaderstats(player: Player)
